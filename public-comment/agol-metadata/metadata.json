@@ -1,0 +1,140 @@
+{
+  "_about": "Item metadata for the public ArcGIS Online copies of the Attachment 2 GIS layers (Docket TTB-2026-0005). Paste each field into the item's Overview and Settings. Plain text; paragraphs are separated by blank lines.",
+  "common": {
+    "terms_of_use": "Not authoritative. These layers were prepared by Dan McLaughlin, co-petitioner for the proposed Hickory Sands District American Viticultural Area, as part of a public comment on TTB Docket No. TTB-2026-0005 (Notice No. 243, 91 FR 52576). They are not an official TTB product. The boundary of an American Viticultural Area is the written boundary description adopted in 27 CFR part 9; TTB's AVA Map Explorer is TTB's published map. The comment as filed on Regulations.gov (Docket TTB-2026-0005) is the version of record; these online copies were published from the GIS files prepared for that comment and are provided for convenience; ArcGIS Online stores them in its own format, so the filed files remain the reference.\n\nLicense: Creative Commons Attribution 4.0 International (CC BY 4.0), https://creativecommons.org/licenses/by/4.0/. Attribution: Dan McLaughlin, Robert Clay Vineyards, Mason, Texas.\n\nProvided as is, without warranty of any kind. Positional accuracy is limited by the USGS 1:24,000 maps from which the lines were drawn.",
+    "credits": "Dan McLaughlin, co-petitioner, Robert Clay Vineyards, Mason, Texas. Drawn on the USGS 1:24,000 topographic quadrangles designated in TTB Notice No. 243.",
+    "base_tags": [
+      "Hickory Sands District",
+      "American Viticultural Area",
+      "AVA",
+      "TTB",
+      "Notice No. 243",
+      "TTB-2026-0005",
+      "Mason County",
+      "San Saba County",
+      "McCulloch County",
+      "Llano County",
+      "Texas",
+      "public comment"
+    ],
+    "description_footer": "Coordinate system: NAD83 (EPSG:4269), the datum of TTB's AVA layer. Areas are measured on the GRS 1980 ellipsoid.\n\nThese layers accompany a public comment in support of the proposed Hickory Sands District AVA, filed on Docket No. TTB-2026-0005. They are not authoritative; the comment as filed on Regulations.gov (Docket TTB-2026-0005) is the version of record. See the Terms of Use."
+  },
+  "items": [
+    {
+      "file": "boundary-per-proposed-text-line-EPSG4269.geojson",
+      "title": "Hickory Sands District AVA - Boundary per Proposed Text (Line)",
+      "summary": "The proposed Hickory Sands District AVA boundary drawn step by step from the written description in TTB Notice No. 243, one line per step (96 steps), on the designated USGS 1:24,000 maps.",
+      "extra_tags": [
+        "boundary",
+        "proposed rule",
+        "USGS"
+      ],
+      "description": "This layer draws the boundary written in the proposed regulatory text of TTB Notice No. 243 (Docket No. TTB-2026-0005), one line feature for each of its 96 steps. Each point was placed on the printed mark or intersection the text names, and each line follows the printed feature the text names (road centerline, creek centerline or contour line), on the 13 USGS 1:24,000 quadrangles designated in the notice.\n\nFields: step (step number in the proposed text); kind (straight line or followed feature); endpoint (the mark or intersection that ends the step); quad (USGS quadrangle); length_m (length in meters); narrative (the step text as written in the notice)."
+    },
+    {
+      "file": "boundary-per-proposed-text-area-EPSG4269.geojson",
+      "title": "Hickory Sands District AVA - Boundary per Proposed Text (Area)",
+      "summary": "The area enclosed by the proposed Hickory Sands District AVA boundary as written in TTB Notice No. 243, drawn on the designated USGS 1:24,000 maps (about 198.1 square miles).",
+      "extra_tags": [
+        "boundary",
+        "proposed rule",
+        "polygon"
+      ],
+      "description": "This layer is the area enclosed by the boundary written in the proposed regulatory text of TTB Notice No. 243, drawn step by step on the 13 designated USGS 1:24,000 quadrangles. It measures about 198.1 square miles. The notice describes a 193-square-mile AVA; the difference is mostly the Grit section (see the Grit Section layer).\n\nThe attribute fields follow the schema of TTB's AVAs_Production layer (fields not applicable to a proposed AVA are empty), plus area_sqmi (area in square miles) and source."
+    },
+    {
+      "file": "boundary-per-proposed-text-points-EPSG4269.geojson",
+      "title": "Hickory Sands District AVA - Boundary Points per Proposed Text",
+      "summary": "The beginning point and the end point of each step of the proposed Hickory Sands District AVA boundary in TTB Notice No. 243, placed on the printed marks of the designated USGS maps (97 points).",
+      "extra_tags": [
+        "boundary points",
+        "proposed rule",
+        "USGS"
+      ],
+      "description": "This layer marks the beginning point and the end of each of the 96 steps of the boundary written in the proposed regulatory text of TTB Notice No. 243, as placed on the printed marks and intersections of the 13 designated USGS 1:24,000 quadrangles. A point number refers to the end of the step with the same number.\n\nFields: point (point number); step (step that ends at the point; 0 for the beginning point); kind; name (the printed mark or intersection); quad (USGS quadrangle); note (where a mark can be read more than one way, the reading used)."
+    },
+    {
+      "file": "boundary-with-petition-western-routing-line-EPSG4269.geojson",
+      "title": "Hickory Sands District AVA - Boundary with Petition Western Routing (Line)",
+      "summary": "The proposed Hickory Sands District AVA boundary with the petition's western routing near Grit and its highway-lane wording restored, drawn on the designated USGS 1:24,000 maps.",
+      "extra_tags": [
+        "boundary",
+        "petition",
+        "Grit"
+      ],
+      "description": "This layer is identical to the boundary drawn from the proposed text of TTB Notice No. 243, except in the western section near Grit and along the highway lanes, where it follows the petition's written boundary description (petition steps 11 and 12 and 91 through 98). The petition routes the boundary along State Highway 29 to keep the exposed granite around Grit outside the AVA.\n\nFields: name; description."
+    },
+    {
+      "file": "boundary-with-petition-western-routing-area-EPSG4269.geojson",
+      "title": "Hickory Sands District AVA - Boundary with Petition Western Routing (Area)",
+      "summary": "The area enclosed by the proposed Hickory Sands District AVA boundary with the petition's western routing near Grit restored, drawn on the designated USGS 1:24,000 maps (about 193.8 square miles).",
+      "extra_tags": [
+        "boundary",
+        "petition",
+        "polygon"
+      ],
+      "description": "This layer is the area enclosed by the boundary drawn from the proposed text of TTB Notice No. 243 with the petition's western routing near Grit and its highway-lane wording restored. It measures about 193.8 square miles, in line with the 193 square miles stated in the notice.\n\nThe attribute fields follow the schema of TTB's AVAs_Production layer (fields not applicable to a proposed AVA are empty), plus area_sqmi (area in square miles) and source."
+    },
+    {
+      "file": "boundary-with-petition-western-routing-points-EPSG4269.geojson",
+      "title": "Hickory Sands District AVA - Boundary Points with Petition Western Routing",
+      "summary": "Boundary points for the proposed Hickory Sands District AVA with the petition's western routing restored, each labeled with its petition step and the matching point in the proposed text (102 points).",
+      "extra_tags": [
+        "boundary points",
+        "petition",
+        "Grit"
+      ],
+      "description": "This layer marks the boundary points of the petition's written boundary description (102 steps) as drawn with the proposed text of TTB Notice No. 243, so the two numbering systems can be compared. Up to the Grit section, petition step N corresponds to proposed step N minus 1.\n\nFields: petition_point (petition step number); ttb_point (matching point in the proposed text, where one exists); label; name; description (the petition's step text)."
+    },
+    {
+      "file": "grit-section-EPSG4269.geojson",
+      "title": "Hickory Sands District AVA - Grit Section (Proposed Text vs Petition Routing)",
+      "summary": "Where the proposed text of TTB Notice No. 243 and the petition's routing differ: about 4.32 square miles (2,767 acres) of exposed granite around Grit, Texas, plus small pieces along the highway lanes.",
+      "extra_tags": [
+        "Grit",
+        "granite",
+        "boundary comparison"
+      ],
+      "description": "This layer shows the areas where the boundary written in the proposed text of TTB Notice No. 243 and the boundary with the petition's western routing differ. The largest piece, about 4.32 square miles (2,767 acres) of exposed granite around Grit between State Highway 29 and U.S. Highway 377, is inside the proposed text's boundary but outside the petition's. Smaller pieces along the highway lanes and near the marked 1,765-foot summit are partly offsetting.\n\nFields: category; direction (which boundary includes the piece); acres; sq_mi; near_point; step; cause_code; cause; note; id."
+    },
+    {
+      "file": "published-polygon-departures-EPSG4269.geojson",
+      "title": "Hickory Sands District AVA - Published Polygon Departures from Proposed Text",
+      "summary": "The 69 places of 2 acres or more where TTB's published Hickory Sands District polygon (AVA Map Explorer, retrieved October 10, 2026) differs from the boundary written in Notice No. 243, about 790 acres in all.",
+      "extra_tags": [
+        "AVA Map Explorer",
+        "boundary comparison",
+        "map corrections"
+      ],
+      "description": "This layer compares TTB's published polygon for the proposed Hickory Sands District AVA (AVAs_Production layer, retrieved October 10, 2026) with the boundary written in the proposed text of Notice No. 243, drawn on the designated USGS 1:24,000 quadrangles. It shows 69 places of 2 acres or more where the two differ, about 790 acres in all: about 540 acres the text includes but the polygon leaves out, and about 250 acres the polygon includes but the text leaves out. These are offered as technical map corrections; they need no change to the written description.\n\nFields: category; direction; acres; sq_mi; near_point; step; cause_code (type of difference); cause (what differs at that place); note; id; reading_note (where a printed mark can be read more than one way)."
+    },
+    {
+      "file": "granite-rock-crawling-parks-EPSG4269.geojson",
+      "title": "Hickory Sands District AVA - Granite Rock-Crawling Parks (Approximate)",
+      "summary": "Approximate areas of two commercial granite rock-crawling parks inside the Grit section near Mason, Texas, interpreted from aerial imagery. Shown as evidence of bare rock; not surveyed.",
+      "extra_tags": [
+        "Grit",
+        "granite",
+        "land cover"
+      ],
+      "description": "This layer shows the approximate areas of two commercial granite rock-crawling parks, Katemcy Rocks (K2) and Wolf Caves, inside the Grit section. Their trail networks show how much of this ground is bare granite. The outlines were interpreted from aerial imagery and the parks' published trail maps; they are approximate and not surveyed. An AVA is a wine-labeling designation and does not regulate land use.\n\nFields: name; use; address; acres_mapped (approximate area inside the Grit section); acres_claimed (advertised size); in_grit_section; source; note."
+    },
+    {
+      "file": "ttb-published-san-pasqual-valley-EPSG4269.geojson",
+      "title": "Hickory Sands District AVA - San Pasqual Valley AVA Boundary Example (from TTB AVAs_Production)",
+      "summary": "TTB's published San Pasqual Valley AVA polygon (27 CFR 9.25), unaltered, with the line its boundary follows out and back (about 380 m) and a hillock of about 220 acres it leaves outside the AVA.",
+      "extra_tags": [
+        "San Pasqual Valley",
+        "27 CFR 9.25",
+        "boundary example"
+      ],
+      "credits": "Feature 1: TTB AVAs_Production layer (San Pasqual Valley), retrieved October 12, 2026, geometry and attributes unaltered. Features 2 and 3 identified by Dan McLaughlin, Robert Clay Vineyards, from TTB's published vertices.",
+      "description": "Feature 1 is TTB's San Pasqual Valley AVA polygon (27 CFR 9.25) exactly as served by TTB's AVAs_Production layer on October 12, 2026. Features 2 and 3, added by the commenter, mark the boundary line that is traversed out and back (about 380 meters) and the hillock of about 220 acres that the boundary leaves outside the AVA, consistent with 27 CFR 9.25(c)(2). It is cited in the comment as an established AVA whose boundary follows the same line out and back.\n\nFields: TTB's AVAs_Production fields on feature 1; on features 2 and 3: source, retrieved, crs, added_by, part, derived, plus length_m and cfr_text (feature 2) or acres (feature 3)."
+    }
+  ],
+  "group": {
+    "title": "Hickory Sands District AVA: Public Comment GIS Data (TTB-2026-0005)",
+    "summary": "GIS layers accompanying Dan McLaughlin's public comment in support of the proposed Hickory Sands District AVA, TTB Docket No. TTB-2026-0005 (Notice No. 243). Not authoritative.",
+    "description": "These layers accompany a public comment in support of the proposed Hickory Sands District American Viticultural Area, filed on TTB Docket No. TTB-2026-0005 (Notice No. 243, 91 FR 52576) by Dan McLaughlin, co-petitioner, Robert Clay Vineyards, Mason, Texas.\n\nThey are not authoritative. The comment as filed on Regulations.gov (Docket TTB-2026-0005) is the version of record; these copies are provided for reference only. The boundary of an AVA is the written description adopted in 27 CFR part 9. License: CC BY 4.0.\n\nPublished October 12, 2026, from the files filed with the comment. Items are not edited after filing except with a dated note in the item description."
+  }
+}

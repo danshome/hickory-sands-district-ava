@@ -1,0 +1,7 @@
+matplotlib>=3.8
+markdown>=3.5
+numpy
+pillow
+pypdf>=4
+pyproj>=3.6
+shapely>=2

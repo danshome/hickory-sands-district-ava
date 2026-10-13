@@ -1,0 +1,27 @@
+# Private and internal material (drafts, correspondence, working notes, filing kit)
+.local/
+
+# Large files rebuilt by scripts (see README, "Rebuilding large files")
+quads_geotiff/
+quads_geopdf/
+quads_cropped_geotiff/
+build/
+narrative/source/
+code/data/
+code/out/
+
+# Tool, editor and OS files
+.remember/
+.idea/
+.playwright-mcp/
+.claude/
+.DS_Store
+*.qgs~
+__pycache__/
+*.pyc
+
+# Generated from quads_cropped/*.vrt.in by scripts/build_cropped_quads.sh
+quads_cropped/*.vrt
+
+# Downloaded by scripts/build_geology.py
+data/fetched/

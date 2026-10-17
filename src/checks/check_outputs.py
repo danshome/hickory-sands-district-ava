@@ -9,10 +9,10 @@ Exit 1 on any failure; warnings do not fail.
   annotation other than links (#39). pdffonts and pdfsig (poppler) are asked
   too when installed;
 - compare text: the two compare-text files differ in exactly the steps whose
-  change in agreed-steps.json is not "unchanged", each changed line reads as
+  change in proposed-steps.json is not "unchanged", each changed line reads as
   the proposed step, and the steps README.txt names as the differences are
   those;
-- figures: the area (agreed-steps.json) in README.txt and the description
+- figures: the area (proposed-steps.json) in README.txt and the description
   (1a), every "x.xx square miles" in them and the read me; README.md's
   figures from the build's statistics (grit-change-stats.json,
   ttb-diff-stats.json), each rounded once, half up (#26, #33);
@@ -100,7 +100,7 @@ def as_int(s):
 
 
 base = os.path.basename
-steps = work_json("agreed-steps.json")
+steps = work_json("proposed-steps.json")
 S = {s["step"]: s for s in steps["steps"]}
 CHANGED = sorted(n for n, s in S.items() if s["change"] != "unchanged")
 failed, warned = [], []
@@ -350,7 +350,7 @@ def _():
     if got_new != CHANGED:
         bad.append(
             f"the notice copy's text differs in steps {got_new}; "
-            f"agreed-steps.json changes {CHANGED}"
+            f"proposed-steps.json changes {CHANGED}"
         )
     if got_old != [n for n in CHANGED if n <= ttb_n]:
         bad.append(

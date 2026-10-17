@@ -73,7 +73,7 @@ OUT = os.path.join(
     "documents",
     "TTB-Notice-243-with-proposed-Hickory-Sands-District-changes-2026-10-15-UNOFFICIAL.pdf",
 )
-with open(os.path.join(HERE, "agreed-steps.json")) as f:
+with open(os.path.join(HERE, "proposed-steps.json")) as f:
     S = {s["step"]: s["text"] for s in json.load(f)["steps"]}
 
 doc = pymupdf.open(SRC)

@@ -12,7 +12,7 @@ is farther apart than that, from either side (ours away from TTB, or TTB away
 from ours). Each ring says which of our steps it touches, how far apart the
 lines are, the acres of the pieces of land between the two lines that it
 touches (whole pieces, as in the all-differences layer, so the figures add
-up), and whether the step's change register (agreed-steps.json "change"; a
+up), and whether the step's change register (proposed-steps.json "change"; a
 "text correction" does not move the line, so it counts as unchanged) says the
 difference is intended or not; rings at least --big m apart (default 100:
 TTB's line takes another path, or slips) are flagged big. It also writes every
@@ -22,7 +22,7 @@ differences), each with its side, acres, length, widths, steps and cause.
 Usage (the project .venv, -E -s):
   compare_ttb.py --ours-line LINE.geojson --ours-area AREA.geojson
                  (--ttb TTB.geojson | --ttb-url URL --ttb-name NAME)
-                 [--steps agreed-steps.json] [--out-dir DIR] [--k 4]
+                 [--steps proposed-steps.json] [--out-dir DIR] [--k 4]
                  [--min-threshold 15] [--threshold M]
 Outputs in --out-dir: ttb-diff-rings-EPSG4269.geojson (circles, one per
 place), ttb-diff-areas-EPSG4269.geojson (every piece between the two
@@ -241,7 +241,7 @@ def main():
     ap.add_argument("--ttb-name", default="Hickory Sands District")
     ap.add_argument(
         "--steps",
-        help="agreed-steps.json (step -> change register) to mark intended "
+        help="proposed-steps.json (step -> change register) to mark intended "
         "differences",
     )
     ap.add_argument("--out-dir", default=".")

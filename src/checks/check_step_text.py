@@ -9,9 +9,9 @@ that sneak in from word processors and printed PDFs).
    its full-text XML as federalregister.gov publishes it (fetched 2026-10-17,
    kept byte for byte).
 2. Every step written for the proposal (the petition's wording in
-   petition-steps.json and the steps in src/boundary/build_agreed.py) and,
+   petition-steps.json and the steps in src/boundary/build_proposed.py) and,
    after a build, every step of the proposed description
-   (target/work/agreed-steps.json) uses only the characters the Federal
+   (target/work/proposed-steps.json) uses only the characters the Federal
    Register uses in step text: printable ASCII and curly double quotes. No en
    or em dashes (the printed notice's dashes are GPO's typesetting; the
    Federal Register's text has hyphens), no curly apostrophes, no
@@ -19,7 +19,7 @@ that sneak in from word processors and printed PDFs).
 
 Exit 1 naming each step, character and its fix.
 
-Usage: check_step_text.py [agreed-steps.json]
+Usage: check_step_text.py [proposed-steps.json]
 """
 
 import ast
@@ -42,7 +42,7 @@ TTB = os.path.join(
 PET = os.path.join(
     ROOT, "resources", "boundary", "description", "petition-steps.json"
 )
-AGREED = os.path.join(ROOT, "src", "boundary", "build_agreed.py")
+PROPOSED = os.path.join(ROOT, "src", "boundary", "build_proposed.py")
 OK = {chr(c) for c in range(32, 127)} | {"\u201c", "\u201d"}
 FIX = {
     "\u2013": "-",
@@ -125,16 +125,16 @@ for k in ttb:
     chars(f"TTB's step ({k})", ttb[k])
 
 # 2. the proposal's own wording: the petition's steps, the steps written in
-# build_agreed.py, and the built description
+# build_proposed.py, and the built description
 for k, v in json.loads(read(PET)).items():
     chars(f"petition step ({k}) in {os.path.basename(PET)}", v)
-for node in ast.walk(ast.parse(read(AGREED))):
+for node in ast.walk(ast.parse(read(PROPOSED))):
     if (
         isinstance(node, ast.Constant)
         and isinstance(node.value, str)
         and node.value.startswith("Proceed ")
     ):
-        chars(f"step text in build_agreed.py line {node.lineno}", node.value)
+        chars(f"step text in build_proposed.py line {node.lineno}", node.value)
 if len(sys.argv) > 1:
     for s in json.loads(read(sys.argv[1]))["steps"]:
         chars(f"proposed step ({s['step']})", s["text"])

@@ -8,16 +8,16 @@ Inputs (both NAD83, EPSG:4269):
              and LAST vertex snapped onto the automatic trace (vertex/segment
              snapping to the traced-steps layer only). Fields: step (int), spot
              (problems.json pid), method, who, when, reason.
-  --out      the spliced lines (same schema; build_agreed.py reads it in place
-             of the automatic file)
+  --out      the spliced lines (same schema; build_proposed.py reads it in
+             place of the automatic file)
 Rules: a patch's ends must lie within TOL m of the step's trace (fails loudly
 otherwise, e.g. after a re-trace), stay more than PIN_TIE m from both pins
-(build_agreed.py drops the vertices that close and ties the line to the pin) or
-sit ON a pin (a patch run to the pin; the step gets pin_patched), never overlap
-another patch on the step; it may be digitized in either direction. Every edit
-is listed, with its provenance, in the step's `hand_edits`. --patches may be
-the QGIS GeoPackage (layer hand_patches, EPSG:4269) or a GeoJSON; --out may
-never be the --traced file.
+(build_proposed.py drops the vertices that close and ties the line to the
+pin) or sit ON a pin (a patch run to the pin; the step gets pin_patched), never
+overlap another patch on the step; it may be digitized in either direction.
+Every edit is listed, with its provenance, in the step's `hand_edits`.
+--patches may be the QGIS GeoPackage (layer hand_patches, EPSG:4269) or a
+GeoJSON; --out may never be the --traced file.
 
 Usage: apply_patches.py --patches hand-patches-EPSG4269.gpkg [--traced ...]
        [--out ...]   (exit 1 on any failed check)
@@ -360,7 +360,7 @@ def main():
             pc.reverse()
             (s0, i0, t0), (s1, i1, t1) = (s1, i1, t1), (s0, i0, t0)
         # an end either stays more than PIN_TIE m from the pins, or sits ON the
-        # pin (a patch run to the pin, Oct. 16, 2026: build_agreed.py then
+        # pin (a patch run to the pin, Oct. 16, 2026: build_proposed.py then
         # keeps the patch's vertices at that end instead of tying the last 12 m
         # straight)
         at0, at1 = s0 <= TOL, total - s1 <= TOL

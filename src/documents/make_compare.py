@@ -35,7 +35,7 @@ def load_json(path, encoding=None):
 
 S = {
     s["step"]: s
-    for s in load_json(os.path.join(HERE, "agreed-steps.json"))["steps"]
+    for s in load_json(os.path.join(HERE, "proposed-steps.json"))["steps"]
 }
 # TTB's steps word for word from the Federal Register's own text of Notice
 # No. 243 (document 2026-16670, full-text XML, downloaded 2026-10-15; the PDF

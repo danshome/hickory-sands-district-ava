@@ -24,7 +24,7 @@ wrong; exit 1 if any check fails.
   elementMappings must be in a view;
 - figures, from the build's outputs in HSD_WORK or target/work (skipped when
   they are not there): the AVA polygon's Area and area_sqmi equal
-  agreed-steps.json (0.01 sq mi); as many steps and points as the build's
+  proposed-steps.json (0.01 sq mi); as many steps and points as the build's
   GeoJSON; the differences' pieces and acres by cause and side equal
   ttb-diff-stats.json, and each big difference's acres the build's rings (0.1
   acre); the Grit areas' acres, granite and sandstone equal
@@ -371,7 +371,7 @@ def load():
         wm, \
         wm_err, \
         OPS
-    built = os.path.exists(os.path.join(HERE, "agreed-steps.json"))
+    built = os.path.exists(os.path.join(HERE, "proposed-steps.json"))
     print(
         "Live checks of the public ArcGIS Online site, anonymously (group "
         f"{GROUP_ID}; build outputs: {HERE if built else 'none'})",
@@ -767,7 +767,7 @@ def dashboard(bad, note):
 
 def figures(bad, note):
     """Figures: the live layers' area, counts, attributes and acres as built."""
-    if not os.path.exists(os.path.join(HERE, "agreed-steps.json")):
+    if not os.path.exists(os.path.join(HERE, "proposed-steps.json")):
         return (
             f"skipped: no build outputs in {HERE} (run ./build.sh first, or "
             "point HSD_WORK at them)"
@@ -784,7 +784,7 @@ def figures(bad, note):
         return None
 
     said = []
-    with open(os.path.join(HERE, "agreed-steps.json")) as f:
+    with open(os.path.join(HERE, "proposed-steps.json")) as f:
         sqmi = json.load(f)["sqmi"]
     ava = query(op_url(None, "esriGeometryPolygon"), outFields="*")["features"]
     if len(ava) != 1:

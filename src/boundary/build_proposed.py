@@ -813,7 +813,7 @@ for kind in ("area", "line", "points"):
         of.SetGeometry(ogr.CreateGeometryFromJson(json.dumps(f["geometry"])))
         lyr.CreateFeature(of)
 gds = None
-with open(os.path.join(HERE, "agreed-steps.json"), "w") as fh:
+with open(os.path.join(HERE, "proposed-steps.json"), "w") as fh:
     json.dump(
         {
             "steps": [

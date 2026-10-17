@@ -116,7 +116,7 @@ repos:
         name: step text uses the Federal Register's characters; TTB's steps identical to the Federal Register
         entry: .venv/bin/python -E -s -B src/checks/check_step_text.py
         language: system
-        files: ^(resources/boundary/description/.*\.json|resources/ttb/federal-register-.*\.xml|src/boundary/build_agreed\.py|src/checks/check_step_text\.py)$
+        files: ^(resources/boundary/description/.*\.json|resources/ttb/federal-register-.*\.xml|src/boundary/build_proposed\.py|src/checks/check_step_text\.py)$
         pass_filenames: false
 
       - id: audit-packages

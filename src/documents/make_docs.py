@@ -70,7 +70,7 @@ rows = [("(1)–(9)", "TTB’s published text, unchanged", "Notice No. 243, step
         ("(101)–(104)", "TTB’s published text, unchanged, renumbered from (93)–(96)", "Notice No. 243, steps (93)–(96)"),
         ("(10), (11), (90)–(92), (99)", "Style only, written the way TTB’s published text writes them: “US Highway” (the petition wrote “U.S. Highway”), “northeasterly” and “northwesterly” (petition “north-easterly”, “north-westerly”), elevations with a comma, such as “1,727-foot” (petition “1727-foot”), and “then” without a comma (petition “then,”). Apart from the tributary in (90) and the road names in (90)–(91) (next row), nothing else in these steps changes.", "Notice No. 243"),
         ("(90), (91)", "Road names as TTB’s published text gives them (flagged change, below): US Highway 377 on the road US Highway 377 and State Highway 29 share from the junction near Grit to Mason (TTB’s step (11)), State Highway 29 northwest of the junction (TTB’s step (10)). The marked 1,727 is on the shared road, so in (90) the petition’s “State Highway 29” is written “US Highway 377”, and in (91) the two names change places. The line does not change.", "Notice No. 243")]
-CSS = ("body{font-family:'Times New Roman',Times,serif;font-size:11.5pt;line-height:1.35;margin:0.9in}"
+CSS = ("body{font-family:'Times New Roman','Liberation Serif',serif;font-size:11.5pt;line-height:1.35;margin:0.9in}"
        "h1{font-size:15pt;margin:0 0 4pt} h2{font-size:12.5pt;margin:18pt 0 6pt} .sub{color:#333;margin:0 0 12pt}"
        "p{margin:0 0 6pt} .ind{margin-left:22pt} .sec{font-weight:bold;margin-top:10pt}"
        "table{border-collapse:collapse;width:100%;font-size:10.5pt} td,th{border:1px solid #888;padding:4pt;vertical-align:top;text-align:left}"

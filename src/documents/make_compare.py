@@ -171,7 +171,7 @@ pet_of = {int(re.match(r"\((\d+)\)", strip(r[2])).group(1)): int(re.match(r"<sma
 assert [pet_of[n] for n in range(97, 105)] == list(range(95, 103)), "the step-numbers box is out of step with the table"
 assert all(pet_of[n] == n + 1 for n in (10, 11, 49, 85)), "the step-numbers box (petition = TTB + 1 up to (89)) is out of step with the table"
 
-css = ("body{font-family:Calibri,Arial,sans-serif;font-size:9pt;margin:0.3in 0.4in} h1{font-size:15pt;margin:0 0 3pt}"
+css = ("body{font-family:Arial,'Liberation Sans',sans-serif;font-size:9pt;margin:0.3in 0.4in} h1{font-size:15pt;margin:0 0 3pt}"
        "p{margin:0 0 5pt} table{border-collapse:collapse;width:100%;table-layout:fixed} td,th{border:1px solid #999;padding:3pt 4pt;vertical-align:top;text-align:left;font-size:9pt} tr{break-inside:avoid;page-break-inside:avoid}"
        "th{background:#e8e8e8} td.why{font-size:8.5pt;color:#222;line-height:1.25} td.head{background:#eef2f7} small{color:#777;font-size:7.5pt}"
        "col.t{width:21%} col.w{width:37%}"

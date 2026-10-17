@@ -116,12 +116,14 @@ quads = {}
 for t, it in docs:
     m = re.match(r"5[ab] .*\((GeoPDF|GeoTIFF)\) - (.+), TX \((\d{4}[^)]*)\)$", t)   # "(1962, photorevised 1982)", as paragraph (b)
     if m:
-        quads.setdefault((m.group(2), m.group(3)), {})[m.group(1)] = it
-rows = "".join(f'<tr><td style="padding:3px 6px">{html.escape(q)}, TX ({y})</td>'
+        sheet = quads.setdefault(m.group(2), {"edition": m.group(3)})
+        sheet[m.group(1)] = it
+        sheet["edition"] = max(sheet["edition"], m.group(3), key=len)   # one row even if only one of the pair is retitled yet
+rows = "".join(f'<tr><td style="padding:3px 6px">{html.escape(q)}, TX ({f["edition"]})</td>'
                f'<td style="padding:3px 6px;white-space:nowrap">{link(f["GeoPDF"], "GeoPDF")}</td>'   # never "GeoPD / F" (QA #47)
                f'<td style="padding:3px 6px;white-space:nowrap">{link(f["GeoTIFF"], "GeoTIFF")}</td>'
                f'<td style="padding:3px 6px">{spans(s["step"] for s in steps if s["quad"] == q) or "-"}</td></tr>'
-               for (q, y), f in sorted(quads.items()))
+               for q, f in sorted(quads.items()))
 quads_html = ('<div style="font-size:13px"><p>The 13 USGS 1:24,000 quadrangles cited in paragraph (b), each with the boundary '
               "added as a solid red line. The GeoPDF is the USGS file with the line as an optional-content layer; in the GeoTIFF "
               "only the image tiles the line crosses are rewritten. The quads keep their NAD27 grids; the NAD83 line is carried "

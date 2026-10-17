@@ -1,28 +1,41 @@
-"""Move the step endpoints (the pins = the AVA boundary points) onto the centre of the printed feature.
+"""Moves the step endpoints onto the centre of the printed feature.
 
-The tracer (ink_centerline.py) holds every pin fixed and bends the line in its last metres to reach it, so a pin that
-was placed off a road's or contour's centre leaves a hook. Dan, Oct. 16, 2026: the pins have to be perfect.
+The step endpoints are the pins, the AVA boundary points. The tracer
+(ink_centerline.py) holds every pin fixed and bends the line in its last metres
+to reach it, so a pin that was placed off a road's or contour's centre leaves a
+hook. Dan, Oct. 16, 2026: the pins have to be perfect.
 
 Method, per pin, for each traced step that starts or ends there:
-  - the feature's DIRECTION at the pin is the principal axis of the traced vertices 10-30 m from the pin;
-  - the feature's CENTRE at the pin is measured on the raw ink of the sheet (the skill's ink classes), on a cross-
-    section through the pin perpendicular to that direction, pooled +-2 m along, with the grader's rules
-    (centerline.grade): a double-line road -> midpoint of the two casings; a filled band -> its middle; a contour or
-    creek -> middle of the nearest run within 6 m. Where the ink is ambiguous (the crossing feature's ink merges
-    with the followed one) the pin is UNMEASURED and left where it is, and listed.
-  A straight fit extended to the pin was tried first and is WRONG on bends (a contour that curves 9 m in its last
-  30 m gave a 9 m "move" for a pin that sits on the ink): measure at the pin, do not extrapolate.
-  - one measurable step at the pin -> the pin moves along that cross-section onto the measured centre (lateral
-    move only; the along-track position stays where the hand placed it, e.g. at a junction with a road that is not
+  - the feature's DIRECTION at the pin is the principal axis of the traced
+    vertices 10-30 m from the pin;
+  - the feature's CENTRE at the pin is measured on the raw ink of the sheet
+    (the skill's ink classes), on a cross-section through the pin perpendicular
+    to that direction, pooled +-2 m along, with the grader's rules
+    (centerline.grade): a double-line road -> midpoint of the two casings; a
+    filled band -> its middle; a contour or creek -> middle of the nearest run
+    within 6 m. Where the ink is ambiguous (the crossing feature's ink merges
+    with the followed one) the pin is UNMEASURED and left where it is, and
+    listed.
+  A straight fit extended to the pin was tried first and is WRONG on bends (a
+  contour that curves 9 m in its last 30 m gave a 9 m "move" for a pin that
+  sits on the ink): measure at the pin, do not extrapolate.
+  - one measurable step at the pin -> the pin moves along that cross-section
+    onto the measured centre (lateral move only; the along-track position stays
+    where the hand placed it, e.g. at a junction with a road that is not
     traced);
-  - two measurable steps -> the intersection of the two centre lines (each through its measured centre with its
-    direction), or the mean of the two lateral moves when they are within 20 deg of parallel.
-Writes <work>/pin-moves.json (a proposal; copy it to resources/boundary/tracing/ once reviewed): {step n (the END of step n == start of step n+1): {old, new, moved_m, method, ...}} for every
-pin whose move is >= MIN_MOVE m; build_agreed.py applies them to END[n] and the ring vertex, and ink_centerline.py
-(write_input) to the priors' endpoints before re-tracing.
-Usage (GDAL venv): fix_pins.py [--min-move 0.5] [--apply]   (without --apply: report only)
+  - two measurable steps -> the intersection of the two centre lines (each
+    through its measured centre with its direction), or the mean of the two
+    lateral moves when they are within 20 deg of parallel.
+Writes <work>/pin-moves.json (a proposal; copy it to resources/boundary/tracing/
+once reviewed): {step n (the END of step n == start of step n+1): {old, new,
+moved_m, method, ...}} for every pin whose move is >= MIN_MOVE m;
+build_agreed.py applies them to END[n] and the ring vertex, and
+ink_centerline.py (write_input) to the priors' endpoints before re-tracing.
+Usage (GDAL venv): fix_pins.py [--min-move 0.5] [--apply]
+  (without --apply: report only)
 """
 
+import itertools
 import json
 import math
 import os
@@ -30,13 +43,18 @@ import sys
 
 import numpy as np
 
-ROOT = os.path.abspath(
-    os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
-)  # the repository root
-sys.path.insert(0, os.path.join(ROOT, "src", "tracing"))
+sys.path.insert(
+    0,
+    os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "tracing"
+    ),
+)
 import centerline as cl
 from quadsheets import open_sheets
 
+ROOT = os.path.abspath(
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
+)  # the repository root
 HERE = os.environ.get("HSD_WORK") or os.path.join(
     ROOT, "target", "work"
 )  # build work dir (build.sh stages resources/ here)
@@ -46,19 +64,16 @@ PRIORS = os.path.join(
 )
 OUT = os.path.join(HERE, "pin-moves.json")
 NEAR, FAR = 10.0, 30.0
-LANE_STEPS = {
-    10,
-    11,
-    91,
-    92,
-}  # highway passes drawn 30 m off the road centre (build_agreed.py); not traced
+# highway passes drawn 30 m off the road centre (build_agreed.py); not traced
+LANE_STEPS = {10, 11, 91, 92}
 HALF, POOL = 12.0, 2
 MIN_MOVE = (
     float(sys.argv[sys.argv.index("--min-move") + 1])
     if "--min-move" in sys.argv
     else 0.5
 )
-# pins NOT moved by this script, with the reason (Dan decides): --exclude 58,64,82
+# pins NOT moved by this script, with the reason (Dan decides): --exclude
+# 58,64,82
 AUTO = "--auto" in sys.argv
 EXCLUDE = (
     {int(x) for x in sys.argv[sys.argv.index("--exclude") + 1].split(",")}
@@ -68,30 +83,50 @@ EXCLUDE = (
 
 
 def frame(lat0):
+    """Returns the metres per degree of longitude and of latitude at lat0."""
     return 111320.0 * math.cos(math.radians(lat0)), 110574.0
 
 
-def resample(P, step=1.0):
-    seg = np.hypot(*np.diff(P, axis=0).T)
+def resample(pts, step=1.0):
+    """Resamples a polyline in metres.
+
+    Args:
+        pts: the polyline, an (n, 2) array.
+        step: the spacing, metres.
+
+    Returns:
+        (the points every `step` m from its start, its length).
+    """
+    seg = np.hypot(*np.diff(pts, axis=0).T)
     s = np.concatenate([[0], np.cumsum(seg)])
     t = np.arange(0, s[-1], step)
     return np.column_stack(
-        [np.interp(t, s, P[:, 0]), np.interp(t, s, P[:, 1])]
+        [np.interp(t, s, pts[:, 0]), np.interp(t, s, pts[:, 1])]
     ), s[-1]
 
 
 def direction(coords, at_start, lon0, lat0):
-    """unit direction of the feature at the pin from the traced vertices 10-30 m away (pointing away from the pin)"""
+    """Returns the unit direction of the feature at the pin, or None.
+
+    The direction is the principal axis of the traced vertices NEAR to FAR m
+    from the pin, pointing away from it; None when the line is shorter.
+
+    Args:
+        coords: the step's traced line, [(lon, lat)].
+        at_start: True if the pin is the line's start, False if its end.
+        lon0: the pin's longitude.
+        lat0: the pin's latitude.
+    """
     mx, my = frame(lat0)
-    P = np.array([[(c[0] - lon0) * mx, (c[1] - lat0) * my] for c in coords])
+    pts = np.array([[(c[0] - lon0) * mx, (c[1] - lat0) * my] for c in coords])
     if not at_start:
-        P = P[::-1]
-    R, L = resample(P)
-    if L < FAR:
+        pts = pts[::-1]
+    res, length = resample(pts)
+    if length < FAR:
         return None
-    W = R[int(NEAR) : int(FAR)]
-    c = W.mean(axis=0)
-    u, s, vt = np.linalg.svd(W - c, full_matrices=False)
+    win = res[int(NEAR) : int(FAR)]
+    c = win.mean(axis=0)
+    _u, _s, vt = np.linalg.svd(win - c, full_matrices=False)
     d = vt[0]
     if float(d @ c) < 0:
         d = -d
@@ -102,20 +137,33 @@ CLIP, EXT = 300.0, 40.0
 
 
 def free_line(sheets, kind, prior, at_start, lon0, lat0):
-    """the feature's centreline THROUGH the pin, free of it: the step's prior clipped to its last CLIP m at the pin end and
-    extended EXT m straight beyond the pin (so the pin is an interior point, not a held endpoint), traced with the
-    skill's tracer; returns the traced line in metres about the pin
+    """Traces the feature's centreline THROUGH the pin, free of it.
+
+    The step's prior is clipped to its last CLIP m at the pin end and extended
+    EXT m straight beyond the pin (so the pin is an interior point, not a held
+    endpoint), then traced with the skill's tracer.
+
+    Args:
+        sheets: the quad sheets (quadsheets.open_sheets).
+        kind: the feature: contour, creek or road.
+        prior: the step's prior, [(lon, lat)].
+        at_start: True if the pin is the step's start, False if its end.
+        lon0: the pin's longitude.
+        lat0: the pin's latitude.
+
+    Returns:
+        (the traced line in metres about the pin, the tracer's figures).
     """
     mx, my = frame(lat0)
-    P = np.array([[(c[0] - lon0) * mx, (c[1] - lat0) * my] for c in prior])
+    pts = np.array([[(c[0] - lon0) * mx, (c[1] - lat0) * my] for c in prior])
     if not at_start:
-        P = P[::-1]  # P[0] is the pin
-    R, L = resample(P)
-    R = R[: int(min(L, CLIP))]
-    d = R[0] - R[min(len(R) - 1, 25)]
+        pts = pts[::-1]  # pts[0] is the pin
+    res, length = resample(pts)
+    res = res[: int(min(length, CLIP))]
+    d = res[0] - res[min(len(res) - 1, 25)]
     d = d / np.hypot(*d)  # direction out of the step at the pin
-    ext = R[0] + d * EXT
-    line = np.vstack([ext[None, :], R])
+    ext = res[0] + d * EXT
+    line = np.vstack([ext[None, :], res])
     ll = [(lon0 + x / mx, lat0 + y / my) for x, y in line]
     coords, st = cl.trace(sheets, ll, kind, label="pin-free")
     return np.array(
@@ -123,26 +171,49 @@ def free_line(sheets, kind, prior, at_start, lon0, lat0):
     ), st
 
 
-def nearest_on(F, p=np.zeros(2)):
+def nearest_on(line, p=None):
+    """Returns the point of a polyline nearest p (default: the pin, 0, 0).
+
+    Args:
+        line: the polyline in metres about the pin, an (n, 2) array.
+        p: the point, or None for the pin.
+
+    Returns:
+        (its distance, the point, the unit direction of its segment), or None
+        for a line of fewer than two points.
+    """
+    if p is None:
+        p = np.zeros(2)
     best = None
-    for a, b in zip(F, F[1:]):
+    for a, b in itertools.pairwise(line):
         ab = b - a
-        L2 = float(ab @ ab)
-        t = 0 if L2 == 0 else max(0, min(1, float((p - a) @ ab) / L2))
+        len2 = float(ab @ ab)
+        t = 0 if len2 == 0 else max(0, min(1, float((p - a) @ ab) / len2))
         q = a + ab * t
         dd = float(np.hypot(*(q - p)))
         if best is None or dd < best[0]:
-            best = (dd, q, ab / math.sqrt(L2) if L2 else ab)
+            best = (dd, q, ab / math.sqrt(len2) if len2 else ab)
     return best
 
 
-def intersect_lines(F1, F2, within=30.0):
-    """nearest intersection of two polylines within `within` m of the pin, or None"""
+def intersect_lines(line1, line2, within=30.0):
+    """Returns the crossing of two polylines nearest the pin, or None.
+
+    Only segments with an end within `within` m of the pin are tried.
+
+    Args:
+        line1: a polyline in metres about the pin, an (n, 2) array.
+        line2: another.
+        within: metres from the pin.
+
+    Returns:
+        (its distance from the pin, the crossing), or None.
+    """
     best = None
-    for a, b in zip(F1, F1[1:]):
+    for a, b in itertools.pairwise(line1):
         if min(np.hypot(*a), np.hypot(*b)) > within:
             continue
-        for c, d in zip(F2, F2[1:]):
+        for c, d in itertools.pairwise(line2):
             if min(np.hypot(*c), np.hypot(*d)) > within:
                 continue
             r = b - a
@@ -162,12 +233,10 @@ def intersect_lines(F1, F2, within=30.0):
 
 
 sheets = open_sheets([ROOT + "/resources/quads/geotiff/*.tif.zip"])
-traced = {
-    int(f["properties"]["id"]): f for f in json.load(open(TRACED))["features"]
-}
-priors = {
-    f["properties"]["step"]: f for f in json.load(open(PRIORS))["features"]
-}
+with open(TRACED) as fh:
+    traced = {int(f["properties"]["id"]): f for f in json.load(fh)["features"]}
+with open(PRIORS) as fh:
+    priors = {f["properties"]["step"]: f for f in json.load(fh)["features"]}
 nsteps = max(priors)
 pins = {}  # n -> pin = end of step n (== start of step n+1)
 for n, f in priors.items():
@@ -227,7 +296,8 @@ for n in sorted(pins):
             }
         )
         notes[st_] = (
-            f"free line {dd:.2f} m from the pin (within 2 m {stats['within_2m_pct']}%)"
+            f"free line {dd:.2f} m from the pin "
+            f"(within 2 m {stats['within_2m_pct']}%)"
         )
         meas.append((st_, F, q1, dvec, dd))
     if not meas:
@@ -237,17 +307,19 @@ for n in sorted(pins):
     if len(meas) == 1:
         st_, F, q, dvec, dd = meas[0]
         method = f"onto step {st_}'s free centreline (nearest point)"
-        # the pin is where the feature REACHES a highway lane line (steps 9 -> 10, 90 -> 91: the lane drawn 30 m off
-        # the road centre, not traced): the free centreline's crossing of that lane line, not its nearest point
+        # the pin is where the feature REACHES a highway lane line (steps 9 ->
+        # 10, 90 -> 91: the lane drawn 30 m off the road centre, not traced):
+        # the free centreline's crossing of that lane line, not its nearest
+        # point
         other = n if st_ != n else nxt
         if other in LANE_STEPS:
             Lc = priors[other]["geometry"]["coordinates"]
             Lm = np.array(
                 [[(c[0] - lon0) * mx, (c[1] - lat0) * my] for c in Lc]
             )
-            if (
-                other == nxt
-            ):  # the lane starts at this pin: extend it 60 m back through the pin (the feature may reach the lane's line short of the pin)
+            # the lane starts at this pin: extend it 60 m back through the pin
+            # (the feature may reach the lane's line short of the pin)
+            if other == nxt:
                 u = Lm[1] - Lm[0]
                 u = u / np.hypot(*u)
                 Lm = np.vstack([(Lm[0] - u * 60.0)[None, :], Lm])
@@ -255,13 +327,15 @@ for n in sorted(pins):
                 u = Lm[-1] - Lm[-2]
                 u = u / np.hypot(*u)
                 Lm = np.vstack([Lm, (Lm[-1] + u * 60.0)[None, :]])
-            Lm, _ = resample(
-                Lm, 2.0
-            )  # long segments: resample so the near ones are found
+            # long segments: resample so the near ones are found
+            Lm, _ = resample(Lm, 2.0)
             X = intersect_lines(F, Lm, within=80.0)
             if X is not None:
                 q = X[1]
-                method = f"where step {st_}'s free centreline crosses the lane line of step {other}"
+                method = (
+                    f"where step {st_}'s free centreline crosses the lane "
+                    f"line of step {other}"
+                )
             else:
                 notes[other] = "lane line not crossed within 80 m"
     else:
@@ -270,10 +344,16 @@ for n in sorted(pins):
         X = intersect_lines(F1, F2) if ang >= 20 else None
         if X is not None:
             q = X[1]
-            method = f"intersection of the free centrelines of steps {s1} and {s2} ({ang:.0f} deg)"
+            method = (
+                f"intersection of the free centrelines of steps {s1} and "
+                f"{s2} ({ang:.0f} deg)"
+            )
         else:
             q = (q1 + q2) / 2
-            method = f"mean of nearest points on steps {s1}, {s2} ({ang:.0f} deg apart, no crossing within 30 m)"
+            method = (
+                f"mean of nearest points on steps {s1}, {s2} "
+                f"({ang:.0f} deg apart, no crossing within 30 m)"
+            )
     moved = float(np.hypot(*q))
     new = (round(lon0 + q[0] / mx, 9), round(lat0 + q[1] / my, 9))
     NEWPINS.append(
@@ -291,7 +371,9 @@ for n in sorted(pins):
     if n in EXCLUDE:
         rows[-1] = (n, moved, "EXCLUDED (--exclude): " + method, notes)
         continue
-    if AUTO:  # only moves the evidence supports without a person looking (the rest are listed for review)
+    # only moves the evidence supports without a person looking (the rest are
+    # listed for review)
+    if AUTO:
         w2m = min(
             float(v.split("within 2 m ")[1].rstrip("%)"))
             for v in notes.values()
@@ -320,22 +402,24 @@ print(f"{'pin':>4} {'move m':>7}  method | measurement per step")
 for n, moved, method, notes in sorted(rows, key=lambda r: -(r[1] or -1)):
     flag = "MOVE" if moved is not None and moved >= MIN_MOVE else "    "
     print(
-        f"{n:>4} {moved if moved is not None else float('nan'):7.2f}  {flag} {method} | {notes}"
+        f"{n:>4} {moved if moved is not None else float('nan'):7.2f}  "
+        f"{flag} {method} | {notes}"
     )
 print(
-    f"\n{len(moves)} pins to move (>= {MIN_MOVE} m); {len(unmeasured)} unmeasured (left where they are); {len(rows)} pins on traced steps"
+    f"\n{len(moves)} pins to move (>= {MIN_MOVE} m); {len(unmeasured)} "
+    f"unmeasured (left where they are); {len(rows)} pins on traced steps"
 )
-json.dump(
-    {"type": "FeatureCollection", "features": FREE},
-    open(os.path.join(HERE, "review-ink", "pin-free-lines.geojson"), "w"),
-)
-json.dump(
-    {"type": "FeatureCollection", "features": NEWPINS},
-    open(os.path.join(HERE, "review-ink", "pin-proposed.geojson"), "w"),
-)
+with open(
+    os.path.join(HERE, "review-ink", "pin-free-lines.geojson"), "w"
+) as fh:
+    json.dump({"type": "FeatureCollection", "features": FREE}, fh)
+with open(os.path.join(HERE, "review-ink", "pin-proposed.geojson"), "w") as fh:
+    json.dump({"type": "FeatureCollection", "features": NEWPINS}, fh)
 print(
-    "review layers: review-ink/pin-free-lines.geojson, review-ink/pin-proposed.geojson"
+    "review layers: review-ink/pin-free-lines.geojson, "
+    "review-ink/pin-proposed.geojson"
 )
 if "--apply" in sys.argv:
-    json.dump(moves, open(OUT, "w"), indent=1)
+    with open(OUT, "w") as fh:
+        json.dump(moves, fh, indent=1)
     print("wrote", OUT)

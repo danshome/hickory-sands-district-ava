@@ -1,0 +1,57 @@
+# The whole build, `./build.sh`, on one of GitHub's Mac machines: the same Homebrew tools (GDAL, PROJ with the NADCON5
+# grid, poppler, Python 3.14) and the same system fonts as Dan's Mac, so the documents come out the same. Runs on pull
+# requests that touch what the build reads, and by hand (Actions > build > Run workflow). The package zip itself is
+# not kept here (about 290 MB); the build report, checksums and GIS lines are, for comparing with a local build.
+# Releases are made by release.yml.
+name: build
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - build.sh
+      - LICENSE.txt
+      - requirements.txt
+      - requirements-dev.txt
+      - documents/**
+      - resources/**
+      - src/**
+      - .github/workflows/build.yml
+permissions:
+  contents: read
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  build:
+    name: ./build.sh (macOS)
+    runs-on: macos-15
+    timeout-minutes: 120
+    env:
+      HOMEBREW_NO_INSTALL_CLEANUP: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - name: The 13 USGS quads (kept between runs; the build checks each against its MD5 and downloads any missing)
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        with:
+          path: |
+            resources/quads/geotiff
+            resources/quads/geopdf
+          key: usgs-quads-${{ hashFiles('resources/quads/quads-manifest.csv') }}
+      - name: ./build.sh
+        run: ./build.sh
+      - name: Build report
+        if: always()
+        run: |
+          { echo '```'; cat dist/build-report.txt 2>/dev/null || echo "no build report: the build stopped"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        with:
+          name: build-report-${{ github.sha }}
+          path: |
+            dist/build-report.txt
+            dist/SHA256SUMS.txt
+            dist/*-README.txt
+            target/work/gis/*.geojson
+            target/work/review/*.json
+          retention-days: 14

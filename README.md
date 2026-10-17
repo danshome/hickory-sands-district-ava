@@ -108,6 +108,10 @@ To change the boundary, change only the inputs in `resources/boundary/` (a pin, 
 texts) and run `./build.sh`; every figure in the documents and the ArcGIS descriptions comes from the build.
 [BUILD.md](BUILD.md) has the stages, the layout, the security checks on Python packages, and the commit hooks.
 
+Every pull request is checked on GitHub (the commit hooks, and the whole build on a Mac when the build's inputs
+change), and each release (a `v...` tag) is built on GitHub and attached to the repository's Releases page; see
+[BUILD.md](BUILD.md#github-actions-and-releases).
+
 `./build.sh publish` updates the ArcGIS Online items, layers, web map and dashboard from the last build. It needs the
 maintainer's saved ArcGIS sign-in and is never part of a normal build.
 
@@ -115,6 +119,7 @@ maintainer's saved ArcGIS sign-in and is never part of a normal build.
 
 ```
 build.sh        the build (see BUILD.md)
+.github/        GitHub Actions: lint, build, release
 src/            all code: quads, tracing, fixing, review, boundary, documents, checks, package, publish
 resources/      the inputs: boundary/ (step texts, proposed ring and pins, tracing inputs), ttb/ (Notice No. 243,
                 the AVAs_Production record), quads/ (manifest, VRT templates), geology/ (shifted USGS units)

@@ -121,6 +121,28 @@ other package. `GDAL` must equal Homebrew's GDAL library (`gdal-config --version
 Hooks that fix files (whitespace, newlines, line endings) stop the commit after fixing; `git add` the fixes and
 commit again. Run them all with `./build.sh lint`.
 
+## GitHub Actions and releases
+
+Three workflows in `.github/workflows/`, every action pinned to a commit:
+
+- **lint** (`lint.yml`, GitHub's Linux machines): every pre-commit hook on every file, on every pull request and every
+  push to `main`. The lint tools come from `requirements-dev.txt`, audited first, as on the Mac.
+- **build** (`build.yml`, GitHub's Mac machines): the whole `./build.sh` on pull requests that change what the build
+  reads (`build.sh`, `src/`, `resources/`, `documents/`, the lock files) and by hand (Actions > build > Run workflow).
+  A Mac, not Linux, so the tools (Homebrew's GDAL, PROJ with the NADCON5 grid, poppler, Python 3.14) and the system
+  fonts in the PDFs are the same as on Dan's Mac. The 13 USGS quads are cached between runs (the build still checks
+  their MD5s). It keeps the build report, the checksums and the GIS lines for 14 days, not the 290 MB zip. While the
+  repository is private, Mac minutes count ten times against the account's Actions minutes.
+- **release** (`release.yml`, Mac): push a tag such as `v2026.10.20` and it builds that commit and makes a GitHub
+  release of the same name with `dist/` attached (the package zip, its README, `SHA256SUMS.txt`, `build-report.txt`).
+  Run it by hand with an existing tag to rebuild that release's files.
+
+```
+git tag v2026.10.20 && git push origin v2026.10.20
+```
+
+Publishing to ArcGIS Online is not in Actions: it stays `./build.sh publish`, run by Dan.
+
 ## Changing the boundary
 
 Change only the inputs in `resources/boundary/` (a pin in `tracing/pin-moves.json`, a patch in

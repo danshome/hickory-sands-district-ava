@@ -1,58 +1,83 @@
-"""The Hickory Sands District boundary as proposed to TTB after the Oct. 15, 2026 call.
+"""The Hickory Sands District boundary as proposed to TTB, Oct. 15, 2026.
 
-Text: TTB's published regulatory text (Notice No. 243, 91 FR 52576) word for word, except the area near Grit, which uses
-the petition's own wording (Feb. 2, 2023; petition steps 11-12 and 91-98, lane wording included), with two departures:
-  - steps (93)-(96) are new: they replace petition step 94 (the straight line from the marked 1737 to the marked 1762)
-    and go around a lobe of granite by a windmill and Topaz Lane;
-  - step (90) (petition step 91) names the unnamed, intermittent tributary the petition's line follows from Honey Creek
-    to the marked 1727 (flagged), and steps (90)-(91) name the roads as TTB's text names them (flagged).
-Outside the area near Grit, two corrections to TTB's own wording, flagged (Dan, Oct. 17, 2026; issue #38), text only:
-  - step (85) "to the marked 1,802-foot summit": the Turtle Creek map prints x1802 at the summit (TTB's text: 1,801);
-  - step (49) "to the marked 1,586-foot elevation point": "-foot", as everywhere else in TTB's text (TTB's: 1,586-elevation).
-Geometry: the option 2 ring (petition route, granite-lobe detour, tributary) with the highway passes drawn 30 m either
-side of the road center line (westbound lane NE, eastbound lane SW), per TTB, so the line is visible beside the road;
-the narrative is unchanged by the offset. Ring: resources/boundary/proposed/proposed-ring.json (built in QGIS from option 2, see README), with the
-steps that follow a road, creek or contour replaced by traces onto the centre of the ink on the USGS sheets
-(ink-centerline-steps.geojson, usgs-quad-trace skill; NO_SPLICE=1 to build without them).
-Attributes: TTB's AVAs_Production fields filled as TTB fills them for an established AVA where the value is known.
+Proposed after the call with TTB that day.
+Text: TTB's published regulatory text (Notice No. 243, 91 FR 52576) word for
+word, except the area near Grit, which uses the petition's own wording (Feb. 2,
+2023; petition steps 11-12 and 91-98, lane wording included), with two
+departures:
+  - steps (93)-(96) are new: they replace petition step 94 (the straight line
+    from the marked 1737 to the marked 1762) and go around a lobe of granite by
+    a windmill and Topaz Lane;
+  - step (90) (petition step 91) names the unnamed, intermittent tributary the
+    petition's line follows from Honey Creek to the marked 1727 (flagged), and
+    steps (90)-(91) name the roads as TTB's text names them (flagged).
+Outside the area near Grit, two corrections to TTB's own wording, flagged (Dan,
+Oct. 17, 2026; issue #38), text only:
+  - step (85) "to the marked 1,802-foot summit": the Turtle Creek map prints
+    x1802 at the summit (TTB's text: 1,801);
+  - step (49) "to the marked 1,586-foot elevation point": "-foot", as
+    everywhere else in TTB's text (TTB's: 1,586-elevation).
+Geometry: the option 2 ring (petition route, granite-lobe detour, tributary)
+with the highway passes drawn 30 m either side of the road center line
+(westbound lane NE, eastbound lane SW), per TTB, so the line is visible beside
+the road; the narrative is unchanged by the offset. Ring:
+resources/boundary/proposed/proposed-ring.json (built in QGIS from option 2,
+see README), with the steps that follow a road, creek or contour replaced by
+traces onto the centre of the ink on the USGS sheets
+(ink-centerline-steps.geojson, usgs-quad-trace skill; NO_SPLICE=1 to build
+without them).
+Attributes: TTB's AVAs_Production fields filled as TTB fills them for an
+established AVA where the value is known.
 """
 
+import itertools
 import json
 import math
 import os
 import re
 import sys
 
+from osgeo import ogr
+from osgeo import osr
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # src/boundary
+import ttb_record
+import ttb_schema_layers as tsl
+
+ogr.UseExceptions()
 ROOT = os.path.abspath(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
 )  # the repository root
 HERE = os.environ.get("HSD_WORK") or os.path.join(
     ROOT, "target", "work"
 )  # build work dir (build.sh stages resources/ here)
-sys.path.insert(0, os.path.join(ROOT, "src", "boundary"))
-from osgeo import ogr
-from osgeo import osr
-
-ogr.UseExceptions()
-import ttb_record
-import ttb_schema_layers as tsl
-
-B = os.path.join(
-    ROOT, "resources", "boundary"
-)  # the inputs (see resources/boundary/README.md)
+# the inputs (see resources/boundary/README.md)
+B = os.path.join(ROOT, "resources", "boundary")
 LL = osr.SpatialReference()
 LL.ImportFromEPSG(4269)
 LL.SetAxisMappingStrategy(osr.OAMS_TRADITIONAL_GIS_ORDER)
-d = lambda a, b: math.hypot((a[0] - b[0]) * 95700, (a[1] - b[1]) * 110900)
+
+
+def dist_m(a, b):
+    """Returns the distance between two (lon, lat) points, metres (flat)."""
+    return math.hypot((a[0] - b[0]) * 95700, (a[1] - b[1]) * 110900)
+
+
+def read_json(path, encoding=None):
+    """Returns the JSON document in the file at path."""
+    with open(path, encoding=encoding) as fh:
+        return json.load(fh)
 
 
 def geo(g):
+    """Returns a copy of the geometry g in NAD83 (EPSG:4269), lon/lat order."""
     h = g.Clone()
     h.AssignSpatialReference(LL)
     return h
 
 
 def glen(c):
+    """Returns the geodesic length of the line c ([[lon, lat]], NAD83), m."""
     g = ogr.CreateGeometryFromJson(
         json.dumps({"type": "LineString", "coordinates": c})
     )
@@ -60,107 +85,142 @@ def glen(c):
     return g.GeodesicLength()
 
 
-R = json.load(open(os.path.join(B, "proposed", "proposed-ring.json")))
+R = read_json(os.path.join(B, "proposed", "proposed-ring.json"))
 ring = [list(p) for p in R["ring"]]
 WB, EB = R["westbound_lane"], R["eastbound_lane"]
 TP = {
     f["properties"]["point"]: f
-    for f in json.load(
-        open(
-            os.path.join(
-                B, "proposed", "step-points-2026-10-14-EPSG4269.geojson"
-            )
-        )
+    for f in read_json(
+        os.path.join(B, "proposed", "step-points-2026-10-14-EPSG4269.geojson")
     )["features"]
 }
 TL = {
     int(f["properties"]["step"]): f["properties"]
-    for f in json.load(
-        open(
-            os.path.join(
-                B, "proposed", "step-lines-2026-10-14-EPSG4269.geojson"
-            )
-        )
+    for f in read_json(
+        os.path.join(B, "proposed", "step-lines-2026-10-14-EPSG4269.geojson")
     )["features"]
 }
 OP = {
     f["properties"]["petition_point"]: f["geometry"]["coordinates"][:2]
-    for f in json.load(
-        open(
-            os.path.join(
-                B, "proposed", "western-routing-points-EPSG4269.geojson"
-            )
-        )
+    for f in read_json(
+        os.path.join(B, "proposed", "western-routing-points-EPSG4269.geojson")
     )["features"]
 }
-DT = json.load(open(os.path.join(B, "proposed", "grit-detour-pins.json")))
+DT = read_json(os.path.join(B, "proposed", "grit-detour-pins.json"))
 
 # ---------------------------------------------------------------- text
-# TTB's steps word for word from the Federal Register's own text of Notice No. 243 (document 2026-16670, full-text XML,
-# downloaded 2026-10-15; the PDF is byte-identical to our copy and its text identical to the regulations.gov copy)
+# TTB's steps word for word from the Federal Register's own text of Notice
+# No. 243 (document 2026-16670, full-text XML, downloaded 2026-10-15; the PDF is
+# byte-identical to our copy and its text identical to the regulations.gov copy)
 NPRM = {
     int(k): v
-    for k, v in json.load(
-        open(
-            os.path.join(B, "description", "ttb-notice-243-steps.json"),
-            encoding="utf-8",
-        )
+    for k, v in read_json(
+        os.path.join(B, "description", "ttb-notice-243-steps.json"),
+        encoding="utf-8",
     ).items()
 }
-# our stored copy lost two line-break hyphens; the notice (91 FR 52586) prints them
+# our stored copy lost two line-break hyphens; the notice (91 FR 52586) prints
+# them
 assert "light-duty" in NPRM[15] and "Mason-McCulloch" in NPRM[19]
 PET = {  # petition (Feb. 2, 2023), written boundary description, word for word
-    11: "Proceed southeasterly along the westbound lane of State Highway 29 to its intersection with U.S. Highway 377; then",
-    12: "Proceed southeasterly along U.S. Highway 377 along the westbound lane to its intersection with U.S. Highway 87; then",
-    91: "Proceed north-easterly, then north-westerly, then north-easterly along Honey Creek to the marked 1727-foot elevation point at its intersection with State Highway 29; then",
-    92: "Proceed northwesterly along the eastbound lane of State Highway 29 to its intersection with U.S. Highway 377; then,",
-    93: "Proceed northwesterly along the eastbound lane of State Highway 29 to the marked 1737-foot elevation point; then,",
-    95: "Proceed southwest in a straight line to the unmarked, unnamed road to the point where the road ends; then",
-    96: "Proceed southwesterly along the unmarked road to its intersection with US Highway 377; then",
-    97: "Proceed southeast in a straight line to the marked 1765-foot summit; then",
-    98: "Proceed southeast in a straight line to the end of the unmarked, unnamed road known locally as Lange Road; then",
+    11: (
+        "Proceed southeasterly along the westbound lane of State Highway 29 "
+        "to its intersection with U.S. Highway 377; then"
+    ),
+    12: (
+        "Proceed southeasterly along U.S. Highway 377 along the westbound "
+        "lane to its intersection with U.S. Highway 87; then"
+    ),
+    91: (
+        "Proceed north-easterly, then north-westerly, then north-easterly "
+        "along Honey Creek to the marked 1727-foot elevation point at its "
+        "intersection with State Highway 29; then"
+    ),
+    92: (
+        "Proceed northwesterly along the eastbound lane of State Highway 29 "
+        "to its intersection with U.S. Highway 377; then,"
+    ),
+    93: (
+        "Proceed northwesterly along the eastbound lane of State Highway 29 "
+        "to the marked 1737-foot elevation point; then,"
+    ),
+    95: (
+        "Proceed southwest in a straight line to the unmarked, unnamed road "
+        "to the point where the road ends; then"
+    ),
+    96: (
+        "Proceed southwesterly along the unmarked road to its intersection "
+        "with US Highway 377; then"
+    ),
+    97: (
+        "Proceed southeast in a straight line to the marked 1765-foot "
+        "summit; then"
+    ),
+    98: (
+        "Proceed southeast in a straight line to the end of the unmarked, "
+        "unnamed road known locally as Lange Road; then"
+    ),
 }
-pet_check = json.load(
-    open(os.path.join(B, "description", "petition-steps.json"))
-)
+pet_check = read_json(os.path.join(B, "description", "petition-steps.json"))
 for k, v in PET.items():
     assert pet_check[str(k)].startswith(v), (k, pet_check[str(k)])
 CORR90 = (
-    "Proceed north-easterly, then north-westerly along Honey Creek to its confluence with an unnamed, intermittent "
-    "tributary, then north-easterly along the tributary to the marked 1727-foot elevation point at its intersection "
-    "with State Highway 29; then"
+    "Proceed north-easterly, then north-westerly along Honey Creek to its "
+    "confluence with an unnamed, intermittent tributary, then "
+    "north-easterly along the tributary to the marked 1727-foot elevation "
+    "point at its intersection with State Highway 29; then"
 )
 NEW = {
     93: "Proceed southwest in a straight line to a windmill; then",
-    94: "Proceed west in a straight line to the intersection of a fence line and the unmarked, unnamed road known locally as Topaz Lane; then",
-    95: "Proceed southerly, then southwesterly along Topaz Lane to its westernmost point, east of a stock pond; then",
-    96: "Proceed south-southwest in a straight line to the marked 1,762-foot elevation point; then",
+    94: (
+        "Proceed west in a straight line to the intersection of a fence line "
+        "and the unmarked, unnamed road known locally as Topaz Lane; then"
+    ),
+    95: (
+        "Proceed southerly, then southwesterly along Topaz Lane to its "
+        "westernmost point, east of a stock pond; then"
+    ),
+    96: (
+        "Proceed south-southwest in a straight line to the marked "
+        "1,762-foot elevation point; then"
+    ),
 }
 
 
 def ttb_body(n):
+    """Returns TTB's step (n) (Notice No. 243) without its number."""
     return re.sub(r"^\(\d+\)\s*", "", NPRM[n])
 
 
-# Two corrections to TTB's own wording, outside the change near Grit (Dan, Oct. 17, 2026; issue #38). Text only: the line,
-# the points and the area do not change. The change notes start "text correction", which src/review/compare_ttb.py
-# counts as unchanged (the line is TTB's step) and the dashboard's step filter looks for.
-#  (85) substantive: the summit the step goes to (its end point, -99.25899, 30.72613 NAD83) is printed x1802 on the
-#       Turtle Creek, TX (1968) map; TTB's 1,801 follows the petition's written step 86 ("the marked 1801-foot summit").
-#  (49) editorial: everywhere else in TTB's 96 steps an elevation is "N-foot" (72 times), as in 27 CFR part 9 (about
-#       500 times) and in the petition's step 50 ("the marked 1,586-foot elevation point").
+# Two corrections to TTB's own wording, outside the change near Grit (Dan,
+# Oct. 17, 2026; issue #38). Text only: the line, the points and the area do not
+# change. The change notes start "text correction", which
+# src/review/compare_ttb.py counts as unchanged (the line is TTB's step) and the
+# dashboard's step filter looks for.
+#  (85) substantive: the summit the step goes to (its end point, -99.25899,
+#       30.72613 NAD83) is printed x1802 on the Turtle Creek, TX (1968) map;
+#       TTB's 1,801 follows the petition's written step 86 ("the marked
+#       1801-foot summit").
+#  (49) editorial: everywhere else in TTB's 96 steps an elevation is "N-foot"
+#       (72 times), as in 27 CFR part 9 (about 500 times) and in the
+#       petition's step 50 ("the marked 1,586-foot elevation point").
 TEXT_FIX = {
     49: (
         "the marked 1,586-elevation point",
         "the marked 1,586-foot elevation point",
-        "text correction (editorial): 1,586-elevation point -> 1,586-foot elevation point, as TTB writes every other "
-        "elevation (the line does not change)",
+        (
+            "text correction (editorial): 1,586-elevation point -> "
+            "1,586-foot elevation point, as TTB writes every other elevation "
+            "(the line does not change)"
+        ),
     ),
     85: (
         "the marked 1,801-foot summit",
         "the marked 1,802-foot summit",
-        "text correction: 1,801-foot summit -> 1,802-foot summit, as the Turtle Creek map prints it (x1802) "
-        "(the line does not change)",
+        (
+            "text correction: 1,801-foot summit -> 1,802-foot summit, as the "
+            "Turtle Creek map prints it (x1802) (the line does not change)"
+        ),
     ),
 }
 
@@ -187,7 +247,7 @@ for n in range(1, 105):
                 n,
                 PET[n + 1],
                 f"Petition step {n + 1}",
-                "petition wording (replaces TTB's step (%d))" % n,
+                f"petition wording (replaces TTB's step ({n}))",
             )
         )
     elif n == 90:
@@ -222,13 +282,15 @@ for n in range(1, 105):
                 n,
                 ttb_body(n - 8),
                 f"TTB's published text, step ({n - 8})",
-                "unchanged, renumbered from (%d)" % (n - 8),
+                f"unchanged, renumbered from ({n - 8})",
             )
         )
 
-# The petition-worded steps are written in TTB's style, as its published text writes them (style only; each step's
-# change field lists what was rewritten): "US Highway" (the petition writes "U.S. Highway"), "northeasterly" and
-# "northwesterly" (the petition hyphenates them), elevations with a comma ("1,727-foot"), and "then" without a comma.
+# The petition-worded steps are written in TTB's style, as its published text
+# writes them (style only; each step's change field lists what was rewritten):
+# "US Highway" (the petition writes "U.S. Highway"), "northeasterly" and
+# "northwesterly" (the petition hyphenates them), elevations with a comma
+# ("1,727-foot"), and "then" without a comma.
 STYLE = [
     (r"U\.S\. Highway", "US Highway"),
     (r"\b(north|south)-(east|west)erly\b", r"\1\2erly"),
@@ -239,17 +301,23 @@ for i, (n, body, src, change) in enumerate(STEPS):
     if not src.startswith("Petition"):
         continue
     notes = []
+    styled = body
     for pat, rep in STYLE:
         for m in dict.fromkeys(
-            re.findall(f"(?:{pat})", body)
-            and [x.group(0) for x in re.finditer(pat, body)]
+            re.findall(f"(?:{pat})", styled)
+            and [x.group(0) for x in re.finditer(pat, styled)]
         ):
             notes.append(
                 f"{m.lstrip('; ')} -> {re.sub(pat, rep, m).lstrip('; ')}"
             )
-        body = re.sub(pat, rep, body)
+        styled = re.sub(pat, rep, styled)
     if notes:
-        STEPS[i] = (n, body, src, change + "; TTB's style: " + ", ".join(notes))
+        STEPS[i] = (
+            n,
+            styled,
+            src,
+            change + "; TTB's style: " + ", ".join(notes),
+        )
 assert not any(
     re.search(
         r"U\.S\.|\b(north|south)-(east|west)erly\b|\b\d{4}-foot\b|then,$", b
@@ -260,9 +328,11 @@ print(
     "TTB style applied:",
     {n: c.split("; ", 1)[1] for n, _, _, c in STEPS if "TTB's style:" in c},
 )
-# Road names as TTB's published text names them: State Highway 29 northwest of the junction near Grit (TTB step (10)),
-# US Highway 377 on the shared road from the junction to Mason (TTB step (11)). The marked 1,727 is 1.5 km southeast
-# of the junction, on the shared road, so steps (90)-(91) name it US Highway 377 where the petition said State Highway 29.
+# Road names as TTB's published text names them: State Highway 29 northwest of
+# the junction near Grit (TTB step (10)), US Highway 377 on the shared road from
+# the junction to Mason (TTB step (11)). The marked 1,727 is 1.5 km southeast
+# of the junction, on the shared road, so steps (90)-(91) name it US Highway
+# 377 where the petition said State Highway 29.
 NAMES = {
     90: [
         (
@@ -272,8 +342,14 @@ NAMES = {
     ],
     91: [
         (
-            "along the eastbound lane of State Highway 29 to its intersection with US Highway 377; then",
-            "along the eastbound lane of US Highway 377 to its intersection with State Highway 29; then",
+            (
+                "along the eastbound lane of State Highway 29 to its "
+                "intersection with US Highway 377; then"
+            ),
+            (
+                "along the eastbound lane of US Highway 377 to its "
+                "intersection with State Highway 29; then"
+            ),
         )
     ],
 }
@@ -281,20 +357,31 @@ NAME_NOTE = (
     "road named as TTB names it (US Highway 377, Grit junction to Mason)"
 )
 for i, (n, body, src, change) in enumerate(STEPS):
+    named = body
     for old, new in NAMES.get(n, []):
-        assert body.count(old) == 1, (n, body)
-        body = body.replace(old, new)
-        STEPS[i] = (n, body, src, change + "; " + NAME_NOTE)
+        assert named.count(old) == 1, (n, named)
+        named = named.replace(old, new)
+        STEPS[i] = (n, named, src, change + "; " + NAME_NOTE)
 print("TTB road names applied:", [n for n, _, _, c in STEPS if NAME_NOTE in c])
 assert all(len(c.encode()) <= 254 for _, _, _, c in STEPS), (
     "a change note is longer than a shapefile text field"
 )
 
 
-# ---------------------------------------------------------------- endpoints on the ring
+# -------------------------------------------------- endpoints on the ring
 def proj(p, line):
+    """Projects the point p onto a polyline.
+
+    Args:
+        p: the point (lon, lat).
+        line: the polyline, [[lon, lat]].
+
+    Returns:
+        (distance m, segment index, t along that segment, the point [lon, lat])
+        of the polyline's point nearest p.
+    """
     best = None
-    for i, (a, b) in enumerate(zip(line, line[1:])):
+    for i, (a, b) in enumerate(itertools.pairwise(line)):
         ax, ay, bx, by, px, py = (
             a[0] * 95700,
             a[1] * 110900,
@@ -304,14 +391,14 @@ def proj(p, line):
             p[1] * 110900,
         )
         dx, dy = bx - ax, by - ay
-        L = dx * dx + dy * dy
+        len2 = dx * dx + dy * dy
         t = (
             0
-            if L == 0
-            else max(0, min(1, ((px - ax) * dx + (py - ay) * dy) / L))
+            if len2 == 0
+            else max(0, min(1, ((px - ax) * dx + (py - ay) * dy) / len2))
         )
         q = [(ax + t * dx) / 95700, (ay + t * dy) / 110900]
-        dd = d(p, q)
+        dd = dist_m(p, q)
         if best is None or dd < best[0]:
             best = (dd, i, t, q)
     return best
@@ -349,30 +436,33 @@ for n in range(1, 105):
     else:
         END[n] = TP[str(n - 8)]["geometry"]["coordinates"][:2]
 BEGIN = TP["Beginning"]["geometry"]["coordinates"][:2]
-assert d(ring[0], BEGIN) < 0.01 and ring[0] == ring[-1]
-# Pins moved onto the centre of the printed feature (fix_pins.py, Oct. 16, 2026: the pins have to be perfect). Each
-# move replaces the step's endpoint AND the ring vertex that sits on the old pin, so the chords either side follow.
+assert dist_m(ring[0], BEGIN) < 0.01 and ring[0] == ring[-1]
+# Pins moved onto the centre of the printed feature (fix_pins.py, Oct. 16,
+# 2026: the pins have to be perfect). Each move replaces the step's endpoint AND
+# the ring vertex that sits on the old pin, so the chords either side follow.
 MOVES = os.path.join(B, "tracing", "pin-moves.json")
 if os.path.exists(MOVES) and not os.environ.get("NO_PIN_MOVES"):
-    PM = json.load(open(MOVES))
+    PM = read_json(MOVES)
     for k, mv in PM.items():
         n = int(k)
-        assert d(END[n], mv["old"]) < 0.05, (
+        assert dist_m(END[n], mv["old"]) < 0.05, (
             n,
             "pin-moves.json 'old' is not the step's endpoint",
         )
-        j = min(range(len(ring)), key=lambda i: d(ring[i], mv["old"]))
-        assert d(ring[j], mv["old"]) < 0.05, (n, "old pin not a ring vertex")
+        j = min(range(len(ring)), key=lambda i: dist_m(ring[i], mv["old"]))
+        assert dist_m(ring[j], mv["old"]) < 0.05, (
+            n,
+            "old pin not a ring vertex",
+        )
         END[n] = list(mv["new"])
         ring[j] = list(mv["new"])
         if j == 0:
             ring[-1] = ring[0]
-        if mv.get(
-            "trim_step"
-        ):  # the pin moved BACK along its own step's line (e.g. pin 92 along the lane): drop that
-            lo = max(
-                0, j - 400
-            )  # line's vertices beyond the new pin, so the step ends at the pin without a spur
+        # the pin moved BACK along its own step's line (e.g. pin 92 along the
+        # lane): drop that line's vertices beyond the new pin, so the step ends
+        # at the pin without a spur
+        if mv.get("trim_step"):
+            lo = max(0, j - 400)
             dd, i, t, q = proj(mv["new"], ring[lo:j])
             assert dd < 0.5, (
                 n,
@@ -392,12 +482,12 @@ for n in range(1, 105):
     if n == 104:
         idx.append(len(ring) - 1)
         continue
-    # nearest vertex at or after the previous endpoint (search the next 20,000 vertices)
+    # nearest vertex at or after the previous endpoint (search the next 20,000
+    # vertices)
     hi = min(len(ring), cur + 20000)
-    j = min(range(cur + 1, hi), key=lambda k: d(ring[k], p))
-    if (
-        d(ring[j], p) > 0.01
-    ):  # a point on a lane (steps 10 and 91): insert it on its segment
+    j = min(range(cur + 1, hi), key=lambda k: dist_m(ring[k], p))
+    # a point on a lane (steps 10 and 91): insert it on its segment
+    if dist_m(ring[j], p) > 0.01:
         best = proj(p, ring[cur:hi])
         assert best[0] < 0.01, (n, best[0])
         k = cur + best[1] + 1
@@ -409,48 +499,48 @@ for n in range(1, 105):
     cur = j
 print("inserted split points:", split_log)
 
-# ---------------------------------------------------------------- ink centrelines (usgs-quad-trace skill)
-# The steps that follow a mapped feature are replaced by their traces onto the centre of the ink
-# (ink-centerline-steps.geojson, made by ink_centerline.py; GOAL-ink-centerlines.md). The pins stay where they are.
+# ---------------------------------- ink centrelines (usgs-quad-trace skill)
+# The steps that follow a mapped feature are replaced by their traces onto the
+# centre of the ink (ink-centerline-steps.geojson, made by ink_centerline.py;
+# GOAL-ink-centerlines.md). The pins stay where they are.
 TRACED = os.path.join(HERE, "ink-centerline-steps.geojson")
 PIN_TIE = 12.0
-# hand patches by Dan on the ink overlay (apply_patches.py, provenance in each step's hand_edits), Oct. 16, 2026
+# hand patches by Dan on the ink overlay (apply_patches.py, provenance in each
+# step's hand_edits), Oct. 16, 2026
 if os.path.exists(
     os.path.join(HERE, "ink-centerline-steps-patched.geojson")
 ) and not os.environ.get("NO_PATCHES"):
     TRACED = os.path.join(HERE, "ink-centerline-steps-patched.geojson")
     print("traced lines: hand-patched file")
 if os.path.exists(TRACED) and not os.environ.get("NO_SPLICE"):
-    T = {
-        int(f["properties"]["id"]): f
-        for f in json.load(open(TRACED))["features"]
-    }
-    segs = [ring[a : b + 1] for a, b in zip(idx, idx[1:])]
+    T = {int(f["properties"]["id"]): f for f in read_json(TRACED)["features"]}
+    segs = [ring[a : b + 1] for a, b in itertools.pairwise(idx)]
     spliced = []
     for n in sorted(T):
         c = [list(p) for p in T[n]["geometry"]["coordinates"]]
         old = segs[n - 1]
-        assert d(c[0], old[0]) < 0.5 and d(c[-1], old[-1]) < 0.5, (
+        assert dist_m(c[0], old[0]) < 0.5 and dist_m(c[-1], old[-1]) < 0.5, (
             n,
             "traced line does not end at the step's pins",
         )
-        # tie each end to its pin with a straight segment (vertices within PIN_TIE m of the pin dropped): where a pin
-        # sits a few metres off a road's centre, the trace's hook to it would cross the next step's hook
-        # ... except at an end where a hand patch runs to the pin (apply_patches.py marks it pin_patched): keep the patch
+        # tie each end to its pin with a straight segment (vertices within
+        # PIN_TIE m of the pin dropped): where a pin sits a few metres off a
+        # road's centre, the trace's hook to it would cross the next step's
+        # hook ... except at an end where a hand patch runs to the pin
+        # (apply_patches.py marks it pin_patched): keep the patch
         pp = T[n]["properties"].get("pin_patched") or []
         c = (
             [old[0]]
             + [
                 q
                 for q in c[1:-1]
-                if ("start" in pp or d(q, old[0]) > PIN_TIE)
-                and ("end" in pp or d(q, old[-1]) > PIN_TIE)
+                if ("start" in pp or dist_m(q, old[0]) > PIN_TIE)
+                and ("end" in pp or dist_m(q, old[-1]) > PIN_TIE)
             ]
             + [old[-1]]
         )
-        c = [
-            q for k, q in enumerate(c) if k == 0 or d(q, c[k - 1]) > 1e-3
-        ]  # a patch run to the pin repeats the pin
+        # a patch run to the pin repeats the pin
+        c = [q for k, q in enumerate(c) if k == 0 or dist_m(q, c[k - 1]) > 1e-3]
         segs[n - 1] = c
         spliced.append(n)
     ring = [segs[0][0]]
@@ -461,13 +551,13 @@ if os.path.exists(TRACED) and not os.environ.get("NO_SPLICE"):
     assert ring[0] == ring[-1] and len(idx) == 105
     print("ink centrelines spliced into steps:", spliced)
 
-# ---------------------------------------------------------------- AVA record (TTB fields, filled)
+# ---------------------------------------- AVA record (TTB fields, filled)
 poly = ogr.CreateGeometryFromJson(
     json.dumps({"type": "Polygon", "coordinates": [ring]})
 )
 assert poly.IsValid()
 sqmi = geo(poly).GeodesicArea() / ttb_record.SQ_MILE
-ttb = json.load(open(ttb_record.TTB_RECORD))["features"][0]["attributes"]
+ttb = read_json(ttb_record.TTB_RECORD)["features"][0]["attributes"]
 AVA = {k: ttb.get(k) for k in ttb_record.TTB_FIELDS}
 AVA.update(
     OBJECTID=None,
@@ -480,11 +570,19 @@ AVA.update(
 )
 AVA.update(
     area_sqmi=round(sqmi, 2),
-    source="Dan McLaughlin, Robert Clay Vineyards (petitioner); drawn on the 13 USGS 1:24,000 maps cited in paragraph (b)",
-    version_note="Boundary as proposed to TTB after the Oct. 15, 2026 call: TTB's published text, with the petition's wording near Grit, four new steps around a granite lobe, and flagged changes to the wording of steps 49, 85, 90 and 91.",
+    source=(
+        "Dan McLaughlin, Robert Clay Vineyards (petitioner); drawn on the 13 "
+        "USGS 1:24,000 maps cited in paragraph (b)"
+    ),
+    version_note=(
+        "Boundary as proposed to TTB after the Oct. 15, 2026 call: TTB's "
+        "published text, with the petition's wording near Grit, four new "
+        "steps around a granite lobe, and flagged changes to the wording of "
+        "steps 49, 85, 90 and 91."
+    ),
 )
 print(
-    "AVA %.3f sq mi; fields:" % sqmi,
+    f"AVA {sqmi:.3f} sq mi; fields:",
     {
         k: AVA[k]
         for k in (
@@ -504,25 +602,28 @@ print(
 
 
 # ---------------------------------------------------------------- features
-def kind_of(n, src):
+def kind_of(n, body):
+    """Returns step n's kind: TTB's for TTB's steps, else from its text."""
     if n <= 9 or 12 <= n <= 89:
         return TL[n]["kind"]
     if n >= 101:
         return TL[n - 8]["kind"]
-    return "straight line" if "straight line" in src else "followed feature"
+    return "straight line" if "straight line" in body else "followed feature"
 
 
-QUAD = lambda n: (
-    TP[str(n)]["properties"]["quad"]
-    if (n <= 9 or 12 <= n <= 89)
-    else TP[str(n - 8)]["properties"]["quad"]
-    if n >= 101
-    else "Purdy Hill"
-    if n == 11
-    else "Turtle Creek"
-    if n == 100
-    else "Grit"
-)
+def quad_of(n):
+    """Returns the USGS quad of step n's end point."""
+    if n <= 9 or 12 <= n <= 89:
+        return TP[str(n)]["properties"]["quad"]
+    if n >= 101:
+        return TP[str(n - 8)]["properties"]["quad"]
+    if n == 11:
+        return "Purdy Hill"
+    if n == 100:
+        return "Turtle Creek"
+    return "Grit"
+
+
 NAME = {
     9: "Honey Creek at the westbound lane of SH 29 (by the marked 1737)",
     10: "SH 29 / US 377 junction (westbound lane)",
@@ -542,6 +643,7 @@ NAME = {
 
 
 def endname(n):
+    """Returns the name of step n's end point."""
     if n in NAME:
         return NAME[n]
     return (
@@ -552,14 +654,16 @@ def endname(n):
 
 
 lines, points = [], []
-for (n, body, src, change), a, b in zip(STEPS, idx, idx[1:]):
+for (n, body, src, change), (a, b) in zip(
+    STEPS, itertools.pairwise(idx), strict=True
+):
     c = ring[a : b + 1]
     lines.append(
         {
             "step": n,
             "kind": kind_of(n, body),
             "endpoint": endname(n),
-            "quad": QUAD(n),
+            "quad": quad_of(n),
             "length_m": round(glen(c), 1),
             "narrative": f"({n}) {body}",
             "txt_source": src,
@@ -577,19 +681,19 @@ points.append(
         "_c": ring[0],
     }
 )
-for (n, body, src, change), b in zip(STEPS, idx[1:]):
+for (n, *_), b in zip(STEPS, idx[1:], strict=True):
     points.append(
         {
             "point": str(n),
             "step": n,
             "kind": "End of step",
             "name": endname(n),
-            "quad": QUAD(n),
+            "quad": quad_of(n),
             "_c": ring[b],
         }
     )
 assert len(lines) == 104 and len(points) == 105
-print("perimeter %.1f km" % (sum(l["length_m"] for l in lines) / 1000))
+print(f"perimeter {sum(ln['length_m'] for ln in lines) / 1000:.1f} km")
 
 OUT = os.path.join(HERE, "gis")
 os.makedirs(OUT, exist_ok=True)
@@ -599,6 +703,15 @@ STEM = "hickory-sands-district-boundary-proposed-2026-10-15-%s-EPSG4269"
 
 
 def write(kind, feats):
+    """Writes one layer as GeoJSON and as a shapefile.
+
+    Args:
+        kind: area, line or points.
+        feats: the GeoJSON features.
+
+    Returns:
+        The GeoJSON's path.
+    """
     fc = {
         "type": "FeatureCollection",
         "name": STEM % kind,
@@ -609,7 +722,8 @@ def write(kind, feats):
         "features": feats,
     }
     p = os.path.join(OUT, STEM % kind + ".geojson")
-    open(p, "w", encoding="utf-8").write(json.dumps(fc, ensure_ascii=False))
+    with open(p, "w", encoding="utf-8") as fh:
+        fh.write(json.dumps(fc, ensure_ascii=False))
     tsl.write_shapefile(fc, STEM % kind)
     return p
 
@@ -632,12 +746,12 @@ write(
             "properties": ttb_record.feature_record(
                 dict(AVA),
                 "line",
-                {k: v for k, v in l.items() if k != "_c"},
+                {k: v for k, v in step_line.items() if k != "_c"},
                 i + 1,
             ),
-            "geometry": {"type": "LineString", "coordinates": l["_c"]},
+            "geometry": {"type": "LineString", "coordinates": step_line["_c"]},
         }
-        for i, l in enumerate(lines)
+        for i, step_line in enumerate(lines)
     ],
 )
 write(
@@ -661,11 +775,12 @@ gp = os.path.join(
 )
 if os.path.exists(gp):
     os.remove(gp)
-# GeoPackage written with explicit field types (TTB's AVAs_Production types, as the shapefiles), not inferred from
-# the GeoJSON: an all-null field such as Established would otherwise come out as String instead of Date.
+# GeoPackage written with explicit field types (TTB's AVAs_Production types, as
+# the shapefiles), not inferred from the GeoJSON: an all-null field such as
+# Established would otherwise come out as String instead of Date.
 gds = ogr.GetDriverByName("GPKG").CreateDataSource(gp)
 for kind in ("area", "line", "points"):
-    fc = json.load(open(os.path.join(OUT, STEM % kind + ".geojson")))
+    fc = read_json(os.path.join(OUT, STEM % kind + ".geojson"))
     gt = {
         "Polygon": ogr.wkbPolygon,
         "LineString": ogr.wkbLineString,
@@ -698,16 +813,17 @@ for kind in ("area", "line", "points"):
         of.SetGeometry(ogr.CreateGeometryFromJson(json.dumps(f["geometry"])))
         lyr.CreateFeature(of)
 gds = None
-json.dump(
-    {
-        "steps": [
-            {"step": n, "text": f"({n}) {b}", "source": s, "change": c}
-            for n, b, s, c in STEPS
-        ],
-        "sqmi": sqmi,
-    },
-    open(os.path.join(HERE, "agreed-steps.json"), "w"),
-    ensure_ascii=False,
-    indent=1,
-)
+with open(os.path.join(HERE, "agreed-steps.json"), "w") as fh:
+    json.dump(
+        {
+            "steps": [
+                {"step": n, "text": f"({n}) {b}", "source": s, "change": c}
+                for n, b, s, c in STEPS
+            ],
+            "sqmi": sqmi,
+        },
+        fh,
+        ensure_ascii=False,
+        indent=1,
+    )
 print("written", OUT)

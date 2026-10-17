@@ -1,13 +1,23 @@
-"""Hickory Sands District: the steps that follow a mapped feature, traced onto the centre of its ink on the 13 USGS
-1:24,000 sheets (resources/quads/geotiff/*.tif.zip, read in place) with the usgs-quad-trace skill
-(the project skill .claude/skills/usgs-quad-trace; method and checks in its SKILL.md). Goal: GOAL-ink-centerlines.md.
+"""Traces the steps that follow a mapped feature onto the centre of its ink.
 
-Input: the step lines as they stood at Oct. 15, 2026, 22:11 (resources/boundary/tracing/trace-priors-EPSG4269.geojson), whose end points are
-the pins, kept exactly. The doubled road near Grit (steps 10, 11, 91, 92) keeps its 30 m lanes and is not traced.
-Output: ink-centerline-steps.geojson (one traced line per step, with the check's figures), which build_agreed.py
-splices into the ring.  Usage (the project .venv, via ./build.sh): ink_centerline.py [STEP ...]   default: all 28 follow steps
-Review sheets: ink_centerline.py --review [STEP ...]  -> review-ink/review-NNN.png
-Problem close-ups for the critic pass: ink_centerline.py --problems [STEP ...]  -> review-ink/problems/
+Hickory Sands District: the steps are traced on the 13 USGS 1:24,000 sheets
+(resources/quads/geotiff/*.tif.zip, read in place) with the usgs-quad-trace
+skill (the project skill .claude/skills/usgs-quad-trace; method and checks in
+its SKILL.md). Goal: GOAL-ink-centerlines.md.
+
+Input: the step lines as they stood at Oct. 15, 2026, 22:11
+(resources/boundary/tracing/trace-priors-EPSG4269.geojson), whose end points
+are the pins, kept exactly. The doubled road near Grit (steps 10, 11, 91, 92)
+keeps its 30 m lanes and is not traced.
+Output: ink-centerline-steps.geojson (one traced line per step, with the
+check's figures), which build_agreed.py splices into the ring.
+
+Usage (the project .venv, via ./build.sh):
+  ink_centerline.py [STEP ...]   default: every step in KIND
+Review sheets: ink_centerline.py --review [STEP ...]
+  -> review-ink/review-NNN.png
+Problem close-ups for the critic pass: ink_centerline.py --problems [STEP ...]
+  -> review-ink/problems/
 """
 
 import json
@@ -56,41 +66,59 @@ KIND = {
         "road",
     ),
 }
-# Not traced, current line kept, listed for Dan: the feature the text follows is not printed on the sheet.
+# Not traced, current line kept, listed for Dan: the feature the text follows is
+# not printed on the sheet.
 NOT_ON_SHEET = {
-    81: "Copperhead Road is not shown on the Mason sheet (1960s): no road symbol south of the junction at the 1,526"
+    81: (
+        "Copperhead Road is not shown on the Mason sheet (1960s): no road "
+        "symbol south of the junction at the 1,526"
+    )
 }
 
 OVERRIDES = os.path.join(
     ROOT, "resources", "boundary", "tracing", "route-overrides-EPSG4269.geojson"
 )
-MOVES = os.path.join(
-    ROOT, "resources", "boundary", "tracing", "pin-moves.json"
-)  # fix_pins.py: pins moved onto the ink centre (end of step n == start of n+1)
+# fix_pins.py: pins moved onto the ink centre (end of step n == start of n+1)
+MOVES = os.path.join(ROOT, "resources", "boundary", "tracing", "pin-moves.json")
 
 
 def write_input():
+    """Writes INPUT, the tracer's input: one line for each step in KIND.
+
+    Each line is the step's prior, or its route override, with its ends on the
+    moved pins where pin-moves.json moves them.
+    """
     feats = []
-    PM = json.load(open(MOVES)) if os.path.exists(MOVES) else {}
-    OV = {}  # route hints that replace a step's prior (resources/boundary/tracing/route-overrides-EPSG4269.geojson; e.g. steps 72-73 on the light-duty road)
+    pin_moves = {}
+    if os.path.exists(MOVES):
+        with open(MOVES) as fh:
+            pin_moves = json.load(fh)
+    # route hints that replace a step's prior (OVERRIDES; e.g. steps 72-73 on
+    # the light-duty road)
+    overrides = {}
     if os.path.exists(OVERRIDES):
-        OV = {
-            f["properties"]["step"]: f["geometry"]["coordinates"]
-            for f in json.load(open(OVERRIDES))["features"]
-        }
-    for f in json.load(open(PRIORS))["features"]:
+        with open(OVERRIDES) as fh:
+            overrides = {
+                f["properties"]["step"]: f["geometry"]["coordinates"]
+                for f in json.load(fh)["features"]
+            }
+    with open(PRIORS) as fh:
+        priors = json.load(fh)["features"]
+    for f in priors:
         s = f["properties"]["step"]
         if s in KIND:
-            c = [list(p) for p in (OV.get(s) or f["geometry"]["coordinates"])]
-            if str(s) in PM:
-                c[-1] = list(PM[str(s)]["new"])
-            if str(s - 1) in PM:
-                c[0] = list(PM[str(s - 1)]["new"])
-            f = {**f, "geometry": {"type": "LineString", "coordinates": c}}
+            c = [
+                list(p)
+                for p in (overrides.get(s) or f["geometry"]["coordinates"])
+            ]
+            if str(s) in pin_moves:
+                c[-1] = list(pin_moves[str(s)]["new"])
+            if str(s - 1) in pin_moves:
+                c[0] = list(pin_moves[str(s - 1)]["new"])
             feats.append(
                 {
                     "type": "Feature",
-                    "geometry": f["geometry"],
+                    "geometry": {"type": "LineString", "coordinates": c},
                     "properties": {
                         "id": str(s),
                         "kind": KIND[s],
@@ -98,9 +126,8 @@ def write_input():
                     },
                 }
             )
-    json.dump(
-        {"type": "FeatureCollection", "features": feats}, open(INPUT, "w")
-    )
+    with open(INPUT, "w") as fh:
+        json.dump({"type": "FeatureCollection", "features": feats}, fh)
 
 
 if __name__ == "__main__":
@@ -158,5 +185,5 @@ if __name__ == "__main__":
             OUT,
         ]
     if ids:
-        cmd += ["--ids"] + ids
+        cmd += ["--ids", *ids]
     sys.exit(subprocess.call(cmd))

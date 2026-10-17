@@ -114,6 +114,7 @@ linework() {
 checks() {
     step "checks"
     run src/checks/check_build.py "$WORK/gis"                                            # hard: stops the build on failure
+    run src/checks/check_step_text.py "$WORK/agreed-steps.json"                         # hard: the Federal Register's characters
     run src/review/tipcheck.py --line "$WORK/gis/$STEM-line-EPSG4269.geojson" --traced "$WORK/ink-centerline-steps.geojson" \
         --out "$WORK/review/tips-short-EPSG4269.geojson" | head -n 1                       # report
     run src/review/compare_ttb.py --ours-line "$WORK/gis/$STEM-line-EPSG4269.geojson" --ours-area "$WORK/gis/$STEM-area-EPSG4269.geojson" \

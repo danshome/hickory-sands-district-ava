@@ -59,7 +59,8 @@ resources/
     description/         the step texts: TTB's Notice 243, the petition
     proposed/            the proposed ring (Oct. 15), the Oct. 14 step lines and points, the Grit detour pins
     tracing/             pin-moves.json, trace priors, route overrides, hand-patches-EPSG4269.geojson
-  ttb/                   TTB's Notice 243 PDF, the AVAs_Production record and polygon snapshot
+  ttb/                   TTB's Notice 243 PDF, the Federal Register's full-text XML of it (byte for byte), the
+                         AVAs_Production record and polygon snapshot
   geology/               USGS SGMC units shifted to the outcrops, for the map only; see resources/geology/README.md
   quads/                 quads-manifest.csv, cropped/ (neatline VRT templates); geotiff/ and geopdf/ are downloaded
 documents/               hand-written texts: README.template.txt ({AREA_SQMI} filled by the build),
@@ -82,7 +83,8 @@ tobedeleted/             set aside for review and deletion, used by nothing (not
    that patch). Patch joins that turn more than 25 degrees are rounded.
 6. **boundary** - pins, straight-line steps, traced steps, polygon, points, GeoPackage, shapefiles.
 7. **checks** - hard (stop the build): every one of the 105 pins exactly on its two steps; no step line crosses
-   itself; the polygon is valid. Reports (in `target/work/review/`): tips of contours the line stops short of; where the
+   itself; the polygon is valid; the step text uses only the Federal Register's characters and TTB's 96 steps are
+   identical to the Federal Register's XML (`src/checks/check_step_text.py`, also a commit hook). Reports (in `target/work/review/`): tips of contours the line stops short of; where the
    proposed revision and the AVA Map Explorer polygon differ (rings beyond hand-drawing noise, the big differences 100 m
    or more apart, and every piece of land between the two lines); the change near Grit, line by line and acre by acre,
    with the granite in each piece (`src/review/grit_change.py`).
@@ -112,6 +114,8 @@ other package. `GDAL` must equal Homebrew's GDAL library (`gdal-config --version
 - files: no files over 2 MB, no case clashes or names Windows cannot hold, no merge-conflict markers, no broken or
   replaced symlinks, no submodules, shebangs and executable bits agree, LF line endings, no trailing whitespace, one
   final newline, no byte-order marks, JSON/GeoJSON/YAML/TOML parse, permanent links to code;
+- step text: only the Federal Register's characters (no en or em dashes, curly apostrophes, non-breaking or hidden
+  spaces), and TTB's steps identical to the Federal Register's XML;
 - secrets and private material: no private keys; detect-secrets (passwords, tokens, API keys; the three known false
   alarms are recorded in `.secrets.baseline`); no word listed in `.private-words` (gitignored: put names that must
   never be committed there, one per line); the OSV audit whenever a requirements file changes;

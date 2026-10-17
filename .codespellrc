@@ -1,5 +1,5 @@
-# codespell: common misspellings in code and docs (pre-commit hook).
+# codespell: common misspellings in code and docs (pre-commit hook). The Federal Register's XML is its text, not ours.
 [codespell]
-skip = *.geojson,*.vrt.in,*.pdf,*.csv,.secrets.baseline
+skip = *.geojson,*.vrt.in,*.pdf,*.csv,.secrets.baseline,resources/ttb/federal-register-*.xml
 # erly: part of a regex for "southeasterly"; iif: Arcade's IIf(); froms: a variable name
 ignore-words-list = erly,iif,froms

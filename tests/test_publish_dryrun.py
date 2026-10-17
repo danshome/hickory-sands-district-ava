@@ -543,19 +543,26 @@ def test_the_dry_run_of_the_build(tmp_path):
         reason="the publish scripts import Esri's arcgis package "
         "(requirements.txt)",
     )
-    r = subprocess.run(
-        [
-            sys.executable,
-            "-E",
-            "-s",
-            "-B",
-            os.path.join(ROOT, "src", "publish", "agol_dryrun.py"),
-            str(tmp_path),
-        ],
-        capture_output=True,
-        text=True,
-        env={**os.environ, "HSD_WORK": work},
-        check=False,
-    )
-    assert r.returncode == 0, r.stdout[-3000:] + r.stderr[-3000:]
-    assert "dry-run checks: 10 of 10 passed" in r.stdout
+    gpkgs = []
+    for out in (tmp_path / "first", tmp_path / "again"):
+        r = subprocess.run(
+            [
+                sys.executable,
+                "-E",
+                "-s",
+                "-B",
+                os.path.join(ROOT, "src", "publish", "agol_dryrun.py"),
+                str(out),
+            ],
+            capture_output=True,
+            text=True,
+            env={**os.environ, "HSD_WORK": work},
+            check=False,
+        )
+        assert r.returncode == 0, r.stdout[-3000:] + r.stderr[-3000:]
+        assert "dry-run checks: 10 of 10 passed" in r.stdout
+        gpkgs.append({p.name: p.read_bytes() for p in out.glob("*.gpkg")})
+    # The GeoPackages 4j and 4n are the same bytes each time, so a publish of
+    # an unchanged build leaves 4k and 4o alone (issue #74).
+    assert len(gpkgs[0]) == 2, sorted(gpkgs[0])
+    assert gpkgs[0] == gpkgs[1], "a GeoPackage changed between two dry runs"

@@ -67,6 +67,11 @@ REVIEW = os.path.join(HERE, "review")
 DIFF_GPKG = os.path.join(
     REVIEW, "hickory-sands-district-differences-from-ttb-EPSG4269.gpkg"
 )
+# The date GDAL stamps on the GeoPackages written here (last_change in
+# gpkg_contents), fixed so the same features always give the same bytes: then
+# hosted() sees an unchanged file and skips overwriting 4k and 4o (issue #74).
+# The proposed boundary's date, as in the file names.
+GPKG_DATE = "2026-10-15T00:00:00.000Z"
 DIFF_SRC_TITLE = (
     "4j Differences from the AVA Map Explorer polygon - GeoPackage (the big "
     "ones, and all of them)"
@@ -947,13 +952,14 @@ def make_diff_gpkg(path=DIFF_GPKG):
                 },
                 f,
             )
-        gdal.VectorTranslate(
-            path,
-            tmp,
-            format="GPKG",
-            layerName=name,
-            accessMode="append" if os.path.exists(path) else None,
-        )
+        with gdal.config_option("OGR_CURRENT_DATE", GPKG_DATE):
+            gdal.VectorTranslate(
+                path,
+                tmp,
+                format="GPKG",
+                layerName=name,
+                accessMode="append" if os.path.exists(path) else None,
+            )
     return path
 
 
@@ -1113,13 +1119,14 @@ def make_grit_gpkg(path=GRIT_GPKG):
         ("grit-change-lines-EPSG4269.geojson", "lines_swapped"),
         ("grit-change-areas-EPSG4269.geojson", "areas_moved"),
     ):
-        gdal.VectorTranslate(
-            path,
-            os.path.join(REVIEW, f),
-            format="GPKG",
-            layerName=name,
-            accessMode="append" if os.path.exists(path) else None,
-        )
+        with gdal.config_option("OGR_CURRENT_DATE", GPKG_DATE):
+            gdal.VectorTranslate(
+                path,
+                os.path.join(REVIEW, f),
+                format="GPKG",
+                layerName=name,
+                accessMode="append" if os.path.exists(path) else None,
+            )
     return path
 
 

@@ -553,6 +553,19 @@ if os.path.exists(TRACED) and not os.environ.get("NO_SPLICE"):
     assert ring[0] == ring[-1] and len(idx) == 105
     print("ink centrelines spliced into steps:", spliced)
 
+
+def sig15(v):
+    """Returns v to 15 significant digits."""
+    return float(f"{v:.15g}")
+
+
+# Every coordinate to 15 significant digits, the precision of TTB's
+# AVAs_Production layer for its established AVAs (issue #65: 12 decimals of a
+# longitude past 100 degrees, 13 otherwise; about a hundredth of a
+# micrometre), once, here: every file, figure and check below then has the
+# same numbers, and the float noise in the last digits between machines goes.
+ring = [[sig15(v) for v in p] for p in ring]
+
 # ---------------------------------------- AVA record (TTB fields, filled)
 poly = ogr.CreateGeometryFromJson(
     json.dumps({"type": "Polygon", "coordinates": [ring]})

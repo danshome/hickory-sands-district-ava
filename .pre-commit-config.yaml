@@ -142,8 +142,13 @@ repos:
         entry: .venv/bin/debug-statement-hook
         language: system
         types: [python]
+      - id: ruff-format
+        name: ruff format (Python layout, Google style, 80 columns; ruff.toml)
+        entry: .venv/bin/ruff format --force-exclude   # rewrites the files it would change: add them and commit again
+        language: system
+        types: [python]
       - id: ruff
-        name: ruff (Python lint, ruff.toml)
+        name: ruff check (Python lint, Google style and stricter checks; ruff.toml)
         entry: .venv/bin/ruff check --force-exclude
         language: system
         types: [python]

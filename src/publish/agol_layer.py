@@ -154,6 +154,50 @@ for gtype, lyr in layers.items():
         except Exception as e:
             print("could not rename", lyr.properties.name, "->", NAMES[gtype], type(e).__name__)
 
+# ---------------------------------------------------------------- the layer's features, as built (issue #71)
+# The layer is published from the GeoPackage once; a republish used to leave its features as first published (the live
+# steps kept old wording and attributes). Each feature is updated in place from the package's GeoJSON, matched by step
+# (lines), point (points) or as the one AVA polygon, so the object ids and the documents attached to the polygon stay.
+# Only when the build's files changed (their SHA-256 is kept in the item's properties). Editing is on for the update
+# only, and the layer is locked again whatever happens.
+BUILT = {g: os.path.join(PKG, "4_GIS", f"hickory-sands-district-boundary-proposed-2026-10-15-{k}-EPSG4269.geojson")
+         for g, k in (("esriGeometryPolygon", "area"), ("esriGeometryPolyline", "line"), ("esriGeometryPoint", "points"))}
+KEY = {"esriGeometryPolygon": None, "esriGeometryPolyline": "step", "esriGeometryPoint": "point"}
+
+def esri(g):   # a GeoJSON geometry (NAD83 lon/lat) as Esri JSON
+    sr, c = {"wkid": 4269}, g["coordinates"]
+    return {"Point": lambda: {"x": c[0], "y": c[1]}, "LineString": lambda: {"paths": [c]}, "MultiLineString": lambda: {"paths": c},
+            "Polygon": lambda: {"rings": c}, "MultiPolygon": lambda: {"rings": [r for p in c for r in p]}}[g["type"]]() | {"spatialReference": sr}
+
+built_sha = hashlib.sha256(b"".join(open(BUILT[g], "rb").read() for g in sorted(BUILT))).hexdigest()
+if (fl.properties or {}).get("features_sha256") != built_sha:
+    plan = {}
+    for gtype, lyr in layers.items():
+        oidf, key = lyr.properties.objectIdField, KEY[gtype]
+        geo = lyr.properties.get("geometryProperties") or {}
+        system = {oidf, lyr.properties.get("globalIdField"), geo.get("shapeAreaFieldName"), geo.get("shapeLengthFieldName")}
+        names = {f["name"] for f in lyr.properties.fields} - system
+        live = lyr.query(where="1=1", out_fields=",".join(f for f in (oidf, key) if f), return_geometry=False).features
+        new = json.load(open(BUILT[gtype]))["features"]
+        live_by = {str(f.attributes[key]) if key else "": f.attributes[oidf] for f in live}
+        new_by = {str(f["properties"][key]) if key else "": f for f in new}
+        assert set(live_by) == set(new_by) and len(live) == len(new), (gtype, sorted(set(live_by) ^ set(new_by)))   # same features
+        plan[gtype] = [{"attributes": {oidf: live_by[k], **{a: v for a, v in f["properties"].items() if a in names}},
+                        "geometry": esri(f["geometry"])} for k, f in new_by.items()]
+    flc.manager.update_definition({"capabilities": "Query,Extract,Update"})
+    try:
+        for gtype, ups in plan.items():
+            for i in range(0, len(ups), 50):
+                res = layers[gtype].edit_features(updates=ups[i:i + 50])["updateResults"]
+                failed = [r for r in res if not r.get("success")]
+                assert not failed, (gtype, failed[:3])
+            print(f"updated {len(ups)} features of {layers[gtype].properties.name}")
+        fl.update(item_properties={"properties": {**(fl.properties or {}), "features_sha256": built_sha}})
+    finally:
+        lock(fl)
+else:
+    print("the layer's features are as built")
+
 # documents attached to the AVA polygon
 if not area.properties.get("hasAttachments"):
     area.manager.add_to_definition({"hasAttachments": True})

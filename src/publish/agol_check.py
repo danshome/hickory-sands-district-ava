@@ -306,9 +306,28 @@ def figures(bad, note):
     for what, geometry, pat in (("steps", "esriGeometryPolyline", "line"), ("points", "esriGeometryPoint", "points")):
         files = glob.glob(os.path.join(HERE, "gis", f"*-{pat}-EPSG4269.geojson"))
         if not files: note(f"no gis/*-{pat}-EPSG4269.geojson in the build outputs: {what} not counted"); continue
-        want, got = len(json.load(open(files[0]))["features"]), query(op_url(None, geometry), returnCountOnly="true")["count"]
+        built = json.load(open(files[0]))["features"]
+        want, got = len(built), query(op_url(None, geometry), returnCountOnly="true")["count"]
         if want != got: bad(f"{what}: {got} live, {want} in the build's {rel(files[0])}")
-        said.append(f"{got} {what}")
+        # every attribute as built (#71: a republish once left the live steps with their first-published text and quads)
+        key = "step" if pat == "line" else "point"
+        live = {str(r["attributes"][key]): r["attributes"] for r in query(op_url(None, geometry), outFields="*")["features"]}
+        off = 0
+        for f in built:
+            have = live.get(str(f["properties"][key]))
+            if have is None: continue                       # counted above
+            for a, v in f["properties"].items():
+                w = have.get(a, v)                          # a field the layer doesn't hold is not compared
+                same = abs(w - v) <= 1e-6 * max(1.0, abs(v)) if isinstance(v, float) and isinstance(w, (int, float)) else w == v
+                if not same:
+                    off += 1
+                    if off <= 5:
+                        sw, sv = str(w), str(v)   # show where they part: 25 characters before the first difference
+                        i = next((j for j, (x, y) in enumerate(zip(sw, sv)) if x != y), min(len(sw), len(sv)))
+                        cut = lambda s: ("..." if i > 25 else "") + s[max(0, i - 25):i + 35]
+                        bad(f"{what} {f['properties'][key]}: {a} is {cut(sw)!r} live, {cut(sv)!r} in the build")
+        if off > 5: bad(f"{what}: {off - 5} more attributes differ from the build")
+        said.append(f"{got} {what} (every attribute as built)")
     stats = load(os.path.join(REVIEW, "ttb-diff-stats.json"))
     if stats:
         out = json.dumps([{"statisticType": "sum", "onStatisticField": "acres", "outStatisticFieldName": "acres"},

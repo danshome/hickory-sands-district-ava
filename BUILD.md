@@ -51,8 +51,9 @@ Other commands:
   - files: each uploaded file is the size of the one just built (and, up to 4 MB, downloaded and the same SHA-256),
     and the documents attached to the AVA polygon match the build's.
 
-  Without build outputs the figures and files are skipped with a note. Right after a publish ArcGIS can take a minute to
-  show a change to anonymous users: run `./build.sh check-live` again before chasing a failure.
+  Without build outputs the figures and files are skipped with a note. Then it runs the browser tests of the published
+  dashboard (`tests/live`, see Tests below). Right after a publish ArcGIS can take a minute to show a change to anonymous
+  users: run `./build.sh check-live` again before chasing a failure.
 
 The only prerequisites are Homebrew (https://brew.sh, on macOS or Linux), Google Chrome on Linux, and network access the
 first time (packages and quads).
@@ -63,9 +64,9 @@ first time (packages and quads).
 build.sh                 the build
 requirements.in          the Python packages the build uses (edit this)
 requirements.txt         compiled from it: every package and indirect dependency pinned, with SHA-256 hashes
-requirements-dev.in/.txt the same for the lint, audit and lock tools and pytest
+requirements-dev.in/.txt the same for the lint, audit and lock tools, pytest and Playwright
 .pre-commit-config.yaml  the hooks; .githooks/pre-commit runs them; ruff.toml, .codespellrc, .secrets.baseline
-pytest.ini, tests/       the unit tests (./build.sh test)
+pytest.ini, tests/       the unit tests (./build.sh test); tests/live/: the browser tests of the dashboard (check-live)
 README.md, BUILD.md      this documentation; CLAUDE.md: notes for Claude Code; LICENSE.txt
 src/
   setup/                 packages.py: the security audit of the lock files (standard library only), lock helper
@@ -180,8 +181,40 @@ commit again. Run them all with `./build.sh lint`.
 
 The scripts keep their work under `if __name__ == "__main__":`, so the tests import them (`src.documents.pdf_text`)
 without running them. Tests marked `build` need the build's own tools (GDAL, NumPy and SciPy, poppler's pdftotext); the
-lint workflow, which installs only the lint tools, runs the rest (`pytest -m "not build"`), and a test whose tool is
-missing is skipped, not failed. One file: `.venv/bin/python -m pytest -q tests/test_pdf_text.py`.
+lint workflow, which installs only the lint tools, runs the rest but the live ones (`pytest -m "not build and not live"`),
+and a test whose tool is missing is skipped, not failed. One file: `.venv/bin/python -m pytest -q tests/test_pdf_text.py`.
+
+### Browser tests of the published dashboard
+
+`tests/live/test_dashboard.py` (marked `live`; #68) opens the public dashboard in Google Chrome the way a reader does,
+anonymously, and checks what is on the screen. Playwright (in `requirements-dev.txt`) drives the installed Chrome
+(`channel="chrome"`, a fresh temporary profile, nothing downloaded; `HSD_CHROME` can name another Chrome). They need
+network access, Google Chrome and the published site, so `./build.sh test` and the lint workflow leave them out
+(`pytest.ini`: `-m "not live"`); `./build.sh check-live` (and so every publish) runs them after `agol_check.py`. Alone:
+
+```
+.venv/bin/python -m pytest -v -m live tests/live
+```
+
+- two phones, emulated as Esri requires for its phone layout (Playwright's iPhone 14 and Pixel 7: their user agent,
+  touch, mobile and pixel ratio; a narrow desktop window would still get the desktop layout), at 390x844 and 412x915:
+  the phone layout (`mobileView`) is shown, not the desktop one (`dashboards-mobile-layout` and the Filter button
+  present, the desktop layout and the selected step's details panel absent); the header; the three indicators'
+  numbers, and every caption inside its indicator and not printed over the number (each text's em box, measured in
+  the page); the map drawn; the four tabs (Steps, What changes, Grit, Documents) each open with content; all 104 steps
+  in the Steps list (it draws only the rows near its scroll position: the test scrolls it through); tapping a step
+  zooms the map; the Documents tab's links open items of the group, with their titles; no sideways scrolling; the
+  drawer's step selector, whose "Corrections to Notice No. 243's wording" leaves (49) and (85). A header cut short
+  with an ellipsis is a warning, not a failure (Esri's phone header is one line);
+- four laptop and desktop screens, 1280x720, 1366x650, 1536x750 (1920x1080 at 125% Windows scaling) and 1920x1080: the
+  desktop layout; the five indicators' numbers and captions (#45); every left tab reachable (Documents, The change near
+  Grit, What changes, USGS quadrangles), the GeoPDF and GeoTIFF links each on one line (#47); the right tabs (Steps,
+  Big differences, All differences); no sideways scrolling.
+
+The figures (area, steps, reworded steps, big differences, acres, the corrected steps) come from the build's outputs in
+`target/work` (or `HSD_WORK`), else from the publish of Oct. 17, 2026. Every test leaves a screenshot,
+`target/browser-tests/<viewport>-<test>.png` (`-FAILED.png` when it failed, named in the failure's report), and
+`<viewport>-loaded.png` shows each page as it first loaded. A page that does not load in two minutes is tried once more.
 
 ## GitHub Actions and releases
 

@@ -1,11 +1,12 @@
-# Development tools: the pre-commit hooks (.pre-commit-config.yaml), the audit, the lock compiler and the unit tests
-# (tests/, pytest). Compiled by `./build.sh upgrade` into requirements-dev.txt (hash-pinned, same versions as
+# Development tools: the pre-commit hooks (.pre-commit-config.yaml), the audit, the lock compiler, the unit tests
+# (tests/, pytest) and the browser tests of the dashboard (tests/live, playwright driving Google Chrome). Compiled by `./build.sh upgrade` into requirements-dev.txt (hash-pinned, same versions as
 # requirements.txt where they overlap).
 -c requirements.txt
 codespell
 detect-secrets
 pip-audit
 pip-tools
+playwright
 pre-commit
 pre-commit-hooks
 pytest

@@ -197,6 +197,7 @@ publish() {
 check_live() {
     step "the public site, checked anonymously against the build (security, sharing, links, figures, files)"
     run src/publish/agol_check.py
+    run -m pytest -v -m live tests/live      # the dashboard in Google Chrome: two phones, four screens (#68; target/browser-tests/)
 }
 
 case "${1:-all}" in

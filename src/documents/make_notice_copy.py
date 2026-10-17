@@ -123,8 +123,9 @@ def paragraphs(lines):
 num = lambda p: int(re.match(r"\((\d+)\) ", p[0]["text"]).group(1))
 body = lambda t: re.sub(r"^\(\d+\)\s*", "", t)
 
-# Compare with a reading-order text conversion (xpdf "pdftotext" without -simple; Beyond Compare's default -simple
-# mode merges the three columns into run-together rows even on TTB's own pages).
+# Check with a reading-order text conversion (src/documents/pdf_text.py, poppler's pdftotext, makes the compare-text
+# files); a column-blind conversion (Beyond Compare's default -simple mode) runs the three columns together even on
+# TTB's own pages.
 
 # ------------------------------------------------------------------ page 52586, column 3: steps (10)-(11)
 c3 = col_lines(P86, 2)

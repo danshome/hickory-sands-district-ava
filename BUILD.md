@@ -6,7 +6,7 @@ One command, run from the repository root, rebuilds everything that goes to TTB 
 ./build.sh
 ```
 
-It installs what is missing (GDAL, Python 3.14 and Google Chrome via Homebrew), checks every Python package it will
+It installs what is missing (GDAL, poppler, Python 3.14 and Google Chrome via Homebrew), checks every Python package it will
 install against the OSV vulnerability database, creates the project's Python environment `.venv` from the hash-pinned
 `requirements.txt` (nothing global), downloads any USGS quad that is missing or altered, builds, checks, and packages. The result is in `dist/`:
 

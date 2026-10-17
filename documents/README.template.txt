@@ -19,9 +19,8 @@ WHAT IS IN THIS PACKAGE
       TTB's notice exactly as it is in the docket (downloaded October 15, 2026), for comparison.
    text-for-comparing-1_TTB-Notice-243-as-published.txt
    text-for-comparing-2_TTB-Notice-243-with-proposed-changes.txt
-      The text of the two PDFs, one paragraph per line in reading order (xpdf pdftotext), for a text compare (for
-      example Beyond Compare): the only differences are the changed steps, apart from a few blank lines where columns
-      break.
+      The text of the two PDFs, one paragraph per line in reading order (poppler pdftotext), for a text compare (for
+      example Beyond Compare): the only differences are the changed steps, (10)-(11) and (90)-(104).
 3_changes-side-by-side/
    ...changes-side-by-side-2026-10-15.pdf / .docx   TTB's published text | the original petition (for reference) |
                                                  proposed text | why, for every step that changes. Marking

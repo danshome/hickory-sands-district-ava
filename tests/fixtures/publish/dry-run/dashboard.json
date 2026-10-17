@@ -1463,7 +1463,7 @@
      "topSection": {
       "maxHeight": 30,
       "textInfo": {
-       "text": "Steps reworded",
+       "text": "Reworded from",
        "weight": "normal"
       }
      },
@@ -1478,7 +1478,7 @@
      "bottomSection": {
       "maxHeight": 25,
       "textInfo": {
-       "text": "from Notice No. 243",
+       "text": "Notice No. 243",
        "weight": "normal"
       }
      }
@@ -1704,8 +1704,8 @@
   "header": {
    "type": "header",
    "dashboardItemType": "panel",
-   "title": "Hickory Sands District AVA: proposed boundary",
-   "subtitle": "Notice No. 243, changes discussed with TTB Oct. 15, 2026",
+   "title": "Hickory Sands District AVA",
+   "subtitle": "Proposed boundary · Notice No. 243",
    "textColor": "#ffffff",
    "titleTextColor": "#ffffff",
    "backgroundColor": "#5a1e2e",

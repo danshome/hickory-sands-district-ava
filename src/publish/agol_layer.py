@@ -1952,11 +1952,11 @@ def main():
 
     The hosted layer 4b is published from 4c once, then reused: its layers are
     renamed, its features updated to the build's (issue #71) when the build's
-    files changed, and the documents attached to the AVA polygon. The
-    GeoPackages 4j, 4l and 4n and their hosted layers 4k, 4m and 4o follow,
-    then every layer's pop-ups, field aliases and visualization, and the web
-    map 4a. Each item is shared to the group and put in its category; none may
-    say "agree".
+    files changed, the documents attached to the AVA polygon, and its field
+    aliases and visualization sent. The GeoPackages 4j, 4l and 4n and their
+    hosted layers 4k, 4m and 4o follow, with their layers' names, field
+    aliases and visualizations, then the web map 4a. Each item is shared to
+    the group and put in its category; none may say "agree".
     """
     global gis, folder, typed  # hosted() uses them
     gis = GIS(profile="hsd")

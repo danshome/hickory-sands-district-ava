@@ -26,9 +26,10 @@ Other commands:
 - `./build.sh clean` removes `target/` and `dist/`.
 - `./build.sh distclean` also removes `.venv`.
 - `./build.sh publish` pushes the built package to ArcGIS Online: items, descriptions, metadata, categories, the hosted
-  layers (the boundary, the differences from TTB's polygon, the shifted geology), the web map over the 13 quads with
-  TTB's live polygon, and the dashboard that links everything. It makes the folder if it is missing. It signs in with Dan's saved `arcgis` profile `hsd`. Publishing is never part of a normal build; run it only when
-  you mean to update ArcGIS Online.
+  layers (the boundary, the differences from the AVA Map Explorer polygon, the change near Grit, the shifted geology),
+  the web map over the 13 quads with TTB's live AVA Map Explorer polygon, and the dashboard that links everything; it
+  makes the folder if it is missing and shares everything publicly. It signs in with Dan's saved `arcgis` profile `hsd`.
+  Publishing is never part of a normal build; run it only when you mean to update ArcGIS Online.
 
 The only prerequisite is Homebrew (https://brew.sh) on macOS, and network access the first time (packages and quads).
 
@@ -46,7 +47,8 @@ src/
   quads/                 fetch_quads (the 13 USGS quads, MD5-checked), build_cropped_quads (neatline VRTs for viewing)
   tracing/               traces each "along the road / creek / contour" step onto the centre of the printed ink
   fixing/                hand patches: patchlib (making them) and apply_patches (splicing them onto the traces)
-  review/                tipcheck (tips the line stops short of), compare_ttb (vs TTB's published polygon), triage tools
+  review/                tipcheck (tips the line stops short of), compare_ttb (vs the AVA Map Explorer polygon),
+                         grit_change (the change near Grit, acre by acre, with its granite), triage tools
   boundary/              ink_centerline (runs the tracer), build_agreed (pins, polygon, GIS), quad sheets, TTB record
   documents/             description, side-by-side, notice copy, DOCX, README / read-me-first, PDF text
   checks/                hard checks: quads vs manifest, every pin on its line, no self-crossing, valid polygon
@@ -66,8 +68,7 @@ LICENSE.txt              CC0 1.0 (also copied into the package)
 .venv/                   the project's Python environment (made by build.sh; not in git)
 target/                  everything the build makes (not in git): work/ (recreated on every run), quads-cropped/
 dist/                    the distribution (not in git)
-tobedeleted/             set aside, used by nothing (not in git): the filed Oct. 13 public comment and its pipeline,
-                         old scripts, the private .local folder. Review, then delete.
+tobedeleted/             set aside for review and deletion, used by nothing (not in git)
 ```
 
 ## The stages and the checks
@@ -81,8 +82,10 @@ tobedeleted/             set aside, used by nothing (not in git): the filed Oct.
    that patch). Patch joins that turn more than 25 degrees are rounded.
 6. **boundary** - pins, straight-line steps, traced steps, polygon, points, GeoPackage, shapefiles.
 7. **checks** - hard (stop the build): every one of the 105 pins exactly on its two steps; no step line crosses
-   itself; the polygon is valid. Reports (in `target/work/review/`): tips of contours the line stops short of; places
-   where our boundary differs from TTB's published polygon by more than the hand-drawing noise.
+   itself; the polygon is valid. Reports (in `target/work/review/`): tips of contours the line stops short of; where the
+   proposed revision and the AVA Map Explorer polygon differ (rings beyond hand-drawing noise, the big differences 100 m
+   or more apart, and every piece of land between the two lines); the change near Grit, line by line and acre by acre,
+   with the granite in each piece (`src/review/grit_change.py`).
 8. **documents**, 9. **quad sheets**, 10. **package** into `dist/`, with `build-report.txt`.
 
 ## Python packages and security

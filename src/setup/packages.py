@@ -5,7 +5,7 @@ only, so it runs before anything is installed:
                                       (https://osv.dev: PyPA advisories, GitHub advisories, CVEs). Exit 1 if any
                                       package has a known vulnerability, 2 if the database cannot be reached.
   packages.py pick LOCK NAME [...]    print the entries (pin + hashes) for NAME... from LOCK, for a first-stage install
-"""  # noqa: D205, D415, E501, RUF100 (the usage message, printed as written)
+"""  # noqa: D205, D415, E501 (the usage message, printed as written)
 
 import json
 import re

@@ -142,18 +142,18 @@ def dry_run(out, items_file=FIXTURE):
     """
     # These imports stay here, in this order: GIS is replaced before the
     # publish scripts import it, and their folder is put on sys.path first.
-    import arcgis.gis  # noqa: PLC0415, RUF100
+    import arcgis.gis  # noqa: PLC0415
 
     # Before the scripts import it: a GIS() anywhere in them now fails the dry
     # run.
     arcgis.gis.GIS = no_sign_in
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     # Their module level needs no sign-in.
-    import agol_dashboard  # noqa: PLC0415, RUF100
-    import agol_layer  # noqa: PLC0415, RUF100
-    import agol_org_categories  # noqa: PLC0415, RUF100
-    import agol_publish  # noqa: PLC0415, RUF100
-    import agol_share  # noqa: PLC0415, RUF100
+    import agol_dashboard  # noqa: PLC0415
+    import agol_layer  # noqa: PLC0415
+    import agol_org_categories  # noqa: PLC0415
+    import agol_publish  # noqa: PLC0415
+    import agol_share  # noqa: PLC0415
 
     with open(items_file, encoding="utf-8") as f:
         listed = json.load(f)

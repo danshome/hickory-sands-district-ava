@@ -67,7 +67,7 @@ class View:
         path = SHOTS / f"{self.name}-{label}.png"
         try:
             self.page.screenshot(path=str(path), timeout=30_000)
-        except Exception as e:  # noqa: BLE001, RUF100
+        except Exception as e:  # noqa: BLE001
             # a closed or hung page: the test's own failure says more
             return f"(no screenshot: {type(e).__name__}: {e})"
         return path
@@ -106,7 +106,7 @@ def site():
             )
             items += page["items"]
             start = page.get("nextStart", -1)
-    except Exception as e:  # noqa: BLE001, RUF100
+    except Exception as e:  # noqa: BLE001
         # whatever stops the read (network, HTTP, JSON) fails the tests
         pytest.fail(
             f"the public group {GROUP_ID} cannot be read without signing in: "

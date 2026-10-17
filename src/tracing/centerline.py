@@ -152,15 +152,17 @@ def disk(rad):
 def line_se(length, theta):
     """Returns a line structuring element `length` cells long at angle theta.
 
-    The line runs through the centre, at (row, col) = (h - t sin(theta),
+    The line runs through the centre, at (row, col) = (h + t sin(theta),
     h + t cos(theta)) for t from -h to h, h = length // 2: theta in radians
-    from the column axis, turning towards row 0.
+    from the column axis, turning towards increasing rows, as on trace()'s
+    grid, whose rows run north and whose theta turns from east towards north
+    (issue #80: it turned towards row 0, mirroring diagonals).
     """
     h = length // 2
     se = np.zeros((2 * h + 1, 2 * h + 1), bool)
     for t in np.linspace(-h, h, 4 * length + 1):
         se[
-            round(h - t * math.sin(theta)),
+            round(h + t * math.sin(theta)),
             round(h + t * math.cos(theta)),
         ] = True
     return se
@@ -171,9 +173,7 @@ def directional_fill(ink, theta, length, nbins=16):
 
     Each cell takes the binary closing of the whole grid by a line_se of
     `length` cells at its own theta (the prior's bearing), binned into nbins
-    directions. On trace()'s grid (rows run north, theta from east towards
-    north) line_se's angle turns the other way, towards row 0, so a diagonal
-    feature is closed along its direction mirrored about the east-west axis.
+    directions, so a dashed road or a broken contour is closed along itself.
     """
     out = ink.copy()
     k = np.floor((theta % math.pi) / math.pi * nbins + 0.5).astype(int) % nbins

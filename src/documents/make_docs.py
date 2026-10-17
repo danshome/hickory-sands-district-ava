@@ -1,6 +1,7 @@
 """Boundary description documents for the proposed boundary: the regulatory text in TTB's style (HTML for PDF/DOCX,
 plain text), a CSV of the steps, and the changes from TTB's published text. Paragraphs (a)-(c) and steps are TTB's words
-(Notice No. 243, 91 FR 52576, 52585-86) except where agreed-steps.json says otherwise."""
+(Notice No. 243, 91 FR 52576, 52585-86) except where agreed-steps.json says otherwise: near Grit, and the two corrections
+to TTB's own wording in steps (49) and (85)."""
 import csv, html, json, os
 ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))   # the repository root
 HERE = os.environ.get("HSD_WORK") or os.path.join(ROOT, "target", "work")   # build work dir (build.sh stages resources/ here)
@@ -47,9 +48,21 @@ assert _re.sub("<[^>]+>", "", corr) == _re.sub(r"^\(90\)\s*", "", S["steps"][89]
 rd91, rd92 = "US Highway 377 to its intersection with State Highway 29", "State Highway 29 to its intersection with U.S. Highway 377"   # (91) and petition step 92
 assert "eastbound lane of " + rd91 + ";" in S["steps"][90]["text"], "road names note out of step with step (91)"
 assert "eastbound lane of " + rd92 + ";" in json.load(open(os.path.join(ROOT, "resources", "boundary", "description", "petition-steps.json")))["92"], "petition step 92 changed"
+# the two corrections to TTB's own wording (issue #38): TTB's step, then the proposed step, the changed words in bold
+TTB = {int(k): v for k, v in json.load(open(os.path.join(ROOT, "resources", "boundary", "description", "ttb-notice-243-steps.json"), encoding="utf-8")).items()}
+FIX = {49: ("1,586-elevation point", "<b>1,586-foot elevation</b> point"), 85: ("1,801-foot summit", "<b>1,802-foot</b> summit")}
+fixed = {n: e(TTB[n]).replace(old, new) for n, (old, new) in FIX.items()}
+for n in FIX:
+    assert TTB[n].count(FIX[n][0]) == 1 and _re.sub("<[^>]+>", "", fixed[n]) == S["steps"][n - 1]["text"], f"correction box out of step with step ({n})"
+    assert S["steps"][n - 1]["change"].startswith("text correction"), n
+same = list(range(1, 10)) + [n for n in range(12, 90) if n not in FIX]      # the table's "unchanged" rows, checked
+assert all(S["steps"][n - 1]["text"] == TTB[n] for n in same), "a step the table calls unchanged differs from TTB's"
+assert all(_re.sub(r"^\(\d+\)", "", S["steps"][n - 1]["text"]) == _re.sub(r"^\(\d+\)", "", TTB[n - 8]) for n in range(101, 105)), "(101)-(104) differ from TTB's (93)-(96)"
 rows = [("(1)–(9)", "TTB’s published text, unchanged", "Notice No. 243, steps (1)–(9)"),
         ("(10)–(11)", "Petition wording (out along the westbound lane of State Highway 29 and US Highway 377); replaces TTB’s steps (10)–(11)", "Petition steps 11–12"),
-        ("(12)–(89)", "TTB’s published text, unchanged", "Notice No. 243, steps (12)–(89)"),
+        ("(12)–(89)", "TTB’s published text, unchanged, except (49) and (85) (next two rows)", "Notice No. 243, steps (12)–(89)"),
+        ("(49)", "TTB’s published text with “-foot” supplied (flagged editorial correction, below): “the marked 1,586-foot elevation point”, where Notice No. 243 says “the marked 1,586-elevation point”. The line does not change.", "Notice No. 243, step (49), corrected"),
+        ("(85)", "TTB’s published text with the summit’s elevation corrected (flagged correction, below): “the marked 1,802-foot summit”, as the Turtle Creek map prints it, where Notice No. 243 says “the marked 1,801-foot summit”. The line does not change.", "Notice No. 243, step (85), corrected"),
         ("(90)", "Petition wording, with a flagged correction (below): names the unnamed, intermittent tributary the petition’s line follows from Honey Creek to the marked 1727", "Petition step 91"),
         ("(91)–(92)", "Petition wording (back along the eastbound lane of US Highway 377, then State Highway 29)", "Petition steps 92–93"),
         ("(93)–(96)", "New: around a lobe of granite northwest of the area near Grit, by a windmill, a fence line and Topaz Lane; replaces petition step 94 (a straight line from the marked 1737 to the marked 1762)", "Proposed; discussed with TTB, Oct. 15, 2026"),
@@ -69,7 +82,9 @@ h = [f"<html><head><meta charset='utf-8'><title>Hickory Sands District AVA: boun
      f"The AVA is {S['sqmi']:.2f} square miles. Prepared by Dan McLaughlin, Robert Clay Vineyards, petitioner.</p>",
      "<p class=small>Every word below is TTB’s published text (Notice No. 243), except steps (10)–(11) and (90)–(100) near Grit, which use the "
      "petition’s own wording (February 2, 2023) written in TTB’s style (such as “US Highway”), with four new steps around a granite lobe and two flagged changes to the "
-     "petition’s wording: the tributary named in (90), and the roads named in (90)–(91) as Notice No. 243 names them. The changes are listed after the text.</p>",
+     "petition’s wording: the tributary named in (90), and the roads named in (90)–(91) as Notice No. 243 names them; and except two flagged corrections to Notice No. 243’s "
+     "own wording, away from the area near Grit: “the marked 1,802-foot summit” in (85), as the Turtle Creek map prints it (the notice: “1,801-foot”), and “the marked "
+     "1,586-foot elevation point” in (49) (the notice: “1,586-elevation point”). The changes are listed after the text.</p>",
      "<h2>Regulatory text</h2>", P("§ 9.___ Hickory Sands District.", "sec"), P(A), P(B)] + \
     [P(m, "ind") for m in MAPS] + [P(C)] + [P(t, "ind") for t in steps] + \
     ["<h2>Changes from TTB’s published text (Notice No. 243)</h2>",
@@ -82,6 +97,17 @@ h = [f"<html><head><meta charset='utf-8'><title>Hickory Sands District AVA: boun
      "<p><b>2. The road names in steps (90)–(91).</b> On the Grit map, State Highway 29 and US Highway 377 share the road from their junction at Roadside Park to Mason. The roads are named as TTB’s published text names them: State Highway 29 northwest of the junction (TTB’s step (10)) and US Highway 377 on the shared road (TTB’s step (11)). The marked 1,727 is on the shared road, 1.5 km southeast of the junction. "
      "So step (90) ends at the 1,727 “at its intersection with US Highway 377” (the petition: “with State Highway 29”), and step (91) goes “along the eastbound lane of " + e(rd91) + "” (the petition: “along the eastbound lane of " + e(rd92) + "”), "
      "back to the same junction. The line is unchanged.</p>",
+     "<h2>The two flagged corrections to Notice No. 243’s own wording</h2>",
+     "<p>Steps (49) and (85) are Notice No. 243’s own steps, away from the area near Grit; they are not the petition’s wording and not part of the change near Grit. "
+     "In each, one word of the notice is corrected. The line, the points and the area do not change.</p>",
+     "<p><b>1. The summit in step (85)</b> (a substantive correction). The step ends at a summit on the Turtle Creek, TX, 1968 map, the step’s end point "
+     "(−99.25899, 30.72613, NAD83). The map prints that summit x1802; Notice No. 243 calls it “the marked 1,801-foot summit”. The 1,801 comes from the "
+     "petition’s written description (its step 86, as filed: “to the marked 1801-foot summit”); the map shows 1802, so the step is corrected to the elevation printed there.</p>",
+     "<div class=box><p><b>Notice No. 243, step (85):</b> " + e(TTB[85]) + "</p><p><b>Step (85), corrected:</b> " + fixed[85] + "</p></div>",
+     "<p><b>2. “-foot” in step (49)</b> (an editorial correction). Notice No. 243 says “to the marked 1,586-elevation point”. Everywhere else in its 96 steps "
+     "an elevation is written “N-foot” (72 times), as TTB writes elevations throughout 27 CFR part 9 (about 500 times, such as “the marked N-foot elevation point”), "
+     "and the petition’s step 50 says “the marked 1,586-foot elevation point”. The Pecan Springs map prints the point x1586.</p>",
+     "<div class=box><p><b>Notice No. 243, step (49):</b> " + e(TTB[49]) + "</p><p><b>Step (49), corrected:</b> " + fixed[49] + "</p></div>",
      "<h2>Notes</h2>",
      "<p>Lane wording. Steps (10)–(11) and (91)–(92) keep the petition’s lane wording. In the GIS layers and on the quadrangles, the westbound-lane line is drawn 30 meters northeast of the highway’s center line and the eastbound-lane line 30 meters southwest of it, along the whole highway stretch, so the boundary is visible beside the road; this is a drawing convention discussed with TTB and does not change the text.</p>",
      "<p>Source of TTB’s words: the Federal Register’s text of Notice No. 243 (document 2026-16670), checked on October 15, 2026 against the official PDF on govinfo.gov and the notice in docket TTB-2026-0005 (same wording). The petition’s words are from the petition as filed in the docket (TTB-2026-0005-0012).</p>",

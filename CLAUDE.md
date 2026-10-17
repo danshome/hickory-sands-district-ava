@@ -15,7 +15,7 @@ mark or junction, a straight line between pins, or a trace of the centre of the 
 
 ## Build: `./build.sh` -> `dist/` (see BUILD.md)
 
-One command from the root, no manual steps: it installs missing tools with Homebrew (GDAL, python@3.14, Chrome), audits
+One command from the root, no manual steps: it installs missing tools with Homebrew (GDAL, poppler, python@3.14, Chrome; no desktop app such as Beyond Compare is used), audits
 every pinned Python package against OSV before installing anything (`src/setup/packages.py`), makes the project's `.venv`
 from the hash-pinned lock `requirements.txt` (compiled from `requirements.in` by `./build.sh upgrade`; never edit the
 `.txt` by hand; all Python runs in `.venv`, `-E -s -B`; nothing global), downloads/verifies the

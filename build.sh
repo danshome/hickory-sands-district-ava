@@ -31,6 +31,7 @@ need_brew() { command -v brew >/dev/null || { echo "Homebrew is needed to instal
 env_setup() {
     step "tools, the security audit, and the project's Python environment (.venv)"
     command -v gdal-config >/dev/null || { need_brew GDAL; brew install gdal; }
+    command -v pdftotext >/dev/null || { need_brew poppler; brew install poppler; }     # the compare-text files (GDAL brings it)
     local base="${HSD_PYTHON:-$(brew --prefix 2>/dev/null || echo /opt/homebrew)/bin/python3.14}"
     [ -x "$base" ] || { need_brew "Python 3.14"; brew install python@3.14; }
     [ -x "$CHROME" ] || { need_brew "Google Chrome"; brew install --cask google-chrome; }

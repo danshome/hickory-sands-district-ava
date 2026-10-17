@@ -1,8 +1,13 @@
-"""Side-by-side comparison for TTB, one row per proposed step that differs from TTB's published text:
-TTB's published text (Notice No. 243) | the original petition (reference, not marked) | proposed text | why.
-Marking compares the proposed text with TTB's text only:
+"""Side-by-side comparison for TTB of the steps that change.
+
+One row per proposed step that differs from TTB's published text: TTB's
+published text (Notice No. 243) | the original petition (reference, not
+marked) | proposed text | why. Marking compares the proposed text with TTB's
+text only:
+
   red strikethrough  TTB's words the proposed text drops
   yellow             words the proposed text adds to TTB's text
+
 ("Proposed", never "final": the text is a proposal until TTB adopts it.)
 Every other step is TTB's published text word for word and is not shown.
 """
@@ -32,8 +37,10 @@ S = {
     s["step"]: s
     for s in load_json(os.path.join(HERE, "agreed-steps.json"))["steps"]
 }
-# TTB's steps word for word from the Federal Register's own text of Notice No. 243 (document 2026-16670, full-text XML,
-# downloaded 2026-10-15; the PDF is byte-identical to our copy and its text identical to the regulations.gov copy)
+# TTB's steps word for word from the Federal Register's own text of Notice
+# No. 243 (document 2026-16670, full-text XML, downloaded 2026-10-15; the PDF
+# is byte-identical to our copy and its text identical to the regulations.gov
+# copy)
 NPRM = {
     int(k): v
     for k, v in load_json(
@@ -43,7 +50,8 @@ NPRM = {
 }
 assert "light-duty" in NPRM[15] and "Mason-McCulloch" in NPRM[19]
 assert "light-duty" in NPRM[91]
-# the petition as filed in the docket (TTB-2026-0005-0012), downloaded 2026-10-15
+# the petition as filed in the docket (TTB-2026-0005-0012), downloaded
+# 2026-10-15
 PET = {
     int(k): v
     for k, v in load_json(
@@ -69,11 +77,26 @@ TOK = re.compile(
 
 
 def tok(t):
+    """The tokens of T: words, with inner punctuation, and single symbols.
+
+    A word keeps the dots, commas, apostrophes (straight or curly) and hyphens
+    inside it ("1,727-foot", "U.S."); any other character is a token of its
+    own.
+    """
     return TOK.findall(t)
 
 
 def render(pieces):
-    """pieces: [(token, cls)] -> html with normal spacing; consecutive tokens of one class share one tag."""
+    """Marked tokens as HTML, spaced as normal text.
+
+    Consecutive tokens of one class share one tag.
+
+    Args:
+        pieces: [(token, cls)]: cls is a tag name (del, ins) or None.
+
+    Returns:
+        The HTML.
+    """
     out = []
     prev = None
     for t, c in pieces:
@@ -98,7 +121,7 @@ def render(pieces):
 
 
 def marks(src, final):
-    """src words not in final -> struck; returns html for src."""
+    """SRC as HTML, its words that FINAL does not have struck (<del>)."""
     a, b = tok(src), tok(final)
     pieces = []
     for op, i1, i2, _j1, _j2 in difflib.SequenceMatcher(
@@ -110,7 +133,7 @@ def marks(src, final):
 
 
 def added(final, ttb):
-    """final words not in TTB's text -> <ins>; plain otherwise."""
+    """FINAL as HTML, its words that TTB's text TTB does not have in <ins>."""
     f = tok(final)
     keep = [False] * len(f)
     if ttb:
@@ -429,7 +452,8 @@ for k in (93, 94, 95, 96):
     )
 
 
-# the proposed column, stripped of marking, is exactly the proposed text; TTB's column is exactly TTB's text
+# the proposed column, stripped of marking, is exactly the proposed text;
+# TTB's column is exactly TTB's text
 def strip_tags(h):
     """The text of HTML H: tags dropped, entities unescaped."""
     return html.unescape(re.sub("<[^>]+>", "", h))

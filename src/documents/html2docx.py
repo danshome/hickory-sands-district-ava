@@ -1,10 +1,17 @@
-"""Minimal HTML -> DOCX converter for the response document (stdlib only).
+"""Minimal HTML -> DOCX converter for the package's documents (stdlib only).
 
-Why not `textutil -convert docx`: on this Mac, textutil's DOCX writer drops <table> structure (cells become
-plain paragraphs) and drops <img> entirely, and the response depends on its summary table and exhibit maps.
-This converter handles exactly the subset the response HTML uses: h1-h3, p, div.(note|sig|pagebreak|quote),
-blockquote, ul/ol/li, table/tr/th/td (colspan), img (width in inches via data-w), b/strong, i/em, u, a, br, sup, span.
-Usage: python3 html2docx.py in.html out.docx
+build.sh runs it on the boundary description and the side-by-side comparison.
+Why not `textutil -convert docx`: on a Mac, textutil's DOCX writer drops
+<table> structure (cells become plain paragraphs) and drops <img> entirely,
+and the documents depend on their tables. This converter handles exactly the
+subset of HTML the documents use: h1-h3; p (classes note, small, center);
+blockquote; div.pagebreak; ul/ol/li; table/tr/th/td (colspan, the columns'
+widths in inches via data-cols, cell shading via data-shade); img (width in
+inches via data-w); b/strong, i/em, u, sup, small, del/s, ins, mark, red (red
+bold), a and br. A page marked <meta name="orientation" content="landscape">
+is set landscape.
+
+Usage: python3 html2docx.py in.html out.docx title author footer
 """
 
 from html.parser import HTMLParser
@@ -19,6 +26,7 @@ EMU = 914400
 
 
 def png_size(p):
+    """The (width, height) in pixels of PNG file P, from its IHDR chunk."""
     with open(p, "rb") as f:
         d = f.read(24)
     w, h = struct.unpack(">II", d[16:24])
@@ -26,6 +34,11 @@ def png_size(p):
 
 
 def jpeg_size(p):
+    """The (width, height) in pixels of JPEG file P, from its SOF marker.
+
+    Raises:
+        ValueError: The file has no SOF0-SOF2 marker.
+    """
     with open(p, "rb") as f:
         d = f.read()
     i = 2
@@ -40,13 +53,23 @@ def jpeg_size(p):
 
 
 def img_size(p):
+    """The (width, height) in pixels of image P: JPEG by its name, else PNG."""
     return (
         jpeg_size(p) if p.lower().endswith((".jpg", ".jpeg")) else png_size(p)
     )
 
 
 class Conv(HTMLParser):
+    """Parses the HTML into WordprocessingML paragraphs, tables and images.
+
+    Attributes:
+        base: The HTML file's folder, for the images' relative paths.
+        body: The document body's XML pieces, in order.
+        media: (relationship id, name in the DOCX, path) of each image.
+    """
+
     def __init__(self, base):
+        """Starts an empty document whose images are found relative to BASE."""
         super().__init__(convert_charrefs=True)
         self.base = base
         self.body = []
@@ -66,12 +89,14 @@ class Conv(HTMLParser):
 
     # ---- paragraph handling
     def start_par(self, style=None, extra=""):
+        """Ends the open paragraph and opens one of STYLE (EXTRA: more pPr)."""
         self.flush()
         self.runs = []
         self.pstyle = style
         self.ppr_extra = extra
 
     def flush(self):
+        """Ends the open paragraph, if any, into the open cell or the body."""
         if self.runs is None:
             return
         ppr = ""
@@ -85,6 +110,7 @@ class Conv(HTMLParser):
         self.ppr_extra = ""
 
     def run(self, text):
+        """Adds TEXT as a run, formatted by the tags open around it."""
         if self.runs is None:
             self.start_par(self.default_style())
         rpr = ""
@@ -114,12 +140,14 @@ class Conv(HTMLParser):
         )
 
     def default_style(self):
+        """The style of a paragraph with no tag of its own: in a cell or not."""
         if self.cell is not None:
             return "TableText"
         return "BodyText"
 
     # ---- parser callbacks
     def handle_starttag(self, tag, a):
+        """Opens a paragraph, list, table, cell or format; places an image."""
         a = dict(a)
         cls = a.get("class", "")
         if tag in ("style", "script", "head", "title"):
@@ -236,6 +264,7 @@ class Conv(HTMLParser):
             self.runs.append(drawing)
 
     def handle_endtag(self, tag):
+        """Closes what the matching start tag opened."""
         if tag in ("style", "script", "head", "title"):
             self.skip -= 1
             return
@@ -288,12 +317,14 @@ class Conv(HTMLParser):
             self.table = None
 
     def _pop(self, f):
+        """Removes the innermost open format F."""
         for i in range(len(self.fmt) - 1, -1, -1):
             if self.fmt[i] == f:
                 del self.fmt[i]
                 return
 
     def handle_data(self, d):
+        """Adds text, its white space collapsed as a browser would."""
         if self.skip:
             return
         if self.runs is None and self.cell is None and not d.strip():
@@ -307,6 +338,16 @@ class Conv(HTMLParser):
             self.run(d)
 
     def table_xml(self, t):
+        """A table's XML: fixed column widths, grey borders, header row.
+
+        Args:
+            t: The table: {"rows": [[(cell XML pieces, colspan, shade)]],
+                "widths": [column widths in inches, or none for equal
+                columns 6.5 inches in all]}.
+
+        Returns:
+            The <w:tbl> and a short paragraph after it.
+        """
         ncols = max(sum(s for _, s, _ in r) for r in t["rows"])
         widths = t["widths"] or [6.5 / ncols] * ncols
         grid = "".join(f'<w:gridCol w:w="{int(w * 1440)}"/>' for w in widths)
@@ -433,6 +474,7 @@ NUMBERING = (
 
 
 def footer_xml(text):
+    """The footer: the docket number, "Page N of M" and TEXT, in 8.5 pt."""
     return (
         '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
         "<w:ftr"
@@ -464,6 +506,15 @@ def footer_xml(text):
 
 
 def convert(src, dst, footer, title="", author=""):
+    """Converts the HTML file SRC to the DOCX file DST.
+
+    Args:
+        src: The HTML file; its images are read relative to its folder.
+        dst: The DOCX file to write.
+        footer: The text at the right of every page's footer.
+        title: The document's title (its properties).
+        author: The document's author (its properties).
+    """
     c = Conv(os.path.dirname(os.path.abspath(src)))
     with open(src, encoding="utf-8") as f:
         text = f.read()

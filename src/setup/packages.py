@@ -5,7 +5,7 @@ only, so it runs before anything is installed:
                                       (https://osv.dev: PyPA advisories, GitHub advisories, CVEs). Exit 1 if any
                                       package has a known vulnerability, 2 if the database cannot be reached.
   packages.py pick LOCK NAME [...]    print the entries (pin + hashes) for NAME... from LOCK, for a first-stage install
-"""
+"""  # noqa: D205, D415, E501, RUF100 (the usage message, printed as written)
 
 import json
 import re
@@ -17,7 +17,15 @@ OSV = "https://api.osv.dev/v1"
 
 
 def entries(path):
-    """{normalised name: (name, version, [lines of the entry])} from a pip-compile lock file"""
+    """The pinned packages of a pip-compile lock file.
+
+    Args:
+        path: The lock file (requirements.txt or requirements-dev.txt).
+
+    Returns:
+        {normalised name: (name, version, [the entry's lines])}: the pin line
+        and its hash and comment lines, without their newlines.
+    """
     out, cur = {}, None
     with open(path, encoding="utf-8") as f:
         for line in f:
@@ -37,6 +45,7 @@ def entries(path):
 
 
 def post(url, body):
+    """POSTs BODY as JSON to URL and returns the JSON reply (60 s timeout)."""
     req = urllib.request.Request(
         url,
         data=json.dumps(body).encode(),
@@ -47,11 +56,24 @@ def post(url, body):
 
 
 def get(url):
+    """GETs URL and returns the JSON reply (60 s timeout)."""
     with urllib.request.urlopen(url, timeout=60) as r:
         return json.load(r)
 
 
 def audit(locks):
+    """Checks every package pinned in LOCKS against the OSV database.
+
+    Prints one line when none has a known vulnerability; otherwise each
+    vulnerability (id, CVEs, summary, fixed versions) on stderr.
+
+    Args:
+        locks: The lock files' paths.
+
+    Returns:
+        The exit code: 0 no known vulnerability, 1 at least one, 2 the
+        database cannot be reached.
+    """
     pkgs = {}
     for lock in locks:
         for k, (name, version, _) in entries(lock).items():
@@ -127,6 +149,18 @@ def audit(locks):
 
 
 def pick(lock, names):
+    """Prints the entries (pin and hashes) of NAMES from LOCK.
+
+    For a first-stage pip install; exits with a message if a name is not
+    pinned in LOCK.
+
+    Args:
+        lock: The lock file's path.
+        names: The package names, in any spelling pip accepts.
+
+    Returns:
+        0, the exit code.
+    """
     e = entries(lock)
     for n in names:
         k = re.sub(r"[-_.]+", "-", n).lower()

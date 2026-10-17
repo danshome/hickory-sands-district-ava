@@ -1,8 +1,10 @@
-"""Download the 13 designated USGS 1:24,000 quadrangles listed in quads-manifest.csv
-(GeoTIFF and GeoPDF), verify each against its recorded MD5, and lay them out the way the
-QGIS projects and the cropped VRTs expect:
+"""Downloads the 13 USGS quadrangles that the description names.
 
-    resources/quads/geotiff/<name>.tif.zip   (one GeoTIFF per zip; read via /vsizip/)
+Downloads the 13 designated USGS 1:24,000 quadrangles listed in
+quads-manifest.csv (GeoTIFF and GeoPDF), verifies each against its recorded
+MD5, and lays them out the way the QGIS projects and the cropped VRTs expect:
+
+    resources/quads/geotiff/<name>.tif.zip   (one GeoTIFF per zip; /vsizip/)
     resources/quads/geopdf/<name>.pdf
 
 ./build.sh runs it whenever a quad is missing or altered.
@@ -25,6 +27,7 @@ PDF_DIR = os.path.join(ROOT, "resources", "quads", "geopdf")
 
 
 def md5_of(path):
+    """The MD5 of a file, as USGS publishes it (a checksum, not security)."""
     h = hashlib.md5(usedforsecurity=False)
     with open(path, "rb") as f:
         for chunk in iter(lambda: f.read(1 << 20), b""):
@@ -33,6 +36,7 @@ def md5_of(path):
 
 
 def md5_of_zip_member(zpath, member):
+    """The MD5 of file MEMBER inside zip ZPATH, read without extracting it."""
     h = hashlib.md5(usedforsecurity=False)
     with zipfile.ZipFile(zpath) as z, z.open(member) as f:
         for chunk in iter(lambda: f.read(1 << 20), b""):
@@ -41,6 +45,7 @@ def md5_of_zip_member(zpath, member):
 
 
 def download(url, dst):
+    """Downloads URL to the file DST, 1 MiB at a time (10-minute timeout)."""
     req = urllib.request.Request(
         url, headers={"User-Agent": "hickory-sands-ava-fetch/1.0"}
     )
@@ -50,6 +55,11 @@ def download(url, dst):
 
 
 def main():
+    """Fetches every quad that is missing or fails its MD5; exits 1 on a miss.
+
+    A GeoTIFF is downloaded to a temporary folder, checked, then stored in its
+    own zip; a GeoPDF is downloaded in place, then checked.
+    """
     os.makedirs(TIF_DIR, exist_ok=True)
     os.makedirs(PDF_DIR, exist_ok=True)
     failures = 0

@@ -1,7 +1,10 @@
-"""Boundary description documents for the proposed boundary: the regulatory text in TTB's style (HTML for PDF/DOCX,
-plain text), a CSV of the steps, and the changes from TTB's published text. Paragraphs (a)-(c) and steps are TTB's words
-(Notice No. 243, 91 FR 52576, 52585-86) except where agreed-steps.json says otherwise: near Grit, and the two corrections
-to TTB's own wording in steps (49) and (85).
+"""Boundary description documents for the proposed boundary.
+
+The regulatory text in TTB's style (HTML for PDF/DOCX, plain text), a CSV of
+the steps, and the changes from TTB's published text. Paragraphs (a)-(c) and
+the steps are TTB's words (Notice No. 243, 91 FR 52576, 52585-86) except where
+agreed-steps.json says otherwise: near Grit, and the two corrections to TTB's
+own wording in steps (49) and (85).
 """
 
 import csv
@@ -148,7 +151,8 @@ assert "eastbound lane of " + rd91 + ";" in S["steps"][90]["text"], (
 assert "eastbound lane of " + rd92 + ";" in PETITION["92"], (
     "petition step 92 changed"
 )
-# the two corrections to TTB's own wording (issue #38): TTB's step, then the proposed step, the changed words in bold
+# the two corrections to TTB's own wording (issue #38): TTB's step, then the
+# proposed step, the changed words in bold
 TTB = {
     int(k): v
     for k, v in load_json(

@@ -7,7 +7,7 @@ All coordinates are NAD83 (EPSG:4269), longitude first.
 
 | file | what it is | read by |
 |---|---|---|
-| `ttb-notice-243-steps.json` | TTB's 96 steps word for word, from the Federal Register's full-text XML of Notice No. 243 | boundary, description, side-by-side, notice copy |
+| `ttb-notice-243-steps.json` | TTB's 96 steps word for word, from the Federal Register's full-text XML of Notice No. 243 (kept as `resources/ttb/federal-register-2026-16670-full-text.xml`; `src/checks/check_step_text.py` holds them identical, character for character, on every commit and build) | boundary, description, side-by-side, notice copy |
 | `petition-steps.json` | the petition's steps used for the proposed Grit wording | boundary, description |
 | `petition-steps-docket.json` | the petition's description as filed in the docket | side-by-side |
 

@@ -65,11 +65,13 @@ repos:
         entry: .venv/bin/trailing-whitespace-fixer --markdown-linebreak-ext=md
         language: system
         types: [text]
+        exclude: ^resources/ttb/federal-register-.*\.xml$   # the Federal Register's file, kept byte for byte
       - id: end-of-file-fixer
         name: files end with one newline
         entry: .venv/bin/end-of-file-fixer
         language: system
         types: [text]
+        exclude: ^resources/ttb/federal-register-.*\.xml$   # the Federal Register's file, kept byte for byte
       - id: check-json
         name: JSON and GeoJSON parse
         entry: .venv/bin/check-json
@@ -108,6 +110,14 @@ repos:
         entry: .venv/bin/python -E -s -B src/checks/check_private_words.py
         language: system
         types: [text]
+        exclude: ^resources/ttb/federal-register-.*\.xml$   # TTB's published notice, verbatim: it names TTB's contact (allowed)
+
+      - id: step-text
+        name: step text uses the Federal Register's characters; TTB's steps identical to the Federal Register
+        entry: .venv/bin/python -E -s -B src/checks/check_step_text.py
+        language: system
+        files: ^(resources/boundary/description/.*\.json|resources/ttb/federal-register-.*\.xml|src/boundary/build_agreed\.py|src/checks/check_step_text\.py)$
+        pass_filenames: false
 
       - id: audit-packages
         name: no Python package with a known vulnerability (OSV; when the lock files change)

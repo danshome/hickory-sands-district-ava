@@ -13,7 +13,8 @@ from the USGS SGMC units shifted to the outcrops (resources/geology), and the st
 
 Usage (the project .venv, -E -s): grit_change.py --line LINE.geojson --oct14 STEP-LINES.geojson --geology GPKG --out-dir DIR
 Outputs: grit-change-lines-EPSG4269.geojson, grit-change-areas-EPSG4269.geojson, grit-change-stats.json (NAD83, EPSG:4269;
-areas in NAD83 / Conus Albers, EPSG:5070)."""
+areas in NAD83 / Conus Albers, EPSG:5070, an equal-area projection; line lengths geodesic on GRS 1980, as in the
+boundary layer)."""
 import argparse, json, os
 from osgeo import ogr, osr
 ogr.UseExceptions()
@@ -28,6 +29,12 @@ def tr(src, dst):
 TO_M, TO_LL = tr(4269, 5070), tr(5070, 4269)
 
 def flat(c): return [p for part in c for p in part] if isinstance(c[0][0], list) else c
+
+def glen(coords):   # geodesic length on GRS 1980 (NAD83), metres, as the boundary layer's step lengths (issue #35)
+    g = ogr.Geometry(ogr.wkbLineString)
+    for x, y in coords: g.AddPoint_2D(x, y)
+    ll = osr.SpatialReference(); ll.ImportFromEPSG(4269); ll.SetAxisMappingStrategy(osr.OAMS_TRADITIONAL_GIS_ORDER)
+    g.AssignSpatialReference(ll); return g.GeodesicLength()
 
 def line(coords):
     g = ogr.Geometry(ogr.wkbLineString)
@@ -86,27 +93,29 @@ def main():
     def add(what, why, g, side, our_set):
         for p in pieces(g, a.min_acres):
             ours_along, ttb_along = along(p, our_set), along(p, ttb_lines)
-            props = {"what": what, "why": why, "side": side, "acres": round(p.GetArea() / SQM_PER_ACRE, 1),
-                     "granite_acres": round(p.Intersection(granite).GetArea() / SQM_PER_ACRE, 1),
-                     "sandstone_acres": round(p.Intersection(sandstone).GetArea() / SQM_PER_ACRE, 1),
+            exact = {"acres": p.GetArea() / SQM_PER_ACRE, "granite_acres": p.Intersection(granite).GetArea() / SQM_PER_ACRE,
+                     "sandstone_acres": p.Intersection(sandstone).GetArea() / SQM_PER_ACRE}
+            props = {"what": what, "why": why, "side": side, **{k: round(v, 2) for k, v in exact.items()},
                      "revision_steps": ",".join(map(str, ours_along)), "notice_steps": ",".join(map(str, ttb_along))}
             if what == "petition, not Notice No. 243" and ttb_along == [10, 11]:
                 props["what"], props["why"] = "lane wording", "the petition's westbound lane of the highway, 30 m from the center line Notice No. 243 follows"
             areas.append({"type": "Feature", "geometry": geojson_ll(p), "properties": props})
             s = stats.setdefault(props["what"], {"pieces": 0, "acres": 0.0, "granite_acres": 0.0, "sandstone_acres": 0.0})
             s["pieces"] += 1
-            for k in ("acres", "granite_acres", "sandstone_acres"): s[k] = round(s[k] + props[k], 1)
+            for k, v in exact.items(): s[k] += v   # summed unrounded, rounded once below (issue #33: no double rounding)
     add("Notice No. 243, not the petition", "in Notice No. 243's text; the petition leaves it out", ttb.Difference(petition), "left out", petition_lines)
     add("petition, not Notice No. 243", "in the petition; Notice No. 243's text leaves it out", petition.Difference(ttb), "put in", petition_lines)
     add("granite lobe", "also left out now: new steps (93)-(96) go around it instead of the petition's straight line", petition.Difference(ours), "left out", ours_lines)
     add("put back", "put back: between the marked 1,737 and the windmill, inside the petition's straight line", ours.Difference(petition), "put in", ours_lines)
+    for s in stats.values():
+        for k in ("acres", "granite_acres", "sandstone_acres"): s[k] = round(s[k], 2)
 
     # ---- lines
     lines = []
     def add_line(role, label, steps, coords, src):
         g = line(flat(coords))
         lines.append({"type": "Feature", "geometry": geojson_ll(g), "properties": {
-            "role": role, "label": label, "steps": steps, "length_m": round(g.Length()), "source": src}})
+            "role": role, "label": label, "steps": steps, "length_m": round(glen(flat(coords))), "source": src}})
     for s in TTB_STEPS:
         add_line("replaced: a Notice No. 243 step", f"Notice ({s})", str(s), o14[s]["geometry"]["coordinates"],
                  "Notice No. 243's text, as drawn by the petitioner on the USGS maps")

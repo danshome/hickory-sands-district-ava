@@ -141,7 +141,12 @@ Three workflows in `.github/workflows/`, every action pinned to a commit:
 git tag v2026.10.20 && git push origin v2026.10.20
 ```
 
-Publishing to ArcGIS Online is not in Actions: it stays `./build.sh publish`, run by Dan.
+Publishing to ArcGIS Online is not in Actions: it stays `./build.sh publish`, run by Dan. Changes only to `src/publish/`
+do not start a Mac build (that code never touches `dist/`).
+
+The runners install whatever GDAL Homebrew has that day, and the build stops when it differs from the `GDAL==` pin in
+the lock (the Python bindings must match the library). When Homebrew moves GDAL on, every build stops with that message
+until the lock follows: `brew upgrade gdal`, then `./build.sh upgrade` on the Mac, in a pull request.
 
 ## Changing the boundary
 

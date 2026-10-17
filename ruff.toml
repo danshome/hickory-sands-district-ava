@@ -1,9 +1,18 @@
-# ruff: Python lint for src/ and the skills, run by the pre-commit hook and ./build.sh lint.
-# Bug-finding rules: syntax errors, pyflakes (undefined names, unused imports/variables, ...), comparison mistakes,
-# bare except, pylint errors. The code's dense style (several statements on a line, one-line ifs, lambdas) is
-# deliberate, so the pycodestyle style rules and the formatter are not used.
+# ruff: the Python formatter and linter for src/, tests/ and the skills, run by the pre-commit hooks and ./build.sh lint.
+# The code follows the Google Python Style Guide (https://google.github.io/styleguide/pyguide.html): 80-column lines,
+# 4-space indents, formatted by `ruff format` (Black's style, as the guide allows). .editorconfig matches these settings.
 target-version = "py314"
+line-length = 80
+cache-dir = "target/ruff-cache"
 extend-exclude = ["tobedeleted", "target", "dist"]
+
+[format]
+exclude = ["*.md"]   # Markdown is prose: its code examples (the skills' recipes) stay as written
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"
+skip-magic-trailing-comma = false
+docstring-code-format = true
 
 [lint]
 select = ["E9", "F", "E711", "E712", "E721", "E722", "PLE"]

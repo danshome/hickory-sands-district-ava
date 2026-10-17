@@ -36,7 +36,15 @@ SAME_TEXT = "the same text, drawn differently"   # the cause agol_layer.py gives
 CREDIT = "Dan McLaughlin, Robert Clay Vineyards (petitioner)"
 CC0 = ("CC0 1.0 Universal (public domain dedication): no rights reserved. TTB, its contractors and anyone else may copy, "
        "change and use this for any purpose without permission or attribution. https://creativecommons.org/publicdomain/zero/1.0/")
+# the dashboard shows more than the petitioner's work, so its license and credits name each part (QA #30)
+LIC = ("The dashboard and the petitioner's layers (the proposed revision, the differences, the change near Grit, the shift of the "
+       "geology): " + CC0 + " The step text it shows is Notice No. 243's, a U.S. Government work (public domain), except the "
+       "proposed changes near Grit (CC0, as above). The AVA Map Explorer polygon (TTB's AVAs_Production layer): U.S. Government "
+       "work (public domain). USGS quadrangles and USGS SGMC geology: public domain. Basemaps: Esri, under Esri's terms of use.")
+CREDITS = (CREDIT + "; TTB (Notice No. 243 step text, AVAs_Production layer); USGS (quadrangles, via Esri USA Historical Topo "
+           "Maps; SGMC geology); basemaps: Esri")
 TAGS = ["Hickory Sands District", "AVA", "TTB", "Notice No. 243", "TTB-2026-0005", "proposed boundary", "dashboard"]
+CULTURE = "en-us"
 ABOUT = ("<p>Hickory Sands District AVA (Docket No. TTB-2026-0005, Notice No. 243, 91 FR 52576): the boundary the petitioners "
          "propose, with the changes discussed with TTB on October 15, 2026. Prepared by Dan McLaughlin, Robert Clay Vineyards "
          "(petitioner).</p>")
@@ -106,11 +114,12 @@ documents_html = "".join(parts)
 
 quads = {}
 for t, it in docs:
-    m = re.match(r"5[ab] .*\((GeoPDF|GeoTIFF)\) - (.+), TX \((\d{4})\)$", t)
+    m = re.match(r"5[ab] .*\((GeoPDF|GeoTIFF)\) - (.+), TX \((\d{4}[^)]*)\)$", t)   # "(1962, photorevised 1982)", as paragraph (b)
     if m:
         quads.setdefault((m.group(2), m.group(3)), {})[m.group(1)] = it
 rows = "".join(f'<tr><td style="padding:3px 6px">{html.escape(q)}, TX ({y})</td>'
-               f'<td style="padding:3px 6px">{link(f["GeoPDF"], "GeoPDF")}</td><td style="padding:3px 6px">{link(f["GeoTIFF"], "GeoTIFF")}</td>'
+               f'<td style="padding:3px 6px;white-space:nowrap">{link(f["GeoPDF"], "GeoPDF")}</td>'   # never "GeoPD / F" (QA #47)
+               f'<td style="padding:3px 6px;white-space:nowrap">{link(f["GeoTIFF"], "GeoTIFF")}</td>'
                f'<td style="padding:3px 6px">{spans(s["step"] for s in steps if s["quad"] == q) or "-"}</td></tr>'
                for (q, y), f in sorted(quads.items()))
 quads_html = ('<div style="font-size:13px"><p>The 13 USGS 1:24,000 quadrangles cited in paragraph (b), each with the boundary '
@@ -181,9 +190,12 @@ def grow(key, label):
 def key(color, dash, label):
     return (f'<li><span style="display:inline-block;width:26px;border-top:4px {"dashed" if dash else "solid"} {color};vertical-align:middle;'
             f'margin-right:6px"></span>{label}</li>')
+reworded = [s["step"] for s in steps if "unchanged" not in (s["change"] or "")]   # as the indicator counts them
 grit_html = ('<div style="font-size:13px;line-height:1.45"><p>Near Grit the proposed text puts back the petition\'s wording in place of '
              "Notice No. 243's steps (10)-(11) and (90)-(92), and adds steps (93)-(96) around a lobe of granite. Turn on <em>The change near Grit</em> in "
              "the map's layer list (on by default) to see each line and area.</p>"
+             f"<p>All {len(reworded)} steps worded differently from Notice No. 243 (<em>Steps reworded</em>, at the top) are here, "
+             f"near Grit: {spans(reworded)}. Every other step is Notice No. 243's text word for word.</p>"
              '<p style="margin:10px 0 2px"><strong>The lines</strong></p><ul style="list-style:none;padding-left:4px;margin:0">'
              + key("#005aff", True, "Replaced: Notice No. 243 steps (10)-(11), (90)-(92), as drawn by the petitioner on the USGS maps")
              + key("#008c3c", False, "Put back: the petition's wording, (10)-(11), (90)-(92), (97)-(100)")
@@ -220,13 +232,13 @@ count = {"onStatisticField": OID, "statisticType": "count", "outStatisticFieldNa
 changed = {"type": "filterGroup", "condition": "AND", "rules": [{"type": "filterRule", "field": {"name": "change", "type": "string"},
                                                                   "operator": "not_contains", "constraint": {"type": "value", "value": "unchanged"}}]}
 indicators = [
-    indicator(IND["area"], "AVA area", AREA_OP, "AVA as proposed", "square miles (GRS 1980)",
+    indicator(IND["area"], "AVA area", AREA_OP, "AVA as proposed", "sq mi (GRS 1980)",
               {"onStatisticField": "area_sqmi", "statisticType": "max", "outStatisticFieldName": "value"}, digits=2),
     indicator(IND["steps"], "Steps shown", LINE_OP, "Steps shown", f"of {len(steps)}", count),
-    indicator(IND["changed"], "Steps worded differently from Notice No. 243", LINE_OP, "Reworded steps", "differ from Notice No. 243, all near Grit", count, flt=changed),
-    indicator(IND["places"], "Big differences", RINGS_OP, "Big differences from the Map Explorer polygon", f"{STATS['big_m']:.0f} m or more apart",
+    indicator(IND["changed"], "Steps worded differently from Notice No. 243", LINE_OP, "Steps reworded", "from Notice No. 243", count, flt=changed),
+    indicator(IND["places"], "Big differences", RINGS_OP, f"Big differences ({STATS['big_m']:.0f} m+)", "from the Map Explorer polygon",
               {"onStatisticField": RINGS_OID, "statisticType": "count", "outStatisticFieldName": "value"}),
-    indicator(IND["acres"], "Land between the boundaries", ALL_OP, "Land between the two boundaries", "acres, same text drawn differently",
+    indicator(IND["acres"], "Land between the boundaries", ALL_OP, "Acres between the boundaries", "same text, drawn differently",
               {"onStatisticField": "acres", "statisticType": "sum", "outStatisticFieldName": "value"},
               flt={"type": "filterGroup", "condition": "AND", "rules": [{"type": "filterRule", "field": {"name": "cause", "type": "string"},
                                                                          "operator": "equal", "constraint": {"type": "value", "value": SAME_TEXT}}]})]
@@ -285,23 +297,26 @@ selector = {"id": SELECT, "dashboardItemType": "selector", "name": "Steps to sho
                 target(t, fieldMap=[{"sourceName": "filterField", "targetName": "change"}])
                 for t in (LIST + "#main", f"{MAP}#{LINE_OP}", IND["steps"] + "#main", IND["changed"] + "#main")]}]}]}
 
+COLS = (0.3, 0.42, 0.28)    # left, map, right: shares of the width (the left was 0.27, the map 0.45: QA #45)
+ROWS = (0.2, 0.18, 0.62)    # left column: indicators, indicators, tabs: shares of the height (were 0.16, 0.15, 0.69)
+assert abs(sum(COLS) - 1) < 1e-9 and abs(sum(ROWS) - 1) < 1e-9
 def item(id_, w=1, h=1, **kw):
     return {"type": "itemLayoutElement", "id": id_, "width": w, "height": h, **kw}
 def stack(orientation, elements, name, w=1, h=1):
     return {"type": "stackLayoutElement", "orientation": orientation, "id": wid("layout-" + name), "width": w, "height": h, "elements": elements}
 layout = {"type": "dockingLayout", "rootElement": stack("col", [
     stack("row", [
-        stack("col", [item(IND[k], 1 / 3) for k in ("area", "steps", "changed")], "indicators", h=0.16),
-        stack("col", [item(IND[k], 0.5) for k in ("places", "acres")], "indicators-2", h=0.15),
-        {"type": "tabsLayoutElement", "id": wid("layout-tabs-left"), "width": 1, "height": 0.69, "elements": [
+        stack("col", [item(IND[k], 1 / 3) for k in ("area", "steps", "changed")], "indicators", h=ROWS[0]),
+        stack("col", [item(IND[k], 0.5) for k in ("places", "acres")], "indicators-2", h=ROWS[1]),
+        {"type": "tabsLayoutElement", "id": wid("layout-tabs-left"), "width": 1, "height": ROWS[2], "elements": [
             item(TXT["documents"], tabName="Documents"), item(TXT["grit"], tabName="The change near Grit"),
             item(TXT["about"], tabName="What changes"), item(TXT["quads"], tabName="USGS quadrangles")]}],
-        "left", w=0.27),
-    item(MAP, 0.45),
+        "left", w=COLS[0]),
+    item(MAP, COLS[1]),
     stack("row", [
         {"type": "tabsLayoutElement", "id": wid("layout-tabs-right"), "width": 1, "height": 0.6, "elements": [
             item(LIST, tabName="Steps"), item(DIFFS, tabName="Big differences"), item(ALLD, tabName="All differences")]},
-        item(DETAILS, h=0.4)], "right", w=0.28)], "root")}
+        item(DETAILS, h=0.4)], "right", w=COLS[2])], "root")}
 
 header = {"type": "header", "dashboardItemType": "panel", "title": "Hickory Sands District AVA: the boundary as proposed to TTB",
           "subtitle": "Docket No. TTB-2026-0005, Notice No. 243 (91 FR 52576) - changes discussed with TTB on October 15, 2026 - "
@@ -327,12 +342,12 @@ props = {"snippet": "Start here: the proposed revision on the 13 USGS quadrangle
          "description": ABOUT + "<p>One page for the whole group: pick a step to see it on the map and read it; the differences from "
                         "the AVA Map Explorer polygon are listed and ringed on the map; the tabs link every document, the GIS data and the "
                         "13 USGS quadrangles.</p>",
-         "tags": ",".join(TAGS), "licenseInfo": CC0, "accessInformation": CREDIT}
+         "tags": ",".join(TAGS), "licenseInfo": LIC, "accessInformation": CREDITS, "culture": CULTURE}
 assert "agree" not in json.dumps(props).lower()
 db = items.get(TITLE)
 if db is None:
     db = folder.add(ItemProperties(title=TITLE, item_type=ItemTypeEnum.DASHBOARD, tags=TAGS, snippet=props["snippet"],
-                                   description=props["description"], license_info=CC0, access_information=CREDIT,
+                                   description=props["description"], license_info=LIC, access_information=CREDITS, culture=CULTURE,
                                    type_keywords=["ArcGIS Dashboards", "Dashboard", "Operations Dashboard"]), text=text).result()
     how = "added"
 else:

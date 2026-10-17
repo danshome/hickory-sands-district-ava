@@ -31,7 +31,8 @@ Script: `src/review/compare_ttb.py`. The live query is read-only (`/query?where=
    stretch joins the ours-side stretch its nearest-ours samples fall in. Unpaired stretches join a neighbour only within
    min(max-apart, 100 m) + 60 m, so one big intended change (a lobe) cannot swallow a real difference next to it.
 5. Each place: a circle (short) or an outline 40 m round both lines (long stretches); our steps involved; max distance
-   apart; length; acres ours adds / drops (symmetric difference inside the ring); kind (straight line / follows a feature,
+   apart; length; acres in the proposed revision only / in the Map Explorer polygon only (symmetric difference inside
+   the ring); kind (straight line / follows a feature,
    from the step text); each pin's distance to TTB's nearest vertex (a straight-line step moves whole when its pin
    differs); status = "intended: <change>" only when EVERY step in it is changed in the register (proposed-steps.json
    `change` not starting "unchanged"), "CHECK (steps .. unchanged; partly intended: ..)" when mixed, else **CHECK**.

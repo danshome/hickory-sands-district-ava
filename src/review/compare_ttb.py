@@ -1,23 +1,24 @@
-"""compare_ttb.py: where our boundary differs from TTB's published AVA polygon.
+"""compare_ttb.py: where the proposed revision differs from the Map Explorer.
 
 It rings each place where the two differ by more than hand-drawing noise, for
 a look in QGIS.
 
-TTB's polygon (AVAs_Production) was digitized by hand; ours follows the centre
-of the printed ink. So the two always differ a little everywhere. This
-measures that everyday difference from the data itself (distance from every
-2 m of each boundary to the other boundary), sets the noise threshold from it
-(median + K x MAD, never below --min-threshold), and rings every stretch that
-is farther apart than that, from either side (ours away from TTB, or TTB away
-from ours). Each ring says which of our steps it touches, how far apart the
-lines are, the acres of the pieces of land between the two lines that it
-touches (whole pieces, as in the all-differences layer, so the figures add
-up), and whether the step's change register (proposed-steps.json "change"; a
-"text correction" does not move the line, so it counts as unchanged) says the
-difference is intended or not; rings at least --big m apart (default 100:
-TTB's line takes another path, or slips) are flagged big. It also writes every
-piece of land inside one polygon and not the other (the sum of all the
-differences), each with its side, acres, length, widths, steps and cause.
+The AVA Map Explorer polygon (TTB's AVAs_Production layer) was digitized by
+hand; the proposed revision follows the centre of the printed ink. So the two
+always differ a little everywhere. This measures that everyday difference from
+the data itself (distance from every 2 m of each boundary to the other
+boundary), sets the noise threshold from it (median + K x MAD, never below
+--min-threshold), and rings every stretch that is farther apart than that, from
+either side (the proposed revision away from the Map Explorer polygon, or the
+other way). Each ring says which of the proposed revision's steps it touches,
+how far apart the lines are, the acres of the pieces of land between the two
+lines that it touches (whole pieces, as in the all-differences layer, so the
+figures add up), and whether the step's change register (proposed-steps.json
+"change"; a "text correction" does not move the line, so it counts as
+unchanged) says the difference is intended or not; rings at least --big m apart
+(default 100: TTB's line takes another path, or slips) are flagged big. It also
+writes every piece of land inside one polygon and not the other (the sum of all
+the differences), each with its side, acres, length, widths, steps and cause.
 
 Usage (the project .venv, -E -s):
   compare_ttb.py --ours-line LINE.geojson --ours-area AREA.geojson
@@ -316,7 +317,8 @@ def main():
         p: round(float(np.percentile(d_o, p)), 1) for p in (50, 75, 90, 95, 99)
     }
     print(
-        f"ours->TTB distance percentiles {pct}; median {med:.1f} m, "
+        "distance from the proposed revision to the Map Explorer polygon, "
+        f"percentiles {pct}; median {med:.1f} m, "
         f"MAD {mad:.1f} m -> threshold {thr:.1f} m"
     )
     # ---- stretches farther apart than that, from both sides
@@ -646,15 +648,17 @@ def main():
         json.dump(stats, fh, indent=1)
     with open(os.path.join(a.out_dir, "ttb-diff-report.md"), "w") as f:
         f.write(
-            "# Our boundary vs TTB's published polygon\n\n"
+            "# The proposed revision vs the AVA Map Explorer polygon\n\n"
             "Everyday difference (hand-drawn vs ink centre): "
             f"median {med:.1f} m, MAD {mad:.1f} m; "
             f"rings mark stretches more than **{thr:.1f} m** apart "
             f"(median + {a.k:g} x MAD, at least {a.min_threshold:g} m).\n\n"
         )
         f.write(
-            "| # | steps | kind | max apart (m) | length (m) | ours adds (ac) "
-            "| ours drops (ac) | status | pins vs TTB | lon, lat |\n"
+            "| # | steps | kind | max apart (m) | length (m) "
+            "| in the proposed revision only (ac) "
+            "| in the Map Explorer polygon only (ac) | status | pins vs TTB "
+            "| lon, lat |\n"
             "|---|---|---|---|---|---|---|---|---|---|\n"
         )
         for p, lon, lat in rows:
@@ -679,7 +683,9 @@ def main():
                 f"| {tot['revision_only_acres']:.1f} "
                 f"| {tot['map_explorer_only_acres']:.1f} |\n"
             )
-    print("stretches of ours beyond the threshold, by K:", sweep)
+    print(
+        "stretches of the proposed revision beyond the threshold, by K:", sweep
+    )
     print(
         f"{len(out)} places ringed ({stats['check']} CHECK, "
         f"{len(out) - stats['check']} intended), {stats['big']} at least "

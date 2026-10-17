@@ -545,7 +545,7 @@ h = [
     ),
     (
         "<p>Columns: TTB’s published text (Notice No. 243, 91 FR 52576) | the "
-        "original petition (February 2, 2023), for reference | the text we "
+        "petition (as amended June 6, 2023), for reference | the text we "
         "propose, as discussed with TTB on October 15, 2026 | why each change "
         "is made. <b>Only the steps that change are shown. Every other step "
         "is TTB’s published text word for word, with the same step "
@@ -576,7 +576,7 @@ h = [
         '<table data-cols="1.93,1.93,1.93,3.41"><colgroup>'
         "<col class=t><col class=t><col class=t><col class=w></colgroup>"
         "<tr><th>TTB’s published text (Notice No. 243)</th>"
-        "<th>Original petition (Feb. 2, 2023), for reference</th>"
+        "<th>Petition (as amended June 6, 2023), for reference</th>"
         "<th>Proposed text</th><th>Why</th></tr>"
     ),
 ]

@@ -497,7 +497,7 @@ ITEMS = [
         ),
         ABOUT + "<p>The side-by-side comparison of item 3a as an editable "
         "Word document. For every step that changes, four columns: Notice "
-        "No. 243's text, the original petition (February 2, 2023, for "
+        "No. 243's text, the petition (as amended June 6, 2023, for "
         "reference), the proposed text, and why. Every other step is Notice "
         "No. 243's text word for word. Marking compares the proposed text "
         "with Notice No. 243's text only: red strikethrough for its words "

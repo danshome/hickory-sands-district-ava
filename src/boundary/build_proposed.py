@@ -2,9 +2,9 @@
 
 Proposed after the call with TTB that day.
 Text: TTB's published regulatory text (Notice No. 243, 91 FR 52576) word for
-word, except the area near Grit, which uses the petition's own wording (Feb. 2,
-2023; petition steps 11-12 and 91-98, lane wording included), with two
-departures:
+word, except the area near Grit, which uses the petition's own wording (as
+amended June 6, 2023; petition steps 11-12 and 91-98, lane wording included),
+with two departures:
   - steps (93)-(96) are new: they replace petition step 94 (the straight line
     from the marked 1737 to the marked 1762) and go around a lobe of granite by
     a windmill and Topaz Lane;
@@ -124,7 +124,7 @@ NPRM = {
 # our stored copy lost two line-break hyphens; the notice (91 FR 52586) prints
 # them
 assert "light-duty" in NPRM[15] and "Mason-McCulloch" in NPRM[19]
-PET = {  # petition (Feb. 2, 2023), written boundary description, word for word
+PET = {  # petition as amended June 6, 2023: its boundary description, verbatim
     11: (
         "Proceed southeasterly along the westbound lane of State Highway 29 "
         "to its intersection with U.S. Highway 377; then"

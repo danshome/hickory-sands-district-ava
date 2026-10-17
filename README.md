@@ -32,7 +32,7 @@ and a link to every file.
 The proposed boundary description is **Notice No. 243's text word for word, except near Grit and for two one-word
 corrections**:
 
-- Steps (10)-(11) and (90)-(100) use the petition's own wording (February 2, 2023) in place of Notice No. 243's steps
+- Steps (10)-(11) and (90)-(100) use the petition's own wording (as amended June 6, 2023) in place of Notice No. 243's steps
   (10)-(11) and (90)-(92), written in the notice's style ("US Highway", "1,727-foot") with the roads named as the notice
   names them.
 - Within them, **steps (93)-(96) are new**: they go around a lobe of granite northwest of the area near Grit by a

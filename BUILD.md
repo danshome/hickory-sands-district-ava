@@ -6,7 +6,7 @@ One command, run from the repository root, rebuilds everything that goes to TTB 
 ./build.sh
 ```
 
-It installs what is missing (GDAL, poppler, Python 3.14 and Google Chrome via Homebrew), checks every Python package it will
+It installs what is missing (GDAL, poppler, Python 3.14, and on macOS Google Chrome, via Homebrew, on macOS or Linux), checks every Python package it will
 install against the OSV vulnerability database, creates the project's Python environment `.venv` from the hash-pinned
 `requirements.txt` (nothing global), downloads any USGS quad that is missing or altered, builds, checks, and packages. The result is in `dist/`:
 
@@ -31,7 +31,8 @@ Other commands:
   makes the folder if it is missing and shares everything publicly. It signs in with Dan's saved `arcgis` profile `hsd`.
   Publishing is never part of a normal build; run it only when you mean to update ArcGIS Online.
 
-The only prerequisite is Homebrew (https://brew.sh) on macOS, and network access the first time (packages and quads).
+The only prerequisites are Homebrew (https://brew.sh, on macOS or Linux), Google Chrome on Linux, and network access the
+first time (packages and quads).
 
 ## Project layout
 
@@ -131,13 +132,14 @@ Three workflows in `.github/workflows/`, every action pinned to a commit:
 
 - **lint** (`lint.yml`, GitHub's Linux machines): every pre-commit hook on every file, on every pull request and every
   push to `main`. The lint tools come from `requirements-dev.txt`, audited first, as on the Mac.
-- **build** (`build.yml`, GitHub's Mac machines): the whole `./build.sh` on pull requests that change what the build
+- **build** (`build.yml`, GitHub's Linux machines): the whole `./build.sh` on pull requests that change what the build
   reads (`build.sh`, `src/`, `resources/`, `documents/`, the lock files) and by hand (Actions > build > Run workflow).
-  A Mac, not Linux, so the tools (Homebrew's GDAL, PROJ with the NADCON5 grid, poppler, Python 3.14) and the system
-  fonts in the PDFs are the same as on Dan's Mac. The 13 USGS quads are cached between runs (the build still checks
-  their MD5s). It keeps the build report, the checksums and the GIS lines for 14 days, not the 290 MB zip. While the
-  repository is private, Mac minutes count ten times against the account's Actions minutes.
-- **release** (`release.yml`, Mac): push a tag such as `v2026.10.20` and it builds that commit and makes a GitHub
+  Linux, not GitHub's Mac machines, whose minutes cost ten times as much (Dan, 2026-10-17). Homebrew on Linux installs
+  the same versions of the tools as on the Mac (GDAL, PROJ with the NADCON5 grid, poppler, Python 3.14); the PDFs ask
+  for Times New Roman, Arial and Courier New and get the Liberation fonts there, which have the same character widths,
+  so lines and pages break in the same places. The 13 USGS quads are cached between runs (the build still checks their
+  MD5s). It keeps the build report, the checksums and the GIS lines for 14 days, not the 290 MB zip.
+- **release** (`release.yml`, Linux): push a tag such as `v2026.10.20` and it builds that commit and makes a GitHub
   release of the same name with `dist/` attached (the package zip, its README, `SHA256SUMS.txt`, `build-report.txt`).
   Run it by hand with an existing tag to rebuild that release's files.
 
@@ -146,7 +148,7 @@ git tag v2026.10.20 && git push origin v2026.10.20
 ```
 
 Publishing to ArcGIS Online is not in Actions: it stays `./build.sh publish`, run by Dan. Changes only to `src/publish/`
-do not start a Mac build (that code never touches `dist/`).
+do not start a build (that code never touches `dist/`).
 
 The runners install whatever GDAL Homebrew has that day, and the build stops when it differs from the `GDAL==` pin in
 the lock (the Python bindings must match the library). When Homebrew moves GDAL on, every build stops with that message

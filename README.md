@@ -29,7 +29,8 @@ and a link to every file.
 
 ## What is proposed
 
-The proposed boundary description is **Notice No. 243's text word for word, except near Grit**:
+The proposed boundary description is **Notice No. 243's text word for word, except near Grit and for two one-word
+corrections**:
 
 - Steps (10)-(11) and (90)-(100) use the petition's own wording (February 2, 2023) in place of Notice No. 243's steps
   (10)-(11) and (90)-(92), written in the notice's style ("US Highway", "1,727-foot") with the roads named as the notice
@@ -37,9 +38,13 @@ The proposed boundary description is **Notice No. 243's text word for word, exce
 - Within them, **steps (93)-(96) are new**: they go around a lobe of granite northwest of the area near Grit by a
   windmill, a fence line and Topaz Lane, instead of the petition's straight line from the marked 1,737 to the marked
   1,762.
-- Step (90) names the unnamed, intermittent tributary the petition's line follows from Honey Creek to the marked 1,727
-  (the one correction to the petition's wording).
+- Step (90) names the unnamed, intermittent tributary the petition's line follows from Honey Creek to the marked 1,727,
+  and steps (90)-(91) name the roads as Notice No. 243 names them (the two flagged changes to the petition's wording).
 - Notice No. 243's steps (93)-(96) are unchanged, renumbered (101)-(104).
+- Away from Grit, two flagged corrections to Notice No. 243's own wording; the line does not change. Step (85) says
+  "the marked 1,802-foot summit", as the Turtle Creek map prints the summit (x1802), where the notice says 1,801 (a
+  substantive correction); step (49) says "the marked 1,586-foot elevation point", where the notice says "the marked
+  1,586-elevation point", the only elevation in its 96 steps written without "-foot" (an editorial correction).
 
 Result (build of October 16, 2026): **104 steps, 105 points, 193.83 square miles** (true area on the GRS 1980
 ellipsoid). The build report in `dist/` always has the current figures.
@@ -49,10 +54,10 @@ Geologic Map Compilation, shifted to the outcrops) in each piece:
 
 | piece | acres | granite (acres) |
 |---|---:|---:|
-| In Notice No. 243's text, left out by the petition | 2,733 | 2,597 |
+| In Notice No. 243's text, left out by the petition | 2,733 | 2,596 |
 | The granite lobe, also left out now by steps (93)-(96) | 140 | 127 |
 | Put back, between the marked 1,737 and the windmill | 6 | 0 |
-| Added by the petition's lane wording along steps (10)-(11) | 69 | 28 |
+| Added by the petition's lane wording along steps (10)-(11) | 69 | 27 |
 | In the petition, not Notice No. 243's text, along steps (99)-(100) | 19 | 16 |
 
 Drawn the same way on the same maps, the AVA measures 198.17 square miles by Notice No. 243's text, 194.03 by the
@@ -92,8 +97,9 @@ Both are published as map layers and listed on the dashboard.
 
 ## Build it yourself
 
-Requirements: macOS with [Homebrew](https://brew.sh), and network access the first time. The build installs the rest
-(GDAL, Python 3.14, Google Chrome) and keeps every Python package in the project's own `.venv`.
+Requirements: macOS or Linux with [Homebrew](https://brew.sh) (and Google Chrome on Linux), and network access the first
+time. The build installs the rest (GDAL, poppler, Python 3.14, and Chrome on macOS) and keeps every Python package in the
+project's own `.venv`.
 
 ```
 ./build.sh            # everything: tools, audit, quads, trace, boundary, checks, documents, quad sheets, package
@@ -108,7 +114,7 @@ To change the boundary, change only the inputs in `resources/boundary/` (a pin, 
 texts) and run `./build.sh`; every figure in the documents and the ArcGIS descriptions comes from the build.
 [BUILD.md](BUILD.md) has the stages, the layout, the security checks on Python packages, and the commit hooks.
 
-Every pull request is checked on GitHub (the commit hooks, and the whole build on a Mac when the build's inputs
+Every pull request is checked on GitHub (the commit hooks, and the whole build on Linux when the build's inputs
 change), and each release (a `v...` tag) is built on GitHub and attached to the repository's Releases page; see
 [BUILD.md](BUILD.md#github-actions-and-releases).
 

@@ -18,9 +18,9 @@ lic = open(os.path.join(ROOT, "LICENSE.txt"), encoding="utf-8").read()
 def text(s):   # escaped, with web addresses as links
     return re.sub(r"(https?://[^\s<]+[^\s<.,;)])", r'<a href="\1">\1</a>', html.escape(s))
 
-def heading(s):   # "WHAT WE PROPOSE TO CHANGE IN TTB'S PUBLISHED TEXT (details ...)" -> sentence case, note kept
-    m = re.match(r"([A-Z0-9 ',]+?)\s*(\(.*\))?$", s)
-    title = re.sub(r"\bttb\b", "TTB", m.group(1).capitalize())
+def heading(s):   # "WHAT WE PROPOSE TO CHANGE IN NOTICE NO. 243 (details ...)" -> sentence case, note kept
+    m = re.match(r"([A-Z0-9 ',.]+?)\s*(\(.*\))?$", s)
+    title = re.sub(r"\bnotice no\.", "Notice No.", re.sub(r"\bttb\b", "TTB", m.group(1).capitalize()))
     return f"<h2>{html.escape(title)}{' <small>' + text(m.group(2)) + '</small>' if m.group(2) else ''}</h2>"
 
 def prose(lines):
@@ -86,7 +86,7 @@ lines = page_readme.splitlines()
 title, meta = lines[0], lines[1:3]
 sections, cur = [], None
 for s in lines[3:]:
-    if s and not s.startswith(" ") and re.match(r"[A-Z][A-Z0-9 ',]+[A-Z](\s*\(.*\))?$", s):
+    if s and not s.startswith(" ") and re.match(r"[A-Z][A-Z0-9 ',.]+[A-Z0-9](\s*\(.*\))?$", s):   # "... NOTICE NO. 243" too
         cur = [s, []]; sections.append(cur)
     elif cur:
         cur[1].append(s)

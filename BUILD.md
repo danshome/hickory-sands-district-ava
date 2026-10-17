@@ -51,7 +51,8 @@ src/
                          grit_change (the change near Grit, acre by acre, with its granite), triage tools
   boundary/              ink_centerline (runs the tracer), build_agreed (pins, polygon, GIS), quad sheets, TTB record
   documents/             description, side-by-side, notice copy, DOCX, README / read-me-first, PDF text
-  checks/                hard checks: quads vs manifest, every pin on its line, no self-crossing, valid polygon
+  checks/                hard checks: quads vs manifest, every pin on its line, no self-crossing, valid polygon;
+                         check_outputs: what reaches TTB (PDF fonts, compare text, figures, wording, GIS, zip paths)
   package/               make_package.sh (the zip)
   publish/               ArcGIS Online
 resources/
@@ -86,7 +87,17 @@ tobedeleted/             set aside for review and deletion, used by nothing (not
    proposed revision and the AVA Map Explorer polygon differ (rings beyond hand-drawing noise, the big differences 100 m
    or more apart, and every piece of land between the two lines); the change near Grit, line by line and acre by acre,
    with the granite in each piece (`src/review/grit_change.py`).
-8. **documents**, 9. **quad sheets**, 10. **package** into `dist/`, with `build-report.txt`.
+8. **documents**, 9. **quad sheets**, 10. **package** into `dist/`, with `build-report.txt`. Then hard checks on what
+   reaches TTB (`src/checks/check_outputs.py`, output in `target/work/review/output-checks.txt` and the build report):
+   every font embedded in the PDFs the build makes and none Mac-only (Helvetica Neue, Menlo); the notice copy (2a)
+   with no AcroForm, /Perms, document XMP, signature or annotation but links; the two compare-text files differing in
+   exactly the steps whose `change` in `agreed-steps.json` is not "unchanged", as the proposed text, and README.txt
+   naming those steps; the area and README.md's figures equal to the build's statistics, rounded once, half up;
+   no "agreed", "ours", "our boundary", "TTB's published polygon", "final text" or bare "Hickory Sandstone" in a
+   generated document; every point's and step end's `quad` the quadrangle whose neatline holds it (the 7.5-minute
+   NAD27 cell, through NADCON 5.0 CONUS), every `length_m` geodesic, every layer and `.prj` NAD83. A warning, not a
+   failure: zip paths longer than Windows' 260-character limit when Explorer extracts the zip under
+   `C:\Users\<name>\Downloads\` (Dan: leave the names for now).
 
 ## Python packages and security
 

@@ -36,7 +36,9 @@ zips the package into `dist/` with `SHA256SUMS.txt` and `build-report.txt`. `./b
 - `tobedeleted/` (gitignored) is where things no build uses go for Dan to review and delete. Nothing may depend on it.
 
 Change the boundary only through `resources/boundary/` and rebuild; never edit outputs. Hard checks stop the build:
-quads vs manifest, every pin exactly on its two steps, no step line crossing itself, valid polygon. Current build:
+quads vs manifest, every pin exactly on its two steps, no step line crossing itself, valid polygon; and, after the
+package, `src/checks/check_outputs.py` on what reaches TTB (PDF fonts, the notice copy, compare text, figures vs
+the stats, wording, quads/lengths/NAD83; zip path lengths only warn). Current build:
 104 steps, 105 pins, 193.83 sq mi (GRS 1980); the figures in the README and ArcGIS descriptions come from the build.
 
 Commits run the pre-commit hooks (`.pre-commit-config.yaml`, tools from `requirements-dev.txt` in `.venv`, via

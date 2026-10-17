@@ -8,7 +8,8 @@
 #   ./build.sh upgrade    every Python package to its latest compatible version (requirements*.in), audited, reinstalled
 #   ./build.sh clean      remove target/ and dist/ (keeps .venv and the downloaded quads)
 #   ./build.sh distclean  also remove .venv
-#   ./build.sh publish    push the built package to ArcGIS Online (Dan's account; run only when you mean it)
+#   ./build.sh publish    push the built package to ArcGIS Online (Dan's account; run only when you mean it), then check-live
+#   ./build.sh check-live check the public ArcGIS Online site anonymously, as TTB sees it, against the build (read-only)
 #
 # No manual steps: missing tools are installed with Homebrew (GDAL, Python 3.14, Google Chrome); every Python package in
 # the lock files is checked against the OSV vulnerability database before anything is installed, then installed into the
@@ -174,7 +175,13 @@ publish() {
     run src/publish/agol_layer.py
     run src/publish/agol_dashboard.py        # after the layers: it finds the map and layers by title
     run src/publish/agol_org_categories.py   # it categorizes the items the three above put in the folder
-    run src/publish/agol_share.py            # last: everything in the folder, and the group, public (Dan, 2026-10-16)
+    run src/publish/agol_share.py            # everything in the folder, and the group, public (Dan, 2026-10-16)
+    check_live                               # last: the public site as TTB sees it, against this build
+}
+
+check_live() {
+    step "the public site, checked anonymously against the build (security, sharing, links, figures, files)"
+    run src/publish/agol_check.py
 }
 
 case "${1:-all}" in
@@ -183,8 +190,9 @@ case "${1:-all}" in
     clean)     rm -rf "$TARGET" "$DIST"; echo "removed target/ and dist/" ;;
     distclean) rm -rf "$TARGET" "$DIST" "$VENV"; echo "removed target/, dist/ and .venv/" ;;
     publish)   env_setup; publish ;;
+    check-live) env_setup; check_live ;;
     audit)     env_setup; audit ;;
     upgrade)   upgrade ;;
     lint)      env_setup; step "pre-commit hooks on every file"; PRE_COMMIT_HOME="$TARGET/pre-commit" "$VENV/bin/pre-commit" run --all-files ;;
-    *)         echo "usage: ./build.sh [all|env|lint|audit|upgrade|clean|distclean|publish]"; exit 2 ;;
+    *)         echo "usage: ./build.sh [all|env|lint|audit|upgrade|clean|distclean|publish|check-live]"; exit 2 ;;
 esac

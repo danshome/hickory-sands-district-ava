@@ -29,7 +29,29 @@ Other commands:
   layers (the boundary, the differences from the AVA Map Explorer polygon, the change near Grit, the shifted geology),
   the web map over the 13 quads with TTB's live AVA Map Explorer polygon, and the dashboard that links everything; it
   makes the folder if it is missing and shares everything publicly. It signs in with Dan's saved `arcgis` profile `hsd`.
-  Publishing is never part of a normal build; run it only when you mean to update ArcGIS Online.
+  Publishing is never part of a normal build; run it only when you mean to update ArcGIS Online. Its last step is
+  `check-live`, so a publish ends with the live site's pass/fail report.
+- `./build.sh check-live` checks the public site the way TTB sees it, without signing in (`src/publish/agol_check.py`,
+  anonymous read-only requests; it changes nothing, so it is safe to run any time). One line per check, and every failure
+  names the item and what is wrong; it exits 1 on any failure:
+  - security: no hosted feature service in the group, nor any of its layers, allows Create, Update, Delete, Editing or
+    Sync, and sync is off;
+  - sharing: the group and every item in it are public, one item for each number (0 Read me first, 0 Dashboard,
+    1a-1d, 2a-2d, 3a-3b, 4a-4o, a 5a and a 5b for each of the 13 quadrangles; `CODES` in the script);
+  - links: every URL in the group's description, the items' descriptions, snippets, licenses and credits, and the
+    dashboard answers 200, and every link to an item goes to a public item in the group with the title it names;
+  - web map: every layer and basemap URL answers without an error and each layer's item is in the group;
+  - dashboard: its JSON parses, its layout, data sources and actions name widgets and web map layers that exist, its
+    map is the group's web map and it links every other item; no phone layout (`mobileView`) yet is only a note (#49);
+  - figures, against the build's outputs in `target/work` (run by hand, `HSD_WORK` can point at another copy of them;
+    `./build.sh` always sets it to `target/work`): the AVA polygon's area (0.01 sq mi), the 104
+    steps and 105 points, the differences from the AVA Map Explorer polygon (pieces and acres by cause and side, each
+    big difference's acres, 0.1 acre), the change near Grit (acres, granite, sandstone, 0.01 acre);
+  - files: each uploaded file is the size of the one just built (and, up to 4 MB, downloaded and the same SHA-256),
+    and the documents attached to the AVA polygon match the build's.
+
+  Without build outputs the figures and files are skipped with a note. Right after a publish ArcGIS can take a minute to
+  show a change to anonymous users: run `./build.sh check-live` again before chasing a failure.
 
 The only prerequisite is Homebrew (https://brew.sh) on macOS, and network access the first time (packages and quads).
 

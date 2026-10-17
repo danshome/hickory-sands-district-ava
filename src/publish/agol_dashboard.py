@@ -1,7 +1,7 @@
 """Dashboard for the PROPOSED boundary, in Dan's folder, shared only to the private group: one page that organizes
 everything in the group for TTB's reviewer.
 - header: the docket, and a selector for which steps to show (petition wording near Grit, new around the granite lobe,
-  unchanged from Notice No. 243's text);
+  the two corrections to Notice No. 243's wording, (49) and (85), unchanged from Notice No. 243's text);
 - left: the AVA's area, the steps shown, how many differ from Notice No. 243, the big differences from the AVA Map
   Explorer polygon and the acres
   between the two boundaries from the same text drawn differently; tabs with every item in the group by number, the 13 USGS quadrangles (GeoPDF, GeoTIFF, the steps
@@ -14,7 +14,7 @@ Wording (Dan, 2026-10-16): the official names, Notice No. 243, the AVA Map Explo
 On a phone (narrow screens; issue #49) ArcGIS Dashboards shows a second layout, the mobileView, with its own copies of
 the elements (ids "mobile-" + the desktop name; elementMappings pairs each with its desktop twin):
 - header: the title and one line; the step selector is in the drawer (a phone header holds text and images only);
-- top: the AVA's area, the steps reworded and the big differences; then the same web map, most of the screen;
+- top: the AVA's area, the steps reworded and the big differences; then the same web map, half the screen;
 - below it, tabs: the steps (tap one to zoom the map; the list item holds the step's whole record), what changes,
   the change near Grit (its table as stacked rows) and the documents (one large link each).
 Both views are built from the same builders and data below, so they cannot drift; check_views() stops the publish if
@@ -246,6 +246,20 @@ GRIT_AREAS = (("Notice No. 243, not the petition", "In Notice No. 243's text, le
               ("lane wording", "Added by the petition's lane wording, (10)-(11)"),
               ("petition, not Notice No. 243", "In the petition, not Notice No. 243's text, (99)-(100)"))
 reworded = [s["step"] for s in steps if "unchanged" not in (s["change"] or "")]   # as the indicator counts them
+FIX = "text correction"   # how build_agreed.py's change notes for (49) and (85) start: Notice No. 243's wording corrected
+fixes = [n for n in reworded if FIX in next(s["change"] for s in steps if s["step"] == n)]
+near_grit = [n for n in reworded if n not in fixes]
+def and_list(nums):   # 49, 85 -> (49) and (85)
+    s = [f"({n})" for n in sorted(nums)]
+    return s[0] if len(s) == 1 else ", ".join(s[:-1]) + " and " + s[-1]
+REWORDED = (f"All {len(reworded)} steps worded differently from Notice No. 243 (<em>Steps reworded</em>, at the top) are here, "
+            f"near Grit: {spans(reworded)}." if not fixes else
+            f"Of the {len(reworded)} steps worded differently from Notice No. 243 (<em>Steps reworded</em>, at the top), "
+            f"{len(near_grit)} are here, near Grit: {spans(near_grit)}. "
+            + (f"The other one, {and_list(fixes)}, corrects Notice No. 243's own wording elsewhere, one word; " if len(fixes) == 1 else
+               f"The other {({2: 'two', 3: 'three', 4: 'four'}).get(len(fixes), len(fixes))}, {and_list(fixes)}, correct Notice "
+               "No. 243's own wording elsewhere, one word each; ")
+            + "the line does not change.")
 def grit_tab(phone=False):   # the same text in both views; on the phone larger, and the table as stacked rows
     head = '<p style="margin:12px 0 4px">' if phone else '<p style="margin:10px 0 2px">'
     areas = ("".join(gblock(*a) for a in GRIT_AREAS) if phone else
@@ -256,8 +270,7 @@ def grit_tab(phone=False):   # the same text in both views; on the phone larger,
             + "<p>Near Grit the proposed text puts back the petition's wording in place of "
             "Notice No. 243's steps (10)-(11) and (90)-(92), and adds steps (93)-(96) around a lobe of granite. Turn on <em>The change near Grit</em> in "
             "the map's layer list (on by default) to see each line and area.</p>"
-            f"<p>All {len(reworded)} steps worded differently from Notice No. 243 (<em>Steps reworded</em>, at the top) are here, "
-            f"near Grit: {spans(reworded)}. Every other step is Notice No. 243's text word for word.</p>"
+            f"<p>{REWORDED} Every other step is Notice No. 243's text word for word.</p>"
             + head + '<strong>The lines</strong></p><ul style="list-style:none;padding-left:4px;margin:0">'
             + "".join(key(*k) for k in GRIT_LINES) + "</ul>"
             + head + "<strong>The areas</strong> (granite: Town Mountain Granite and younger granitic intrusions; "
@@ -363,6 +376,12 @@ phone_widgets = [map_widget(M_MAP, phone=True), *(indicator(M_IND[k], k, PHONE_C
                  steps_list(M_LIST, M_MAP, phone=True), text_widget(M_TXT["about"], "What changes", about_phone),
                  text_widget(M_TXT["grit"], "The change near Grit", grit_phone), text_widget(M_TXT["documents"], "Documents", documents_phone)]
 
+CHOICES = (("1", "Petition wording near Grit", "petition wording"), ("2", "New: around the granite lobe", "NEW"),
+           ("4", "Corrections to Notice No. 243's wording", FIX), ("3", "Unchanged from Notice No. 243", "unchanged"))
+for s in steps:   # the filter is "contains": every step in exactly one choice, matched with or without case
+    for fold in (str, str.lower):
+        hits = [value for _, _, value in CHOICES if fold(value) in fold(s["change"] or "")]
+        assert len(hits) == 1, ("step selector", s["step"], s["change"], hits)
 def step_selector(id_, targets, phone=False):   # which steps to show, by the `change` field; on the phone in the drawer
     return {"id": id_, "dashboardItemType": "selector", "name": "Steps to show", "noDataState": {}, "noFilterState": {},
             "focusModeEnabled": False, "label": "Steps", "placeholderText": f"All {len(steps)} steps", "showActionButtons": True,
@@ -370,9 +389,7 @@ def step_selector(id_, targets, phone=False):   # which steps to show, by the `c
             "showFilter": False, "displayType": "list", "maxSize": "none" if phone else "compact",
             "presentationMode": "drilldown" if phone else "dropdown",
             "datasets": [{"type": "staticDataset", "name": "main", "data": {"type": "staticValues", "dataType": "string", "values": [
-                {"type": "labelledValue", "id": "1", "label": "Petition wording near Grit", "value": "petition wording"},
-                {"type": "labelledValue", "id": "2", "label": "New: around the granite lobe", "value": "NEW"},
-                {"type": "labelledValue", "id": "3", "label": "Unchanged from Notice No. 243", "value": "unchanged"}]}}],
+                {"type": "labelledValue", "id": i, "label": label, "value": value} for i, label, value in CHOICES]}}],
             "events": [{"type": "selectionChanged", "actions": [{"type": "filter", "targets": [
                 target(t, fieldMap=[{"sourceName": "filterField", "targetName": "change"}]) for t in targets]}]}]}
 selector = step_selector(SELECT, (LIST + "#main", f"{MAP}#{LINE_OP}", IND["steps"] + "#main", IND["changed"] + "#main"))

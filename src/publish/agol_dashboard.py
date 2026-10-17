@@ -312,7 +312,7 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
                 "changed": ("Steps reworded", "from Notice No. 243"),
                 "places": (f"Big differences ({STATS['big_m']:.0f} m+)", "from the Map Explorer polygon"),
                 "acres": ("Acres between the boundaries", "same text, drawn differently")}
-    PHONE_CAPTIONS = {"area": ("AVA area", "sq mi"), "changed": ("Steps reworded", "from Notice No. 243"),
+    PHONE_CAPTIONS = {"area": ("AVA area", "sq mi"), "changed": ("Reworded from", "Notice No. 243"),   # one line each (#68)
                       "places": ("Big differences", f"{STATS['big_m']:.0f} m+ apart")}   # a third of a phone's width each: short
     indicators = [indicator(IND[k], k, CAPTIONS) for k in IND]
 
@@ -436,7 +436,7 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
                                      "prepared by Dan McLaughlin, Robert Clay Vineyards (petitioner)"),
                     "settings": {"allowElementResizing": True, "allowElementExpansion": True, "allowReset": True}}
     phone_view = {"type": "mobile", "layout": phone_layout, "widgets": phone_widgets,
-                  "header": header("Hickory Sands District AVA: proposed boundary", "Notice No. 243, changes discussed with TTB Oct. 15, 2026",
+                  "header": header("Hickory Sands District AVA", "Proposed boundary \u00b7 Notice No. 243",   # one line each on a phone (#68)
                                    phone=True),
                   "drawer": {"type": "drawer", "dashboardItemType": "panel", "selectors": [phone_selector]},
                   "settings": {"allowElementResizing": False, "allowElementExpansion": True, "allowReset": False}}

@@ -1,0 +1,17 @@
+# Python packages the build uses (./build.sh). Edit this file, never requirements.txt: `./build.sh upgrade` compiles it
+# into requirements.txt, every package and indirect dependency pinned to its latest compatible version with SHA-256
+# hashes, and checks them against the OSV vulnerability database. Installed into the project's .venv only.
+
+# GDAL's Python bindings are compiled against Homebrew's GDAL library, so this stays equal to `gdal-config --version`
+GDAL==3.13.3            # osgeo: the quads, NADCON5 datum shift, GeoPackage/shapefiles, GeoPDF/GeoTIFF writing
+numpy                   # arrays everywhere; needed before GDAL's bindings are built
+setuptools              # builds GDAL's bindings
+wheel                   # builds GDAL's bindings
+pip                     # the installer itself, pinned like everything else
+
+scipy                   # tracing: Dijkstra, distance transforms, KD-trees
+matplotlib              # review images, quad sheet rendering
+pillow                  # quad sheets, notice copy
+pypdf                   # GeoPDF layers on the quad sheets
+pymupdf                 # TTB notice copy with the changes highlighted; PDF text
+arcgis                  # ./build.sh publish (ArcGIS Online). Esri's arcgis caps dask, pyarrow and puremagic below their latest

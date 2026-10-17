@@ -1,0 +1,18 @@
+CC0 1.0 Universal - Public Domain Dedication
+
+To the extent possible under law, Dan McLaughlin (Robert Clay Vineyards, Mason, Texas) has waived all copyright and
+related or neighboring rights to the files in this package: the boundary description documents, the comparison, the
+CSV, the GIS layers, the boundary linework and attribute records added to the USGS quadrangles, and this README.
+
+You may copy, modify, distribute and use them, including for commercial purposes, all without asking permission and
+without attribution. This includes the Alcohol and Tobacco Tax and Trade Bureau (TTB), its contractors, and the United
+States Government generally, for any purpose, including the final rule, 27 CFR part 9, TTB's AVA Map Explorer and
+TTB's AVA GIS layers.
+
+The proposed regulatory text quoted here is TTB's (Notice No. 243, 91 FR 52576), and the USGS topographic maps are
+works of the United States Government; both are in the public domain.
+
+Full legal code: https://creativecommons.org/publicdomain/zero/1.0/legalcode
+
+Provided as is, without warranty of any kind. The boundary of an American Viticultural Area is the written boundary
+description adopted in 27 CFR part 9.

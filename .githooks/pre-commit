@@ -1,0 +1,8 @@
+#!/bin/bash
+# Runs the hooks in .pre-commit-config.yaml on the staged files, with the tools in the project's .venv.
+# ./build.sh env points git here (git config core.hooksPath .githooks) and installs the tools.
+ROOT="$(git rev-parse --show-toplevel)"
+PC="$ROOT/.venv/bin/pre-commit"
+[ -x "$PC" ] || { echo "pre-commit is not installed in .venv: run ./build.sh env" >&2; exit 1; }
+export PRE_COMMIT_HOME="$ROOT/target/pre-commit"     # pre-commit's own cache stays in the project
+exec "$PC" run --config "$ROOT/.pre-commit-config.yaml" --hook-stage pre-commit

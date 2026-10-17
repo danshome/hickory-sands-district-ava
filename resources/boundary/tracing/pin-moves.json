@@ -1,0 +1,400 @@
+{
+ "2": {
+  "old": [
+   -99.40424216,
+   30.78455519
+  ],
+  "new": [
+   -99.404244362,
+   30.784560485
+  ],
+  "moved_m": 0.62,
+  "method": "onto step 3's free centreline (nearest point)",
+  "free_lines": {
+   "3": "free line 0.62 m from the pin (within 2 m 98.3%)"
+  }
+ },
+ "3": {
+  "old": [
+   -99.39169671,
+   30.81168883
+  ],
+  "new": [
+   -99.391711862,
+   30.811686793
+  ],
+  "moved_m": 1.47,
+  "method": "onto step 3's free centreline (nearest point)",
+  "free_lines": {
+   "3": "free line 1.47 m from the pin (within 2 m 96.7%)"
+  }
+ },
+ "5": {
+  "old": [
+   -99.38992718,
+   30.83003313
+  ],
+  "new": [
+   -99.389924452,
+   30.830048685
+  ],
+  "moved_m": 1.74,
+  "method": "onto step 6's free centreline (nearest point)",
+  "free_lines": {
+   "6": "free line 1.74 m from the pin (within 2 m 100.0%)"
+  }
+ },
+ "6": {
+  "old": [
+   -99.33812792,
+   30.83107814
+  ],
+  "new": [
+   -99.338153645,
+   30.83106516
+  ],
+  "moved_m": 2.85,
+  "method": "junction of the road's centre (both dashed edges fitted, rms 0.84-0.99 m, width 9.9-10.7 m) with the 1,900-ft contour's centre (brown, 4-5 m wide, cubic fit across the road); checked 16:09",
+  "superseded": {
+   "new": [
+    -99.338217184,
+    30.831118556
+   ],
+   "method": "intersection of the free centrelines of steps 6 and 7 (21 deg)",
+   "moved_m": 9.63,
+   "why": "sat 8.5 m NW along the contour, on its NE margin where the road's SW edge overlaps it"
+  }
+ },
+ "7": {
+  "old": [
+   -99.31392567,
+   30.82867019
+  ],
+  "new": [
+   -99.313910292,
+   30.828681827
+  ],
+  "moved_m": 1.96,
+  "method": "junction of the two road centrelines, each midway between its two printed edges (4 edge lines least-squares fitted to the dashes, rms 0.5-0.7 m; road widths 9.4 and 10.7 m); Dan flagged the free-trace move (tour stop 24, 15:19)",
+  "superseded": {
+   "new": [
+    -99.313809804,
+    30.828652708
+   ],
+   "method": "intersection of the free centrelines of steps 7 and 8 (89 deg) -- step 7's free line had drifted onto a contour SE of the junction; that pin sat 10 m off road B's centre, outside the road",
+   "moved_m": 11.24
+  }
+ },
+ "8": {
+  "old": [
+   -99.31460529,
+   30.82699314
+  ],
+  "new": [
+   -99.31467125,
+   30.826941096
+  ],
+  "moved_m": 8.55,
+  "method": "junction of the road's centre (midway between its two printed edges, line fits over 55 m, width 10.6 m) with Honey Creek's centre (blue ink line fit, rms 0.41 m); checked 16:05 after the free-line method failed at pins 7 and 67",
+  "superseded": {
+   "new": [
+    -99.314664764,
+    30.826964732
+   ],
+   "method": "intersection of the free centrelines of steps 8 and 9 (70 deg)",
+   "moved_m": 6.5,
+   "why": "sat 2.7 m north of Honey Creek's centre, on the faint north edge of the creek ink"
+  }
+ },
+ "9": {
+  "old": [
+   -99.327621002,
+   30.797688866
+  ],
+  "new": [
+   -99.327604641,
+   30.797673959
+  ],
+  "moved_m": 2.27,
+  "method": "where step 9's free centreline crosses the lane line of step 10",
+  "free_lines": {
+   "9": "free line 2.27 m from the pin (within 2 m 100.0%)"
+  }
+ },
+ "29": {
+  "old": [
+   -99.27343511,
+   30.88951083
+  ],
+  "new": [
+   -99.273438077,
+   30.88951561
+  ],
+  "moved_m": 0.6,
+  "method": "onto step 30's free centreline (nearest point)",
+  "free_lines": {
+   "30": "free line 0.60 m from the pin (within 2 m 98.2%)"
+  }
+ },
+ "30": {
+  "old": [
+   -99.2924974,
+   30.85018966
+  ],
+  "new": [
+   -99.292561923,
+   30.850208815
+  ],
+  "moved_m": 6.52,
+  "method": "where Dry Prong Katemcy Creek (hidden under the windmill symbol; the stub coming out under the windmill joined to the creek line south of the road, through the teal ink in the road) crosses Stark Road's centre (both edges fitted, width 11.0 m); two independent checks agree within 0.5 m. Dan's call, Oct. 16 17:08",
+  "superseded": {
+   "new": [
+    -99.292441592,
+    30.850209717
+   ],
+   "method": "intersection of the free centrelines of steps 30 and 31 (89 deg)",
+   "moved_m": 5.78,
+   "why": "on Stark Road's centre but ~11.5 m east of the creek's crossing"
+  }
+ },
+ "59": {
+  "old": [
+   -98.97863844,
+   30.93520169
+  ],
+  "new": [
+   -98.978625153,
+   30.935189557
+  ],
+  "moved_m": 1.85,
+  "method": "intersection of the free centrelines of steps 59 and 60 (88 deg)",
+  "free_lines": {
+   "59": "free line 1.43 m from the pin (within 2 m 100.0%)",
+   "60": "free line 1.13 m from the pin (within 2 m 82.1%)"
+  }
+ },
+ "60": {
+  "old": [
+   -98.97728566,
+   30.93927645
+  ],
+  "new": [
+   -98.977289514,
+   30.939290038
+  ],
+  "moved_m": 1.55,
+  "method": "onto step 60's free centreline (nearest point)",
+  "free_lines": {
+   "60": "free line 1.55 m from the pin (within 2 m 90.0%)"
+  }
+ },
+ "65": {
+  "old": [
+   -98.88517731,
+   30.92084236
+  ],
+  "new": [
+   -98.885185941,
+   30.920845291
+  ],
+  "moved_m": 0.89,
+  "method": "onto step 65's free centreline (nearest point)",
+  "free_lines": {
+   "65": "free line 0.89 m from the pin (within 2 m 100.0%)"
+  }
+ },
+ "67": {
+  "old": [
+   -98.94707804,
+   30.90170915
+  ],
+  "new": [
+   -98.947063422,
+   30.901705117
+  ],
+  "moved_m": 1.47,
+  "method": "junction of Field Creek Lane's centre (midway between its printed edges, measured every 5-10 m and across the flared mouth) with SH 71's centre (midway between the casings); Dan flagged stop 110 (15:31)",
+  "superseded": {
+   "new": [
+    -98.947089595,
+    30.901726768
+   ],
+   "method": "mean of nearest points on steps 67, 68 (15 deg apart, no crossing within 30 m)",
+   "moved_m": 2.24,
+   "why": "the mean of nearest points sat 2.5 m north of SH 71's centre, in the lane's mouth"
+  }
+ },
+ "70": {
+  "old": [
+   -99.03671944,
+   30.89030122
+  ],
+  "new": [
+   -99.036727701,
+   30.890305275
+  ],
+  "moved_m": 0.91,
+  "method": "onto step 71's free centreline (nearest point)",
+  "free_lines": {
+   "71": "free line 0.91 m from the pin (within 2 m 89.3%)"
+  }
+ },
+ "71": {
+  "old": [
+   -99.05469914,
+   30.84190182
+  ],
+  "new": [
+   -99.054656325,
+   30.841996169
+  ],
+  "moved_m": 11.23,
+  "method": "junction of Fly Gap Road's centre (east casing unbroken, rms 0.21 m, width 10-10.5 m) with County Road 2618's centre (both casings, rms 0.2 m, width 10.2 m, run straight on its last 21 m); along-road position good to about +/-3 m; checked 16:09",
+  "superseded": {
+   "new": [
+    -99.054685097,
+    30.842033246
+   ],
+   "method": "intersection of the free centrelines of steps 71 and 72 (30 deg)",
+   "moved_m": 14.59,
+   "why": "sat 3.8 m W of Fly Gap's centre, near its west edge"
+  }
+ },
+ "72": {
+  "old": [
+   -99.07008452,
+   30.84180298
+  ],
+  "new": [
+   -99.065345741,
+   30.841287549
+  ],
+  "moved_m": 456.51,
+  "method": "intersection of County Road 2618's centre with the unnamed LIGHT-DUTY road's centre (solid double line, 'Light-duty road, hard or improved surface' in the Fly Gap 1962 PR1982 road-classification legend; centre measured on cross-sections every 2 m, width 10.5 m). Dan's call, Oct. 16 17:21: steps 72-73 follow the light-duty road",
+  "superseded": {
+   "new": [
+    -99.070100871,
+    30.841820931
+   ],
+   "method": "intersection of the free centrelines of steps 72 and 73 (71 deg)",
+   "moved_m": 2.53,
+   "why": "on the dashed (unimproved, purple photorevision) road; the narrative's 'unnamed, light-duty road' is the solid double line per the sheet's road legend"
+  }
+ },
+ "73": {
+  "old": [
+   -99.06376512,
+   30.83480904
+  ],
+  "new": [
+   -99.063766392,
+   30.8347902
+  ],
+  "moved_m": 2.09,
+  "method": "onto step 73's free centreline (nearest point)",
+  "free_lines": {
+   "73": "free line 2.09 m from the pin (within 2 m 95.4%)"
+  }
+ },
+ "79": {
+  "old": [
+   -99.1986937,
+   30.76242634
+  ],
+  "new": [
+   -99.198696935,
+   30.762411395
+  ],
+  "moved_m": 1.68,
+  "method": "intersection of the free centrelines of steps 79 and 80 (86 deg)",
+  "free_lines": {
+   "79": "free line 1.67 m from the pin (within 2 m 87.4%)",
+   "80": "free line 0.28 m from the pin (within 2 m 97.2%)"
+  }
+ },
+ "80": {
+  "old": [
+   -99.19887161,
+   30.74731433
+  ],
+  "new": [
+   -99.198899652,
+   30.747318267
+  ],
+  "moved_m": 2.72,
+  "method": "onto step 80's free centreline (nearest point)",
+  "free_lines": {
+   "80": "free line 2.72 m from the pin (within 2 m 100.0%)"
+  }
+ },
+ "94": {
+  "old": [
+   -99.340281882,
+   30.793812195
+  ],
+  "new": [
+   -99.340273666,
+   30.793812357
+  ],
+  "moved_m": 0.79,
+  "method": "onto step 95's free centreline (nearest point)",
+  "free_lines": {
+   "95": "free line 0.79 m from the pin (within 2 m 100.0%)"
+  }
+ },
+ "95": {
+  "old": [
+   -99.344547504,
+   30.786527784
+  ],
+  "new": [
+   -99.344566586,
+   30.786531023
+  ],
+  "moved_m": 1.86,
+  "method": "onto step 95's free centreline (nearest point)",
+  "free_lines": {
+   "95": "free line 1.86 m from the pin (within 2 m 100.0%)"
+  }
+ },
+ "82": {
+  "old": [
+   -99.21802988,
+   30.71361434
+  ],
+  "new": [
+   -99.218074739,
+   30.713660206
+  ],
+  "moved_m": 6.64,
+  "method": "onto step 82's free centreline (nearest point); Dan, Oct. 16 08:49: 'the proposed pin at 82 is better'",
+  "free_lines": {
+   "82": "free line 6.64 m from the pin (within 2 m 98.9%)"
+  }
+ },
+ "90": {
+  "old": [
+   -99.295985001,
+   30.77489312
+  ],
+  "new": [
+   -99.295822623,
+   30.774837835
+  ],
+  "moved_m": 16.7,
+  "method": "where the tributary's centre (blue ink, line fit) crosses the eastbound lane line of step 91, 16.7 m ESE along the lane; Dan flagged the pin on the 1727 label (tour stop 151, 15:33); fix_pins had proposed 19.5 m, held"
+ },
+ "92": {
+  "old": [
+   -99.32813919,
+   30.797431371
+  ],
+  "new": [
+   -99.328030398,
+   30.797274702
+  ],
+  "moved_m": 20.24,
+  "trim_step": true,
+  "method": "where Honey Creek's centre (blue ink line fit, rms 1.3 m) crosses the eastbound lane line of step 92, the same rule as pin 9 on the westbound lane; step 92's lane vertices beyond it dropped (trim_step). Dan's call, Oct. 16 17:06 (option A)"
+ }
+}

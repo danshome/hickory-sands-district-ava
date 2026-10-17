@@ -1,0 +1,546 @@
+{
+ "source": "Hickory Sands District AVA; critic round 2, Oct. 15, 2026 23:40 (traces before the dash-cycle smoothing and trend filter)",
+ "meaning": "spots where the trace was judged off the feature and the prior better; re-render with problems.py --spots and they must flip",
+ "spots": [
+  {
+   "pid": "6-00-off_center",
+   "id": "6",
+   "kind": "contour",
+   "type": "off_center",
+   "lon": -99.361752,
+   "lat": 30.823191,
+   "sheet": "Grit",
+   "detail": "centre measured up to 3.5 m off the line over 6 m",
+   "png": "6-00-off_center.png",
+   "label": {
+    "pid": "6-00-off_center",
+    "purple": "off",
+    "red": "near",
+    "better": "red",
+    "cause": "lettering",
+    "offset_m": 15,
+    "note": "purple climbs off the contour and hooks up over the 190 label onto a thin line above; red interpolates straight through the label gap"
+   }
+  },
+  {
+   "pid": "30-04-moved",
+   "id": "30",
+   "kind": "creek",
+   "type": "moved",
+   "lon": -99.280257,
+   "lat": 30.881443,
+   "sheet": "Katemcy",
+   "detail": "traced line 20 m from the prior",
+   "png": "30-04-moved.png",
+   "label": {
+    "pid": "30-04-moved",
+    "purple": "off",
+    "red": "centred",
+    "better": "red",
+    "cause": "wrong_class",
+    "offset_m": 19,
+    "note": "purple detours ~19 m west onto the brown contour between the dots of the dash-dot creek; red stays on the dotted creek"
+   }
+  },
+  {
+   "pid": "31-01-off_center",
+   "id": "31",
+   "kind": "road",
+   "type": "off_center",
+   "lon": -99.303458,
+   "lat": 30.849094,
+   "sheet": "Grit",
+   "detail": "centre measured up to 4.8 m off the line over 5 m",
+   "png": "31-01-off_center.png",
+   "label": {
+    "pid": "31-01-off_center",
+    "purple": "off",
+    "red": "centred",
+    "better": "red",
+    "cause": "lettering",
+    "offset_m": 25,
+    "note": "purple arches ~25 m up through the 1911 label and back; red stays on the dashed double-line road"
+   }
+  },
+  {
+   "pid": "59-01-off_center",
+   "id": "59",
+   "kind": "contour",
+   "type": "off_center",
+   "lon": -99.010066,
+   "lat": 30.928338,
+   "sheet": "Fredonia",
+   "detail": "centre measured up to 6.0 m off the line over 12 m",
+   "png": "59-01-off_center.png",
+   "label": {
+    "pid": "59-01-off_center",
+    "purple": "off",
+    "red": "centred",
+    "better": "red",
+    "cause": "other",
+    "offset_m": 1,
+    "note": "on the contour at the circle, but ~35 m east purple drops to the next contour below while red stays on the traced one"
+   }
+  },
+  {
+   "pid": "65-01-off_center",
+   "id": "65",
+   "kind": "contour",
+   "type": "off_center",
+   "lon": -98.880562,
+   "lat": 30.951921,
+   "sheet": "Pontotoc",
+   "detail": "centre measured up to 3.5 m off the line over 8 m",
+   "png": "65-01-off_center.png",
+   "label": {
+    "pid": "65-01-off_center",
+    "purple": "off",
+    "red": "centred",
+    "better": "red",
+    "cause": "other",
+    "offset_m": 1,
+    "note": "on the heavy contour at the circle, but just below it purple cuts ~20 m west onto the adjacent lighter contour; red stays"
+   }
+  },
+  {
+   "pid": "73-03-gap",
+   "id": "73",
+   "kind": "road",
+   "type": "gap",
+   "lon": -99.068512,
+   "lat": 30.836069,
+   "sheet": "Fly Gap",
+   "detail": "no centre measurable over 25 m",
+   "png": "73-03-gap.png",
+   "label": {
+    "pid": "73-03-gap",
+    "purple": "off",
+    "red": "near",
+    "better": "red",
+    "cause": "dashed_gap",
+    "offset_m": 2,
+    "note": "purple is on the dashed road at the circle but ~25 m below it leaves the dashes and drops toward the creek; red stays along the dash line"
+   }
+  },
+  {
+   "pid": "82-00-off_center",
+   "id": "82",
+   "kind": "contour",
+   "type": "off_center",
+   "lon": -99.206569,
+   "lat": 30.720265,
+   "sheet": "Mason",
+   "detail": "centre measured up to 4.0 m off the line over 10 m",
+   "png": "82-00-off_center.png",
+   "label": {
+    "pid": "82-00-off_center",
+    "purple": "off",
+    "red": "centred",
+    "better": "red",
+    "cause": "lettering",
+    "offset_m": 12,
+    "note": "purple weaves around the zeros of the 500 contour label; red interpolates straight through the label gap"
+   }
+  },
+  {
+   "pid": "27-00-off_center",
+   "id": "27",
+   "kind": "road",
+   "type": "off_center",
+   "lon": -99.245721,
+   "lat": 30.9066,
+   "sheet": "Spy Rock",
+   "detail": "centre measured up to 4.9 m off the line over 17 m",
+   "png": "27-00-off_center.png",
+   "label": {
+    "pid": "27-00-off_center",
+    "purple": "off",
+    "red": "centred",
+    "better": "red",
+    "cause": "wrong_class",
+    "offset_m": 4,
+    "note": "road edge ink over the orchard tint is classed as contour, so purple rides the west edge then crosses to the east edge; red keeps the centre"
+   }
+  },
+  {
+   "pid": "27-06-control",
+   "id": "27",
+   "kind": "road",
+   "type": "control",
+   "lon": -99.247046,
+   "lat": 30.907894,
+   "sheet": "Spy Rock",
+   "detail": "random place on the line",
+   "png": "27-06-control.png",
+   "label": {
+    "pid": "27-06-control",
+    "purple": "off",
+    "red": "centred",
+    "better": "red",
+    "cause": "wrong_class",
+    "offset_m": 4,
+    "note": "same road: west edge classed green, purple rides the east edge ~4 m off centre, red is centred"
+   }
+  },
+  {
+   "pid": "28-05-gap",
+   "id": "28",
+   "kind": "road",
+   "type": "gap",
+   "lon": -99.260295,
+   "lat": 30.903759,
+   "sheet": "Katemcy",
+   "detail": "no centre measurable over 19 m",
+   "png": "28-05-gap.png",
+   "label": {
+    "pid": "28-05-gap",
+    "purple": "off",
+    "red": "centred",
+    "better": "red",
+    "cause": "wrong_class",
+    "offset_m": 4,
+    "note": "highway edges along the red fill are classed as contour; purple drifts to the east edge of the fill, red runs the centre"
+   }
+  },
+  {
+   "pid": "31-02-off_center",
+   "id": "31",
+   "kind": "road",
+   "type": "off_center",
+   "lon": -99.296492,
+   "lat": 30.849726,
+   "sheet": "Grit",
+   "detail": "centre measured up to 3.2 m off the line over 7 m",
+   "png": "31-02-off_center.png",
+   "label": {
+    "pid": "31-02-off_center",
+    "purple": "off",
+    "red": "centred",
+    "better": "red",
+    "cause": "tint_ink_missed",
+    "offset_m": 3,
+    "note": "faint dashed road over tint is mostly unclassed; purple leaves the road at the circle and arcs ~20 m north toward the creek, red stays on the road"
+   }
+  },
+  {
+   "pid": "71-00-off_center",
+   "id": "71",
+   "kind": "road",
+   "type": "off_center",
+   "lon": -99.046653,
+   "lat": 30.855853,
+   "sheet": "Fly Gap",
+   "detail": "centre measured up to 4.2 m off the line over 17 m",
+   "png": "71-00-off_center.png",
+   "label": {
+    "pid": "71-00-off_center",
+    "purple": "off",
+    "red": "centred",
+    "better": "red",
+    "cause": "lettering",
+    "offset_m": 4,
+    "note": "the FLY GAP lettering pulls purple onto the west edge of the road and bulges it further west above; red keeps the centre"
+   }
+  },
+  {
+   "pid": "30-01-off_center",
+   "id": "30",
+   "kind": "creek",
+   "type": "off_center",
+   "lon": -99.274723,
+   "lat": 30.88836,
+   "sheet": "Katemcy",
+   "detail": "centre measured up to 4.5 m off the line over 6 m",
+   "png": "30-01-off_center.png",
+   "label": {
+    "pid": "30-01-off_center",
+    "purple": "off",
+    "red": "centred",
+    "better": "red",
+    "cause": "corner_cut",
+    "offset_m": 9,
+    "note": "purple cuts across the S-bend ~9 m east of the blue creek, whose ink is only partly classed; red follows the bend on the line centre."
+   }
+  },
+  {
+   "pid": "31-04-moved",
+   "id": "31",
+   "kind": "road",
+   "type": "moved",
+   "lon": -99.298766,
+   "lat": 30.849177,
+   "sheet": "Grit",
+   "detail": "traced line 19 m from the prior",
+   "png": "31-04-moved.png",
+   "label": {
+    "pid": "31-04-moved",
+    "purple": "off",
+    "red": "near",
+    "better": "red",
+    "cause": "tint_ink_missed",
+    "offset_m": 8,
+    "note": "the dashed road over the tint is mostly not classed as ink and purple leaves it to run ~8 m north along a fainter line; red stays on the dash rows."
+   }
+  },
+  {
+   "pid": "43-03-moved",
+   "id": "43",
+   "kind": "road",
+   "type": "moved",
+   "lon": -99.204315,
+   "lat": 31.006923,
+   "sheet": "Voca",
+   "detail": "traced line 17 m from the prior",
+   "png": "43-03-moved.png",
+   "label": {
+    "pid": "43-03-moved",
+    "purple": "off",
+    "red": "near",
+    "better": "red",
+    "cause": "junction",
+    "offset_m": 8,
+    "note": "purple bulges ~8 m west through the junction block where the dashed side road meets the north-south road; red keeps to the road centre."
+   }
+  },
+  {
+   "pid": "59-04-moved",
+   "id": "59",
+   "kind": "contour",
+   "type": "moved",
+   "lon": -99.003554,
+   "lat": 30.927411,
+   "sheet": "Fredonia",
+   "detail": "traced line 30 m from the prior",
+   "png": "59-04-moved.png",
+   "label": {
+    "pid": "59-04-moved",
+    "purple": "off",
+    "red": "near",
+    "better": "red",
+    "cause": "lettering",
+    "offset_m": 30,
+    "note": "purple jumps to the next contour north of the 1800 label then runs down the stem of the 1; red is a straight chord through the label gap."
+   }
+  },
+  {
+   "pid": "65-04-moved",
+   "id": "65",
+   "kind": "contour",
+   "type": "moved",
+   "lon": -98.883222,
+   "lat": 30.938847,
+   "sheet": "Pontotoc",
+   "detail": "traced line 29 m from the prior",
+   "png": "65-04-moved.png",
+   "label": {
+    "pid": "65-04-moved",
+    "purple": "off",
+    "red": "near",
+    "better": "red",
+    "cause": "lettering",
+    "offset_m": 30,
+    "note": "purple passes through the 0 of 1700 and drops onto a separate contour dash ~30 m south of the label; red is a chord through the label gap."
+   }
+  },
+  {
+   "pid": "82-03-moved",
+   "id": "82",
+   "kind": "contour",
+   "type": "moved",
+   "lon": -99.20678,
+   "lat": 30.731344,
+   "sheet": "Mason",
+   "detail": "traced line 16 m from the prior",
+   "png": "82-03-moved.png",
+   "label": {
+    "pid": "82-03-moved",
+    "purple": "off",
+    "red": "near",
+    "better": "red",
+    "cause": "lettering",
+    "offset_m": 6,
+    "note": "purple follows the bottoms of the 1500 digits ~6 m below the label line; red is a straight chord through the label gap between the contour ends."
+   }
+  },
+  {
+   "pid": "90-01-off_center",
+   "id": "90",
+   "kind": "creek",
+   "type": "off_center",
+   "lon": -99.323621,
+   "lat": 30.745567,
+   "sheet": "Turtle Creek",
+   "detail": "centre measured up to 4.5 m off the line over 4 m",
+   "png": "90-01-off_center.png",
+   "label": {
+    "pid": "90-01-off_center",
+    "purple": "off",
+    "red": "near",
+    "better": "red",
+    "cause": "tint_ink_missed",
+    "offset_m": 4,
+    "note": "creek ink over the tint is not classed, so purple weaves ~4-8 m onto nearby contour fragments; red keeps a straight line between the blue stretches."
+   }
+  },
+  {
+   "pid": "95-00-moved",
+   "id": "95",
+   "kind": "road",
+   "type": "moved",
+   "lon": -99.340183,
+   "lat": 30.793661,
+   "sheet": "Grit",
+   "detail": "traced line 10 m from the prior",
+   "png": "95-00-moved.png",
+   "label": {
+    "pid": "95-00-moved",
+    "purple": "off",
+    "red": "near",
+    "better": "red",
+    "cause": "tint_ink_missed",
+    "offset_m": 7,
+    "note": "dashed road over the tint is barely classed, and purple bows ~7 m east onto the crossing contour below the highway; red rides the west dash."
+   }
+  },
+  {
+   "pid": "28-02-off_center",
+   "id": "28",
+   "kind": "road",
+   "type": "off_center",
+   "lon": -99.254643,
+   "lat": 30.911561,
+   "sheet": "Katemcy",
+   "detail": "centre measured up to 4.8 m off the line over 9 m",
+   "png": "28-02-off_center.png",
+   "label": {
+    "pid": "28-02-off_center",
+    "purple": "off",
+    "red": "centred",
+    "better": "red",
+    "cause": "junction",
+    "offset_m": 5,
+    "note": "at the side-road junction purple jumps to the north edge of the highway and stays there; red holds the centre of the red fill"
+   }
+  },
+  {
+   "pid": "65-05-gap",
+   "id": "65",
+   "kind": "contour",
+   "type": "gap",
+   "lon": -98.902218,
+   "lat": 30.958814,
+   "sheet": "Pontotoc",
+   "detail": "no centre measurable over 114 m",
+   "png": "65-05-gap.png",
+   "label": {
+    "pid": "65-05-gap",
+    "purple": "off",
+    "red": "unclear",
+    "better": "red",
+    "cause": "lettering",
+    "offset_m": 5,
+    "note": "purple follows the strokes of the 1700 label (down the 7, over the 0s); red is a plain straight bridge below the digits"
+   }
+  },
+  {
+   "pid": "72-01-off_center",
+   "id": "72",
+   "kind": "road",
+   "type": "off_center",
+   "lon": -99.067727,
+   "lat": 30.841387,
+   "sheet": "Fly Gap",
+   "detail": "centre measured up to 3.0 m off the line over 5 m",
+   "png": "72-01-off_center.png",
+   "label": {
+    "pid": "72-01-off_center",
+    "purple": "off",
+    "red": "centred",
+    "better": "red",
+    "cause": "junction",
+    "offset_m": 2,
+    "note": "purple is ~2 m off at the circle but humps ~5 m north of the highway centre about 25 m west where a road joins from above; red holds centre"
+   }
+  },
+  {
+   "pid": "73-01-moved",
+   "id": "73",
+   "kind": "road",
+   "type": "moved",
+   "lon": -99.068749,
+   "lat": 30.835408,
+   "sheet": "Fly Gap",
+   "detail": "traced line 33 m from the prior",
+   "png": "73-01-moved.png",
+   "label": {
+    "pid": "73-01-moved",
+    "purple": "off",
+    "red": "centred",
+    "better": "red",
+    "cause": "wrong_class",
+    "offset_m": 30,
+    "note": "purple leaves the road and sweeps across open map along a faint dotted symbol, ~30 m from the road corner that red follows"
+   }
+  },
+  {
+   "pid": "30-03-moved",
+   "id": "30",
+   "kind": "creek",
+   "type": "moved",
+   "lon": -99.275892,
+   "lat": 30.886337,
+   "sheet": "Katemcy",
+   "detail": "traced line 30 m from the prior",
+   "png": "30-03-moved.png",
+   "label": {
+    "pid": "30-03-moved",
+    "purple": "off",
+    "red": "near",
+    "better": "red",
+    "cause": "tint_ink_missed",
+    "offset_m": 25,
+    "note": "purple leaves the dash-dot creek for the brown contour and then a straight run north; the creek's dark dots over the tint are classed as black, and red follows them"
+   }
+  },
+  {
+   "pid": "65-06-gap",
+   "id": "65",
+   "kind": "contour",
+   "type": "gap",
+   "lon": -98.88434,
+   "lat": 30.924714,
+   "sheet": "Pontotoc",
+   "detail": "no centre measurable over 101 m",
+   "png": "65-06-gap.png",
+   "label": {
+    "pid": "65-06-gap",
+    "purple": "off",
+    "red": "near",
+    "better": "red",
+    "cause": "lettering",
+    "offset_m": 4,
+    "note": "contour is broken for the '1700' label; purple humps up and wanders through the digits while red takes a straight chord between the ink ends"
+   }
+  },
+  {
+   "pid": "98-05-gap",
+   "id": "98",
+   "kind": "road",
+   "type": "gap",
+   "lon": -99.358045,
+   "lat": 30.767036,
+   "sheet": "Grit",
+   "detail": "no centre measurable over 154 m",
+   "png": "98-05-gap.png",
+   "label": {
+    "pid": "98-05-gap",
+    "purple": "off",
+    "red": "centred",
+    "better": "red",
+    "cause": "tint_ink_missed",
+    "offset_m": 6,
+    "note": "dashed road over the tint with dashes classed as contour ink; purple rides the upper row of dashes and above it while red runs midway between the rows"
+   }
+  }
+ ]
+}

@@ -1,0 +1,9 @@
+# ruff: Python lint for src/ and the skills, run by the pre-commit hook and ./build.sh lint.
+# Bug-finding rules: syntax errors, pyflakes (undefined names, unused imports/variables, ...), comparison mistakes,
+# bare except, pylint errors. The code's dense style (several statements on a line, one-line ifs, lambdas) is
+# deliberate, so the pycodestyle style rules and the formatter are not used.
+target-version = "py314"
+extend-exclude = ["tobedeleted", "target", "dist"]
+
+[lint]
+select = ["E9", "F", "E711", "E712", "E721", "E722", "PLE"]

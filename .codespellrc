@@ -1,0 +1,5 @@
+# codespell: common misspellings in code and docs (pre-commit hook).
+[codespell]
+skip = *.geojson,*.vrt.in,*.pdf,*.csv,.secrets.baseline
+# erly: part of a regex for "southeasterly"; iif: Arcade's IIf(); froms: a variable name
+ignore-words-list = erly,iif,froms

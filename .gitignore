@@ -1,0 +1,23 @@
+# Made by ./build.sh
+/.venv/
+/target/
+/dist/
+
+# The 13 USGS quads: downloaded by ./build.sh (src/quads/fetch_quads.py) and checked against resources/quads/quads-manifest.csv
+/resources/quads/geotiff/
+/resources/quads/geopdf/
+
+# Set aside for Dan to review and delete (holds private material)
+/tobedeleted/
+
+# Words the private-words hook blocks (the list itself is private)
+/.private-words
+
+# Tool, editor and OS files
+.remember/
+.idea/
+.claude/*
+!.claude/skills/
+.DS_Store
+__pycache__/
+*.pyc

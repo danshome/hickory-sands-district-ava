@@ -1,0 +1,299 @@
+"""TTB's Notice No. 243 PDF (docket copy TTB-2026-0005-0001) with only the Hickory Sands District steps that change
+set into TTB's own pages, so a text compare against TTB's PDF shows only those changes.
+
+- Pages 52576-52585 and 52587 are TTB's pages untouched.
+- Page 52586, column 3: steps (10)-(11) are set anew; they take one line more than TTB's, so the column's lines are
+  re-spaced evenly (9.74 pt; GPO's own spacing there varies from 9.5 to 10) to end level with columns 1 and 2.
+- Page 52588: column 1 and column 2 down to step (89) are untouched. From step (90), the new steps and TTB's steps
+  (93)-(96) renumbered (101)-(104) fill column 2 and continue in column 3, followed by TTB's signature block.
+  The next document (Kaw Valley, which began in column 3), the margin text and the slug move unchanged, in place,
+  to an added last page, so the text reads in TTB's order.
+New lines are set the way GPO set this notice: Melior 9 pt, 9.5 pt leading, ragged right, one fixed word space,
+breaking only at spaces (not after hyphens, so text extraction never joins "north-easterly" into one word). The first page carries a small red "unofficial copy" note as an image
+(so it does not show in a text compare). Usage: python make_notice_copy.py"""
+import io, json, os, re
+import pymupdf
+from PIL import Image, ImageDraw, ImageFont
+
+ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))   # the repository root
+HERE = os.environ.get("HSD_WORK") or os.path.join(ROOT, "target", "work")   # build work dir (build.sh stages resources/ here)
+SRC = os.path.join(HERE, "ttb-source-check-2026-10-15", "regs-TTB-2026-0005-0001.pdf")
+OUT = os.path.join(HERE, "documents", "TTB-Notice-243-with-proposed-Hickory-Sands-District-changes-2026-10-15-UNOFFICIAL.pdf")
+S = {s["step"]: s["text"] for s in json.load(open(os.path.join(HERE, "agreed-steps.json")))["steps"]}
+
+doc = pymupdf.open(SRC)
+pristine = pymupdf.open(SRC)
+COLX = [45.0, 222.0, 399.0]
+INDENT, SIZE, LEAD, TOP, BOTTOM = 9.0, 9.0, 9.5, 67.0, 739.0
+P86, P88 = 10, 12                     # page indexes of 52586 and 52588
+col_of = lambda x: 0 if x < 215 else (1 if x < 392 else 2)
+
+FONTS = {}
+for pno in (P86, 11, P88):
+    for xref, ext, typ, name, *_ in doc[pno].get_fonts():
+        FONTS.setdefault(name.split("+")[-1], pymupdf.Font(fontbuffer=doc.extract_font(xref)[3]))
+MEL = FONTS["Melior"]
+adv = lambda c, f="Melior", s=SIZE: FONTS[f].text_length(c, s)
+
+def col_lines(pno, col):
+    """TTB's lines in one column, top to bottom: dict(y, ch=[(char, x relative to the column, font, size)], text)"""
+    rows = {}
+    for b in doc[pno].get_text("rawdict")["blocks"]:
+        for l in b.get("lines", []):
+            for s in l["spans"]:
+                for c in s["chars"]:
+                    x, y = c["origin"]
+                    if y < 55 or y > 765 or x < 40 or col_of(x) != col: continue
+                    rows.setdefault(round(y, 2), []).append((c["c"], x - COLX[col], s["font"], s["size"]))
+    out = []
+    for y, ch in sorted(rows.items()):
+        ch.sort(key=lambda t: t[1]); out.append(dict(y=y, ch=ch, text="".join(c[0] for c in ch)))
+    assert all(f in FONTS for l in out for _, _, f, _ in l["ch"])
+    return out
+
+# GPO's word space and measure, from the notice itself
+gaps, widths = [], []
+for pno in (P86, 11, P88):
+    for col in (0, 1, 2):
+        for l in col_lines(pno, col):
+            ch = l["ch"]
+            if not all(f == "Melior" and s == SIZE for _, _, f, s in ch): continue
+            for i in range(1, len(ch) - 1):
+                if ch[i][0] == " " and ch[i + 1][0] != " ":
+                    gaps.append(ch[i + 1][1] - ch[i - 1][1] - adv(ch[i - 1][0]))
+            ink = [c for c in ch if c[0] != " "]
+            if ink: widths.append(ink[-1][1] + adv(ink[-1][0]))
+WORDSP = sorted(gaps)[len(gaps) // 2]
+MEASURE = max(widths)
+print(f"GPO word space {WORDSP:.3f} pt, measure {MEASURE:.2f} pt")
+
+def pieces_of(text, at_hyphens=True):
+    out = []
+    for w in text.split(" "):
+        parts = (re.findall(r"[^-]+-|[^-]+$", w) or [w]) if at_hyphens else [w]
+        out += [(p, k == 0) for k, p in enumerate(parts)]
+    return out
+
+def set_lines(text, breaks=None, mark=None):
+    """GPO style: ragged right, fixed word space, first line indented; breaks = TTB's pieces per line, to keep them.
+    mark: True (all), or one flag per piece; flagged glyphs carry a 5th element True and are highlighted."""
+    P = pieces_of(text, at_hyphens=bool(breaks)); lines, i = [], 0     # new text never breaks at a hyphen (reads cleanly in a text compare)
+    M = [bool(mark)] * len(P) if not isinstance(mark, list) else mark
+    assert len(M) == len(P), (text[:40], len(M), len(P))
+    while i < len(P):
+        x0 = INDENT if not lines else 0.0
+        if breaks:
+            j = i + breaks[len(lines)]
+        else:
+            j = i + 1
+            while j < len(P):
+                w = x0 + sum(adv(p) for p, _ in P[i:j + 1]) + WORDSP * sum(1 for _, sb in P[i + 1:j + 1] if sb)
+                if w > MEASURE + 0.01: break
+                j += 1
+        lines.append((x0, P[i:j])); i = j
+    out = []; k = 0
+    for x0, L in lines:
+        g, x = [], x0
+        for n, (p, sb) in enumerate(L):
+            if n and sb: g.append((" ", x, "Melior", SIZE, M[k] and M[k - 1])); x += WORDSP
+            for c in p: g.append((c, x, "Melior", SIZE, M[k])); x += adv(c)
+            k += 1
+        assert x <= MEASURE + 0.01, (text[:50], x)
+        g.append((" ", x, "Melior", SIZE, False)); out.append(g)
+    return out
+
+# what the proposed text adds to TTB's step, word by word (as the side-by-side marks it)
+TTB_STEPS = {int(k): v for k, v in json.load(open(os.path.join(ROOT, "resources", "boundary", "description", "ttb-notice-243-steps.json"), encoding="utf-8")).items()}
+def added_words(n):
+    import difflib
+    key = lambda w: w.strip(",;:")             # "377," in TTB's text is the same word as "377"
+    a, b = [key(w) for w in TTB_STEPS[n].split(" ")], [key(w) for w in S[n].split(" ")]
+    keep = [False] * len(b)
+    for op, i1, i2, j1, j2 in difflib.SequenceMatcher(None, a, b, autojunk=False).get_opcodes():
+        if op == "equal":
+            for j in range(j1, j2): keep[j] = True
+    return [not k for k in keep]
+
+def paragraphs(lines):
+    paras = []
+    for l in lines:
+        if abs(l["ch"][0][1] - INDENT) < 1.0 and l["ch"][0][3] == SIZE and re.match(r"\(\d+\) ", l["text"]): paras.append([l])
+        else: paras[-1].append(l)
+    return paras
+num = lambda p: int(re.match(r"\((\d+)\) ", p[0]["text"]).group(1))
+body = lambda t: re.sub(r"^\(\d+\)\s*", "", t)
+
+# Compare with a reading-order text conversion (xpdf "pdftotext" without -simple; Beyond Compare's default -simple
+# mode merges the three columns into run-together rows even on TTB's own pages).
+
+# ------------------------------------------------------------------ page 52586, column 3: steps (10)-(11)
+c3 = col_lines(P86, 2)
+i10 = next(i for i, l in enumerate(c3) if l["text"].startswith("(10) Proceed"))
+i12 = next(i for i, l in enumerate(c3) if l["text"].startswith("(12) Proceed"))
+tail = set_lines(S[10], mark=added_words(10)) + set_lines(S[11], mark=added_words(11)) + [l["ch"] for l in c3[i12:]]
+col86 = [l["ch"] for l in c3[:i10]] + tail          # the whole column, re-spaced evenly so it still ends level with columns 1-2
+lead86 = (c3[-1]["y"] - c3[0]["y"]) / (len(col86) - 1)
+place86 = [(c3[0]["y"] + k * lead86, g) for k, g in enumerate(col86)]
+print(f"52586 col 3: steps (10)-(11) {i12 - i10} -> {len(tail) - (len(c3) - i12)} lines; column leading {lead86:.3f} pt (TTB's 9.5-10.0)")
+
+# ------------------------------------------------------------------ page 52588, column 2 from step (90); the rest on an added page
+c2 = col_lines(P88, 1)
+i90 = next(i for i, l in enumerate(c2) if l["text"].startswith("(90) Proceed"))
+isig = next(i for i, l in enumerate(c2) if l["text"].startswith("Signed:"))
+old = paragraphs(c2[i90:isig])
+assert [num(p) for p in old] == list(range(90, 97))
+lines88 = []
+for k in range(90, 101): lines88 += [(g, n == 0) for n, g in enumerate(set_lines(S[k], mark=True))]     # replace TTB's (90)-(92)
+for p in old[3:]:                                  # TTB's (93)-(96) -> (101)-(104), TTB's line breaks kept
+    n = num(p); new = S[n + 8]
+    assert body(new) == body(" ".join(l["text"].strip() for l in p).replace("- ", "-")), n
+    br = [len(pieces_of(l["text"].strip())) for l in p]
+    assert sum(br) == len(pieces_of(new)), (n, br)
+    lines88 += [(g, m == 0) for m, g in enumerate(set_lines(new, br, mark=[True] + [False] * (len(pieces_of(new)) - 1)))]   # new number only
+sig = c2[isig:]
+sig_dy = [l["y"] - sig[0]["y"] for l in sig]
+gap_sig = sig[0]["y"] - c2[isig - 1]["y"]
+
+# Columns 2 and 3 from step (90) take the spacing TTB used in column 2 of this page: 10.4 pt between the lines of a step
+# and 13.2 pt between steps. Column 2 holds as many lines as leave column 3 enough text above the signature block for a
+# text converter to read TTB's signature lines as separate lines, as it does in TTB's file (xpdf joins them when only a
+# few lines stand above them); the spare space at the foot of column 2 is spread between its steps, as GPO does.
+WITHIN = BETWEEN = float(os.environ.get("NOTICE_LEAD", "9.5"))    # GPO's 9.5 pt, even: no extra space between steps (a gap there also makes xpdf join the signature lines)
+COL2_MAX = int(os.environ.get("NOTICE_COL2_LINES", "999"))   # test switch; by default column 2 is filled
+def stack(items, y):
+    out = []
+    for k, (g, first) in enumerate(items):
+        if k: y += BETWEEN if first else WITHIN
+        out.append([y, g, first])
+    return out
+fit = 1
+while fit < len(lines88) and stack(lines88[:fit + 1], c2[i90]["y"])[-1][0] <= BOTTOM + 0.01: fit += 1
+n2 = min(fit, COL2_MAX, len(lines88) - int(os.environ.get("NOTICE_MIN3", "0")))    # column 3 keeps >= 16 step lines above TTB's signature block, which a text
+                                               # converter (xpdf) needs to read the signature lines separately, as in TTB's file
+# column 2 fills to the bottom; a step may continue into column 3, as TTB's step (82) runs from column 1 into column 2
+place88 = {1: stack(lines88[:n2], c2[i90]["y"]), 2: stack(lines88[n2:], TOP)}
+spare = BOTTOM - place88[1][-1][0]; starts = list(range(1, len(place88[1])))   # spread over every line gap, not only between steps
+acc = 0.0
+for k, q in enumerate(place88[1]):
+    if k in starts: acc += spare / len(starts)
+    q[0] += acc
+ysig = place88[2][-1][0] + gap_sig
+assert ysig + sig_dy[-1] <= BOTTOM + 0.01, "signature block runs past the bottom of column 3"
+place88[2] += [[ysig + dy, l["ch"], False] for dy, l in zip(sig_dy, sig)]
+print(f"52588: col 2 {n2} lines from step (90) (room for {fit}; {spare:.2f} pt spread over {len(starts)} gaps); "
+      f"col 3 {len(lines88) - n2} step lines, then TTB's signature block; BILLING CODE at y {place88[2][-1][0]:.2f}")
+
+# ------------------------------------------------------------------ the next document moves, unchanged and in place, to an added last page
+# In TTB's reading order page 52588 runs: running head, columns 1-3 (column 3 = Kaw Valley), margin text, slug.
+# The added page keeps Kaw Valley, the margin text and the slug where they were, so the order is unchanged.
+doc.insert_pdf(pristine, from_page=P88, to_page=P88)
+p86, p88, added = doc[P86], doc[P88], doc[-1]
+for r in (pymupdf.Rect(0, 0, 612, 55), pymupdf.Rect(40, 55, 395, 766)):
+    added.add_redact_annot(r, fill=False)
+added.apply_redactions(images=pymupdf.PDF_REDACT_IMAGE_NONE, graphics=pymupdf.PDF_REDACT_LINE_ART_REMOVE_IF_TOUCHED)
+
+# ------------------------------------------------------------------ clear the replaced areas and set the text
+p86.add_redact_annot(pymupdf.Rect(395, 55, 600, 766), fill=False)
+p86.apply_redactions(images=pymupdf.PDF_REDACT_IMAGE_NONE, graphics=pymupdf.PDF_REDACT_LINE_ART_NONE)
+p88.add_redact_annot(pymupdf.Rect(218, c2[i90 - 1]["y"] + 3, 394, 766), fill=False)    # column 2 from step (90)
+p88.add_redact_annot(pymupdf.Rect(395, 55, 600, 766), fill=False)                      # column 3 (moved)
+p88.add_redact_annot(pymupdf.Rect(0, 766, 612, 792), fill=False)                       # slug (moved)
+p88.add_redact_annot(pymupdf.Rect(0, 55, 40, 792), fill=False)                         # margin text (moved)
+p88.apply_redactions(images=pymupdf.PDF_REDACT_IMAGE_NONE, graphics=pymupdf.PDF_REDACT_LINE_ART_REMOVE_IF_TOUCHED)
+
+# GPO's margin stamp on the added page ("lotter on DSK8BHNXB4PROD with PROPOSALS1", rotated, left margin): a text
+# converter reads rotated text last on a page with text in only one column, which would put it after the slug line;
+# set horizontally just above the slug, it reads stamp, then slug, as on TTB's page 52588.
+stamp = [l for b in pristine[P88].get_text("rawdict")["blocks"] for l in b.get("lines", []) if l["spans"][0]["chars"][0]["origin"][0] < 24]
+assert len(stamp) == 1, len(stamp)
+STAMP = "".join(c["c"] for sp in stamp[0]["spans"] for c in sp["chars"]); STAMP_F, STAMP_S = stamp[0]["spans"][0]["font"], stamp[0]["spans"][0]["size"]
+added.add_redact_annot(pymupdf.Rect(0, 55, 24, 792), fill=False)
+added.apply_redactions(images=pymupdf.PDF_REDACT_IMAGE_NONE, graphics=pymupdf.PDF_REDACT_LINE_ART_NONE)
+tw = pymupdf.TextWriter(added.rect); tw.append(pymupdf.Point(25, 764), STAMP, font=FONTS[STAMP_F], fontsize=STAMP_S)
+tw.write_text(added, color=(1, 1, 1))        # white, as GPO sets its stamp and slug on TTB's pages ("1 g"): text only
+
+def write(page, col, placed, per_line=False):
+    tw = pymupdf.TextWriter(page.rect)
+    for y, g, *_ in placed:
+        for c, x, f, s, *_ in g: tw.append(pymupdf.Point(COLX[col] + x, y), c, font=FONTS[f], fontsize=s)
+        if per_line: tw.write_text(page); tw = pymupdf.TextWriter(page.rect)
+    tw.write_text(page)
+write(p86, 2, place86)
+write(p88, 1, place88[1]); write(p88, 2, place88[2], per_line=True)
+
+# yellow highlights over the changed wording (annotations: they add no text, so a text compare is unaffected)
+def highlight(page, cols_placed):
+    rects = []
+    for col, placed in cols_placed:
+        for y, g, *_ in placed:
+            run = []
+            for t in g + [(" ", 0, "Melior", SIZE, False)]:
+                if len(t) > 4 and t[4]: run.append(t); continue
+                while run and run[-1][0] == " ": run.pop()
+                if run:
+                    x0, x1 = COLX[col] + run[0][1], COLX[col] + run[-1][1] + adv(run[-1][0])
+                    rects.append(pymupdf.Rect(x0 - 0.4, y - 6.9, x1 + 0.4, y + 2.3))
+                run = []
+    if rects:
+        a = page.add_highlight_annot(rects); a.set_colors(stroke=(1.0, 0.93, 0.3)); a.set_info(title="Changes proposed to TTB, Oct. 15, 2026"); a.update()
+    return len(rects)
+nh = highlight(p86, [(2, place86)]) + highlight(p88, [(1, place88[1]), (2, place88[2])])
+print(f"highlighted {nh} runs of changed wording")
+
+# ------------------------------------------------------------------ first-page note (an image, so it is not text)
+NOTE = ("UNOFFICIAL COPY prepared by the petitioner (Dan McLaughlin): TTB's Notice No. 243 with the Hickory Sands District boundary "
+        "changes proposed to TTB (discussed with TTB on October 15, 2026) set into TTB's pages 52586 and 52588 and highlighted in yellow (the start of the next document, Kaw Valley, "
+        "is moved to an added last page). Not the official Federal Register text; the official notice is FR Doc. 2026-16670 on govinfo.gov.")
+fnt = ImageFont.truetype("/System/Library/Fonts/Supplemental/Arial Bold.ttf", 40)
+NOTE_X0, NOTE_X1 = 88, 567                     # right of GPO's authentication seal (x 42-82)
+Wpx = int((NOTE_X1 - NOTE_X0) * 8); rows, cur = [], ""
+dr = ImageDraw.Draw(Image.new("RGB", (10, 10)))
+for w in NOTE.split(" "):
+    t = (cur + " " + w).strip()
+    if dr.textlength(t, font=fnt) > Wpx: rows.append(cur); cur = w
+    else: cur = t
+rows.append(cur)
+im = Image.new("RGBA", (Wpx, 52 * len(rows) + 8), (255, 255, 255, 0)); dr = ImageDraw.Draw(im)
+for k, t in enumerate(rows): dr.text((0, 4 + 52 * k), t, font=fnt, fill=(190, 0, 0, 255))
+buf = io.BytesIO(); im.save(buf, "PNG")
+h = (NOTE_X1 - NOTE_X0) * im.height / Wpx
+doc[0].insert_image(pymupdf.Rect(NOTE_X0, 33 - h, NOTE_X1, 33), stream=buf.getvalue())
+
+doc.set_metadata({**doc.metadata, "title": "Notice No. 243 (91 FR 52576) - UNOFFICIAL copy with the proposed Hickory Sands District changes (Oct. 15, 2026)",
+                  "author": "Dan McLaughlin (petitioner), from TTB's docket copy TTB-2026-0005-0001", "subject": "Not the official Federal Register text"})
+doc.save(OUT + ".tmp", garbage=3, deflate=True)
+
+# MuPDF maps the hyphen glyph to U+00AD (soft hyphen) in the ToUnicode maps of the fonts it adds; make it U+002D
+d2 = pymupdf.open(OUT + ".tmp"); n = 0
+# ... and gives the fonts it adds generic names, flags and metrics (ascent 952 for TTB's 745); give them TTB's, since
+# text converters use the ascent and descent to decide which lines belong together
+DESC = {}
+for xref in range(1, pristine.xref_length()):
+    try:
+        if pristine.xref_get_key(xref, "Type")[1] == "/FontDescriptor":
+            DESC.setdefault(pristine.xref_get_key(xref, "FontName")[1], {k: pristine.xref_get_key(xref, k)[1] for k in ("Flags", "ItalicAngle", "StemV", "StemH", "Ascent", "Descent", "CapHeight", "XHeight", "FontBBox")
+                                                                  if pristine.xref_get_key(xref, k)[0] != "null"})
+    except Exception: pass
+for xref in range(1, d2.xref_length()):
+    try: is0 = d2.xref_get_key(xref, "Subtype")[1] == "/Type0"
+    except Exception: continue
+    if is0:
+        name = d2.xref_get_key(xref, "BaseFont")[1].replace(" Regular", "")
+        if name in DESC:
+            d2.xref_set_key(xref, "BaseFont", name)
+            cid = int(d2.xref_get_key(xref, "DescendantFonts")[1].strip("[]").split()[0])
+            d2.xref_set_key(cid, "BaseFont", name)
+            fd = int(d2.xref_get_key(cid, "FontDescriptor")[1].split()[0])
+            d2.xref_set_key(fd, "FontName", name)
+            for k, v in DESC[name].items(): d2.xref_set_key(fd, k, v)
+for xref in range(1, d2.xref_length()):
+    try: is0 = d2.xref_get_key(xref, "Subtype")[1] == "/Type0"
+    except Exception: continue
+    if is0:
+        tu = d2.xref_get_key(xref, "ToUnicode")
+        if tu[0] == "xref":
+            tx = int(tu[1].split()[0]); s = d2.xref_stream(tx)
+            t = re.sub(rb"(?m)^(<[0-9A-Fa-f]+>\s+)<00[Aa][Dd]>\s*$", rb"\1<002d>", s)     # target values only
+            if t != s: d2.update_stream(tx, t); n += 1
+d2.save(OUT, garbage=3, deflate=True); d2.close(); os.remove(OUT + ".tmp")
+print(f"fixed hyphen mapping in {n} font(s); wrote {OUT}")

@@ -1,5 +1,7 @@
 # Every pre-commit hook on every file (the same hooks as `./build.sh lint` and every commit; .pre-commit-config.yaml),
-# then the unit tests that need nothing more (tests/; ./build.sh test runs them all).
+# then the unit tests that need nothing more (tests/; ./build.sh test runs them all), among them the publish dry run's
+# checks on a dry run of the current build and on faults planted in it (tests/test_publish_dryrun.py, issue #58; the
+# dry run itself needs GDAL and the build's outputs, so build.yml runs it after ./build.sh).
 # Runs on GitHub's Linux machines: the hooks and those tests need only the lint tools, not GDAL or the quads.
 name: lint
 on:

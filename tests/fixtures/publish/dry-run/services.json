@@ -1,0 +1,1212 @@
+{
+ "4b Proposed boundary - layer (AVA polygon, 104 steps, step endpoints)": {
+  "url": "https://services3.arcgis.com/FgD9ae359Y9QwuZY/arcgis/rest/services/Hickory_Sands_District_proposed_boundary_2026_10_15/FeatureServer",
+  "definition": {
+   "capabilities": "Query,Extract"
+  },
+  "layers": [
+   {
+    "id": 0,
+    "name": "AVA (proposed, 193.83 sq mi)",
+    "fields with a new alias": []
+   },
+   {
+    "id": 1,
+    "name": "Boundary steps (104)",
+    "fields with a new alias": []
+   },
+   {
+    "id": 2,
+    "name": "Step endpoints",
+    "fields with a new alias": []
+   }
+  ],
+  "data": {
+   "layers": [
+    {
+     "id": 0,
+     "layerDefinition": {
+      "drawingInfo": {
+       "renderer": {
+        "type": "simple",
+        "symbol": {
+         "type": "esriSFS",
+         "style": "esriSFSSolid",
+         "color": [
+          255,
+          0,
+          0,
+          18
+         ],
+         "outline": {
+          "type": "esriSLS",
+          "style": "esriSLSSolid",
+          "color": [
+           220,
+           0,
+           0,
+           255
+          ],
+          "width": 1.2
+         }
+        }
+       }
+      }
+     },
+     "popupInfo": {
+      "title": "Hickory Sands District AVA (proposed)",
+      "fieldInfos": [
+       {
+        "fieldName": "Name",
+        "label": "Name",
+        "visible": true
+       },
+       {
+        "fieldName": "Status",
+        "label": "Status",
+        "visible": true
+       },
+       {
+        "fieldName": "Area",
+        "label": "Area (sq mi)",
+        "visible": true
+       },
+       {
+        "fieldName": "Counties",
+        "label": "Counties",
+        "visible": true
+       },
+       {
+        "fieldName": "Within",
+        "label": "Within",
+        "visible": true
+       },
+       {
+        "fieldName": "CFR_Section",
+        "label": "CFR section",
+        "visible": true
+       },
+       {
+        "fieldName": "version_note",
+        "label": "Version",
+        "visible": true
+       }
+      ],
+      "showAttachments": true,
+      "popupElements": [
+       {
+        "type": "text",
+        "text": "The boundary as proposed to TTB; the changes near Grit were discussed with TTB on October 15, 2026. The documents are attached below: read-me, boundary description, TTB's notice with the proposed changes highlighted, and the side-by-side."
+       },
+       {
+        "type": "fields"
+       },
+       {
+        "type": "attachments",
+        "displayType": "list"
+       }
+      ]
+     }
+    },
+    {
+     "id": 1,
+     "layerDefinition": {
+      "drawingInfo": {
+       "renderer": {
+        "type": "simple",
+        "symbol": {
+         "type": "esriSLS",
+         "style": "esriSLSSolid",
+         "color": [
+          220,
+          0,
+          0,
+          255
+         ],
+         "width": 2.4
+        }
+       }
+      }
+     },
+     "popupInfo": {
+      "title": "Step ({step})",
+      "fieldInfos": [
+       {
+        "fieldName": "narrative",
+        "label": "Text",
+        "visible": true
+       },
+       {
+        "fieldName": "change",
+        "label": "Change from Notice No. 243's text",
+        "visible": true
+       },
+       {
+        "fieldName": "txt_source",
+        "label": "Text source",
+        "visible": true
+       },
+       {
+        "fieldName": "endpoint",
+        "label": "Ends at",
+        "visible": true
+       },
+       {
+        "fieldName": "quad",
+        "label": "USGS quadrangle",
+        "visible": true
+       },
+       {
+        "fieldName": "length_m",
+        "label": "Length (m)",
+        "visible": true
+       }
+      ],
+      "showAttachments": false,
+      "popupElements": [
+       {
+        "type": "text",
+        "text": "The boundary as proposed to TTB; the changes near Grit were discussed with TTB on October 15, 2026."
+       },
+       {
+        "type": "fields"
+       }
+      ]
+     }
+    },
+    {
+     "id": 2,
+     "layerDefinition": {
+      "drawingInfo": {
+       "renderer": {
+        "type": "simple",
+        "symbol": {
+         "type": "esriSMS",
+         "style": "esriSMSCircle",
+         "color": [
+          255,
+          255,
+          255,
+          255
+         ],
+         "size": 5,
+         "outline": {
+          "type": "esriSLS",
+          "color": [
+           0,
+           0,
+           0,
+           255
+          ],
+          "width": 1
+         }
+        }
+       },
+       "labelingInfo": [
+        {
+         "labelExpressionInfo": {
+          "expression": "IIf(IsEmpty($feature.step), '', '(' + $feature.step + ')')"
+         },
+         "labelPlacement": "esriServerPointLabelPlacementAboveRight",
+         "symbol": {
+          "type": "esriTS",
+          "color": [
+           0,
+           0,
+           0,
+           255
+          ],
+          "haloColor": [
+           255,
+           255,
+           255,
+           255
+          ],
+          "haloSize": 1.5,
+          "font": {
+           "family": "Arial",
+           "size": 9,
+           "weight": "bold"
+          }
+         },
+         "minScale": 150000
+        }
+       ]
+      },
+      "showLabels": true
+     },
+     "popupInfo": {
+      "title": "{point_name}",
+      "fieldInfos": [
+       {
+        "fieldName": "step",
+        "label": "Step",
+        "visible": true
+       },
+       {
+        "fieldName": "point_name",
+        "label": "Point",
+        "visible": true
+       },
+       {
+        "fieldName": "kind",
+        "label": "Kind",
+        "visible": true
+       },
+       {
+        "fieldName": "quad",
+        "label": "USGS quadrangle",
+        "visible": true
+       }
+      ],
+      "showAttachments": false,
+      "popupElements": [
+       {
+        "type": "fields"
+       }
+      ]
+     }
+    }
+   ]
+  },
+  "attachments on the AVA polygon": [
+   {
+    "name": "Hickory-Sands-District-read-me-first-2026-10-15.pdf",
+    "size": 238698
+   },
+   {
+    "name": "Hickory-Sands-District-boundary-description-as-proposed-2026-10-15.pdf",
+    "size": 274837
+   },
+   {
+    "name": "TTB-Notice-243-with-proposed-Hickory-Sands-District-changes-highlighted-2026-10-15-UNOFFICIAL.pdf",
+    "size": 1274175
+   },
+   {
+    "name": "Hickory-Sands-District-boundary-changes-side-by-side-2026-10-15.pdf",
+    "size": 258176
+   }
+  ]
+ },
+ "4k Differences from the AVA Map Explorer polygon - layer (the big ones, and all of them)": {
+  "url": "https://services3.arcgis.com/FgD9ae359Y9QwuZY/arcgis/rest/services/Hickory_Sands_District_differences_from_TTB_2026_10_15/FeatureServer",
+  "definition": {
+   "capabilities": "Query,Extract"
+  },
+  "layers": [
+   {
+    "id": 1,
+    "name": "Big differences from the Map Explorer polygon (6)",
+    "fields with a new alias": []
+   },
+   {
+    "id": 0,
+    "name": "All differences between the two lines (990 pieces)",
+    "fields with a new alias": []
+   }
+  ],
+  "data": {
+   "layers": [
+    {
+     "id": 1,
+     "layerDefinition": {
+      "drawingInfo": {
+       "renderer": {
+        "type": "uniqueValue",
+        "field1": "why",
+        "valueExpressionTitle": "Why the lines differ",
+        "uniqueValueInfos": [
+         {
+          "value": "the two lines take different paths",
+          "label": "The two lines take different paths",
+          "symbol": {
+           "type": "esriSFS",
+           "style": "esriSFSNull",
+           "outline": {
+            "type": "esriSLS",
+            "style": "esriSLSSolid",
+            "color": [
+             230,
+             110,
+             0,
+             255
+            ],
+            "width": 3
+           }
+          }
+         },
+         {
+          "value": "the proposed text change near Grit",
+          "label": "The proposed text change near Grit",
+          "symbol": {
+           "type": "esriSFS",
+           "style": "esriSFSNull",
+           "outline": {
+            "type": "esriSLS",
+            "style": "esriSLSDash",
+            "color": [
+             110,
+             110,
+             110,
+             255
+            ],
+            "width": 3
+           }
+          }
+         }
+        ]
+       },
+       "labelingInfo": [
+        {
+         "labelExpressionInfo": {
+          "expression": "'#' + $feature.n + IIf(Find(',', $feature.steps) > -1, ' steps ', ' step ') + $feature.steps + ': ' + Round($feature.max_apart_m) + ' m'"
+         },
+         "labelPlacement": "esriServerPolygonPlacementAlwaysHorizontal",
+         "symbol": {
+          "type": "esriTS",
+          "color": [
+           170,
+           70,
+           0,
+           255
+          ],
+          "haloColor": [
+           255,
+           255,
+           255,
+           255
+          ],
+          "haloSize": 1.5,
+          "font": {
+           "family": "Arial",
+           "size": 10,
+           "weight": "bold"
+          }
+         }
+        }
+       ]
+      },
+      "showLabels": true
+     },
+     "popupInfo": {
+      "title": "Big difference #{n}: step(s) {steps}",
+      "fieldInfos": [
+       {
+        "fieldName": "why",
+        "label": "Why",
+        "visible": true
+       },
+       {
+        "fieldName": "steps",
+        "label": "Steps",
+        "visible": true
+       },
+       {
+        "fieldName": "kind",
+        "label": "Kind of step",
+        "visible": true
+       },
+       {
+        "fieldName": "max_apart_m",
+        "label": "Farthest apart (m)",
+        "visible": true
+       },
+       {
+        "fieldName": "length_m",
+        "label": "Length of the stretch (m)",
+        "visible": true
+       },
+       {
+        "fieldName": "revision_only_acres",
+        "label": "In the proposed revision only (acres)",
+        "visible": true
+       },
+       {
+        "fieldName": "map_explorer_only_acres",
+        "label": "In the Map Explorer polygon only (acres)",
+        "visible": true
+       },
+       {
+        "fieldName": "endpoints",
+        "label": "Step endpoints vs the Map Explorer polygon's nearest vertex",
+        "visible": true
+       }
+      ],
+      "showAttachments": false,
+      "popupElements": [
+       {
+        "type": "text",
+        "text": "Red: the proposed revision. Blue: the AVA Map Explorer polygon (AVAs_Production, Notice No. 243). Ringed where they are 100 m or more apart; elsewhere they differ as a hand-digitized line and a traced one do (median 11 m, measured every 2 m along each line)."
+       },
+       {
+        "type": "fields"
+       }
+      ]
+     }
+    },
+    {
+     "id": 0,
+     "layerDefinition": {
+      "drawingInfo": {
+       "renderer": {
+        "type": "uniqueValue",
+        "valueExpressionTitle": "Land between the two boundaries",
+        "valueExpression": "IIf($feature.cause == 'the proposed text change near Grit', 'text', IIf($feature.side == 'in the proposed revision only', 'rev', 'mapx'))",
+        "uniqueValueInfos": [
+         {
+          "value": "rev",
+          "label": "In the proposed revision only (the same text, drawn differently)",
+          "symbol": {
+           "type": "esriSFS",
+           "style": "esriSFSSolid",
+           "color": [
+            220,
+            0,
+            0,
+            120
+           ],
+           "outline": {
+            "type": "esriSLS",
+            "style": "esriSLSNull",
+            "color": [
+             0,
+             0,
+             0,
+             0
+            ],
+            "width": 0
+           }
+          }
+         },
+         {
+          "value": "mapx",
+          "label": "In the Map Explorer polygon only (the same text, drawn differently)",
+          "symbol": {
+           "type": "esriSFS",
+           "style": "esriSFSSolid",
+           "color": [
+            0,
+            90,
+            255,
+            120
+           ],
+           "outline": {
+            "type": "esriSLS",
+            "style": "esriSLSNull",
+            "color": [
+             0,
+             0,
+             0,
+             0
+            ],
+            "width": 0
+           }
+          }
+         },
+         {
+          "value": "text",
+          "label": "Between the two near Grit (the proposed text change)",
+          "symbol": {
+           "type": "esriSFS",
+           "style": "esriSFSSolid",
+           "color": [
+            120,
+            120,
+            120,
+            70
+           ],
+           "outline": {
+            "type": "esriSLS",
+            "style": "esriSLSNull",
+            "color": [
+             0,
+             0,
+             0,
+             0
+            ],
+            "width": 0
+           }
+          }
+         }
+        ]
+       }
+      }
+     },
+     "popupInfo": {
+      "title": "{acres} acres {side}",
+      "fieldInfos": [
+       {
+        "fieldName": "cause",
+        "label": "Cause",
+        "visible": true
+       },
+       {
+        "fieldName": "side",
+        "label": "Side",
+        "visible": true
+       },
+       {
+        "fieldName": "acres",
+        "label": "Acres",
+        "visible": true
+       },
+       {
+        "fieldName": "length_m",
+        "label": "Length (m)",
+        "visible": true
+       },
+       {
+        "fieldName": "mean_width_m",
+        "label": "Average width (m)",
+        "visible": true
+       },
+       {
+        "fieldName": "widest_m",
+        "label": "Farthest apart (m)",
+        "visible": true
+       },
+       {
+        "fieldName": "steps",
+        "label": "Proposed revision steps along it",
+        "visible": true
+       }
+      ],
+      "showAttachments": false,
+      "popupElements": [
+       {
+        "type": "text",
+        "text": "One piece of land in one line and not the other. Red: in the proposed revision only; blue: in the AVA Map Explorer polygon only; grey: the proposed text change near Grit."
+       },
+       {
+        "type": "fields"
+       }
+      ]
+     }
+    }
+   ]
+  }
+ },
+ "4m Geology - USGS SGMC units shifted to the outcrops - layer": {
+  "url": "https://services3.arcgis.com/FgD9ae359Y9QwuZY/arcgis/rest/services/Hickory_Sands_District_geology_SGMC_shifted/FeatureServer",
+  "definition": {
+   "capabilities": "Query,Extract"
+  },
+  "layers": [
+   {
+    "id": 1,
+    "name": "Town Mountain Granite (USGS SGMC, shifted)",
+    "fields with a new alias": []
+   },
+   {
+    "id": 2,
+    "name": "Younger granitic intrusions (USGS SGMC, shifted)",
+    "fields with a new alias": []
+   },
+   {
+    "id": 0,
+    "name": "Hickory Sandstone Member formation (USGS SGMC, shifted)",
+    "fields with a new alias": []
+   }
+  ],
+  "data": {
+   "layers": [
+    {
+     "id": 1,
+     "layerDefinition": {
+      "drawingInfo": {
+       "renderer": {
+        "type": "simple",
+        "symbol": {
+         "type": "esriSFS",
+         "style": "esriSFSSolid",
+         "color": [
+          232,
+          96,
+          140,
+          60
+         ],
+         "outline": {
+          "type": "esriSLS",
+          "style": "esriSLSSolid",
+          "color": [
+           232,
+           96,
+           140,
+           255
+          ],
+          "width": 0.8
+         }
+        }
+       }
+      }
+     },
+     "popupInfo": {
+      "title": "Town Mountain Granite",
+      "fieldInfos": [
+       {
+        "fieldName": "name",
+        "label": "SGMC unit",
+        "visible": true
+       },
+       {
+        "fieldName": "unit_link",
+        "label": "Unit code",
+        "visible": true
+       },
+       {
+        "fieldName": "generalize",
+        "label": "Rock type",
+        "visible": true
+       },
+       {
+        "fieldName": "area_acres",
+        "label": "Area (acres)",
+        "visible": true
+       },
+       {
+        "fieldName": "source",
+        "label": "Source",
+        "visible": true
+       },
+       {
+        "fieldName": "alignment",
+        "label": "Shift",
+        "visible": true
+       },
+       {
+        "fieldName": "unit_url",
+        "label": "USGS unit page",
+        "visible": true
+       }
+      ],
+      "showAttachments": false,
+      "popupElements": [
+       {
+        "type": "fields"
+       }
+      ]
+     }
+    },
+    {
+     "id": 2,
+     "layerDefinition": {
+      "drawingInfo": {
+       "renderer": {
+        "type": "simple",
+        "symbol": {
+         "type": "esriSFS",
+         "style": "esriSFSSolid",
+         "color": [
+          150,
+          90,
+          200,
+          60
+         ],
+         "outline": {
+          "type": "esriSLS",
+          "style": "esriSLSSolid",
+          "color": [
+           150,
+           90,
+           200,
+           255
+          ],
+          "width": 0.8
+         }
+        }
+       }
+      }
+     },
+     "popupInfo": {
+      "title": "Younger granitic intrusions",
+      "fieldInfos": [
+       {
+        "fieldName": "name",
+        "label": "SGMC unit",
+        "visible": true
+       },
+       {
+        "fieldName": "unit_link",
+        "label": "Unit code",
+        "visible": true
+       },
+       {
+        "fieldName": "generalize",
+        "label": "Rock type",
+        "visible": true
+       },
+       {
+        "fieldName": "area_acres",
+        "label": "Area (acres)",
+        "visible": true
+       },
+       {
+        "fieldName": "source",
+        "label": "Source",
+        "visible": true
+       },
+       {
+        "fieldName": "alignment",
+        "label": "Shift",
+        "visible": true
+       },
+       {
+        "fieldName": "unit_url",
+        "label": "USGS unit page",
+        "visible": true
+       }
+      ],
+      "showAttachments": false,
+      "popupElements": [
+       {
+        "type": "fields"
+       }
+      ]
+     }
+    },
+    {
+     "id": 0,
+     "layerDefinition": {
+      "drawingInfo": {
+       "renderer": {
+        "type": "simple",
+        "symbol": {
+         "type": "esriSFS",
+         "style": "esriSFSSolid",
+         "color": [
+          214,
+          168,
+          50,
+          60
+         ],
+         "outline": {
+          "type": "esriSLS",
+          "style": "esriSLSSolid",
+          "color": [
+           214,
+           168,
+           50,
+           255
+          ],
+          "width": 0.8
+         }
+        }
+       }
+      }
+     },
+     "popupInfo": {
+      "title": "Hickory Sandstone Member formation",
+      "fieldInfos": [
+       {
+        "fieldName": "name",
+        "label": "SGMC unit",
+        "visible": true
+       },
+       {
+        "fieldName": "unit_link",
+        "label": "Unit code",
+        "visible": true
+       },
+       {
+        "fieldName": "generalize",
+        "label": "Rock type",
+        "visible": true
+       },
+       {
+        "fieldName": "area_acres",
+        "label": "Area (acres)",
+        "visible": true
+       },
+       {
+        "fieldName": "source",
+        "label": "Source",
+        "visible": true
+       },
+       {
+        "fieldName": "alignment",
+        "label": "Shift",
+        "visible": true
+       },
+       {
+        "fieldName": "unit_url",
+        "label": "USGS unit page",
+        "visible": true
+       }
+      ],
+      "showAttachments": false,
+      "popupElements": [
+       {
+        "type": "fields"
+       }
+      ]
+     }
+    }
+   ]
+  }
+ },
+ "4o The change near Grit - layer (lines swapped, areas moved, granite acres)": {
+  "url": "https://services3.arcgis.com/FgD9ae359Y9QwuZY/arcgis/rest/services/Hickory_Sands_District_change_near_Grit_2026_10_15/FeatureServer",
+  "definition": {
+   "capabilities": "Query,Extract"
+  },
+  "layers": [
+   {
+    "id": 1,
+    "name": "Lines the change near Grit swaps",
+    "fields with a new alias": []
+   },
+   {
+    "id": 0,
+    "name": "Areas the change near Grit moves, with their granite",
+    "fields with a new alias": []
+   }
+  ],
+  "data": {
+   "layers": [
+    {
+     "id": 1,
+     "layerDefinition": {
+      "drawingInfo": {
+       "renderer": {
+        "type": "uniqueValue",
+        "field1": "role",
+        "uniqueValueInfos": [
+         {
+          "value": "replaced: a Notice No. 243 step",
+          "label": "Replaced: Notice No. 243 steps (10)-(11), (90)-(92), as drawn by the petitioner",
+          "symbol": {
+           "type": "esriSLS",
+           "style": "esriSLSDash",
+           "color": [
+            0,
+            90,
+            255,
+            255
+           ],
+           "width": 3
+          }
+         },
+         {
+          "value": "put back: the petition's wording",
+          "label": "Put back: the petition's wording, (10)-(11), (90)-(92), (97)-(100)",
+          "symbol": {
+           "type": "esriSLS",
+           "style": "esriSLSSolid",
+           "color": [
+            0,
+            140,
+            60,
+            255
+           ],
+           "width": 3.5
+          }
+         },
+         {
+          "value": "new: around the granite lobe",
+          "label": "New: (93)-(96), around the granite lobe",
+          "symbol": {
+           "type": "esriSLS",
+           "style": "esriSLSSolid",
+           "color": [
+            190,
+            0,
+            130,
+            255
+           ],
+           "width": 3.5
+          }
+         },
+         {
+          "value": "replaced: the petition's straight line",
+          "label": "Replaced: the petition's straight line from the marked 1,737 to the marked 1,762",
+          "symbol": {
+           "type": "esriSLS",
+           "style": "esriSLSDash",
+           "color": [
+            0,
+            140,
+            60,
+            255
+           ],
+           "width": 2.5
+          }
+         }
+        ]
+       },
+       "labelingInfo": [
+        {
+         "labelExpressionInfo": {
+          "expression": "$feature.label"
+         },
+         "labelPlacement": "esriServerLinePlacementCenterAlong",
+         "minScale": 60000,
+         "symbol": {
+          "type": "esriTS",
+          "color": [
+           40,
+           40,
+           40,
+           255
+          ],
+          "haloColor": [
+           255,
+           255,
+           255,
+           255
+          ],
+          "haloSize": 1.5,
+          "font": {
+           "family": "Arial",
+           "size": 9,
+           "weight": "bold"
+          }
+         }
+        }
+       ]
+      },
+      "showLabels": true
+     },
+     "popupInfo": {
+      "title": "{label}",
+      "fieldInfos": [
+       {
+        "fieldName": "role",
+        "label": "What it is",
+        "visible": true
+       },
+       {
+        "fieldName": "steps",
+        "label": "Steps",
+        "visible": true
+       },
+       {
+        "fieldName": "length_m",
+        "label": "Length (m)",
+        "visible": true
+       },
+       {
+        "fieldName": "source",
+        "label": "Drawn from",
+        "visible": true
+       }
+      ],
+      "showAttachments": false,
+      "popupElements": [
+       {
+        "type": "fields"
+       }
+      ]
+     }
+    },
+    {
+     "id": 0,
+     "layerDefinition": {
+      "drawingInfo": {
+       "renderer": {
+        "type": "uniqueValue",
+        "field1": "what",
+        "uniqueValueInfos": [
+         {
+          "value": "Notice No. 243, not the petition",
+          "label": "In Notice No. 243's text, left out by the petition",
+          "symbol": {
+           "type": "esriSFS",
+           "style": "esriSFSBackwardDiagonal",
+           "color": [
+            150,
+            90,
+            40,
+            255
+           ],
+           "outline": {
+            "type": "esriSLS",
+            "style": "esriSLSSolid",
+            "color": [
+             150,
+             90,
+             40,
+             255
+            ],
+            "width": 1.2
+           }
+          }
+         },
+         {
+          "value": "granite lobe",
+          "label": "Granite lobe, also left out now by (93)-(96)",
+          "symbol": {
+           "type": "esriSFS",
+           "style": "esriSFSForwardDiagonal",
+           "color": [
+            190,
+            0,
+            130,
+            255
+           ],
+           "outline": {
+            "type": "esriSLS",
+            "style": "esriSLSSolid",
+            "color": [
+             190,
+             0,
+             130,
+             255
+            ],
+            "width": 1.2
+           }
+          }
+         },
+         {
+          "value": "lane wording",
+          "label": "Added by the petition's lane wording, (10)-(11)",
+          "symbol": {
+           "type": "esriSFS",
+           "style": "esriSFSSolid",
+           "color": [
+            0,
+            140,
+            60,
+            90
+           ],
+           "outline": {
+            "type": "esriSLS",
+            "style": "esriSLSNull",
+            "color": [
+             0,
+             0,
+             0,
+             0
+            ],
+            "width": 0
+           }
+          }
+         },
+         {
+          "value": "petition, not Notice No. 243",
+          "label": "In the petition, not Notice No. 243's text, (99)-(100)",
+          "symbol": {
+           "type": "esriSFS",
+           "style": "esriSFSSolid",
+           "color": [
+            0,
+            140,
+            60,
+            90
+           ],
+           "outline": {
+            "type": "esriSLS",
+            "style": "esriSLSNull",
+            "color": [
+             0,
+             0,
+             0,
+             0
+            ],
+            "width": 0
+           }
+          }
+         },
+         {
+          "value": "put back",
+          "label": "Put back, between the marked 1,737 and the windmill",
+          "symbol": {
+           "type": "esriSFS",
+           "style": "esriSFSSolid",
+           "color": [
+            0,
+            140,
+            60,
+            90
+           ],
+           "outline": {
+            "type": "esriSLS",
+            "style": "esriSLSNull",
+            "color": [
+             0,
+             0,
+             0,
+             0
+            ],
+            "width": 0
+           }
+          }
+         }
+        ]
+       },
+       "labelingInfo": [
+        {
+         "labelExpressionInfo": {
+          "expression": "Text($feature.acres, '#,###') + ' ac, ' + Text($feature.granite_acres, '#,###') + ' ac granite'"
+         },
+         "labelPlacement": "esriServerPolygonPlacementAlwaysHorizontal",
+         "symbol": {
+          "type": "esriTS",
+          "color": [
+           60,
+           40,
+           20,
+           255
+          ],
+          "haloColor": [
+           255,
+           255,
+           255,
+           255
+          ],
+          "haloSize": 1.5,
+          "font": {
+           "family": "Arial",
+           "size": 10,
+           "weight": "bold"
+          }
+         }
+        }
+       ]
+      },
+      "showLabels": true
+     },
+     "popupInfo": {
+      "title": "{acres} acres: {why}",
+      "fieldInfos": [
+       {
+        "fieldName": "acres",
+        "label": "Acres",
+        "visible": true
+       },
+       {
+        "fieldName": "granite_acres",
+        "label": "Granite (acres)",
+        "visible": true
+       },
+       {
+        "fieldName": "sandstone_acres",
+        "label": "Hickory Sandstone Member formation (acres)",
+        "visible": true
+       },
+       {
+        "fieldName": "revision_steps",
+        "label": "Proposed revision (or petition) steps along it",
+        "visible": true
+       },
+       {
+        "fieldName": "notice_steps",
+        "label": "Notice No. 243 steps along it",
+        "visible": true
+       }
+      ],
+      "showAttachments": false,
+      "popupElements": [
+       {
+        "type": "text",
+        "text": "Granite: Town Mountain Granite and younger granitic intrusions, USGS SGMC shifted about 400 m to the outcrops."
+       },
+       {
+        "type": "fields"
+       }
+      ]
+     }
+    }
+   ]
+  }
+ }
+}

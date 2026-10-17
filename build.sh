@@ -9,7 +9,10 @@
 #   ./build.sh upgrade    every Python package to its latest compatible version (requirements*.in), audited, reinstalled
 #   ./build.sh clean      remove target/ and dist/ (keeps .venv and the downloaded quads)
 #   ./build.sh distclean  also remove .venv
-#   ./build.sh publish    push the built package to ArcGIS Online (Dan's account; run only when you mean it), then check-live
+#   ./build.sh publish    push the built package to ArcGIS Online (Dan's account; run only when you mean it), then check-live;
+#                         it runs the publish dry run first and uploads nothing if one of its checks fails
+#   ./build.sh publish-dry-run  (or publish --dry-run) build everything publish would send, without signing in, into
+#                         target/publish/ as JSON, and check it (src/publish/agol_dryrun.py)
 #   ./build.sh check-live check the public ArcGIS Online site anonymously, as TTB sees it, against the build (read-only)
 #
 # No manual steps, on macOS or Linux: missing tools are installed with Homebrew (GDAL, poppler, Python 3.14; on macOS
@@ -183,8 +186,14 @@ package() {
     } | tee "$DIST/build-report.txt"
 }
 
-publish() {
+dry_run() {
     [ -d "$WORK/pkg/$NAME" ] || { echo "nothing built yet: run ./build.sh first"; exit 1; }
+    step "publish dry run: everything ArcGIS Online would get, built without signing in (target/publish/), and checked"
+    run src/publish/agol_dryrun.py "$TARGET/publish"   # exits 1 if a check fails, which stops a publish here (set -e)
+}
+
+publish() {
+    dry_run                                  # first: nothing is uploaded if a check fails
     step "ArcGIS Online (Dan's saved profile 'hsd')"
     run src/publish/agol_publish.py
     run src/publish/agol_layer.py
@@ -204,11 +213,12 @@ case "${1:-all}" in
     env)       env_setup ;;
     clean)     rm -rf "$TARGET" "$DIST"; echo "removed target/ and dist/" ;;
     distclean) rm -rf "$TARGET" "$DIST" "$VENV"; echo "removed target/, dist/ and .venv/" ;;
-    publish)   env_setup; publish ;;
+    publish)   env_setup; if [ "${2:-}" = --dry-run ]; then dry_run; else publish; fi ;;
+    publish-dry-run) env_setup; dry_run ;;
     check-live) env_setup; check_live ;;
     audit)     env_setup; audit ;;
     upgrade)   upgrade ;;
     lint)      env_setup; step "pre-commit hooks on every file"; PRE_COMMIT_HOME="$TARGET/pre-commit" "$VENV/bin/pre-commit" run --all-files ;;
     test)      env_setup; step "unit tests (tests/, pytest)"; run -m pytest -q tests ;;
-    *)         echo "usage: ./build.sh [all|env|lint|test|audit|upgrade|clean|distclean|publish|check-live]"; exit 2 ;;
+    *)         echo "usage: ./build.sh [all|env|lint|test|audit|upgrade|clean|distclean|publish [--dry-run]|publish-dry-run|check-live]"; exit 2 ;;
 esac

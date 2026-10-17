@@ -49,6 +49,7 @@ Rules: `./build.sh publish` (ArcGIS Online) is outward-facing, only on Dan's exp
 or private material. `./build.sh check-live` (`src/publish/agol_check.py`, publish's last step) checks the public site
 anonymously against the build (locked layers, public items, links, dashboard, figures, file sizes); read-only, run it any time.
 `./build.sh publish-dry-run` (`agol_dryrun.py`, #58; publish's first step) builds what publish would send, without signing in, into `target/publish/` and checks it: keep building apart from sending (`main()`).
+It then runs `tests/live` (marked `live`; not in `./build.sh test` or lint): Playwright drives Google Chrome over the dashboard as two phones and four screens (#68); screenshots in `target/browser-tests/`.
 
 ## Git workflow (Dan, 2026-10-16)
 

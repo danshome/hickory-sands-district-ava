@@ -34,5 +34,5 @@ jobs:
         env:
           PRE_COMMIT_HOME: ${{ runner.temp }}/pre-commit
         run: .venv/bin/pre-commit run --all-files --show-diff-on-failure
-      - name: The unit tests that need only the lint tools (those marked build, with GDAL and poppler, run in ./build.sh test)
-        run: .venv/bin/python -E -s -B -m pytest -q -m "not build" tests
+      - name: The unit tests that need only the lint tools (build ones need GDAL and poppler; live ones browse the published site)
+        run: .venv/bin/python -E -s -B -m pytest -q -m "not build and not live" tests

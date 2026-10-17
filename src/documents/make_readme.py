@@ -1,8 +1,12 @@
-"""README.txt and the read-me-first page from documents/ templates, with the figures taken from the build
-(agreed-steps.json, written by build_agreed.py). Writes <work>/README.txt and <work>/documents/...read-me-first...html.
-The page is typeset from README.txt itself (one source): its ALL-CAPS headings become headings, the package listing
-becomes a table per folder (file | what it is), blank-line-separated paragraphs and "- " items become paragraphs and
-lists. A check stops the build if any word of README.txt or LICENSE.txt is missing from the page.
+"""README.txt and the read-me-first page, from the templates in documents/.
+
+The figures are taken from the build (agreed-steps.json, written by
+build_agreed.py). Writes <work>/README.txt and
+<work>/documents/...read-me-first...html. The page is typeset from README.txt
+itself (one source): its ALL-CAPS headings become headings, the package
+listing becomes a table per folder (file | what it is), blank-line-separated
+paragraphs and "- " items become paragraphs and lists. A check stops the build
+if any word of README.txt or LICENSE.txt is missing from the page.
 """
 
 import html
@@ -17,27 +21,48 @@ HERE = os.environ.get("HSD_WORK") or os.path.join(ROOT, "target", "work")
 DOC = os.path.join(ROOT, "documents")
 
 
-def text(s):  # escaped, with web addresses as links
+def text(s):
+    """S as HTML: escaped, with web addresses as links."""
     return re.sub(
         r"(https?://[^\s<]+[^\s<.,;)])", r'<a href="\1">\1</a>', html.escape(s)
     )
 
 
-def heading(
-    s,
-):  # "WHAT WE PROPOSE TO CHANGE IN NOTICE NO. 243 (details ...)" -> sentence case, note kept
+def heading(s):
+    """An ALL-CAPS heading of README.txt as an <h2>, in sentence case.
+
+    "WHAT WE PROPOSE TO CHANGE IN NOTICE NO. 243 (details ...)" becomes "What
+    we propose to change in Notice No. 243", with the note in parentheses kept
+    as it is, in <small>. "TTB" and "Notice No." keep their capitals.
+
+    Args:
+        s: The heading line.
+
+    Returns:
+        The <h2> element.
+    """
     m = re.match(r"([A-Z0-9 ',.]+?)\s*(\(.*\))?$", s)
     title = re.sub(
         r"\bnotice no\.",
         "Notice No.",
         re.sub(r"\bttb\b", "TTB", m.group(1).capitalize()),
     )
-    return f"<h2>{html.escape(title)}{' <small>' + text(m.group(2)) + '</small>' if m.group(2) else ''}</h2>"
+    note = f" <small>{text(m.group(2))}</small>" if m.group(2) else ""
+    return f"<h2>{html.escape(title)}{note}</h2>"
 
 
-def is_heading(
-    s,
-):  # an ALL-CAPS line at column 0, with an optional "(note)": "... NOTICE NO. 243" too
+def is_heading(s):
+    """Whether line S is a heading.
+
+    A heading is an ALL-CAPS line at column 0, with an optional "(note)";
+    "... NOTICE NO. 243" is one too.
+
+    Args:
+        s: A line of README.txt.
+
+    Returns:
+        A true value (the match) for a heading, a false one otherwise.
+    """
     return (
         s
         and not s.startswith(" ")
@@ -46,7 +71,17 @@ def is_heading(
 
 
 def prose(lines):
-    """paragraphs (blank-line separated) and '- ' list items (continuation lines indented past the dash)"""
+    """A section's lines as HTML paragraphs and lists.
+
+    Paragraphs are separated by blank lines; "- " starts a list item, and a
+    line indented past the dash continues it.
+
+    Args:
+        lines: The section's lines.
+
+    Returns:
+        The HTML.
+    """
     out, para, items = [], [], []
 
     def flush_para():
@@ -79,9 +114,33 @@ def prose(lines):
     return "".join(out)
 
 
+def file_names(names):
+    """The names for a table cell, one per line; a long one breaks after - _ /.
+
+    Args:
+        names: The file names, as README.txt lists them.
+
+    Returns:
+        HTML: the names escaped, separated by <br>, with a <wbr> after each
+        -, _ and / so that a long name can break there.
+    """
+    return "<br>".join(
+        re.sub(r"([-_/])", r"\1<wbr>", html.escape(n)) for n in names
+    )
+
+
 def package(lines):
-    """folder lines at column 0; under each, 'name   description' rows (or a name alone with its description indented
-    below it, or several names sharing one), description continuations indented further, or plain prose
+    """The package listing as HTML: a heading and a table per folder.
+
+    Folder lines are at column 0. Under each come 'name   description' rows
+    (or a name alone with its description indented below it, or several names
+    sharing one), description continuations indented further, or plain prose.
+
+    Args:
+        lines: The lines of the WHAT IS IN THIS PACKAGE section.
+
+    Returns:
+        The HTML.
     """
     out, folder, rows, names, desc, para = [], None, [], [], [], []
 
@@ -95,18 +154,20 @@ def package(lines):
         end_row()
         if folder:
             name, note = folder
+            small = f" <small>{text(note)}</small>" if note else ""
             out.append(
-                f'<h3><span class="path">{html.escape(name)}</span>{" <small>" + text(note) + "</small>" if note else ""}</h3>'
+                f'<h3><span class="path">{html.escape(name)}</span>{small}</h3>'
             )
             if rows:
                 out.append(
                     '<table class="files">'
                     + "".join(
-                        f'<tr><td class="f">{"<br>".join(re.sub(r"([-_/])", r"\1<wbr>", html.escape(n)) for n in ns)}</td><td>{text(d)}</td></tr>'
+                        f'<tr><td class="f">{file_names(ns)}</td>'
+                        f"<td>{text(d)}</td></tr>"
                         for ns, d in rows
                     )
                     + "</table>"
-                )  # long file names break after - _ /
+                )
             if para:
                 out.append("<p>" + text(" ".join(para)) + "</p>")
         rows.clear()
@@ -140,12 +201,19 @@ def package(lines):
     return "".join(out)
 
 
-def words(
-    s,
-):  # the README's list dashes become list bullets, so a lone "-" is not a word
-    s = re.sub(
-        r"<[^>]+>", " ", s.replace("<wbr>", "")
-    )  # <wbr> is only a place a long name may break
+def words(s):
+    """The words of HTML S, lower case, for the check that none is lost.
+
+    The README's list dashes become list bullets, so a lone "-" is not a
+    word; a <wbr> is only a place where a long name may break, not a space.
+
+    Args:
+        s: HTML (README.txt and LICENSE.txt escaped, or the page's parts).
+
+    Returns:
+        The words, in order.
+    """
+    s = re.sub(r"<[^>]+>", " ", s.replace("<wbr>", ""))
     return [
         w
         for w in re.findall(r"[\w.'/:()-]+", html.unescape(s).lower())
@@ -154,22 +222,30 @@ def words(
 
 
 def main():
-    built = json.load(open(os.path.join(HERE, "agreed-steps.json")))
+    """Writes README.txt and the read-me-first page into the work folder.
+
+    Fills the template's {AREA_SQMI} and {STEPS} from the build, and stops
+    (AssertionError) on a placeholder left unfilled or on a word of README.txt
+    or LICENSE.txt that the page does not have.
+    """
+    with open(os.path.join(HERE, "agreed-steps.json")) as f:
+        built = json.load(f)
     fill = {
-        "AREA_SQMI": "%.2f" % built["sqmi"],
+        "AREA_SQMI": f"{built['sqmi']:.2f}",
         "STEPS": str(len(built["steps"])),
     }
-    readme = open(
-        os.path.join(DOC, "README.template.txt"), encoding="utf-8"
-    ).read()
+    with open(os.path.join(DOC, "README.template.txt"), encoding="utf-8") as f:
+        readme = f.read()
     for k, v in fill.items():
         readme = readme.replace("{" + k + "}", v)
-    assert not re.search(r"\{[A-Z_]+\}", readme), (
-        "unfilled placeholder in README.template.txt: %s"
-        % re.findall(r"\{[A-Z_]+\}", readme)
+    unfilled = re.findall(r"\{[A-Z_]+\}", readme)
+    assert not unfilled, (
+        f"unfilled placeholder in README.template.txt: {unfilled}"
     )
-    open(os.path.join(HERE, "README.txt"), "w", encoding="utf-8").write(readme)
-    lic = open(os.path.join(ROOT, "LICENSE.txt"), encoding="utf-8").read()
+    with open(os.path.join(HERE, "README.txt"), "w", encoding="utf-8") as f:
+        f.write(readme)
+    with open(os.path.join(ROOT, "LICENSE.txt"), encoding="utf-8") as f:
+        lic = f.read()
 
     page_readme = readme.replace(
         "(see LICENSE.txt)", "(full text at the end of this page)"
@@ -203,21 +279,23 @@ def main():
     want = words(html.escape(page_readme)) + words(html.escape(lic))
     got = words(readme_html + "<!--intro-->" + body + license_html)
     assert got == want, next(
-        f"read-me page differs from README.txt/LICENSE.txt at word {i}: {got[i : i + 8]} vs {want[i : i + 8]}"
+        f"read-me page differs from README.txt/LICENSE.txt at word {i}: "
+        f"{got[i : i + 8]} vs {want[i : i + 8]}"
         for i in range(max(len(got), len(want)))
         if got[i : i + 1] != want[i : i + 1]
     )
 
-    page = open(
+    with open(
         os.path.join(DOC, "read-me-first.template.html"), encoding="utf-8"
-    ).read()
+    ) as f:
+        page = f.read()
     page = (
         page.replace("{HEADER}", readme_html)
         .replace("{README}", body)
         .replace("{LICENSE}", license_html)
     )
     os.makedirs(os.path.join(HERE, "documents"), exist_ok=True)
-    open(
+    with open(
         os.path.join(
             HERE,
             "documents",
@@ -225,10 +303,11 @@ def main():
         ),
         "w",
         encoding="utf-8",
-    ).write(page)
+    ) as f:
+        f.write(page)
     print(
-        "README.txt and read-me-first page: AVA %s sq mi, %s steps"
-        % (fill["AREA_SQMI"], fill["STEPS"])
+        f"README.txt and read-me-first page: AVA {fill['AREA_SQMI']} sq mi, "
+        f"{fill['STEPS']} steps"
     )
 
 

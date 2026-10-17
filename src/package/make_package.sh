@@ -18,5 +18,11 @@ cp gis/*.geojson gis/*.gpkg "$P"/4_GIS/
 cp gis/shapefiles/*.zip "$P"/4_GIS/shapefiles/
 cp quads/*_geo.pdf quads/*_geo.tif "$P"/5_USGS-quadrangles-with-boundary/
 cmp -s "$D"/TTB-Notice-243-91FR52576-docket-TTB-2026-0005-0001.pdf ttb-source-check-2026-10-15/regs-TTB-2026-0005-0001.pdf   # TTB's file, unchanged
-(cd pkg && rm -f "../$NAME.zip" && zip -q -r -X "../$NAME.zip" "$NAME" -x '*.DS_Store')
+# Every file and folder in the zip dated SOURCE_DATE_EPOCH (build.sh sets it to the package's date; the present time
+# when it is not set), not the time it was copied, so the same files give the same zip. A zip holds local times, so
+# touch and zip run in UTC; -X leaves out the other times (and owners) zip would add.
+EPOCH="${SOURCE_DATE_EPOCH:-$(date +%s)}"
+STAMP="$(date -u -r "$EPOCH" +%Y%m%d%H%M.%S 2>/dev/null || date -u -d "@$EPOCH" +%Y%m%d%H%M.%S)"   # BSD date, GNU date
+find "$P" -exec env TZ=UTC touch -t "$STAMP" {} +
+(cd pkg && rm -f "../$NAME.zip" && TZ=UTC zip -q -r -X "../$NAME.zip" "$NAME" -x '*.DS_Store')
 echo "package: $(find "$P" -type f | wc -l | tr -d ' ') files; $NAME.zip $(wc -c < "$NAME.zip" | tr -d ' ') bytes"

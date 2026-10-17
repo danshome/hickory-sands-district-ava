@@ -15,6 +15,7 @@ import json
 import os
 import shutil
 import sys
+import time
 import zipfile
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -96,6 +97,12 @@ TTB_TYPE = {
     "CFR_Section": (ogr.OFTString, 50),
 }
 SHP_DIR = os.path.join(ttb_record.ROOT, "target", "shp-ttb-schema")
+# The date written into the shapefiles (the .dbf header's last update) and
+# their zips (every member's time), and build_proposed.py's GeoPackage:
+# SOURCE_DATE_EPOCH, which build.sh sets to the package's date, not the time of
+# writing, so the same features give the same bytes; the present time when it
+# is not set.
+DATE = time.gmtime(int(os.environ.get("SOURCE_DATE_EPOCH", time.time())))
 
 
 def split254(text):
@@ -130,7 +137,8 @@ def write_shapefile(fc, stem):
     Field names longer than 10 characters are shortened (SHP_NAME), text
     longer than 254 bytes continues in a second field (SHP_CONT), TTB's fields
     get TTB's types (TTB_TYPE); <stem>-field-names.txt beside the shapefile
-    lists the full names.
+    lists the full names. The .dbf header and the zip's members are dated
+    DATE.
 
     Args:
         fc: the GeoJSON FeatureCollection (one geometry type).
@@ -162,7 +170,15 @@ def write_shapefile(fc, stem):
     ds = ogr.GetDriverByName("ESRI Shapefile").CreateDataSource(
         os.path.join(d, stem + ".shp")
     )
-    lyr = ds.CreateLayer(stem, srs, gtype, options=["ENCODING=UTF-8"])
+    lyr = ds.CreateLayer(
+        stem,
+        srs,
+        gtype,
+        options=[
+            "ENCODING=UTF-8",
+            "DBF_DATE_LAST_UPDATE=" + time.strftime("%Y-%m-%d", DATE),
+        ],
+    )
     cols, mapping = [], []
     for k in keys:
         vals = [
@@ -228,7 +244,12 @@ def write_shapefile(fc, stem):
     zp = os.path.join(SHP_DIR, f"{stem}-shp.zip")
     with zipfile.ZipFile(zp, "w", zipfile.ZIP_DEFLATED) as z:
         for n in sorted(os.listdir(d)):
-            z.write(os.path.join(d, n), n)
+            # the entry z.write would make, but dated DATE, not the file's time
+            info = zipfile.ZipInfo.from_file(os.path.join(d, n), n)
+            info.date_time = DATE[:6]
+            info.compress_type = zipfile.ZIP_DEFLATED
+            with open(os.path.join(d, n), "rb") as fh:
+                z.writestr(info, fh.read())
     print(
         f"    shapefile {os.path.basename(zp)}: {len(cols)} fields "
         f"(+{len(need2)} continuation)"

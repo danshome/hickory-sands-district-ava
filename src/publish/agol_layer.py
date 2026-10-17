@@ -70,6 +70,15 @@ ATTACH = [os.path.join(HERE, "documents", "Hickory-Sands-District-read-me-first-
           os.path.join(PKG, "3_changes-side-by-side", "Hickory-Sands-District-boundary-changes-side-by-side-2026-10-15.pdf")]
 
 gis = GIS(profile="hsd")
+
+READ_ONLY = {"capabilities": "Query,Extract"}   # public layers: no editing by anyone (issue #25: publish leaves editing on)
+
+
+def lock(lyr):
+    """a hosted layer read-only: viewers may query and export it, never add, change or delete features"""
+    FeatureLayerCollection.fromitem(lyr).manager.update_definition(READ_ONLY)
+    return lyr
+
 folder = gis.content.folders.get(FOLDER)
 group = gis.groups.get(GROUP_ID)
 listing = list(folder.list())
@@ -94,8 +103,7 @@ if fl is None:
         fl.move(folder)
     print("published", fl.id, fl.url)
 fl.update(item_properties={"title": LAYER_TITLE, **props})
-flc = FeatureLayerCollection.fromitem(fl)
-flc.manager.update_definition({"capabilities": "Query,Extract"})
+flc = FeatureLayerCollection.fromitem(lock(fl))
 
 layers = {lyr.properties.geometryType: lyr for lyr in flc.layers}
 area, line, pts = layers["esriGeometryPolygon"], layers["esriGeometryPolyline"], layers["esriGeometryPoint"]
@@ -154,7 +162,8 @@ fl.update(data=json.dumps({"layers": [{"id": area.properties.id, "layerDefinitio
 
 # ---------------------------------------------------------------- GeoPackage items and the hosted layers made from them
 def hosted(gpkg, src_title, title, service, props, was=((), ())):
-    """the GeoPackage item and the hosted layer published from it, in the folder; a re-run replaces the file and overwrites the layer"""
+    """the GeoPackage item and the hosted layer published from it, in the folder, read-only; a re-run replaces the file
+    and overwrites the layer"""
     find = lambda kind, *titles: next((typed[(x, kind)] for x in titles if (x, kind) in typed), None)
     src = find("GeoPackage", src_title, *was[0], title)
     lyr = find("Feature Service", title, *was[1], src_title, *was[0])
@@ -166,7 +175,7 @@ def hosted(gpkg, src_title, title, service, props, was=((), ())):
         src.update(item_properties={"title": src_title, **props, "properties": {**(src.properties or {}), "sha256": sha}})
         lyr.update(item_properties={"title": title, **props})
         print("unchanged", lyr.id, lyr.url)
-        return src, lyr
+        return src, lock(lyr)
     if src is None:
         src = folder.add(ItemProperties(title=src_title, item_type=ItemTypeEnum.GEOPACKAGE, tags=TAGS, snippet=props["snippet"],
                                         description=props["description"], license_info=props["licenseInfo"],
@@ -189,7 +198,7 @@ def hosted(gpkg, src_title, title, service, props, was=((), ())):
             time.sleep(2)
         print("overwrote", lyr.id, lyr.url)
     lyr.update(item_properties={"title": title, **props})
-    return src, lyr
+    return src, lock(lyr)
 
 def rename(lyr, nm):
     if lyr.properties.name != nm:

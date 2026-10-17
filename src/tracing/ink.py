@@ -56,9 +56,9 @@ def classes(a, size=7, px_m=2.03):
       brown (contours): blue darkened more than red (warmth above +0.22)
       red (highway fill): green and blue darkened, red not
     """
-    A = a[:3].astype(np.float32)
+    rgb = a[:3].astype(np.float32)
     bg = np.maximum(background(a[:3], size), 1.0)
-    k = A / bg
+    k = rgb / bg
     kr, kg, kb = k[0], k[1], k[2]
     kmean = (kr + kg + kb) / 3
     kmax = np.maximum(np.maximum(kr, kg), kb)
@@ -179,9 +179,9 @@ def lettering(
                 if len(ys) < 4:
                     keep[i] = False
                     continue
-                P = np.column_stack([ys, xs]).astype(float)
-                P -= P.mean(0)
-                sv = np.linalg.svd(P, compute_uv=False)
+                pix = np.column_stack([ys, xs]).astype(float)
+                pix -= pix.mean(0)
+                sv = np.linalg.svd(pix, compute_uv=False)
                 keep[i] = (sv[0] / max(sv[1], 1e-6)) <= (
                     compact if compact is not True else 2.5
                 )
@@ -278,9 +278,9 @@ def digit_holes(
             if j > i and np.hypot(cx[i] - cx[j], cy[i] - cy[j]) <= pair_m:
                 group[find(j)] = find(i)
     out = np.zeros(ink.shape, bool)
-    Y, X = np.mgrid[0 : ink.shape[0], 0 : ink.shape[1]]
-    Y = Y * px_m
-    X = X * px_m
+    yy, xx = np.mgrid[0 : ink.shape[0], 0 : ink.shape[1]]
+    yy = yy * px_m
+    xx = xx * px_m
     for g in {find(i) for i in kid}:
         mem = [i for i in kid if find(i) == g]
         c = np.array([[cx[i], cy[i]] for i in mem])
@@ -293,11 +293,11 @@ def digit_holes(
         nrm = np.array([-ax[1], ax[0]])
         along = (c - ctr) @ ax
         half_ext = max(ext[i] for i in mem) / 2
-        Lu = np.abs(along).max() + half_ext + label_beyond_m
-        Lv = half_ext + label_half_m
-        U = (X - ctr[0]) * ax[0] + (Y - ctr[1]) * ax[1]
-        V = (X - ctr[0]) * nrm[0] + (Y - ctr[1]) * nrm[1]
-        out |= (np.abs(U) <= Lu) & (np.abs(V) <= Lv)
+        half_u = np.abs(along).max() + half_ext + label_beyond_m
+        half_v = half_ext + label_half_m
+        u_off = (xx - ctr[0]) * ax[0] + (yy - ctr[1]) * ax[1]
+        v_off = (xx - ctr[0]) * nrm[0] + (yy - ctr[1]) * nrm[1]
+        out |= (np.abs(u_off) <= half_u) & (np.abs(v_off) <= half_v)
     digits = (
         ndimage.binary_dilation(np.isin(lab, ids[keep]), iterations=grow_px)
         & ink
@@ -331,11 +331,11 @@ def dashes(ink, px_m=2.03, min_m=8.0, max_m=35.0, min_elong=3.0):
         if len(ys) < 4:
             keep[i] = False
             continue
-        P = np.column_stack([ys, xs]).astype(float)
-        P -= P.mean(0)
-        sv = np.linalg.svd(P, compute_uv=False)
+        pix = np.column_stack([ys, xs]).astype(float)
+        pix -= pix.mean(0)
+        sv = np.linalg.svd(pix, compute_uv=False)
         length = (
-            2 * np.sqrt(3) * sv[0] / np.sqrt(len(P)) * px_m
+            2 * np.sqrt(3) * sv[0] / np.sqrt(len(pix)) * px_m
         )  # length of a uniform bar with this spread
         keep[i] = (sv[0] / max(sv[1], 1e-6) >= min_elong) and (length <= max_m)
     return np.isin(lab, ids[keep]) if keep.any() else np.zeros_like(ink)

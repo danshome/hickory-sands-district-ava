@@ -105,22 +105,25 @@ class StepGrid:
             111320.0 * math.cos(math.radians(self.lat0)),
             110574.0,
         )
-        XY = [self.xy(c) for c in lines]
-        A = np.vstack(XY)
+        lines_xy = [self.xy(c) for c in lines]
+        all_xy = np.vstack(lines_xy)
         pad = HALF + 6
-        self.xmin, self.ymin = A[:, 0].min() - pad, A[:, 1].min() - pad
+        self.xmin, self.ymin = (
+            all_xy[:, 0].min() - pad,
+            all_xy[:, 1].min() - pad,
+        )
         nx, ny = (
-            int((A[:, 0].max() + pad - self.xmin) / cl.RES) + 1,
-            int((A[:, 1].max() + pad - self.ymin) / cl.RES) + 1,
+            int((all_xy[:, 0].max() + pad - self.xmin) / cl.RES) + 1,
+            int((all_xy[:, 1].max() + pad - self.ymin) / cl.RES) + 1,
         )
         near = np.zeros((ny, nx), bool)
-        for P in XY:
-            C = cl.resample(P, 0.5)
+        for pts in lines_xy:
+            dense = cl.resample(pts, 0.5)
             rr = np.clip(
-                ((C[:, 1] - self.ymin) / cl.RES).astype(int), 0, ny - 1
+                ((dense[:, 1] - self.ymin) / cl.RES).astype(int), 0, ny - 1
             )
             cc = np.clip(
-                ((C[:, 0] - self.xmin) / cl.RES).astype(int), 0, nx - 1
+                ((dense[:, 0] - self.xmin) / cl.RES).astype(int), 0, nx - 1
             )
             near[rr, cc] = True
         near = ndimage.binary_dilation(
@@ -189,14 +192,16 @@ class StepGrid:
             [(c[:, 0] - self.lon0) * self.mx, (c[:, 1] - self.lat0) * self.my]
         )
 
-    def lonlat(self, P):
-        return self.lon0 + P[..., 0] / self.mx, self.lat0 + P[..., 1] / self.my
+    def lonlat(self, pts):
+        return self.lon0 + pts[..., 0] / self.mx, self.lat0 + pts[
+            ..., 1
+        ] / self.my
 
-    def sample(self, mask, PX, PY):
-        r = np.floor((PY - self.ymin) / cl.RES).astype(int)
-        c = np.floor((PX - self.xmin) / cl.RES).astype(int)
+    def sample(self, mask, px, py):
+        r = np.floor((py - self.ymin) / cl.RES).astype(int)
+        c = np.floor((px - self.xmin) / cl.RES).astype(int)
         ok = (r >= 0) & (r < self.shape[0]) & (c >= 0) & (c < self.shape[1])
-        out = np.zeros(PX.shape, bool)
+        out = np.zeros(px.shape, bool)
         out[ok] = mask[r[ok], c[ok]]
         return out
 
@@ -219,26 +224,26 @@ def long_pieces(mask, min_len):
         if math.hypot(h, w) < min_len:
             continue
         ys, xs = np.nonzero(lab[o] == k)
-        P = np.column_stack([xs, ys]).astype(float)
-        P -= P.mean(0)
-        sv = np.linalg.svd(P, compute_uv=False)
-        if 2 * math.sqrt(3) * sv[0] / math.sqrt(len(P)) * cl.RES >= min_len:
+        pix = np.column_stack([xs, ys]).astype(float)
+        pix -= pix.mean(0)
+        sv = np.linalg.svd(pix, compute_uv=False)
+        if 2 * math.sqrt(3) * sv[0] / math.sqrt(len(pix)) * cl.RES >= min_len:
             keep[k] = True
     return keep[lab]
 
 
 # ---------------------------------------------------------------- lanes in the straightened frame
-def typical_width(S, o):
-    W = [
+def typical_width(strip, o):
+    widths = [
         q[1]
-        for i in range(S.shape[0])
-        for q in (cl.ink_runs(S[i], o) if S[i].any() else [])
+        for i in range(strip.shape[0])
+        for q in (cl.ink_runs(strip[i], o) if strip[i].any() else [])
         if abs(q[0]) <= RIDE
     ]
-    return float(np.median(W)) if W else 3.0
+    return float(np.median(widths)) if widths else 3.0
 
 
-def track_lanes(S, o, wide=None):
+def track_lanes(strip, o, wide=None):
     """S: rows (1 m along the line) x cols (offsets o). Returns lanes [{rows, offs, wid, merged, life}].
     A run of ink continues a lane when it lies within GATE of the lane's last offset (or of its extrapolation), or
     contains the last offset; ties go to the OLDER lane. A lane whose last offset lies inside the (ordinary-width) run
@@ -246,61 +251,63 @@ def track_lanes(S, o, wide=None):
     line's typical width) holds lines welded together: lanes inside it coast, marked merged (identity ambiguous).
     """
     if wide is None:
-        wide = max(8.0, 1.6 * typical_width(S, o))
+        wide = max(8.0, 1.6 * typical_width(strip, o))
     lanes, active = [], []
-    for i in range(S.shape[0]):
-        R = cl.ink_runs(S[i], o) if S[i].any() else []
-        used = [False] * len(R)
+    for i in range(strip.shape[0]):
+        found = cl.ink_runs(strip[i], o) if strip[i].any() else []
+        used = [False] * len(found)
         upd = {}
         cand = []
         for li in active:
-            L = lanes[li]
-            dt = i - L["rows"][-1]
-            last = L["offs"][-1]
+            lane = lanes[li]
+            dt = i - lane["rows"][-1]
+            last = lane["offs"][-1]
             v = 0.0
-            if len(L["rows"]) >= 4:
+            if len(lane["rows"]) >= 4:
                 v = float(
                     np.clip(
-                        (L["offs"][-1] - L["offs"][-4])
-                        / max(L["rows"][-1] - L["rows"][-4], 1),
+                        (lane["offs"][-1] - lane["offs"][-4])
+                        / max(lane["rows"][-1] - lane["rows"][-4], 1),
                         -1.0,
                         1.0,
                     )
                 )
             pred = last + v * dt
             gate = GATE + 0.25 * (dt - 1)
-            for j, q in enumerate(R):
+            for j, q in enumerate(found):
                 d = min(
                     abs(q[0] - pred), abs(q[0] - last)
                 )  # the run grid is 0.5 m: jitter is not velocity
                 if q[1] <= wide and q[2] <= last <= q[3]:
                     d = min(d, 0.25)
                 if d <= gate:
-                    cand.append((round(d * 2) / 2, L["rows"][0], li, j, pred))
+                    cand.append(
+                        (round(d * 2) / 2, lane["rows"][0], li, j, pred)
+                    )
                 elif q[1] > wide and q[2] - 0.5 <= pred <= q[3] + 0.5:
-                    cand.append((gate + 0.5, L["rows"][0], li, j, pred))
+                    cand.append((gate + 0.5, lane["rows"][0], li, j, pred))
         for _d, _, li, j, pred in sorted(cand):
             if li in upd:
                 continue
-            q = R[j]
-            L = lanes[li]
+            q = found[j]
+            lane = lanes[li]
             if used[j]:
                 if (
                     q[1] > wide and q[2] - 0.5 <= pred <= q[3] + 0.5
                 ):  # a second lane inside a welded run: coasts
-                    L["rows"].append(i)
-                    L["offs"].append(pred)
-                    L["wid"].append(q[1])
-                    L["merged"].append(True)
+                    lane["rows"].append(i)
+                    lane["offs"].append(pred)
+                    lane["wid"].append(q[1])
+                    lane["merged"].append(True)
                     upd[li] = j
                 continue
             used[j] = True
-            L["rows"].append(i)
-            L["offs"].append(q[0])
-            L["wid"].append(q[1])
-            L["merged"].append(q[1] > wide)
+            lane["rows"].append(i)
+            lane["offs"].append(q[0])
+            lane["wid"].append(q[1])
+            lane["merged"].append(q[1] > wide)
             upd[li] = j
-        for j, q in enumerate(R):
+        for j, q in enumerate(found):
             if not used[j]:
                 lanes.append(
                     dict(
@@ -312,7 +319,7 @@ def track_lanes(S, o, wide=None):
         # twins: a younger lane whose last offset lies inside the ordinary run an older lane took this row
         dead = set()
         for la, j in upd.items():
-            q = R[j]
+            q = found[j]
             if q[1] > wide:
                 continue
             for lb in active:
@@ -326,28 +333,28 @@ def track_lanes(S, o, wide=None):
                 if q[2] - 0.25 <= lanes[lb]["offs"][-1] <= q[
                     3
                 ] + 0.25 and upd.get(lb, -1) in (-1, j):
-                    A, B = lanes[la], lanes[lb]
+                    keeper, absorbed = lanes[la], lanes[lb]
                     for k in ("rows", "offs", "wid", "merged"):
-                        A[k] = A[k] + B[k]
-                    order = np.argsort(A["rows"], kind="stable")
+                        keeper[k] = keeper[k] + absorbed[k]
+                    order = np.argsort(keeper["rows"], kind="stable")
                     for k in ("rows", "offs", "wid", "merged"):
-                        A[k] = [A[k][x] for x in order]
-                    B["rows"] = []
+                        keeper[k] = [keeper[k][x] for x in order]
+                    absorbed["rows"] = []
                     dead.add(lb)
         active = [
             li
             for li in active
             if li not in dead and i - lanes[li]["rows"][-1] <= COAST
         ]
-    lanes = [L for L in lanes if L["rows"]]
-    for L in lanes:
-        r = np.array(L["rows"])
+    lanes = [lane for lane in lanes if lane["rows"]]
+    for lane in lanes:
+        r = np.array(lane["rows"])
         _, first = np.unique(r, return_index=True)
-        L["rows"] = r[first]
-        L["offs"] = np.array(L["offs"])[first]
-        L["wid"] = np.array(L["wid"])[first]
-        L["merged"] = np.array(L["merged"])[first]
-        L["life"] = int(L["rows"][-1] - L["rows"][0] + 1)
+        lane["rows"] = r[first]
+        lane["offs"] = np.array(lane["offs"])[first]
+        lane["wid"] = np.array(lane["wid"])[first]
+        lane["merged"] = np.array(lane["merged"])[first]
+        lane["life"] = int(lane["rows"][-1] - lane["rows"][0] + 1)
     return lanes
 
 
@@ -359,12 +366,15 @@ def ridden_sequence(lanes, n):
     best = np.full(n, np.inf)
     amb = np.zeros(n, bool)
     cnt = np.zeros(n, int)
-    for li, L in enumerate(lanes):
-        if L["life"] < LANE_MIN:
+    for li, lane in enumerate(lanes):
+        if lane["life"] < LANE_MIN:
             continue
-        sel = np.abs(L["offs"]) <= RIDE
+        sel = np.abs(lane["offs"]) <= RIDE
         for i, off, mg in zip(
-            L["rows"][sel], L["offs"][sel], L["merged"][sel], strict=True
+            lane["rows"][sel],
+            lane["offs"][sel],
+            lane["merged"][sel],
+            strict=True,
         ):
             cnt[i] += 1
             if mg:
@@ -376,24 +386,26 @@ def ridden_sequence(lanes, n):
     return rid, amb
 
 
-def lane_beside(L, lo, hi, S=None, o=None, elsewhere=None):
+def lane_beside(lane, lo, hi, strip=None, o=None, elsewhere=None):
     """metres of lane L seen BESIDE the line in rows [lo, hi), and the largest |off| there. Beside means: |off| >= BESIDE,
     white paper (>= 1 m with no ink) between it and the line -- so a heavy line's halo or a split run is not a second
     line -- and not on the line itself somewhere else (the other arm of a V or a hairpin is the same contour: elsewhere
     is a per-observation flag computed from the whole line)
     """
     sel = (
-        (L["rows"] >= lo)
-        & (L["rows"] < hi)
-        & (np.abs(L["offs"]) >= BESIDE)
-        & (np.abs(L["offs"]) <= HALF - 1)
+        (lane["rows"] >= lo)
+        & (lane["rows"] < hi)
+        & (np.abs(lane["offs"]) >= BESIDE)
+        & (np.abs(lane["offs"]) <= HALF - 1)
     )
-    if S is not None and sel.any():
+    if strip is not None and sel.any():
         k0 = len(o) // 2
         for x in np.flatnonzero(sel):
-            r, f = L["rows"][x], L["offs"][x]
+            r, f = lane["rows"][x], lane["offs"][x]
             j = round((f + HALF) / DO)
-            between = S[r, k0:j] if j > k0 else S[r, j + 1 : k0 + 1][::-1]
+            between = (
+                strip[r, k0:j] if j > k0 else strip[r, j + 1 : k0 + 1][::-1]
+            )
             # the lane's own run is at the far end; require a white stretch of >= 2 cells somewhere between
             w = ~between
             best = 0
@@ -404,24 +416,24 @@ def lane_beside(L, lo, hi, S=None, o=None, elsewhere=None):
             if best < 2:
                 sel[x] = False
     if elsewhere is not None and sel.any():
-        sel &= ~elsewhere(L, sel)
+        sel &= ~elsewhere(lane, sel)
     return int(sel.sum()), float(
-        np.abs(L["offs"][sel]).max()
+        np.abs(lane["offs"][sel]).max()
     ) if sel.any() else 0.0
 
 
-def hop_events(lanes, rid, n, S=None, o=None, C=None, N=None):
-    tree = cKDTree(C) if C is not None else None
+def hop_events(lanes, rid, n, strip=None, o=None, line=None, nrm=None):
+    tree = cKDTree(line) if line is not None else None
 
-    def elsewhere(L, sel):
+    def elsewhere(lane, sel):
         """observations of L that lie within 2 m of the line at an arc position > 20 m from the row they were seen at"""
-        r = L["rows"][sel]
-        f = L["offs"][sel]
-        Pts = C[r] + f[:, None] * N[r]
+        r = lane["rows"][sel]
+        f = lane["offs"][sel]
+        pts = line[r] + f[:, None] * nrm[r]
         # an observation >= 3 m off its own row that is within 2 m of the line ANYWHERE is ink the line rides
         # elsewhere (the other arm of a V, a hairpin, the far side of a tight bend), not a second line
-        out = np.zeros(len(L["rows"]), bool)
-        out[np.flatnonzero(sel)] = tree.query(Pts)[0] <= 2.0
+        out = np.zeros(len(lane["rows"]), bool)
+        out[np.flatnonzero(sel)] = tree.query(pts)[0] <= 2.0
         return out
 
     segs = []  # (lane, first row, last row) of the ridden sequence
@@ -443,17 +455,17 @@ def hop_events(lanes, rid, n, S=None, o=None, C=None, N=None):
     # "carries on" is ANY long lane seen within 3.5 m of the line's position at the leaving point, not just the old id.
     at = {}
     k0 = len(o) // 2
-    for li, L in enumerate(lanes):
-        if L["life"] < LANE_MIN:
+    for li, lane in enumerate(lanes):
+        if lane["life"] < LANE_MIN:
             continue
-        for r, f in zip(L["rows"], L["offs"], strict=True):
+        for r, f in zip(lane["rows"], lane["offs"], strict=True):
             if abs(f) <= 3.5:
                 at.setdefault(int(r), set()).add(li)
             elif (
-                abs(f) <= 8.0 and S is not None
+                abs(f) <= 8.0 and strip is not None
             ):  # or its ink joins the ink under the line (a fork)
                 j = round((f + HALF) / DO)
-                seg = S[r, min(j, k0) : max(j, k0) + 1]
+                seg = strip[r, min(j, k0) : max(j, k0) + 1]
                 if (~seg).sum() <= 1:
                     at.setdefault(int(r), set()).add(li)
 
@@ -463,14 +475,15 @@ def hop_events(lanes, rid, n, S=None, o=None, C=None, N=None):
             out |= at.get(r, set())
         return out
 
-    for x, (A, _a0, a1) in enumerate(segs):
-        if x + 1 < len(segs) and segs[x + 1][0] == A:
+    for x, (lane_out, _a0, a1) in enumerate(segs):
+        if x + 1 < len(segs) and segs[x + 1][0] == lane_out:
             continue
         nxt = segs[x + 1][0] if x + 1 < len(segs) else None
         best = (0, 0.0)
-        for L in near(a1 - 3, a1 + 6) - {nxt}:
+        for lj in near(a1 - 3, a1 + 6) - {nxt}:
             best = max(
-                best, lane_beside(lanes[L], a1 + 1, a1 + 1 + LOOK, S, o, ew)
+                best,
+                lane_beside(lanes[lj], a1 + 1, a1 + 1 + LOOK, strip, o, ew),
             )
         outm, outx = best
         if outm >= 2 * BESIDE_MIN or (outm >= BESIDE_MIN and outx >= 6.0):
@@ -484,14 +497,15 @@ def hop_events(lanes, rid, n, S=None, o=None, C=None, N=None):
                     why=f"left a line that carries on beside it ({outm} m, up to {outx:.1f} m off)",
                 )
             )
-    for x, (B, b0, _b1) in enumerate(segs):
-        if x > 0 and segs[x - 1][0] == B:
+    for x, (lane_in, b0, _b1) in enumerate(segs):
+        if x > 0 and segs[x - 1][0] == lane_in:
             continue
         prv = segs[x - 1][0] if x > 0 else None
         best = (0, 0.0)
-        for L in near(b0 - 6, b0 + 3) - {prv}:
+        for lj in near(b0 - 6, b0 + 3) - {prv}:
             best = max(
-                best, lane_beside(lanes[L], max(0, b0 - LOOK), b0, S, o, ew)
+                best,
+                lane_beside(lanes[lj], max(0, b0 - LOOK), b0, strip, o, ew),
             )
         inm, inx = best
         if inm >= 2 * BESIDE_MIN or (inm >= BESIDE_MIN and inx >= 6.0):
@@ -510,10 +524,10 @@ def hop_events(lanes, rid, n, S=None, o=None, C=None, N=None):
 
 def crossing_events(lanes, n, rid=None):
     ev = []
-    for li, L in enumerate(lanes):
-        if L["life"] < LANE_MIN:
+    for li, lane in enumerate(lanes):
+        if lane["life"] < LANE_MIN:
             continue
-        r, f = L["rows"], L["offs"]
+        r, f = lane["rows"], lane["offs"]
         pos = np.flatnonzero(f >= 2.0)
         neg = np.flatnonzero(f <= -2.0)
         if not len(pos) or not len(neg):
@@ -545,43 +559,43 @@ def crossing_events(lanes, n, rid=None):
                             r0=int(r[a]),
                             r1=int(r[b]),
                             size_m=round(float(max(abs(f[a]), abs(f[b]))), 1),
-                            why=f"a {L['life']} m line passes from {f[a]:+.1f} m to {f[b]:+.1f} m across the line",
+                            why=f"a {lane['life']} m line passes from {f[a]:+.1f} m to {f[b]:+.1f} m across the line",
                         )
                     )
     return ev
 
 
 # ---------------------------------------------------------------- shape checks
-def headings(C, h=2):
-    n = len(C)
+def headings(pts, h=2):
+    n = len(pts)
     i = np.arange(n)
-    D = C[np.minimum(i + h, n - 1)] - C[np.maximum(i - h, 0)]
-    return np.unwrap(np.arctan2(D[:, 1], D[:, 0]))
+    delta = pts[np.minimum(i + h, n - 1)] - pts[np.maximum(i - h, 0)]
+    return np.unwrap(np.arctan2(delta[:, 1], delta[:, 0]))
 
 
-def wiggle_events(C, d_long=None):
+def wiggle_events(pts, d_long=None):
     """loops through label digits: total |turn| - |net turn| over WIGGLE_WIN m > WIGGLE_DEG, AND inside that window the
     line spends >= 5 m off long-line ink (it is riding digit strokes or nothing). A real hairpin or S-bend of the
     contour turns as much, but the line stays on the contour's own long ink the whole way.
     """
-    th = headings(C)
+    th = headings(pts)
     d = np.diff(th)
-    n = len(C)
-    W = WIGGLE_WIN
+    n = len(pts)
+    win = WIGGLE_WIN
     a = np.concatenate([[0], np.cumsum(np.abs(d))])
     s = np.concatenate([[0], np.cumsum(d)])
-    i = np.arange(0, max(n - W, 0))
+    i = np.arange(0, max(n - win, 0))
     if not len(i):
         return [], np.zeros(n)
-    tot = a[i + W - 1] - a[i]
-    net = np.abs(s[i + W - 1] - s[i])
+    tot = a[i + win - 1] - a[i]
+    net = np.abs(s[i + win - 1] - s[i])
     wig = np.degrees(tot - net)
     if d_long is not None:
         offl = np.concatenate([[0], np.cumsum(d_long > RIDE + 0.5)])
-        offm = offl[i + W] - offl[i]
+        offm = offl[i + win] - offl[i]
         wig = np.where(offm >= 5, wig, 0.0)
     score = np.zeros(n)
-    score[i + W // 2] = wig
+    score[i + win // 2] = wig
     ev = []
     for r0, r1 in cl.runs(score > WIGGLE_DEG):
         k = r0 + int(np.argmax(score[r0:r1]))
@@ -591,42 +605,42 @@ def wiggle_events(C, d_long=None):
                 r0=int(r0),
                 r1=int(r1),
                 size_m=round(float(score[k]), 0),
-                why=f"turns {score[k]:.0f} deg back and forth within {W} m while off the line's ink (loop through digits?)",
+                why=f"turns {score[k]:.0f} deg back and forth within {win} m while off the line's ink (loop through digits?)",
             )
         )
     return ev, score
 
 
-def bridge_events(C, G):
+def bridge_events(pts, grid):
     """where the line is off long-line ink for 8-400 m it must bridge the gap smoothly: compared with the cubic Hermite
     curve between the ink either side, with the line's own direction over the 10 m of ink before and after the gap
     (straight across a label on a straight contour, along the bend for a gap on a bend). Max distance > max(3 m, 5% of
     the chord) is flagged.
     """
-    d = G_d_at(G, C)
+    d = d_long_at(grid, pts)
     off = d > RIDE + 0.5
     ev = []
-    n = len(C)
+    n = len(pts)
     for a, b in cl.runs(off):
-        L = b - a
-        if L < 8 or L > 400 or a < 11 or b + 10 >= n:
+        gap_len = b - a
+        if gap_len < 8 or gap_len > 400 or a < 11 or b + 10 >= n:
             continue
-        P0, P1 = C[a - 1], C[b]
-        ch = float(np.hypot(*(P1 - P0)))
+        p0, p1 = pts[a - 1], pts[b]
+        ch = float(np.hypot(*(p1 - p0)))
         if ch < 1:
             continue
-        t0 = C[a - 1] - C[a - 11]
-        t1 = C[b + 10] - C[b]
+        t0 = pts[a - 1] - pts[a - 11]
+        t1 = pts[b + 10] - pts[b]
         t0 = t0 / (np.hypot(*t0) + 1e-9) * ch
         t1 = t1 / (np.hypot(*t1) + 1e-9) * ch
-        u = np.linspace(0, 1, 4 * L + 2)[:, None]
-        H = (
-            (2 * u**3 - 3 * u**2 + 1) * P0
+        u = np.linspace(0, 1, 4 * gap_len + 2)[:, None]
+        herm = (
+            (2 * u**3 - 3 * u**2 + 1) * p0
             + (u**3 - 2 * u**2 + u) * t0
-            + (-2 * u**3 + 3 * u**2) * P1
+            + (-2 * u**3 + 3 * u**2) * p1
             + (u**3 - u**2) * t1
         )
-        dev = cKDTree(H).query(C[a:b])[0]
+        dev = cKDTree(herm).query(pts[a:b])[0]
         k = int(np.argmax(dev))
         tol = max(3.0, 0.05 * ch)
         if dev[k] > tol:
@@ -636,27 +650,31 @@ def bridge_events(C, G):
                     r0=int(a),
                     r1=int(b),
                     size_m=round(float(dev[k]), 1),
-                    why=f"off the line ink for {L} m and {dev[k]:.1f} m from a smooth bridge across the gap (chord {ch:.0f} m)",
+                    why=f"off the line ink for {gap_len} m and {dev[k]:.1f} m from a smooth bridge across the gap (chord {ch:.0f} m)",
                 )
             )
     return ev, d
 
 
-def G_d_at(G, C):
-    r = np.clip(((C[:, 1] - G.ymin) / cl.RES).astype(int), 0, G.shape[0] - 1)
-    c = np.clip(((C[:, 0] - G.xmin) / cl.RES).astype(int), 0, G.shape[1] - 1)
-    return G.d_long[r, c]
+def d_long_at(grid, pts):
+    r = np.clip(
+        ((pts[:, 1] - grid.ymin) / cl.RES).astype(int), 0, grid.shape[0] - 1
+    )
+    c = np.clip(
+        ((pts[:, 0] - grid.xmin) / cl.RES).astype(int), 0, grid.shape[1] - 1
+    )
+    return grid.d_long[r, c]
 
 
-def wrongclass_events(C, G):
-    if G.kind == "road":
+def wrongclass_events(pts, grid):
+    if grid.kind == "road":
         return []
-    N = cl.normals(C)
+    nrm = cl.normals(pts)
     o = np.arange(-RIDE, RIDE + 1e-9, 0.5)
-    PX = C[:, 0, None] + o * N[:, 0, None]
-    PY = C[:, 1, None] + o * N[:, 1, None]
-    oth = G.sample(G.other_long, PX, PY).any(1)
-    own = G.sample(G.line, PX, PY).any(1)
+    px = pts[:, 0, None] + o * nrm[:, 0, None]
+    py = pts[:, 1, None] + o * nrm[:, 1, None]
+    oth = grid.sample(grid.other_long, px, py).any(1)
+    own = grid.sample(grid.line, px, py).any(1)
     ev = []
     for a, b in cl.runs(oth & ~own):
         if b - a >= 10:
@@ -666,26 +684,26 @@ def wrongclass_events(C, G):
                     r0=int(a),
                     r1=int(b),
                     size_m=float(b - a),
-                    why=f"rides other ink ({'blue' if G.kind == 'contour' else 'brown/black'}) for {b - a} m",
+                    why=f"rides other ink ({'blue' if grid.kind == 'contour' else 'brown/black'}) for {b - a} m",
                 )
             )
     return ev
 
 
-def seg_intersections(P, Q=None, cell=5.0, min_sep=4):
+def seg_intersections(pts, other=None, cell=5.0, min_sep=4):
     """crossings of polyline P with itself (Q None; segments >= min_sep apart) or with polyline Q: list of (i, j)"""
 
-    def buckets(A):
-        B = {}
-        for i in range(len(A) - 1):
-            x0, x1 = sorted((A[i, 0], A[i + 1, 0]))
-            y0, y1 = sorted((A[i, 1], A[i + 1, 1]))
+    def buckets(poly):
+        cells = {}
+        for i in range(len(poly) - 1):
+            x0, x1 = sorted((poly[i, 0], poly[i + 1, 0]))
+            y0, y1 = sorted((poly[i, 1], poly[i + 1, 1]))
             for gx in range(math.floor(x0 / cell), math.floor(x1 / cell) + 1):
                 for gy in range(
                     math.floor(y0 / cell), math.floor(y1 / cell) + 1
                 ):
-                    B.setdefault((gx, gy), []).append(i)
-        return B
+                    cells.setdefault((gx, gy), []).append(i)
+        return cells
 
     def cross(a, b, c, d):
         def o(p, q, r):
@@ -693,56 +711,58 @@ def seg_intersections(P, Q=None, cell=5.0, min_sep=4):
 
         return (o(a, b, c) * o(a, b, d) < 0) and (o(c, d, a) * o(c, d, b) < 0)
 
-    BP = buckets(P)
+    cells_p = buckets(pts)
     out = set()
-    if Q is None:
-        for L in BP.values():
-            for x in range(len(L)):
-                for y in range(x + 1, len(L)):
-                    i, j = L[x], L[y]
+    if other is None:
+        for segs in cells_p.values():
+            for x in range(len(segs)):
+                for y in range(x + 1, len(segs)):
+                    i, j = segs[x], segs[y]
                     if abs(i - j) >= min_sep and cross(
-                        P[i], P[i + 1], P[j], P[j + 1]
+                        pts[i], pts[i + 1], pts[j], pts[j + 1]
                     ):
                         out.add((min(i, j), max(i, j)))
     else:
-        BQ = buckets(Q)
-        for k, L in BP.items():
-            for j in BQ.get(k, []):
-                for i in L:
-                    if cross(P[i], P[i + 1], Q[j], Q[j + 1]):
+        cells_q = buckets(other)
+        for k, segs in cells_p.items():
+            for j in cells_q.get(k, []):
+                for i in segs:
+                    if cross(pts[i], pts[i + 1], other[j], other[j + 1]):
                         out.add((i, j))
     return sorted(out)
 
 
 # ---------------------------------------------------------------- one line
-def check_line(G, coords, others=(), sheet_rows=None):
-    P = G.xy(coords)
-    C = cl.resample(P, 1.0)
-    C[0], C[-1] = P[0], P[-1]
-    n = len(C)
-    meas, _symbol = cl.grade(C, G.g["kind"], G.xmin, G.ymin, G.kind)
+def check_line(grid, coords, others=(), sheet_rows=None):
+    pts = grid.xy(coords)
+    line = cl.resample(pts, 1.0)
+    line[0], line[-1] = pts[0], pts[-1]
+    n = len(line)
+    meas, _symbol = cl.grade(
+        line, grid.g["kind"], grid.xmin, grid.ymin, grid.kind
+    )
     o = np.arange(-HALF, HALF + 1e-9, DO)
-    N = cl.normals(C)
-    PX = C[:, 0, None] + o * N[:, 0, None]
-    PY = C[:, 1, None] + o * N[:, 1, None]
-    S = G.sample(G.line, PX, PY)
-    lanes = track_lanes(S, o)
+    nrm = cl.normals(line)
+    px = line[:, 0, None] + o * nrm[:, 0, None]
+    py = line[:, 1, None] + o * nrm[:, 1, None]
+    strip = grid.sample(grid.line, px, py)
+    lanes = track_lanes(strip, o)
     rid, amb = ridden_sequence(lanes, n)
     ev = []
-    if G.kind in ("contour", "creek"):
-        ev += hop_events(lanes, rid, n, S, o, C, N)
-        if G.kind == "contour":
+    if grid.kind in ("contour", "creek"):
+        ev += hop_events(lanes, rid, n, strip, o, line, nrm)
+        if grid.kind == "contour":
             ev += crossing_events(lanes, n, rid)
     else:
         ev += road_events(lanes, n)
     d_long = None
-    if G.kind != "road":
-        be, d_long = bridge_events(C, G)
+    if grid.kind != "road":
+        be, d_long = bridge_events(line, grid)
         ev += be
-    we, _wscore = wiggle_events(C, d_long)
+    we, _wscore = wiggle_events(line, d_long)
     ev += we
-    ev += wrongclass_events(C, G)
-    for i, j in seg_intersections(C):
+    ev += wrongclass_events(line, grid)
+    for i, j in seg_intersections(line):
         ev.append(
             dict(
                 type="selfx",
@@ -752,8 +772,10 @@ def check_line(G, coords, others=(), sheet_rows=None):
                 why=f"crosses itself (metre {j})",
             )
         )
-    for name, Q in others:
-        for i, _j in seg_intersections(C, G.xy(Q) if len(Q) else None):
+    for name, other_coords in others:
+        for i, _j in seg_intersections(
+            line, grid.xy(other_coords) if len(other_coords) else None
+        ):
             if i < END_SKIP or i > n - END_SKIP:
                 continue  # steps meet at their shared pins
             ev.append(
@@ -776,17 +798,17 @@ def check_line(G, coords, others=(), sheet_rows=None):
                 e["sheet_edge"] = True
     ev = [e for e in ev if e["r1"] >= END_SKIP and e["r0"] <= n - 1 - END_SKIP]
     # context, for the reader only (pass/fail does not depend on it): a sharp bend at the event, lettering near it
-    th = headings(C)
-    tx = ndimage.binary_dilation(G.g["text"], structure=cl.disk(12 / cl.RES))
+    th = headings(line)
+    tx = ndimage.binary_dilation(grid.g["text"], structure=cl.disk(12 / cl.RES))
     for e in ev:
         a0, a1 = max(0, e["r0"] - 10), min(n - 1, e["r1"] + 10)
         e["turn_deg"] = round(abs(math.degrees(th[a1] - th[a0])))
-        seg = C[e["r0"] : e["r1"] + 1]
+        seg = line[e["r0"] : e["r1"] + 1]
         rr = np.clip(
-            ((seg[:, 1] - G.ymin) / cl.RES).astype(int), 0, G.shape[0] - 1
+            ((seg[:, 1] - grid.ymin) / cl.RES).astype(int), 0, grid.shape[0] - 1
         )
         cc = np.clip(
-            ((seg[:, 0] - G.xmin) / cl.RES).astype(int), 0, G.shape[1] - 1
+            ((seg[:, 0] - grid.xmin) / cl.RES).astype(int), 0, grid.shape[1] - 1
         )
         e["at_label"] = bool(tx[rr, cc].any())
         e["context"] = (
@@ -796,7 +818,7 @@ def check_line(G, coords, others=(), sheet_rows=None):
         )
     for e in ev:
         k = (e["r0"] + e["r1"]) // 2
-        lo, la = G.lonlat(C[k])
+        lo, la = grid.lonlat(line[k])
         e["lon"], e["lat"] = round(float(lo), 6), round(float(la), 6)
         e["s_m"] = int(k)
     # ---- per-metre states
@@ -823,7 +845,7 @@ def check_line(G, coords, others=(), sheet_rows=None):
         if b - a >= 3:
             flagged[a:b] = True
     graded_ok = ~np.isnan(meas) & (np.nan_to_num(resid, nan=99) <= 2)
-    lane_ok = road_ok(lanes, n) if G.kind == "road" else (rid >= 0) & ~amb
+    lane_ok = road_ok(lanes, n) if grid.kind == "road" else (rid >= 0) & ~amb
     verified = graded_ok & lane_ok & ~flagged & core
     flagged &= core
     unmeasured = core & ~verified & ~flagged
@@ -866,7 +888,7 @@ def check_line(G, coords, others=(), sheet_rows=None):
     for a, b in cl.runs(unmeasured):
         if b - a >= 15:
             k = (a + b) // 2
-            lo, la = G.lonlat(C[k])
+            lo, la = grid.lonlat(line[k])
             queue.append([round(float(lo), 6), round(float(la), 6), int(b - a)])
     stats["excursions_m"] = int(
         sum(b - a for a, b in exc)
@@ -885,7 +907,7 @@ def check_line(G, coords, others=(), sheet_rows=None):
         and not e.get("sheet_edge")
     )
     return dict(
-        C=C,
+        C=line,
         meas=meas,
         rid=rid,
         amb=amb,
@@ -905,11 +927,11 @@ def road_ok(lanes, n):
     """a metre is lane-verified when a long lane is on each side of the line (a casing pair) within 2.5-11 m"""
     left = np.zeros(n, bool)
     right = np.zeros(n, bool)
-    for L in lanes:
-        if L["life"] < LANE_MIN:
+    for lane in lanes:
+        if lane["life"] < LANE_MIN:
             continue
-        f = L["offs"]
-        r = L["rows"]
+        f = lane["offs"]
+        r = lane["rows"]
         sl = (f <= -1.25) & (f >= -11)
         sr = (f >= 1.25) & (f <= 11)
         left[r[sl]] = True
@@ -924,10 +946,10 @@ def road_ok(lanes, n):
 def road_events(lanes, n):
     """roads: the line crosses a long casing lane (it went over the road's edge onto something else)"""
     ev = []
-    for L in lanes:
-        if L["life"] < 25:
+    for lane in lanes:
+        if lane["life"] < 25:
             continue
-        r, f = L["rows"], L["offs"]
+        r, f = lane["rows"], lane["offs"]
         side = np.where(f >= 1.0, 1, np.where(f <= -1.0, -1, 0))
         k = np.flatnonzero(side != 0)
         for a, b in itertools.pairwise(k):
@@ -945,7 +967,7 @@ def road_events(lanes, n):
                             r0=int(r[a]),
                             r1=int(r[b]),
                             size_m=round(float(max(abs(f[a]), abs(f[b]))), 1),
-                            why=f"a {L['life']} m casing/line passes from {f[a]:+.1f} m to {f[b]:+.1f} m across the line",
+                            why=f"a {lane['life']} m casing/line passes from {f[a]:+.1f} m to {f[b]:+.1f} m across the line",
                         )
                     )
     return ev
@@ -1037,16 +1059,16 @@ def render_crop(
     big, bc0, br0 = sh.read(
         c - half_px - m, r - half_px - m, c + half_px + m, r + half_px + m
     )
-    M = inklib.classes(big)
+    masks = inklib.classes(big)
     a, c0, r0 = sh.read(c - half_px, r - half_px, c + half_px, r + half_px)
     oy, ox = int(r0 - br0), int(c0 - bc0)
     rgb = np.transpose(a, (1, 2, 0)).astype("uint8")
     ov = np.full_like(rgb, 255)
     for k, col in COL.items():
-        ov[M[k][oy : oy + rgb.shape[0], ox : ox + rgb.shape[1]]] = col
-    W, H = rgb.shape[1] * scale, rgb.shape[0] * scale
-    L = Image.fromarray(rgb).resize((W, H), Image.NEAREST)
-    R = Image.fromarray(ov).resize((W, H), Image.NEAREST)
+        ov[masks[k][oy : oy + rgb.shape[0], ox : ox + rgb.shape[1]]] = col
+    width_px, height_px = rgb.shape[1] * scale, rgb.shape[0] * scale
+    left_im = Image.fromarray(rgb).resize((width_px, height_px), Image.NEAREST)
+    right_im = Image.fromarray(ov).resize((width_px, height_px), Image.NEAREST)
 
     def pts(co):
         cc, rr, _, _ = sh.pixels([p[0] for p in co], [p[1] for p in co])
@@ -1056,37 +1078,46 @@ def render_crop(
         ]
 
     for im, items in (
-        (L, ((prior, (230, 0, 0), 1), (traced, (120, 0, 230), 2))),
-        (R, ((traced, (120, 0, 230), 2),)),
+        (left_im, ((prior, (230, 0, 0), 1), (traced, (120, 0, 230), 2))),
+        (right_im, ((traced, (120, 0, 230), 2),)),
     ):
         d = ImageDraw.Draw(im)
         for co, col, wd in items:
             if co is not None and len(co) > 1:
                 d.line(pts(co), fill=col, width=wd)
-    d = ImageDraw.Draw(L)
+    d = ImageDraw.Draw(left_im)
     for st in stretches:
         if len(st) > 1:
             p = pts(st)
             d.line(p, fill=(255, 210, 0), width=4)
             for u, v in (p[0], p[-1]):
                 d.ellipse([u - 4, v - 4, u + 4, v + 4], outline=(0, 0, 0))
-    for im in (L, R):
+    for im in (left_im, right_im):
         ImageDraw.Draw(im).ellipse(
-            [W / 2 - 6, H / 2 - 6, W / 2 + 6, H / 2 + 6],
+            [
+                width_px / 2 - 6,
+                height_px / 2 - 6,
+                width_px / 2 + 6,
+                height_px / 2 + 6,
+            ],
             outline=(0, 0, 0),
             width=1,
         )
     f = _font(14)
     lh = 18
     lines = [
-        x for t in lines for x in wrap(t, max(40, int((2 * W + 10) / 7.4)))
+        x
+        for t in lines
+        for x in wrap(t, max(40, int((2 * width_px + 10) / 7.4)))
     ][:8]
-    o = Image.new("RGB", (2 * W + 10, H + lh * len(lines) + 6), "white")
+    o = Image.new(
+        "RGB", (2 * width_px + 10, height_px + lh * len(lines) + 6), "white"
+    )
     dd = ImageDraw.Draw(o)
     for k, t in enumerate(lines):
         dd.text((4, 3 + k * lh), t, fill=(0, 0, 0), font=f)
-    o.paste(L, (0, lh * len(lines) + 6))
-    o.paste(R, (W + 10, lh * len(lines) + 6))
+    o.paste(left_im, (0, lh * len(lines) + 6))
+    o.paste(right_im, (width_px + 10, lh * len(lines) + 6))
     o.save(out)
     return True
 
@@ -1154,13 +1185,13 @@ def main():
     for sid in ids:
         kind, coords = feats[sid]
         ts = time.time()
-        G = StepGrid(sheets, [coords], kind)
+        grid = StepGrid(sheets, [coords], kind)
         others = [(o_, feats[o_][1]) for o_ in feats if o_ != sid]
-        P = G.xy(coords)
-        C = cl.resample(P, 1.0)
-        lo, la = G.lonlat(C)
-        R = check_line(G, coords, others, sheet_index(sheets, lo, la))
-        st = R["stats"]
+        pts = grid.xy(coords)
+        line = cl.resample(pts, 1.0)
+        lo, la = grid.lonlat(line)
+        chk = check_line(grid, coords, others, sheet_index(sheets, lo, la))
+        st = chk["stats"]
         ok = kind in VALIDATED
         # ---- queue entries: every event, and every unmeasured stretch >= 15 m; clustered along the line
         ent = [
@@ -1172,7 +1203,7 @@ def main():
                 why=e["why"],
                 context=e.get("context", ""),
             )
-            for e in R["events"]
+            for e in chk["events"]
         ]
         ent += [
             dict(
@@ -1183,7 +1214,7 @@ def main():
                 why=f"{int(x1 - x0)} m neither verified nor flagged",
                 context="",
             )
-            for x0, x1 in R["unmeasured_runs"]
+            for x0, x1 in chk["unmeasured_runs"]
             if x1 - x0 >= 15
         ]
         ent.sort(key=lambda e: e["r0"])
@@ -1286,9 +1317,9 @@ def main():
                 verified_pct=st["verified_pct"],
                 flagged_pct=st["flagged_pct"],
                 unmeasured_pct=st["unmeasured_pct"],
-                verified_m=int(R["verified"].sum()),
-                flagged_m=int(R["flagged"].sum()),
-                unmeasured_m=int(R["unmeasured"].sum()),
+                verified_m=int(chk["verified"].sum()),
+                flagged_m=int(chk["flagged"].sum()),
+                unmeasured_m=int(chk["unmeasured"].sum()),
                 wrong_line_m=st["excursions_m"],
                 graded_ok_but_suspect_m=st["graded_ok_but_suspect_m"],
                 **{
@@ -1326,9 +1357,9 @@ def main():
         ext = 0
         for stx in it["_stretches"]:
             if len(stx) > 1:
-                X = (np.array([p[0] for p in stx]) - it["lon"]) * 95600
-                Y = (np.array([p[1] for p in stx]) - it["lat"]) * 110574
-                ext = max(ext, float(np.hypot(X, Y).max()))
+                dx = (np.array([p[0] for p in stx]) - it["lon"]) * 95600
+                dy = (np.array([p[1] for p in stx]) - it["lat"]) * 110574
+                ext = max(ext, float(np.hypot(dx, dy).max()))
         half = int(min(110, max(50, ext / 2.03 + 25)))
         where = (
             f"size {it['size']}  metres {it['s_from_m']}-{it['s_to_m']} along the line"

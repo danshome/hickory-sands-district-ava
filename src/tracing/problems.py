@@ -66,16 +66,16 @@ def m_between(a, b):
 
 
 def dist_to(line, p):
-    O = np.array(line)
-    X = (O[:, 0] - p[0]) * 111320 * math.cos(math.radians(p[1]))
-    Y = (O[:, 1] - p[1]) * 110574
-    A = np.column_stack([X, Y])
-    D = A[1:] - A[:-1]
-    L = (D**2).sum(1)
-    L[L == 0] = 1
-    t = np.clip(-(A[:-1] * D).sum(1) / L, 0, 1)
-    C = A[:-1] + t[:, None] * D
-    return float(np.sqrt((C**2).sum(1)).min())
+    pts = np.array(line)
+    dx = (pts[:, 0] - p[0]) * 111320 * math.cos(math.radians(p[1]))
+    dy = (pts[:, 1] - p[1]) * 110574
+    rel = np.column_stack([dx, dy])
+    seg = rel[1:] - rel[:-1]
+    seg_len2 = (seg**2).sum(1)
+    seg_len2[seg_len2 == 0] = 1
+    t = np.clip(-(rel[:-1] * seg).sum(1) / seg_len2, 0, 1)
+    foot = rel[:-1] + t[:, None] * seg
+    return float(np.sqrt((foot**2).sum(1)).min())
 
 
 def closeup(sh, lon, lat, old, new, half, scale, label):
@@ -90,10 +90,10 @@ def closeup(sh, lon, lat, old, new, half, scale, label):
     ov = np.full_like(rgb, 255)
     for k, col in COL.items():
         ov[m[k][oy : oy + rgb.shape[0], ox : ox + rgb.shape[1]]] = col
-    W = rgb.shape[1] * scale
-    H = rgb.shape[0] * scale
-    left = Image.fromarray(rgb).resize((W, H), Image.NEAREST)
-    right = Image.fromarray(ov).resize((W, H), Image.NEAREST)
+    width = rgb.shape[1] * scale
+    height = rgb.shape[0] * scale
+    left = Image.fromarray(rgb).resize((width, height), Image.NEAREST)
+    right = Image.fromarray(ov).resize((width, height), Image.NEAREST)
     for im, lines in ((left, ((old, OLD), (new, NEW))), (right, ((new, NEW),))):
         d = ImageDraw.Draw(im)
         for pts, col in lines:
@@ -109,13 +109,13 @@ def closeup(sh, lon, lat, old, new, half, scale, label):
                 width=2,
             )
         d.ellipse(
-            [W / 2 - 5, H / 2 - 5, W / 2 + 5, H / 2 + 5],
+            [width / 2 - 5, height / 2 - 5, width / 2 + 5, height / 2 + 5],
             outline=(0, 0, 0),
             width=1,
         )
-    out = Image.new("RGB", (2 * W + 10, H + 28), "white")
+    out = Image.new("RGB", (2 * width + 10, height + 28), "white")
     out.paste(left, (0, 28))
-    out.paste(right, (W + 10, 28))
+    out.paste(right, (width + 10, 28))
     ImageDraw.Draw(out).text((6, 5), label, fill=(0, 0, 0), font=SMALL)
     return out
 
@@ -216,12 +216,12 @@ def main():
     if a.spots:
         with open(a.traced) as fh:
             traced_fc = json.load(fh)
-        T = {str(f["properties"]["id"]): f for f in traced_fc["features"]}
+        traced = {str(f["properties"]["id"]): f for f in traced_fc["features"]}
         with open(a.spots) as fh:
-            S = json.load(fh)
-        S = S["spots"] if isinstance(S, dict) else S
-        for r in S:
-            f = T.get(str(r["id"]))
+            spots = json.load(fh)
+        spots = spots["spots"] if isinstance(spots, dict) else spots
+        for r in spots:
+            f = traced.get(str(r["id"]))
             if f is None or (a.ids and str(r["id"]) not in a.ids):
                 continue
             sh = sheet_of(sheets, r["lon"], r["lat"])

@@ -41,10 +41,10 @@ OLD, NEW = (230, 0, 0), (120, 0, 230)
 def crop(sh, c0, r0, c1, r1, out_w, lines):
     a, cc0, rr0 = sh.read(c0, r0, c1, r1)
     im = Image.fromarray(np.transpose(a, (1, 2, 0)).astype("uint8"))
-    S = out_w / a.shape[2]
+    scale = out_w / a.shape[2]
     im = im.resize(
-        (out_w, max(1, int(a.shape[1] * S))),
-        Image.LANCZOS if S < 1 else Image.NEAREST,
+        (out_w, max(1, int(a.shape[1] * scale))),
+        Image.LANCZOS if scale < 1 else Image.NEAREST,
     )
     d = ImageDraw.Draw(im)
     for pts, col, w in lines:
@@ -52,7 +52,10 @@ def crop(sh, c0, r0, c1, r1, out_w, lines):
             continue
         c, r, _, _ = sh.pixels([p[0] for p in pts], [p[1] for p in pts])
         d.line(
-            [((u - cc0) * S, (v - rr0) * S) for u, v in zip(c, r, strict=True)],
+            [
+                ((u - cc0) * scale, (v - rr0) * scale)
+                for u, v in zip(c, r, strict=True)
+            ],
             fill=col,
             width=w,
         )
@@ -67,16 +70,16 @@ def osr_ct(sh):
 
 
 def dist_to(line, p):
-    O = np.array(line)
-    X = (O[:, 0] - p[0]) * 111320 * math.cos(math.radians(p[1]))
-    Y = (O[:, 1] - p[1]) * 110574
-    A = np.column_stack([X, Y])
-    D = A[1:] - A[:-1]
-    L = (D**2).sum(1)
-    L[L == 0] = 1
-    t = np.clip(-(A[:-1] * D).sum(1) / L, 0, 1)
-    Cc = A[:-1] + t[:, None] * D
-    return float(np.sqrt((Cc**2).sum(1)).min())
+    pts = np.array(line)
+    dx = (pts[:, 0] - p[0]) * 111320 * math.cos(math.radians(p[1]))
+    dy = (pts[:, 1] - p[1]) * 110574
+    rel = np.column_stack([dx, dy])
+    seg = rel[1:] - rel[:-1]
+    seg_len2 = (seg**2).sum(1)
+    seg_len2[seg_len2 == 0] = 1
+    t = np.clip(-(rel[:-1] * seg).sum(1) / seg_len2, 0, 1)
+    foot = rel[:-1] + t[:, None] * seg
+    return float(np.sqrt((foot**2).sum(1)).min())
 
 
 def sheet_png(sheets, feat, prior, title, out_path, width=1500):
@@ -104,17 +107,17 @@ def sheet_png(sheets, feat, prior, title, out_path, width=1500):
     # where the line runs onto another sheet, show that sheet's own map face there (not this sheet's collar)
     others = list({id(o): o for o in owners if o and o is not sh}.values())
     if others:
-        S = width / side
-        H = over.height
-        gx, gy = np.meshgrid(np.arange(0, width, 4), np.arange(0, H, 4))
-        pc = (cx - side / 2) + gx / S
-        pr = (cy - side / 2) + gy / S
+        scale = width / side
+        height = over.height
+        gx, gy = np.meshgrid(np.arange(0, width, 4), np.arange(0, height, 4))
+        pc = (cx - side / 2) + gx / scale
+        pr = (cy - side / 2) + gy / scale
         g = sh.gt
-        X = g[0] + pc * g[1]
-        Y = g[3] + pr * g[5]
+        proj_x = g[0] + pc * g[1]
+        proj_y = g[3] + pr * g[5]
         ll = np.array(
             osr_ct(sh).TransformPoints(
-                np.column_stack([X.ravel(), Y.ravel()]).tolist()
+                np.column_stack([proj_x.ravel(), proj_y.ravel()]).tolist()
             )
         )[:, :2]
         for s2 in others:
@@ -142,7 +145,10 @@ def sheet_png(sheets, feat, prior, title, out_path, width=1500):
             c, r, _, _ = sh.pixels([p[0] for p in pts], [p[1] for p in pts])
             d.line(
                 [
-                    ((u - (cx - side / 2)) * S, (v - (cy - side / 2)) * S)
+                    (
+                        (u - (cx - side / 2)) * scale,
+                        (v - (cy - side / 2)) * scale,
+                    )
                     for u, v in zip(c, r, strict=True)
                 ],
                 fill=col,

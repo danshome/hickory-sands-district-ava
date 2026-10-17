@@ -23,19 +23,19 @@ def regrade(sheets, coords, kind):
     lon0 = float(np.mean([c[0] for c in coords]))
     lat0 = float(np.mean([c[1] for c in coords]))
     mx, my = 111320.0 * math.cos(math.radians(lat0)), 110574.0
-    XY = np.array([[(c[0] - lon0) * mx, (c[1] - lat0) * my] for c in coords])
-    C = cl.resample(XY, 1.0)
-    C[0], C[-1] = XY[0], XY[-1]
+    pts = np.array([[(c[0] - lon0) * mx, (c[1] - lat0) * my] for c in coords])
+    line = cl.resample(pts, 1.0)
+    line[0], line[-1] = pts[0], pts[-1]
     pad = 16.0
-    xmin, ymin = C[:, 0].min() - pad, C[:, 1].min() - pad
+    xmin, ymin = line[:, 0].min() - pad, line[:, 1].min() - pad
     nx, ny = (
-        int((C[:, 0].max() + pad - xmin) / cl.RES) + 1,
-        int((C[:, 1].max() + pad - ymin) / cl.RES) + 1,
+        int((line[:, 0].max() + pad - xmin) / cl.RES) + 1,
+        int((line[:, 1].max() + pad - ymin) / cl.RES) + 1,
     )
     # ink only within 14 m of the line (what grade() reads), sampled on the sheets
     near = np.zeros((ny, nx), bool)
-    rr = np.clip(((C[:, 1] - ymin) / cl.RES).astype(int), 0, ny - 1)
-    cc = np.clip(((C[:, 0] - xmin) / cl.RES).astype(int), 0, nx - 1)
+    rr = np.clip(((line[:, 1] - ymin) / cl.RES).astype(int), 0, ny - 1)
+    cc = np.clip(((line[:, 0] - xmin) / cl.RES).astype(int), 0, nx - 1)
     near[rr, cc] = True
     near = ndimage.binary_dilation(near, structure=cl.disk(14 / cl.RES))
     iy, ix = np.nonzero(near)
@@ -56,8 +56,8 @@ def regrade(sheets, coords, kind):
         ink_c, _have = cl.sample_ink(sheets, kind, lons, lats)
         ink = np.zeros((ny, nx), bool)
         ink[iy, ix] = ink_c
-    meas, symbol = cl.grade(C, ink, xmin, ymin, kind)
-    core = np.zeros(len(C), bool)
+    meas, symbol = cl.grade(line, ink, xmin, ymin, kind)
+    core = np.zeros(len(line), bool)
     core[10:-10] = True
     resid = np.abs(meas)
     r_ok = resid[core & ~np.isnan(resid)]
@@ -66,7 +66,7 @@ def regrade(sheets, coords, kind):
     for a, b in cl.runs(core & (np.nan_to_num(resid, nan=0) > 2)):
         if b - a >= 3:
             k = a + int(np.nanargmax(resid[a:b]))
-            x, y = C[k]
+            x, y = line[k]
             off_runs.append(
                 [
                     round(lon0 + x / mx, 6),
@@ -77,7 +77,7 @@ def regrade(sheets, coords, kind):
             )
     for a, b in cl.runs(np.isnan(meas)):
         if b - a >= 8:
-            x, y = C[(a + b) // 2]
+            x, y = line[(a + b) // 2]
             gaps.append(
                 [round(lon0 + x / mx, 6), round(lat0 + y / my, 6), int(b - a)]
             )

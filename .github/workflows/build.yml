@@ -1,6 +1,7 @@
 # The whole build, `./build.sh`, on one of GitHub's Mac machines: the same Homebrew tools (GDAL, PROJ with the NADCON5
 # grid, poppler, Python 3.14) and the same system fonts as Dan's Mac, so the documents come out the same. Runs on pull
-# requests that touch what the build reads, and by hand (Actions > build > Run workflow). The package zip itself is
+# requests that touch what the build reads (not src/publish/, which only ArcGIS publishing uses), and by hand
+# (Actions > build > Run workflow). The package zip itself is
 # not kept here (about 290 MB); the build report, checksums and GIS lines are, for comparing with a local build.
 # Releases are made by release.yml.
 name: build
@@ -15,6 +16,7 @@ on:
       - documents/**
       - resources/**
       - src/**
+      - "!src/publish/**"
       - .github/workflows/build.yml
 permissions:
   contents: read

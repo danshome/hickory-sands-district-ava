@@ -49,10 +49,10 @@ Geologic Map Compilation, shifted to the outcrops) in each piece:
 
 | piece | acres | granite (acres) |
 |---|---:|---:|
-| In Notice No. 243's text, left out by the petition | 2,733 | 2,597 |
+| In Notice No. 243's text, left out by the petition | 2,733 | 2,596 |
 | The granite lobe, also left out now by steps (93)-(96) | 140 | 127 |
 | Put back, between the marked 1,737 and the windmill | 6 | 0 |
-| Added by the petition's lane wording along steps (10)-(11) | 69 | 28 |
+| Added by the petition's lane wording along steps (10)-(11) | 69 | 27 |
 | In the petition, not Notice No. 243's text, along steps (99)-(100) | 19 | 16 |
 
 Drawn the same way on the same maps, the AVA measures 198.17 square miles by Notice No. 243's text, 194.03 by the

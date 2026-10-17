@@ -1,6 +1,9 @@
-"""The 13 USGS quads (GeoPDF + GeoTIFF, USGS files unaltered except the added line) with the proposed boundary line,
-using src/boundary/build_quad_sheets.py as is. Each line feature already carries its full record (TTB's AVAs_Production
-fields + step fields), so it is passed through unchanged. Output: quads/<USGS stem>.pdf / .tif.
+"""The 13 USGS quads (GeoPDF + GeoTIFF) with the proposed boundary line.
+
+The USGS files are unaltered except for the added line, drawn with
+src/boundary/build_quad_sheets.py as is. Each line feature already carries its
+full record (TTB's AVAs_Production fields + step fields), so it is passed
+through unchanged. Output: quads/<USGS stem>.pdf / .tif.
 """
 
 import glob
@@ -9,19 +12,19 @@ import os
 import re
 import sys
 
+from osgeo import gdal
+from osgeo import osr
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # src/boundary
+import build_quad_sheets as q
+import ttb_record
+
 ROOT = os.path.abspath(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
 )  # the repository root
 HERE = os.environ.get("HSD_WORK") or os.path.join(
     ROOT, "target", "work"
 )  # build work dir (build.sh stages resources/ here)
-sys.path.insert(0, os.path.join(ROOT, "src", "boundary"))
-from osgeo import gdal
-from osgeo import osr
-
-import build_quad_sheets as q
-import ttb_record
-
 gdal.UseExceptions()
 gdal.SetConfigOption("GDAL_PAM_ENABLED", "NO")
 LINE = (
@@ -40,10 +43,10 @@ S = dict(
     display="step",
     layer="Hickory Sands District boundary - as proposed to TTB, Oct. 15, 2026",
 )
-line = json.load(open(os.path.join(HERE, "gis", LINE)))
-record = json.load(open(os.path.join(HERE, "gis", AREA)))["features"][0][
-    "properties"
-]
+with open(os.path.join(HERE, "gis", LINE)) as fh:
+    line = json.load(fh)
+with open(os.path.join(HERE, "gis", AREA)) as fh:
+    record = json.load(fh)["features"][0]["properties"]
 only = sys.argv[1:]
 for orig_pdf in sorted(
     glob.glob(os.path.join(ROOT, "resources", "quads", "geopdf", "*_geo.pdf"))
@@ -74,10 +77,12 @@ for orig_pdf in sorted(
     ds = gdal.Open(base + ".tif", gdal.GA_Update)
     ds.SetMetadataItem(
         "boundary_layer",
-        f"{LINE} (NAD83, EPSG:4269): the boundary as proposed to TTB on Oct. 15, 2026",
+        f"{LINE} (NAD83, EPSG:4269): "
+        "the boundary as proposed to TTB on Oct. 15, 2026",
     )
     ds = None
     print(
-        f"{quadname:18s} pdf features={len(fp):3d}  tif features={len(ft):3d}  tiles rewritten={tiles}",
+        f"{quadname:18s} pdf features={len(fp):3d}  "
+        f"tif features={len(ft):3d}  tiles rewritten={tiles}",
         flush=True,
     )

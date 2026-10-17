@@ -1,15 +1,21 @@
-"""The six boundary layers of Attachment 2 with TTB's AVAs_Production fields added (src/boundary/ttb_record.py), written
-to target/ttb-schema-layers/ under the same file names, from
-resources/boundary/proposed/; the TTB package build uses only its shapefile writer and field types; every geometry is copied unchanged (checked).
+"""Attachment 2's six boundary layers with TTB's AVAs_Production fields added.
 
-  {version}-area     the AVA record (TTB fields + area_sqmi, source, version_note)
+The fields come from src/boundary/ttb_record.py. The layers are read from
+resources/boundary/proposed/ and written to target/ttb-schema-layers/ under the
+same file names; every geometry is copied unchanged (checked). The TTB package
+build uses only the shapefile writer and the field types.
+
+  {version}-area     the AVA record (TTB fields + area_sqmi, source,
+                     version_note)
   {version}-line     the AVA record, then the line's own fields
   {version}-points   the AVA record, then the point's own fields
 """
 
 import json
 import os
+import shutil
 import sys
+import zipfile
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from osgeo import ogr
@@ -21,12 +27,14 @@ OUT = os.path.join(ttb_record.ROOT, "target", "ttb-schema-layers")
 
 
 def main():
+    """Writes the six layers, as GeoJSON and as shapefiles, with the record."""
     os.makedirs(OUT, exist_ok=True)
     for version, prefix in ttb_record.VERSIONS.items():
         ava = ttb_record.ava_record(version)
         for kind in ("area", "line", "points"):
             name = f"{prefix}-{kind}-EPSG4269.geojson"
-            src = json.load(open(ttb_record.source(name)))
+            with open(ttb_record.source(name)) as fh:
+                src = json.load(fh)
             out = {k: v for k, v in src.items() if k != "features"}
             out["features"] = [
                 {
@@ -46,13 +54,15 @@ def main():
             with open(os.path.join(OUT, name), "w", encoding="utf-8") as fh:
                 fh.write(text)
             print(
-                f"{name:62s} {len(out['features']):3d} features, {len(out['features'][0]['properties'])} fields"
+                f"{name:62s} {len(out['features']):3d} features, "
+                f"{len(out['features'][0]['properties'])} fields"
             )
             write_shapefile(out, name[: -len(".geojson")])
 
 
-# Shapefile (.dbf) limits: field names of 10 characters, text of 254 bytes. TTB's fields keep the 10-character
-# names ArcGIS gives them (Establishe, CFR_Sectio, Partially_, as in TTB's and the petition's shapefiles); text
+# Shapefile (.dbf) limits: field names of 10 characters, text of 254 bytes.
+# TTB's fields keep the 10-character names ArcGIS gives them (Establishe,
+# CFR_Sectio, Partially_, as in TTB's and the petition's shapefiles); text
 # longer than 254 bytes continues in a second field so nothing is cut.
 SHP_NAME = {
     "Established": "Establishe",
@@ -89,12 +99,22 @@ SHP_DIR = os.path.join(ttb_record.ROOT, "target", "shp-ttb-schema")
 
 
 def split254(text):
+    """Splits a text for a .dbf text field of 254 bytes.
+
+    Args:
+        text: the text (or None).
+
+    Returns:
+        (text, None) if it fits in 254 bytes, else (its first 254 bytes or
+        fewer, the rest), split inside a word.
+    """
     b = (text or "").encode("utf-8")
     if len(b) <= 254:
         return text, None
     cut = 254
-    # Break inside a word: not inside a UTF-8 character, and no space on either side of the break, since .dbf
-    # readers trim the space padding at the end of a field and would drop it.
+    # Break inside a word: not inside a UTF-8 character, and no space on either
+    # side of the break, since .dbf readers trim the space padding at the end
+    # of a field and would drop it.
     while cut and (
         (b[cut] & 0xC0) == 0x80
         or b[cut : cut + 1].isspace()
@@ -105,9 +125,17 @@ def split254(text):
 
 
 def write_shapefile(fc, stem):
-    import shutil
-    import zipfile
+    """Writes a FeatureCollection as a shapefile, and zips it, in SHP_DIR.
 
+    Field names longer than 10 characters are shortened (SHP_NAME), text
+    longer than 254 bytes continues in a second field (SHP_CONT), TTB's fields
+    get TTB's types (TTB_TYPE); <stem>-field-names.txt beside the shapefile
+    lists the full names.
+
+    Args:
+        fc: the GeoJSON FeatureCollection (one geometry type).
+        stem: the shapefile's name, without .shp; also its folder's.
+    """
     feats = fc["features"]
     keys = list(feats[0]["properties"])
     need2 = {
@@ -164,7 +192,8 @@ def write_shapefile(fc, stem):
             lyr.CreateField(fd2)
             cols[-1] = (k, short, SHP_CONT[k])
             mapping.append(
-                f"{SHP_CONT[k]:12s}{k}, continued (characters after the first 254 bytes)"
+                f"{SHP_CONT[k]:12s}{k}, continued "
+                "(characters after the first 254 bytes)"
             )
     for f in feats:
         of = ogr.Feature(lyr.GetLayerDefn())
@@ -189,18 +218,20 @@ def write_shapefile(fc, stem):
     ds = None
     with open(os.path.join(d, stem + "-field-names.txt"), "w") as fh:
         fh.write(
-            "Shapefile field names (10 characters at most) and the full field names they stand for.\n"
-            "TTB's fields keep the names ArcGIS gives them in a shapefile; the full names are those of TTB's\n"
-            "AVAs_Production layer, as in the GeoJSON and GeoPDF versions of this layer.\n\n"
-            + "\n".join(mapping)
-            + "\n"
+            "Shapefile field names (10 characters at most) and the full field "
+            "names they stand for.\n"
+            "TTB's fields keep the names ArcGIS gives them in a shapefile; the "
+            "full names are those of TTB's\n"
+            "AVAs_Production layer, as in the GeoJSON and GeoPDF versions of "
+            "this layer.\n\n" + "\n".join(mapping) + "\n"
         )
     zp = os.path.join(SHP_DIR, f"{stem}-shp.zip")
     with zipfile.ZipFile(zp, "w", zipfile.ZIP_DEFLATED) as z:
         for n in sorted(os.listdir(d)):
             z.write(os.path.join(d, n), n)
     print(
-        f"    shapefile {os.path.basename(zp)}: {len(cols)} fields (+{len(need2)} continuation)"
+        f"    shapefile {os.path.basename(zp)}: {len(cols)} fields "
+        f"(+{len(need2)} continuation)"
     )
 
 

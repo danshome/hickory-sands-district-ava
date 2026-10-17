@@ -83,6 +83,19 @@ rows.append((L("(11)") + marks(T(11), F(11)), pet(12), L("(11)") + added(F(11), 
     "“crossing onto the Purdy Hill map” and “the highway’s”</b> only because, as discussed with TTB, we use the petition’s "
     "own words for these steps, and the petition’s step does not have them. The line is the same, and it still crosses onto the Purdy Hill map here." + US))
 
+rows.append(("HEAD", "<b>Away from the area near Grit: two flagged corrections to Notice No. 243’s own wording.</b> Steps (49) and (85) are TTB’s "
+    "published steps with one word corrected in each; they are not part of the change near Grit. The line, the points and the area do not change."))
+rows.append((L("(49)") + marks(T(49), F(49)), pet(50), L("(49)") + added(F(49), T(49)),
+    "<b>Editorial correction.</b> TTB’s published text says “the marked 1,586-elevation point”, without “-foot”. Everywhere else in its 96 steps an "
+    "elevation is written “N-foot” (72 times), as TTB writes elevations throughout 27 CFR part 9 (about 500 times, such as “the marked N-foot elevation "
+    "point”), and the original petition (step 50) says “the marked 1,586-foot elevation point”. <b>We are supplying “-foot”</b>: “the marked 1,586-foot "
+    "elevation point”. The Pecan Springs map prints the point x1586. <b>The line does not change.</b>"))
+rows.append((L("(85)") + marks(T(85), F(85)), pet(86), L("(85)") + added(F(85), T(85)),
+    "<b>Correction.</b> TTB’s published text says “the marked 1,801-foot summit”. The step ends at a summit on the Turtle Creek, TX, 1968 map "
+    "(−99.25899, 30.72613, NAD83), and the map prints that summit <b>x1802</b>. The 1,801 comes from the original petition’s written description "
+    "(step 86, “the marked 1801-foot summit”). <b>We are correcting it to “the marked 1,802-foot summit”</b>, the elevation the map prints at the "
+    "step’s end point. <b>The line does not change.</b>"))
+
 rows.append(("HEAD", "<b>Near Grit: TTB’s steps (90)–(92) are replaced as a whole by the original petition’s route, in the petition’s "
     "own words, as discussed with TTB on October 15, 2026.</b> The area near Grit becomes proposed steps (90)–(100), eleven steps in place of TTB’s three. "
     "TTB’s three steps are shown beside the proposed steps closest to them; rows with “—” have no TTB step."))
@@ -148,11 +161,15 @@ for r in rows:
     if r[1].startswith("<small>petition step"):
         k = int(re.match(r"<small>petition step (\d+)", r[1]).group(1)); assert strip(r[1]).endswith(PET[k])
 shown = sorted(int(re.match(r"\((\d+)\)", strip(r[2])).group(1)) for r in rows if r[0] != "HEAD")
-assert shown == [10, 11] + list(range(90, 105)), shown
-assert all(F(n) == T(n) for n in list(range(1, 10)) + list(range(12, 90))), "a step outside the table differs from TTB"
+assert shown == [10, 11, 49, 85] + list(range(90, 105)), shown
+FIXED = {49: "Proceed south in a straight line to the marked 1,586-foot elevation point along an unnamed road known locally as County Road 220; then",
+         85: "Proceed west in a straight line, crossing onto the Turtle Creek map, to the marked 1,802-foot summit; then"}   # issue #38
+assert all(F(n) == T(n) for n in list(range(1, 10)) + list(range(12, 90)) if n not in FIXED), "a step outside the table differs from TTB"
+assert all(F(n) == t for n, t in FIXED.items()), "steps (49) and (85) are not the corrected text"
 pet_of = {int(re.match(r"\((\d+)\)", strip(r[2])).group(1)): int(re.match(r"<small>petition step (\d+)", r[1]).group(1))
           for r in rows if r[0] != "HEAD" and r[1].startswith("<small>petition step")}   # the STEP NUMBERS box below quotes these
 assert [pet_of[n] for n in range(97, 105)] == list(range(95, 103)), "the step-numbers box is out of step with the table"
+assert all(pet_of[n] == n + 1 for n in (10, 11, 49, 85)), "the step-numbers box (petition = TTB + 1 up to (89)) is out of step with the table"
 
 css = ("body{font-family:Calibri,Arial,sans-serif;font-size:9pt;margin:0.3in 0.4in} h1{font-size:15pt;margin:0 0 3pt}"
        "p{margin:0 0 5pt} table{border-collapse:collapse;width:100%;table-layout:fixed} td,th{border:1px solid #999;padding:3pt 4pt;vertical-align:top;text-align:left;font-size:9pt} tr{break-inside:avoid;page-break-inside:avoid}"

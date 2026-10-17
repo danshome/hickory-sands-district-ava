@@ -5,7 +5,10 @@ the petition's own wording (Feb. 2, 2023; petition steps 11-12 and 91-98, lane w
   - steps (93)-(96) are new: they replace petition step 94 (the straight line from the marked 1737 to the marked 1762)
     and go around a lobe of granite by a windmill and Topaz Lane;
   - step (90) (petition step 91) names the unnamed, intermittent tributary the petition's line follows from Honey Creek
-    to the marked 1727 (the one wording correction, flagged).
+    to the marked 1727 (flagged), and steps (90)-(91) name the roads as TTB's text names them (flagged).
+Outside the area near Grit, two corrections to TTB's own wording, flagged (Dan, Oct. 17, 2026; issue #38), text only:
+  - step (85) "to the marked 1,802-foot summit": the Turtle Creek map prints x1802 at the summit (TTB's text: 1,801);
+  - step (49) "to the marked 1,586-foot elevation point": "-foot", as everywhere else in TTB's text (TTB's: 1,586-elevation).
 Geometry: the option 2 ring (petition route, granite-lobe detour, tributary) with the highway passes drawn 30 m either
 side of the road center line (westbound lane NE, eastbound lane SW), per TTB, so the line is visible beside the road;
 the narrative is unchanged by the offset. Ring: resources/boundary/proposed/proposed-ring.json (built in QGIS from option 2, see README), with the
@@ -63,10 +66,27 @@ NEW = {93: "Proceed southwest in a straight line to a windmill; then",
        95: "Proceed southerly, then southwesterly along Topaz Lane to its westernmost point, east of a stock pond; then",
        96: "Proceed south-southwest in a straight line to the marked 1,762-foot elevation point; then"}
 def ttb_body(n): return re.sub(r"^\(\d+\)\s*", "", NPRM[n])
+# Two corrections to TTB's own wording, outside the change near Grit (Dan, Oct. 17, 2026; issue #38). Text only: the line,
+# the points and the area do not change. The change notes start "text correction", which src/review/compare_ttb.py
+# counts as unchanged (the line is TTB's step) and the dashboard's step filter looks for.
+#  (85) substantive: the summit the step goes to (its end point, -99.25899, 30.72613 NAD83) is printed x1802 on the
+#       Turtle Creek, TX (1968) map; TTB's 1,801 follows the petition's written step 86 ("the marked 1801-foot summit").
+#  (49) editorial: everywhere else in TTB's 96 steps an elevation is "N-foot" (72 times), as in 27 CFR part 9 (about
+#       500 times) and in the petition's step 50 ("the marked 1,586-foot elevation point").
+TEXT_FIX = {
+    49: ("the marked 1,586-elevation point", "the marked 1,586-foot elevation point",
+         "text correction (editorial): 1,586-elevation point -> 1,586-foot elevation point, as TTB writes every other "
+         "elevation (the line does not change)"),
+    85: ("the marked 1,801-foot summit", "the marked 1,802-foot summit",
+         "text correction: 1,801-foot summit -> 1,802-foot summit, as the Turtle Creek map prints it (x1802) "
+         "(the line does not change)")}
 
 STEPS = []   # (number, text without the number, source, change)
 for n in range(1, 105):
-    if n <= 9 or 12 <= n <= 89:
+    if n in TEXT_FIX:
+        old, new, note = TEXT_FIX[n]; assert ttb_body(n).count(old) == 1, (n, ttb_body(n))
+        STEPS.append((n, ttb_body(n).replace(old, new), f"TTB's published text, step ({n}), corrected", note))
+    elif n <= 9 or 12 <= n <= 89:
         STEPS.append((n, ttb_body(n), f"TTB's published text, step ({n})", "unchanged"))
     elif n in (10, 11):
         STEPS.append((n, PET[n + 1], f"Petition step {n + 1}", "petition wording (replaces TTB's step (%d))" % n))
@@ -203,7 +223,7 @@ AVA = {k: ttb.get(k) for k in ttb_record.TTB_FIELDS}
 AVA.update(OBJECTID=None, Id=0, Area=sqmi, Contains_="None", Partially_Overlaps="None",
            Shape__Area=poly.Area(), Shape__Length=poly.Boundary().Length())
 AVA.update(area_sqmi=round(sqmi, 2), source="Dan McLaughlin, Robert Clay Vineyards (petitioner); drawn on the 13 USGS 1:24,000 maps cited in paragraph (b)",
-           version_note="Boundary as proposed to TTB after the Oct. 15, 2026 call: TTB's published text, with the petition's wording near Grit, four new steps around a granite lobe, and one flagged correction (step 90).")
+           version_note="Boundary as proposed to TTB after the Oct. 15, 2026 call: TTB's published text, with the petition's wording near Grit, four new steps around a granite lobe, and flagged changes to the wording of steps 49, 85, 90 and 91.")
 print("AVA %.3f sq mi; fields:" % sqmi, {k: AVA[k] for k in ("Name", "Id", "States", "Level_", "Contains_", "Within", "Status", "CFR_Section", "Partially_Overlaps", "Counties")})
 
 # ---------------------------------------------------------------- features

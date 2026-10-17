@@ -1,0 +1,1848 @@
+{
+ "version": "5.1.0",
+ "authoringApp": "ArcGIS Dashboards",
+ "authoringAppVersion": "5.1.0",
+ "maxPaginationRecords": 50000,
+ "maxChartRecords": 10000,
+ "timeZone": "system",
+ "theme": {
+  "id": "light",
+  "type": "defined"
+ },
+ "numberPrefixOverrides": [
+  {
+   "key": "yotta",
+   "symbol": "Y",
+   "enabled": true
+  },
+  {
+   "key": "zeta",
+   "symbol": "Z",
+   "enabled": true
+  },
+  {
+   "key": "exa",
+   "symbol": "E",
+   "enabled": true
+  },
+  {
+   "key": "peta",
+   "symbol": "P",
+   "enabled": true
+  },
+  {
+   "key": "tera",
+   "symbol": "T",
+   "enabled": true
+  },
+  {
+   "key": "giga",
+   "symbol": "G",
+   "enabled": true
+  },
+  {
+   "key": "mega",
+   "symbol": "M",
+   "enabled": true
+  },
+  {
+   "key": "kilo",
+   "symbol": "k",
+   "enabled": true
+  },
+  {
+   "key": "base",
+   "symbol": "",
+   "enabled": true
+  },
+  {
+   "key": "deci",
+   "symbol": "d",
+   "enabled": false
+  },
+  {
+   "key": "centi",
+   "symbol": "c",
+   "enabled": false
+  },
+  {
+   "key": "milli",
+   "symbol": "m",
+   "enabled": false
+  },
+  {
+   "key": "micro",
+   "symbol": "µ",
+   "enabled": false
+  },
+  {
+   "key": "nano",
+   "symbol": "n",
+   "enabled": false
+  }
+ ],
+ "desktopView": {
+  "type": "desktop",
+  "layout": {
+   "type": "dockingLayout",
+   "rootElement": {
+    "type": "stackLayoutElement",
+    "orientation": "col",
+    "id": "b71f32d8-1209-57f2-8956-2b9e114d92bb",
+    "width": 1,
+    "height": 1,
+    "elements": [
+     {
+      "type": "stackLayoutElement",
+      "orientation": "row",
+      "id": "25c70025-05bc-50a5-89b2-5f3bac046171",
+      "width": 0.33,
+      "height": 1,
+      "elements": [
+       {
+        "type": "stackLayoutElement",
+        "orientation": "col",
+        "id": "74888014-9d55-51df-8530-2f3c4c23ad52",
+        "width": 1,
+        "height": 0.25,
+        "elements": [
+         {
+          "type": "itemLayoutElement",
+          "id": "21b8acea-a7e5-582b-942f-67c7dc2c439b",
+          "width": 0.3333333333333333,
+          "height": 1
+         },
+         {
+          "type": "itemLayoutElement",
+          "id": "868bc072-04cc-5289-9fd9-71064ef1f97c",
+          "width": 0.3333333333333333,
+          "height": 1
+         },
+         {
+          "type": "itemLayoutElement",
+          "id": "65fe27cc-967c-5d04-814f-3ff3be4b4504",
+          "width": 0.3333333333333333,
+          "height": 1
+         }
+        ]
+       },
+       {
+        "type": "stackLayoutElement",
+        "orientation": "col",
+        "id": "4814f0cf-e7a3-5c60-b9bd-2a17eb91b8f4",
+        "width": 1,
+        "height": 0.23,
+        "elements": [
+         {
+          "type": "itemLayoutElement",
+          "id": "344fbccc-d57f-535a-b2c9-b100336ba2b9",
+          "width": 0.5,
+          "height": 1
+         },
+         {
+          "type": "itemLayoutElement",
+          "id": "02f57368-0a05-51cd-9943-c702f89246f2",
+          "width": 0.5,
+          "height": 1
+         }
+        ]
+       },
+       {
+        "type": "tabsLayoutElement",
+        "id": "51b26d26-908e-5a5d-9bf2-c60298d98817",
+        "width": 1,
+        "height": 0.52,
+        "elements": [
+         {
+          "type": "itemLayoutElement",
+          "id": "01fa690f-52e5-50ca-b200-7d6dd5378508",
+          "width": 1,
+          "height": 1,
+          "tabName": "Documents"
+         },
+         {
+          "type": "itemLayoutElement",
+          "id": "1ead89a0-163a-5e01-97f7-dbe4889ff064",
+          "width": 1,
+          "height": 1,
+          "tabName": "The change near Grit"
+         },
+         {
+          "type": "itemLayoutElement",
+          "id": "96772228-f366-5693-8ca9-00de8d228030",
+          "width": 1,
+          "height": 1,
+          "tabName": "What changes"
+         },
+         {
+          "type": "itemLayoutElement",
+          "id": "b0055c33-ca99-5ba5-bcff-45a51cb2635f",
+          "width": 1,
+          "height": 1,
+          "tabName": "USGS quadrangles"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "type": "itemLayoutElement",
+      "id": "ea476add-4264-554d-bc3b-142c6bb77f0a",
+      "width": 0.41,
+      "height": 1
+     },
+     {
+      "type": "stackLayoutElement",
+      "orientation": "row",
+      "id": "b33e3776-f90d-5f38-bca3-766f46d18068",
+      "width": 0.26,
+      "height": 1,
+      "elements": [
+       {
+        "type": "tabsLayoutElement",
+        "id": "ba0b0b17-cb47-5758-bd65-a8d41a9660d0",
+        "width": 1,
+        "height": 0.6,
+        "elements": [
+         {
+          "type": "itemLayoutElement",
+          "id": "2d63289e-8652-5363-8433-d4210d64a415",
+          "width": 1,
+          "height": 1,
+          "tabName": "Steps"
+         },
+         {
+          "type": "itemLayoutElement",
+          "id": "0cf7d198-4dea-5590-a4fd-3365ceabff63",
+          "width": 1,
+          "height": 1,
+          "tabName": "Big differences"
+         },
+         {
+          "type": "itemLayoutElement",
+          "id": "045ac856-0bd2-52eb-af23-6bb542367636",
+          "width": 1,
+          "height": 1,
+          "tabName": "All differences"
+         }
+        ]
+       },
+       {
+        "type": "itemLayoutElement",
+        "id": "8d181f6d-4981-5eb4-a235-0e1db9bfe508",
+        "width": 1,
+        "height": 0.4
+       }
+      ]
+     }
+    ]
+   }
+  },
+  "widgets": [
+   {
+    "id": "ea476add-4264-554d-bc3b-142c6bb77f0a",
+    "dashboardItemType": "widget",
+    "name": "Map",
+    "type": "mapWidget",
+    "noDataState": {},
+    "noFilterState": {},
+    "focusModeEnabled": false,
+    "itemId": "00000000000000000000000000000013",
+    "flashRepeats": 3,
+    "linkedMapWidgetIds": [],
+    "pointZoomScale": 10000,
+    "mapTools": [
+     {
+      "type": "mapContentsTool"
+     },
+     {
+      "type": "legendTool"
+     }
+    ],
+    "showMeasureTool": true,
+    "showNavigation": true,
+    "showPanRotate": false,
+    "showLocate": false,
+    "showCompass": false,
+    "showPopup": true,
+    "scalebarStyle": "line",
+    "editingEnabled": false,
+    "selectionColor": "#00b4ff",
+    "highlightColor": "#00b4ff",
+    "trackedFeatureColor": "#0000ff",
+    "trackedFeatureRadius": 100,
+    "layers": [
+     {
+      "type": "layer",
+      "dataSource": {
+       "type": "layerDataSource",
+       "itemId": "00000000000000000000000000000013",
+       "layerId": "hsd-1"
+      },
+      "events": [
+       {
+        "type": "selectionChanged",
+        "actions": [
+         {
+          "type": "filter",
+          "targets": [
+           {
+            "targetId": "8d181f6d-4981-5eb4-a235-0e1db9bfe508#main",
+            "by": "whereClause",
+            "requiresSelection": false
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     }
+    ],
+    "selectTool": {
+     "type": "selectTool",
+     "clickToSelect": true,
+     "advanceSketchTools": []
+    }
+   },
+   {
+    "id": "2d63289e-8652-5363-8433-d4210d64a415",
+    "dashboardItemType": "widget",
+    "name": "Steps",
+    "type": "listWidget",
+    "noDataState": {},
+    "noFilterState": {},
+    "focusModeEnabled": false,
+    "datasets": [
+     {
+      "type": "serviceDataset",
+      "name": "main",
+      "dataSource": {
+       "type": "layerDataSource",
+       "itemId": "00000000000000000000000000000013",
+       "layerId": "hsd-1"
+      },
+      "groupByFields": [],
+      "orderByFields": [
+       "step ASC"
+      ],
+      "statisticDefinitions": [],
+      "outFields": [
+       "*"
+      ],
+      "returnDistinctValues": false,
+      "allowSourceDownload": false,
+      "allowSummaryDownload": false,
+      "maxFeatures": 200
+     }
+    ],
+    "events": [
+     {
+      "type": "selectionChanged",
+      "actions": [
+       {
+        "type": "filter",
+        "targets": [
+         {
+          "targetId": "8d181f6d-4981-5eb4-a235-0e1db9bfe508#main",
+          "by": "whereClause",
+          "requiresSelection": true
+         }
+        ]
+       },
+       {
+        "type": "flashGeometry",
+        "targets": [
+         {
+          "targetId": "ea476add-4264-554d-bc3b-142c6bb77f0a",
+          "by": "geometry",
+          "requiresSelection": false
+         }
+        ]
+       },
+       {
+        "type": "zoom",
+        "targets": [
+         {
+          "targetId": "ea476add-4264-554d-bc3b-142c6bb77f0a",
+          "by": "geometry",
+          "requiresSelection": false
+         }
+        ]
+       }
+      ]
+     }
+    ],
+    "selectionMode": "single",
+    "iconType": "none",
+    "showFilter": true,
+    "separatorColor": "#dddddd",
+    "selectionColor": "#f3e3e6",
+    "text": "<p><span style=\"font-size:13px\">{field/narrative}</span></p><p><span style=\"font-size:11px;color:#8a1c1c\">{field/change}</span><span style=\"font-size:11px;color:#777\"> &middot; {field/quad} quad &middot; {field/length_m} m</span></p>"
+   },
+   {
+    "id": "0cf7d198-4dea-5590-a4fd-3365ceabff63",
+    "dashboardItemType": "widget",
+    "name": "Big differences from the Map Explorer polygon",
+    "type": "listWidget",
+    "noDataState": {},
+    "noFilterState": {},
+    "focusModeEnabled": false,
+    "datasets": [
+     {
+      "type": "serviceDataset",
+      "name": "main",
+      "dataSource": {
+       "type": "layerDataSource",
+       "itemId": "00000000000000000000000000000013",
+       "layerId": "hsd-rings"
+      },
+      "groupByFields": [],
+      "orderByFields": [
+       "n ASC"
+      ],
+      "statisticDefinitions": [],
+      "outFields": [
+       "*"
+      ],
+      "returnDistinctValues": false,
+      "allowSourceDownload": false,
+      "allowSummaryDownload": false,
+      "maxFeatures": 100
+     }
+    ],
+    "events": [
+     {
+      "type": "selectionChanged",
+      "actions": [
+       {
+        "type": "flashGeometry",
+        "targets": [
+         {
+          "targetId": "ea476add-4264-554d-bc3b-142c6bb77f0a",
+          "by": "geometry",
+          "requiresSelection": false
+         }
+        ]
+       },
+       {
+        "type": "zoom",
+        "targets": [
+         {
+          "targetId": "ea476add-4264-554d-bc3b-142c6bb77f0a",
+          "by": "geometry",
+          "requiresSelection": false
+         }
+        ]
+       }
+      ]
+     }
+    ],
+    "selectionMode": "single",
+    "iconType": "none",
+    "showFilter": false,
+    "separatorColor": "#dddddd",
+    "selectionColor": "#fdebd9",
+    "text": "<p><span style=\"font-size:13px\"><strong>#{field/n}</strong> &middot; step(s) {field/steps}: up to {field/max_apart_m} m apart over {field/length_m} m</span></p><p><span style=\"font-size:11px;color:#8a1c1c\">{field/why}</span><span style=\"font-size:11px;color:#777\"> &middot; in the proposed revision only: {field/revision_only_acres} ac &middot; in the Map Explorer polygon only: {field/map_explorer_only_acres} ac</span></p>"
+   },
+   {
+    "id": "045ac856-0bd2-52eb-af23-6bb542367636",
+    "dashboardItemType": "widget",
+    "name": "All differences between the two lines",
+    "type": "listWidget",
+    "noDataState": {},
+    "noFilterState": {},
+    "focusModeEnabled": false,
+    "datasets": [
+     {
+      "type": "serviceDataset",
+      "name": "main",
+      "dataSource": {
+       "type": "layerDataSource",
+       "itemId": "00000000000000000000000000000013",
+       "layerId": "hsd-all-differences"
+      },
+      "groupByFields": [],
+      "orderByFields": [
+       "acres DESC"
+      ],
+      "statisticDefinitions": [],
+      "outFields": [
+       "*"
+      ],
+      "returnDistinctValues": false,
+      "allowSourceDownload": false,
+      "allowSummaryDownload": false,
+      "maxFeatures": 2000
+     }
+    ],
+    "events": [
+     {
+      "type": "selectionChanged",
+      "actions": [
+       {
+        "type": "flashGeometry",
+        "targets": [
+         {
+          "targetId": "ea476add-4264-554d-bc3b-142c6bb77f0a",
+          "by": "geometry",
+          "requiresSelection": false
+         }
+        ]
+       },
+       {
+        "type": "zoom",
+        "targets": [
+         {
+          "targetId": "ea476add-4264-554d-bc3b-142c6bb77f0a",
+          "by": "geometry",
+          "requiresSelection": false
+         }
+        ]
+       }
+      ]
+     }
+    ],
+    "selectionMode": "single",
+    "iconType": "none",
+    "showFilter": false,
+    "separatorColor": "#dddddd",
+    "selectionColor": "#e8eef9",
+    "topCaption": "<p style=\"font-size:12px;margin:4px 6px\">Every piece of land in one line and not the other, largest first. Same text drawn differently: <strong>682 acres</strong> in the proposed revision only and <strong>368 acres</strong> in the AVA Map Explorer polygon only, in 966 pieces. The proposed text change near Grit: 122 and 2,868 acres, in 24 pieces.</p>",
+    "text": "<p><span style=\"font-size:13px\"><strong>{field/acres} ac</strong> &middot; {field/side}</span></p><p><span style=\"font-size:11px;color:#777\">{field/cause} &middot; steps {field/steps} &middot; {field/length_m} m long &middot; up to {field/widest_m} m apart</span></p>"
+   },
+   {
+    "id": "8d181f6d-4981-5eb4-a235-0e1db9bfe508",
+    "dashboardItemType": "widget",
+    "name": "Selected step",
+    "type": "detailsWidget",
+    "noDataState": {},
+    "noFilterState": {},
+    "focusModeEnabled": false,
+    "datasets": [
+     {
+      "type": "serviceDataset",
+      "name": "main",
+      "dataSource": {
+       "type": "layerDataSource",
+       "itemId": "00000000000000000000000000000013",
+       "layerId": "hsd-1"
+      },
+      "groupByFields": [],
+      "orderByFields": [],
+      "statisticDefinitions": [],
+      "outFields": [
+       "*"
+      ],
+      "returnDistinctValues": false,
+      "allowSourceDownload": false,
+      "allowSummaryDownload": false,
+      "maxFeatures": 1
+     }
+    ],
+    "mapWidgetId": "ea476add-4264-554d-bc3b-142c6bb77f0a",
+    "showTitle": true,
+    "showContents": true,
+    "showMedia": true,
+    "showAttachments": false,
+    "showFeatureMenu": false
+   },
+   {
+    "id": "01fa690f-52e5-50ca-b200-7d6dd5378508",
+    "dashboardItemType": "widget",
+    "name": "Documents",
+    "type": "richTextWidget",
+    "noDataState": {},
+    "noFilterState": {},
+    "focusModeEnabled": false,
+    "datasets": [],
+    "valueType": "none",
+    "showFeatureMenu": false,
+    "text": "<div style=\"font-size:13px;line-height:1.45\"><p style=\"margin:10px 0 2px\"><strong>Start here</strong></p><ul style=\"margin:0;padding-left:18px\"><li><span style=\"color:#666\">0</span> <a href=\"https://robertclayvines.maps.arcgis.com/home/item.html?id=00000000000000000000000000000002\" target=\"_blank\" rel=\"noopener noreferrer\">Read me first - what is in this group, and the license</a></li></ul><p style=\"margin:10px 0 2px\"><strong>1 Boundary description as proposed</strong></p><ul style=\"margin:0;padding-left:18px\"><li><span style=\"color:#666\">1a</span> <a href=\"https://robertclayvines.maps.arcgis.com/home/item.html?id=00000000000000000000000000000003\" target=\"_blank\" rel=\"noopener noreferrer\">Boundary description as proposed (PDF)</a></li><li><span style=\"color:#666\">1b</span> <a href=\"https://robertclayvines.maps.arcgis.com/home/item.html?id=00000000000000000000000000000004\" target=\"_blank\" rel=\"noopener noreferrer\">Boundary description as proposed (Word)</a></li><li><span style=\"color:#666\">1c</span> <a href=\"https://robertclayvines.maps.arcgis.com/home/item.html?id=00000000000000000000000000000005\" target=\"_blank\" rel=\"noopener noreferrer\">Boundary description as proposed (plain text)</a></li><li><span style=\"color:#666\">1d</span> <a href=\"https://robertclayvines.maps.arcgis.com/home/item.html?id=00000000000000000000000000000006\" target=\"_blank\" rel=\"noopener noreferrer\">Boundary steps, one row per step (CSV)</a></li></ul><p style=\"margin:10px 0 2px\"><strong>2 Notice No. 243 with the proposed changes highlighted</strong></p><ul style=\"margin:0;padding-left:18px\"><li><span style=\"color:#666\">2a</span> <a href=\"https://robertclayvines.maps.arcgis.com/home/item.html?id=00000000000000000000000000000007\" target=\"_blank\" rel=\"noopener noreferrer\">Notice No. 243 with the proposed changes highlighted (unofficial copy, PDF)</a></li><li><span style=\"color:#666\">2b</span> <a href=\"https://robertclayvines.maps.arcgis.com/home/item.html?id=00000000000000000000000000000008\" target=\"_blank\" rel=\"noopener noreferrer\">Notice No. 243 as published, docket TTB-2026-0005-0001 (PDF)</a></li><li><span style=\"color:#666\">2c</span> <a href=\"https://robertclayvines.maps.arcgis.com/home/item.html?id=00000000000000000000000000000009\" target=\"_blank\" rel=\"noopener noreferrer\">Text for comparing - 1 Notice No. 243 as published (plain text)</a></li><li><span style=\"color:#666\">2d</span> <a href=\"https://robertclayvines.maps.arcgis.com/home/item.html?id=00000000000000000000000000000010\" target=\"_blank\" rel=\"noopener noreferrer\">Text for comparing - 2 Notice No. 243 with the proposed changes (plain text)</a></li></ul><p style=\"margin:10px 0 2px\"><strong>3 Changes side by side</strong></p><ul style=\"margin:0;padding-left:18px\"><li><span style=\"color:#666\">3a</span> <a href=\"https://robertclayvines.maps.arcgis.com/home/item.html?id=00000000000000000000000000000011\" target=\"_blank\" rel=\"noopener noreferrer\">Changes side by side - TTB&#x27;s text, the petition, the proposed text and why (PDF)</a></li><li><span style=\"color:#666\">3b</span> <a href=\"https://robertclayvines.maps.arcgis.com/home/item.html?id=00000000000000000000000000000012\" target=\"_blank\" rel=\"noopener noreferrer\">Changes side by side (Word)</a></li></ul><p style=\"margin:10px 0 2px\"><strong>4 GIS data: the map, the layers and the downloads</strong></p><ul style=\"margin:0;padding-left:18px\"><li><span style=\"color:#666\">4a</span> <a href=\"https://robertclayvines.maps.arcgis.com/home/item.html?id=00000000000000000000000000000013\" target=\"_blank\" rel=\"noopener noreferrer\">Proposed boundary - map over the 13 USGS quadrangles</a></li><li><span style=\"color:#666\">4b</span> <a href=\"https://robertclayvines.maps.arcgis.com/home/item.html?id=00000000000000000000000000000014\" target=\"_blank\" rel=\"noopener noreferrer\">Proposed boundary - layer (AVA polygon, 104 steps, step endpoints)</a></li><li><span style=\"color:#666\">4c</span> <a href=\"https://robertclayvines.maps.arcgis.com/home/item.html?id=00000000000000000000000000000015\" target=\"_blank\" rel=\"noopener noreferrer\">Proposed boundary - GeoPackage (AVA polygon, 104 steps, step endpoints)</a></li><li><span style=\"color:#666\">4d</span> <a href=\"https://robertclayvines.maps.arcgis.com/home/item.html?id=00000000000000000000000000000016\" target=\"_blank\" rel=\"noopener noreferrer\">Proposed boundary - AVA polygon (shapefile)</a></li><li><span style=\"color:#666\">4e</span> <a href=\"https://robertclayvines.maps.arcgis.com/home/item.html?id=00000000000000000000000000000017\" target=\"_blank\" rel=\"noopener noreferrer\">Proposed boundary - 104 boundary steps (shapefile)</a></li><li><span style=\"color:#666\">4f</span> <a href=\"https://robertclayvines.maps.arcgis.com/home/item.html?id=00000000000000000000000000000018\" target=\"_blank\" rel=\"noopener noreferrer\">Proposed boundary - step endpoints (shapefile)</a></li><li><span style=\"color:#666\">4g</span> <a href=\"https://robertclayvines.maps.arcgis.com/home/item.html?id=00000000000000000000000000000019\" target=\"_blank\" rel=\"noopener noreferrer\">Proposed boundary - AVA polygon (GeoJSON)</a></li><li><span style=\"color:#666\">4h</span> <a href=\"https://robertclayvines.maps.arcgis.com/home/item.html?id=00000000000000000000000000000020\" target=\"_blank\" rel=\"noopener noreferrer\">Proposed boundary - 104 boundary steps (GeoJSON)</a></li><li><span style=\"color:#666\">4i</span> <a href=\"https://robertclayvines.maps.arcgis.com/home/item.html?id=00000000000000000000000000000021\" target=\"_blank\" rel=\"noopener noreferrer\">Proposed boundary - step endpoints (GeoJSON)</a></li><li><span style=\"color:#666\">4j</span> <a href=\"https://robertclayvines.maps.arcgis.com/home/item.html?id=00000000000000000000000000000022\" target=\"_blank\" rel=\"noopener noreferrer\">Differences from the AVA Map Explorer polygon - GeoPackage (the big ones, and all of them)</a></li><li><span style=\"color:#666\">4k</span> <a href=\"https://robertclayvines.maps.arcgis.com/home/item.html?id=00000000000000000000000000000023\" target=\"_blank\" rel=\"noopener noreferrer\">Differences from the AVA Map Explorer polygon - layer (the big ones, and all of them)</a></li><li><span style=\"color:#666\">4l</span> <a href=\"https://robertclayvines.maps.arcgis.com/home/item.html?id=00000000000000000000000000000024\" target=\"_blank\" rel=\"noopener noreferrer\">Geology - USGS SGMC units shifted to the outcrops - GeoPackage</a></li><li><span style=\"color:#666\">4m</span> <a href=\"https://robertclayvines.maps.arcgis.com/home/item.html?id=00000000000000000000000000000025\" target=\"_blank\" rel=\"noopener noreferrer\">Geology - USGS SGMC units shifted to the outcrops - layer</a></li><li><span style=\"color:#666\">4n</span> <a href=\"https://robertclayvines.maps.arcgis.com/home/item.html?id=00000000000000000000000000000026\" target=\"_blank\" rel=\"noopener noreferrer\">The change near Grit - GeoPackage (lines swapped, areas moved, granite acres)</a></li><li><span style=\"color:#666\">4o</span> <a href=\"https://robertclayvines.maps.arcgis.com/home/item.html?id=00000000000000000000000000000027\" target=\"_blank\" rel=\"noopener noreferrer\">The change near Grit - layer (lines swapped, areas moved, granite acres)</a></li></ul><p style=\"margin:10px 0 2px\"><strong>5 USGS quadrangles with the boundary</strong></p><p>The 13 quadrangles as GeoPDF and GeoTIFF, with the boundary added as a solid red line: see the <em>USGS quadrangles</em> tab.</p></div>"
+   },
+   {
+    "id": "b0055c33-ca99-5ba5-bcff-45a51cb2635f",
+    "dashboardItemType": "widget",
+    "name": "USGS quadrangles",
+    "type": "richTextWidget",
+    "noDataState": {},
+    "noFilterState": {},
+    "focusModeEnabled": false,
+    "datasets": [],
+    "valueType": "none",
+    "showFeatureMenu": false,
+    "text": "<div style=\"font-size:13px\"><p>The 13 USGS 1:24,000 quadrangles cited in paragraph (b), each with the boundary added as a solid red line. The GeoPDF is the USGS file with the line as an optional-content layer; in the GeoTIFF only the image tiles the line crosses are rewritten. The quads keep their NAD27 grids; the NAD83 line is carried onto them with the NADCON 5.0 CONUS grid.</p><table style=\"border-collapse:collapse;width:100%\"><tr style=\"text-align:left;border-bottom:1px solid #ccc\"><th style=\"padding:3px 6px\">Quadrangle</th><th style=\"padding:3px 6px\" colspan=\"2\">Files</th><th style=\"padding:3px 6px\">Steps</th></tr><tr><td style=\"padding:3px 6px\">Fly Gap, TX (1962, photorevised 1982)</td><td style=\"padding:3px 6px;white-space:nowrap\"><a href=\"https://robertclayvines.maps.arcgis.com/home/item.html?id=00000000000000000000000000000028\" target=\"_blank\" rel=\"noopener noreferrer\">GeoPDF</a></td><td style=\"padding:3px 6px;white-space:nowrap\"><a href=\"https://robertclayvines.maps.arcgis.com/home/item.html?id=00000000000000000000000000000041\" target=\"_blank\" rel=\"noopener noreferrer\">GeoTIFF</a></td><td style=\"padding:3px 6px\">(71)-(75)</td></tr><tr><td style=\"padding:3px 6px\">Fredonia, TX (1962)</td><td style=\"padding:3px 6px;white-space:nowrap\"><a href=\"https://robertclayvines.maps.arcgis.com/home/item.html?id=00000000000000000000000000000029\" target=\"_blank\" rel=\"noopener noreferrer\">GeoPDF</a></td><td style=\"padding:3px 6px;white-space:nowrap\"><a href=\"https://robertclayvines.maps.arcgis.com/home/item.html?id=00000000000000000000000000000042\" target=\"_blank\" rel=\"noopener noreferrer\">GeoTIFF</a></td><td style=\"padding:3px 6px\">(18), (50)-(58), (70)</td></tr><tr><td style=\"padding:3px 6px\">Grit, TX (1970)</td><td style=\"padding:3px 6px;white-space:nowrap\"><a href=\"https://robertclayvines.maps.arcgis.com/home/item.html?id=00000000000000000000000000000030\" target=\"_blank\" rel=\"noopener noreferrer\">GeoPDF</a></td><td style=\"padding:3px 6px;white-space:nowrap\"><a href=\"https://robertclayvines.maps.arcgis.com/home/item.html?id=00000000000000000000000000000043\" target=\"_blank\" rel=\"noopener noreferrer\">GeoTIFF</a></td><td style=\"padding:3px 6px\">(6)-(10), (30)-(31), (90)-(99)</td></tr><tr><td style=\"padding:3px 6px\">Katemcy, TX (1970)</td><td style=\"padding:3px 6px;white-space:nowrap\"><a href=\"https://robertclayvines.maps.arcgis.com/home/item.html?id=00000000000000000000000000000031\" target=\"_blank\" rel=\"noopener noreferrer\">GeoPDF</a></td><td style=\"padding:3px 6px;white-space:nowrap\"><a href=\"https://robertclayvines.maps.arcgis.com/home/item.html?id=00000000000000000000000000000044\" target=\"_blank\" rel=\"noopener noreferrer\">GeoTIFF</a></td><td style=\"padding:3px 6px\">(27)-(29), (32)-(40)</td></tr><tr><td style=\"padding:3px 6px\">Long Mountain, TX (1970)</td><td style=\"padding:3px 6px;white-space:nowrap\"><a href=\"https://robertclayvines.maps.arcgis.com/home/item.html?id=00000000000000000000000000000032\" target=\"_blank\" rel=\"noopener noreferrer\">GeoPDF</a></td><td style=\"padding:3px 6px;white-space:nowrap\"><a href=\"https://robertclayvines.maps.arcgis.com/home/item.html?id=00000000000000000000000000000045\" target=\"_blank\" rel=\"noopener noreferrer\">GeoTIFF</a></td><td style=\"padding:3px 6px\">(1)-(5), (103)-(104)</td></tr><tr><td style=\"padding:3px 6px\">Mason, TX (1967, photoinspected 1979)</td><td style=\"padding:3px 6px;white-space:nowrap\"><a href=\"https://robertclayvines.maps.arcgis.com/home/item.html?id=00000000000000000000000000000033\" target=\"_blank\" rel=\"noopener noreferrer\">GeoPDF</a></td><td style=\"padding:3px 6px;white-space:nowrap\"><a href=\"https://robertclayvines.maps.arcgis.com/home/item.html?id=00000000000000000000000000000046\" target=\"_blank\" rel=\"noopener noreferrer\">GeoTIFF</a></td><td style=\"padding:3px 6px\">(80)-(84)</td></tr><tr><td style=\"padding:3px 6px\">Pecan Springs, TX (1963)</td><td style=\"padding:3px 6px;white-space:nowrap\"><a href=\"https://robertclayvines.maps.arcgis.com/home/item.html?id=00000000000000000000000000000034\" target=\"_blank\" rel=\"noopener noreferrer\">GeoPDF</a></td><td style=\"padding:3px 6px;white-space:nowrap\"><a href=\"https://robertclayvines.maps.arcgis.com/home/item.html?id=00000000000000000000000000000047\" target=\"_blank\" rel=\"noopener noreferrer\">GeoTIFF</a></td><td style=\"padding:3px 6px\">(48)-(49)</td></tr><tr><td style=\"padding:3px 6px\">Pontotoc, TX (1955)</td><td style=\"padding:3px 6px;white-space:nowrap\"><a href=\"https://robertclayvines.maps.arcgis.com/home/item.html?id=00000000000000000000000000000035\" target=\"_blank\" rel=\"noopener noreferrer\">GeoPDF</a></td><td style=\"padding:3px 6px;white-space:nowrap\"><a href=\"https://robertclayvines.maps.arcgis.com/home/item.html?id=00000000000000000000000000000048\" target=\"_blank\" rel=\"noopener noreferrer\">GeoTIFF</a></td><td style=\"padding:3px 6px\">(59)-(69)</td></tr><tr><td style=\"padding:3px 6px\">Purdy Hill, TX (1962)</td><td style=\"padding:3px 6px;white-space:nowrap\"><a href=\"https://robertclayvines.maps.arcgis.com/home/item.html?id=00000000000000000000000000000036\" target=\"_blank\" rel=\"noopener noreferrer\">GeoPDF</a></td><td style=\"padding:3px 6px;white-space:nowrap\"><a href=\"https://robertclayvines.maps.arcgis.com/home/item.html?id=00000000000000000000000000000049\" target=\"_blank\" rel=\"noopener noreferrer\">GeoTIFF</a></td><td style=\"padding:3px 6px\">(11)-(15), (76)-(79)</td></tr><tr><td style=\"padding:3px 6px\">Sheep Run Creek, TX (1968)</td><td style=\"padding:3px 6px;white-space:nowrap\"><a href=\"https://robertclayvines.maps.arcgis.com/home/item.html?id=00000000000000000000000000000037\" target=\"_blank\" rel=\"noopener noreferrer\">GeoPDF</a></td><td style=\"padding:3px 6px;white-space:nowrap\"><a href=\"https://robertclayvines.maps.arcgis.com/home/item.html?id=00000000000000000000000000000050\" target=\"_blank\" rel=\"noopener noreferrer\">GeoTIFF</a></td><td style=\"padding:3px 6px\">(101)-(102)</td></tr><tr><td style=\"padding:3px 6px\">Spy Rock, TX (1963)</td><td style=\"padding:3px 6px;white-space:nowrap\"><a href=\"https://robertclayvines.maps.arcgis.com/home/item.html?id=00000000000000000000000000000038\" target=\"_blank\" rel=\"noopener noreferrer\">GeoPDF</a></td><td style=\"padding:3px 6px;white-space:nowrap\"><a href=\"https://robertclayvines.maps.arcgis.com/home/item.html?id=00000000000000000000000000000051\" target=\"_blank\" rel=\"noopener noreferrer\">GeoTIFF</a></td><td style=\"padding:3px 6px\">(16)-(17), (19)-(26), (41)-(42)</td></tr><tr><td style=\"padding:3px 6px\">Turtle Creek, TX (1968)</td><td style=\"padding:3px 6px;white-space:nowrap\"><a href=\"https://robertclayvines.maps.arcgis.com/home/item.html?id=00000000000000000000000000000039\" target=\"_blank\" rel=\"noopener noreferrer\">GeoPDF</a></td><td style=\"padding:3px 6px;white-space:nowrap\"><a href=\"https://robertclayvines.maps.arcgis.com/home/item.html?id=00000000000000000000000000000052\" target=\"_blank\" rel=\"noopener noreferrer\">GeoTIFF</a></td><td style=\"padding:3px 6px\">(85)-(89), (100)</td></tr><tr><td style=\"padding:3px 6px\">Voca, TX (1963)</td><td style=\"padding:3px 6px;white-space:nowrap\"><a href=\"https://robertclayvines.maps.arcgis.com/home/item.html?id=00000000000000000000000000000040\" target=\"_blank\" rel=\"noopener noreferrer\">GeoPDF</a></td><td style=\"padding:3px 6px;white-space:nowrap\"><a href=\"https://robertclayvines.maps.arcgis.com/home/item.html?id=00000000000000000000000000000053\" target=\"_blank\" rel=\"noopener noreferrer\">GeoTIFF</a></td><td style=\"padding:3px 6px\">(43)-(47)</td></tr></table><p style=\"color:#666\">Each step is listed under the one quadrangle named in its record; a step that crosses onto another map is listed once.</p></div>"
+   },
+   {
+    "id": "96772228-f366-5693-8ca9-00de8d228030",
+    "dashboardItemType": "widget",
+    "name": "About",
+    "type": "richTextWidget",
+    "noDataState": {},
+    "noFilterState": {},
+    "focusModeEnabled": false,
+    "datasets": [],
+    "valueType": "none",
+    "showFeatureMenu": false,
+    "text": "<div style=\"font-size:13px;line-height:1.45\"><p>Docket No. TTB-2026-0005, Notice No. 243 (91 FR 52576). Prepared by Dan McLaughlin, Robert Clay Vineyards (petitioner).<br>dan@robertclayvineyards.com, 512.633.8086. License: CC0 1.0 (full text in item 0, the read me) - no attribution required. (TTB&#x27;s notice, included in folder 2, is a U.S. Government work.)</p><p style=\"margin:10px 0 2px\"><strong>What the proposed revision changes in Notice No. 243</strong></p><p>Steps (10)-(11) and (90)-(100) near Grit use the petition&#x27;s own wording (February 2, 2023), lane wording included, in place of TTB&#x27;s steps (10)-(11) and (90)-(92). Within them:</p><ul style=\"margin:0 0 6px;padding-left:18px\"><li>steps (93)-(96) are new: they go around a lobe of granite northwest of the area near Grit by a windmill, a fence line and Topaz Lane, instead of the petition&#x27;s straight line from the marked 1737 to the marked 1762;</li><li>two flagged changes to the petition&#x27;s wording: step (90) names the unnamed, intermittent tributary that the petition&#x27;s line follows from Honey Creek to the marked 1727, and steps (90)-(91) name the roads as Notice No. 243 names them (below).</li></ul><p>Away from the area near Grit, two flagged corrections to Notice No. 243&#x27;s own wording, one word each; the line does not change:</p><ul style=\"margin:0 0 6px;padding-left:18px\"><li>step (85) says &quot;the marked 1,802-foot summit&quot;, as the Turtle Creek map prints the summit (x1802), where Notice No. 243 says &quot;the marked 1,801-foot summit&quot; (a substantive correction);</li><li>step (49) says &quot;the marked 1,586-foot elevation point&quot;, where Notice No. 243 says &quot;the marked 1,586-elevation point&quot;, the only elevation in its steps written without &quot;-foot&quot; (an editorial correction).</li></ul><p>TTB&#x27;s steps (93)-(96) are unchanged, renumbered (101)-(104). Every other step is TTB&#x27;s published text word for word.</p><p>The petition-worded steps are written in TTB&#x27;s style, as in its published text: &quot;US Highway&quot; (petition &quot;U.S. Highway&quot;), &quot;northeasterly&quot;/&quot;northwesterly&quot; (petition &quot;north-easterly&quot;/&quot;north-westerly&quot;), elevations with a comma (&quot;1,727-foot&quot;; petition &quot;1727-foot&quot;) and &quot;then&quot; without a comma, in steps (10), (11), (90)-(92) and (99).</p><p>Roads are named as TTB names them: State Highway 29 northwest of the junction near Grit, US Highway 377 on the road the two share from the junction to Mason. The marked 1,727 is on the shared road, so step (90) says US Highway 377 where the petition said State Highway 29, and in step (91) the two names change places: along US Highway 377 to its intersection with State Highway 29 (the petition: along State Highway 29 to its intersection with U.S. Highway 377). The line does not change.</p><p style=\"margin:10px 0 2px\"><strong>How the line is drawn</strong></p><p>Every point is a mark printed on the USGS maps, or a trace of the map&#x27;s own linework (roads, streams, contours), located on the scanned 1:24,000 sheets; no line comes from another boundary layer.</p><p>Lane wording: along the whole highway stretch (steps (10)-(11) and (91)-(92)) the westbound-lane line is drawn 30 m northeast of the highway&#x27;s center line and the eastbound-lane line 30 m southwest of it, so the boundary is visible beside the road on the maps (the road symbol is about 13 m wide). This is a drawing convention discussed with TTB; the text is unchanged. Honey Creek (step 9) and the tributary (step 90) end where they meet their lane line.</p><p style=\"margin:10px 0 2px\"><strong>The map</strong></p><p>Red: the proposed revision, 193.83 square miles. Blue: the AVA Map Explorer polygon for Notice No. 243, from TTB's live AVAs_Production layer. The Map Explorer polygon was digitized by hand and the proposed revision follows the printed linework, so the two differ a little almost everywhere (median 11 m apart, measured every 2 m along each line). Shaded: every piece of land between them (red: in the proposed revision only; blue: in the Map Explorer polygon only; grey: the proposed text change near Grit); from the same text drawn differently they add up to 682 acres in the proposed revision only and 368 in the Map Explorer polygon only. Ringed: the 6 big differences, where the lines are 100 m or more apart (orange: the two lines take different paths; grey dashed: the proposed text change near Grit). Under them: the USGS geologic units (Town Mountain Granite, younger granitic intrusions, Hickory Sandstone Member formation), shifted about 400 m to sit on the outcrops, and the 13 USGS quadrangles. In the map's layer list, <em>TTB's AVA Map Explorer basemaps</em> holds the Map Explorer's four basemaps (Topographic, Streets, Imagery, USA Topo Maps): turn it on and pick one.</p></div>"
+   },
+   {
+    "id": "1ead89a0-163a-5e01-97f7-dbe4889ff064",
+    "dashboardItemType": "widget",
+    "name": "The change near Grit",
+    "type": "richTextWidget",
+    "noDataState": {},
+    "noFilterState": {},
+    "focusModeEnabled": false,
+    "datasets": [],
+    "valueType": "none",
+    "showFeatureMenu": false,
+    "text": "<div style=\"font-size:13px;line-height:1.45\"><p>Near Grit the proposed text puts back the petition's wording in place of Notice No. 243's steps (10)-(11) and (90)-(92), and adds steps (93)-(96) around a lobe of granite. Turn on <em>The change near Grit</em> in the map's layer list (on by default) to see each line and area.</p><p>Of the 15 steps worded differently from Notice No. 243 (<em>Steps reworded</em>, at the top), 13 are here, near Grit: (10)-(11), (90)-(100). The other two, (49) and (85), correct Notice No. 243's own wording elsewhere, one word each; the line does not change. Every other step is Notice No. 243's text word for word.</p><p style=\"margin:10px 0 2px\"><strong>The lines</strong></p><ul style=\"list-style:none;padding-left:4px;margin:0\"><li><span style=\"display:inline-block;width:26px;border-top:4px dashed #005aff;vertical-align:middle;margin-right:6px\"></span>Replaced: Notice No. 243 steps (10)-(11), (90)-(92), as drawn by the petitioner on the USGS maps</li><li><span style=\"display:inline-block;width:26px;border-top:4px solid #008c3c;vertical-align:middle;margin-right:6px\"></span>Put back: the petition's wording, (10)-(11), (90)-(92), (97)-(100)</li><li><span style=\"display:inline-block;width:26px;border-top:4px solid #be0082;vertical-align:middle;margin-right:6px\"></span>New: (93)-(96), around the granite lobe</li><li><span style=\"display:inline-block;width:26px;border-top:4px dashed #008c3c;vertical-align:middle;margin-right:6px\"></span>Replaced: the petition's straight line from the marked 1,737 to the marked 1,762</li></ul><p style=\"margin:10px 0 2px\"><strong>The areas</strong> (granite: Town Mountain Granite and younger granitic intrusions; USGS SGMC shifted to the outcrops)</p><table style=\"border-collapse:collapse;width:100%\"><tr style=\"text-align:left;border-bottom:1px solid #ccc\"><th style=\"padding:3px 6px\"></th><th style=\"padding:3px 6px;text-align:right\">acres</th><th style=\"padding:3px 6px;text-align:right;white-space:nowrap\">granite</th><th style=\"padding:3px 6px;text-align:right;white-space:nowrap\">sandstone*</th></tr><tr><td style=\"padding:3px 6px\">In Notice No. 243's text, left out by the petition</td><td style=\"padding:3px 6px;text-align:right;white-space:nowrap\">2,733</td><td style=\"padding:3px 6px;text-align:right;white-space:nowrap\">2,596</td><td style=\"padding:3px 6px;text-align:right;white-space:nowrap\">4</td></tr><tr><td style=\"padding:3px 6px\">Granite lobe, also left out now by (93)-(96)</td><td style=\"padding:3px 6px;text-align:right;white-space:nowrap\">140</td><td style=\"padding:3px 6px;text-align:right;white-space:nowrap\">127</td><td style=\"padding:3px 6px;text-align:right;white-space:nowrap\">3</td></tr><tr><td style=\"padding:3px 6px\">Put back, between the marked 1,737 and the windmill</td><td style=\"padding:3px 6px;text-align:right;white-space:nowrap\">6</td><td style=\"padding:3px 6px;text-align:right;white-space:nowrap\">0</td><td style=\"padding:3px 6px;text-align:right;white-space:nowrap\">0</td></tr><tr><td style=\"padding:3px 6px\">Added by the petition's lane wording, (10)-(11)</td><td style=\"padding:3px 6px;text-align:right;white-space:nowrap\">69</td><td style=\"padding:3px 6px;text-align:right;white-space:nowrap\">27</td><td style=\"padding:3px 6px;text-align:right;white-space:nowrap\">16</td></tr><tr><td style=\"padding:3px 6px\">In the petition, not Notice No. 243's text, (99)-(100)</td><td style=\"padding:3px 6px;text-align:right;white-space:nowrap\">19</td><td style=\"padding:3px 6px;text-align:right;white-space:nowrap\">16</td><td style=\"padding:3px 6px;text-align:right;white-space:nowrap\">2</td></tr></table><p style=\"font-size:11px;color:#666;margin-top:2px\">* the Hickory Sandstone Member formation</p><p style=\"margin-top:8px\">The AVA drawn three ways: Notice No. 243's text 198.17 square miles; the petition 194.03; the proposed revision 193.83. All three are drawn the same way, on the printed linework of the USGS maps; none is taken from the AVA Map Explorer polygon.</p></div>"
+   },
+   {
+    "id": "21b8acea-a7e5-582b-942f-67c7dc2c439b",
+    "dashboardItemType": "widget",
+    "name": "AVA area",
+    "type": "indicatorWidget",
+    "noDataState": {},
+    "noFilterState": {},
+    "focusModeEnabled": false,
+    "datasets": [
+     {
+      "type": "serviceDataset",
+      "name": "main",
+      "dataSource": {
+       "type": "layerDataSource",
+       "itemId": "00000000000000000000000000000013",
+       "layerId": "hsd-0"
+      },
+      "groupByFields": [],
+      "orderByFields": [],
+      "statisticDefinitions": [
+       {
+        "onStatisticField": "area_sqmi",
+        "statisticType": "max",
+        "outStatisticFieldName": "value"
+       }
+      ],
+      "outFields": [
+       "*"
+      ],
+      "returnDistinctValues": false,
+      "allowSourceDownload": false,
+      "allowSummaryDownload": false
+     }
+    ],
+    "defaultSettings": {
+     "topSection": {
+      "maxHeight": 30,
+      "textInfo": {
+       "text": "AVA as proposed",
+       "weight": "normal"
+      }
+     },
+     "middleSection": {
+      "maxHeight": 45,
+      "textInfo": {
+       "text": "{calculated/value}",
+       "weight": "bold",
+       "fillColor": "#5a1e2e"
+      }
+     },
+     "bottomSection": {
+      "maxHeight": 25,
+      "textInfo": {
+       "text": "sq mi (GRS 1980)",
+       "weight": "normal"
+      }
+     }
+    },
+    "verticalAlignment": "middle",
+    "comparison": "none",
+    "valueType": "statistic",
+    "noValueState": {},
+    "showFeatureMenu": false,
+    "valueFormat": {
+     "name": "value",
+     "prefix": false,
+     "style": "decimal",
+     "useGrouping": true,
+     "minimumFractionDigits": 2,
+     "maximumFractionDigits": 2
+    },
+    "percentageFormat": {
+     "name": "percentage",
+     "prefix": false,
+     "style": "percent",
+     "useGrouping": true
+    },
+    "ratioFormat": {
+     "name": "ratio",
+     "prefix": false,
+     "style": "decimal",
+     "useGrouping": true,
+     "maximumFractionDigits": 2
+    }
+   },
+   {
+    "id": "868bc072-04cc-5289-9fd9-71064ef1f97c",
+    "dashboardItemType": "widget",
+    "name": "Steps shown",
+    "type": "indicatorWidget",
+    "noDataState": {},
+    "noFilterState": {},
+    "focusModeEnabled": false,
+    "datasets": [
+     {
+      "type": "serviceDataset",
+      "name": "main",
+      "dataSource": {
+       "type": "layerDataSource",
+       "itemId": "00000000000000000000000000000013",
+       "layerId": "hsd-1"
+      },
+      "groupByFields": [],
+      "orderByFields": [],
+      "statisticDefinitions": [
+       {
+        "onStatisticField": "fid",
+        "statisticType": "count",
+        "outStatisticFieldName": "value"
+       }
+      ],
+      "outFields": [
+       "*"
+      ],
+      "returnDistinctValues": false,
+      "allowSourceDownload": false,
+      "allowSummaryDownload": false
+     }
+    ],
+    "defaultSettings": {
+     "topSection": {
+      "maxHeight": 30,
+      "textInfo": {
+       "text": "Steps shown",
+       "weight": "normal"
+      }
+     },
+     "middleSection": {
+      "maxHeight": 45,
+      "textInfo": {
+       "text": "{calculated/value}",
+       "weight": "bold",
+       "fillColor": "#5a1e2e"
+      }
+     },
+     "bottomSection": {
+      "maxHeight": 25,
+      "textInfo": {
+       "text": "of 104",
+       "weight": "normal"
+      }
+     }
+    },
+    "verticalAlignment": "middle",
+    "comparison": "none",
+    "valueType": "statistic",
+    "noValueState": {},
+    "showFeatureMenu": false,
+    "valueFormat": {
+     "name": "value",
+     "prefix": false,
+     "style": "decimal",
+     "useGrouping": true,
+     "minimumFractionDigits": 0,
+     "maximumFractionDigits": 0
+    },
+    "percentageFormat": {
+     "name": "percentage",
+     "prefix": false,
+     "style": "percent",
+     "useGrouping": true
+    },
+    "ratioFormat": {
+     "name": "ratio",
+     "prefix": false,
+     "style": "decimal",
+     "useGrouping": true,
+     "maximumFractionDigits": 2
+    }
+   },
+   {
+    "id": "65fe27cc-967c-5d04-814f-3ff3be4b4504",
+    "dashboardItemType": "widget",
+    "name": "Steps worded differently from Notice No. 243",
+    "type": "indicatorWidget",
+    "noDataState": {},
+    "noFilterState": {},
+    "focusModeEnabled": false,
+    "datasets": [
+     {
+      "type": "serviceDataset",
+      "name": "main",
+      "dataSource": {
+       "type": "layerDataSource",
+       "itemId": "00000000000000000000000000000013",
+       "layerId": "hsd-1"
+      },
+      "groupByFields": [],
+      "orderByFields": [],
+      "statisticDefinitions": [
+       {
+        "onStatisticField": "fid",
+        "statisticType": "count",
+        "outStatisticFieldName": "value"
+       }
+      ],
+      "outFields": [
+       "*"
+      ],
+      "returnDistinctValues": false,
+      "allowSourceDownload": false,
+      "allowSummaryDownload": false,
+      "filter": {
+       "type": "filterGroup",
+       "condition": "AND",
+       "rules": [
+        {
+         "type": "filterRule",
+         "field": {
+          "name": "change",
+          "type": "string"
+         },
+         "operator": "not_contains",
+         "constraint": {
+          "type": "value",
+          "value": "unchanged"
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "defaultSettings": {
+     "topSection": {
+      "maxHeight": 30,
+      "textInfo": {
+       "text": "Steps reworded",
+       "weight": "normal"
+      }
+     },
+     "middleSection": {
+      "maxHeight": 45,
+      "textInfo": {
+       "text": "{calculated/value}",
+       "weight": "bold",
+       "fillColor": "#5a1e2e"
+      }
+     },
+     "bottomSection": {
+      "maxHeight": 25,
+      "textInfo": {
+       "text": "from Notice No. 243",
+       "weight": "normal"
+      }
+     }
+    },
+    "verticalAlignment": "middle",
+    "comparison": "none",
+    "valueType": "statistic",
+    "noValueState": {},
+    "showFeatureMenu": false,
+    "valueFormat": {
+     "name": "value",
+     "prefix": false,
+     "style": "decimal",
+     "useGrouping": true,
+     "minimumFractionDigits": 0,
+     "maximumFractionDigits": 0
+    },
+    "percentageFormat": {
+     "name": "percentage",
+     "prefix": false,
+     "style": "percent",
+     "useGrouping": true
+    },
+    "ratioFormat": {
+     "name": "ratio",
+     "prefix": false,
+     "style": "decimal",
+     "useGrouping": true,
+     "maximumFractionDigits": 2
+    }
+   },
+   {
+    "id": "344fbccc-d57f-535a-b2c9-b100336ba2b9",
+    "dashboardItemType": "widget",
+    "name": "Big differences",
+    "type": "indicatorWidget",
+    "noDataState": {},
+    "noFilterState": {},
+    "focusModeEnabled": false,
+    "datasets": [
+     {
+      "type": "serviceDataset",
+      "name": "main",
+      "dataSource": {
+       "type": "layerDataSource",
+       "itemId": "00000000000000000000000000000013",
+       "layerId": "hsd-rings"
+      },
+      "groupByFields": [],
+      "orderByFields": [],
+      "statisticDefinitions": [
+       {
+        "onStatisticField": "fid",
+        "statisticType": "count",
+        "outStatisticFieldName": "value"
+       }
+      ],
+      "outFields": [
+       "*"
+      ],
+      "returnDistinctValues": false,
+      "allowSourceDownload": false,
+      "allowSummaryDownload": false
+     }
+    ],
+    "defaultSettings": {
+     "topSection": {
+      "maxHeight": 30,
+      "textInfo": {
+       "text": "Big differences (100 m+)",
+       "weight": "normal"
+      }
+     },
+     "middleSection": {
+      "maxHeight": 45,
+      "textInfo": {
+       "text": "{calculated/value}",
+       "weight": "bold",
+       "fillColor": "#5a1e2e"
+      }
+     },
+     "bottomSection": {
+      "maxHeight": 25,
+      "textInfo": {
+       "text": "from the Map Explorer polygon",
+       "weight": "normal"
+      }
+     }
+    },
+    "verticalAlignment": "middle",
+    "comparison": "none",
+    "valueType": "statistic",
+    "noValueState": {},
+    "showFeatureMenu": false,
+    "valueFormat": {
+     "name": "value",
+     "prefix": false,
+     "style": "decimal",
+     "useGrouping": true,
+     "minimumFractionDigits": 0,
+     "maximumFractionDigits": 0
+    },
+    "percentageFormat": {
+     "name": "percentage",
+     "prefix": false,
+     "style": "percent",
+     "useGrouping": true
+    },
+    "ratioFormat": {
+     "name": "ratio",
+     "prefix": false,
+     "style": "decimal",
+     "useGrouping": true,
+     "maximumFractionDigits": 2
+    }
+   },
+   {
+    "id": "02f57368-0a05-51cd-9943-c702f89246f2",
+    "dashboardItemType": "widget",
+    "name": "Land between the boundaries",
+    "type": "indicatorWidget",
+    "noDataState": {},
+    "noFilterState": {},
+    "focusModeEnabled": false,
+    "datasets": [
+     {
+      "type": "serviceDataset",
+      "name": "main",
+      "dataSource": {
+       "type": "layerDataSource",
+       "itemId": "00000000000000000000000000000013",
+       "layerId": "hsd-all-differences"
+      },
+      "groupByFields": [],
+      "orderByFields": [],
+      "statisticDefinitions": [
+       {
+        "onStatisticField": "acres",
+        "statisticType": "sum",
+        "outStatisticFieldName": "value"
+       }
+      ],
+      "outFields": [
+       "*"
+      ],
+      "returnDistinctValues": false,
+      "allowSourceDownload": false,
+      "allowSummaryDownload": false,
+      "filter": {
+       "type": "filterGroup",
+       "condition": "AND",
+       "rules": [
+        {
+         "type": "filterRule",
+         "field": {
+          "name": "cause",
+          "type": "string"
+         },
+         "operator": "equal",
+         "constraint": {
+          "type": "value",
+          "value": "the same text, drawn differently"
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "defaultSettings": {
+     "topSection": {
+      "maxHeight": 30,
+      "textInfo": {
+       "text": "Acres between the boundaries",
+       "weight": "normal"
+      }
+     },
+     "middleSection": {
+      "maxHeight": 45,
+      "textInfo": {
+       "text": "{calculated/value}",
+       "weight": "bold",
+       "fillColor": "#5a1e2e"
+      }
+     },
+     "bottomSection": {
+      "maxHeight": 25,
+      "textInfo": {
+       "text": "same text, drawn differently",
+       "weight": "normal"
+      }
+     }
+    },
+    "verticalAlignment": "middle",
+    "comparison": "none",
+    "valueType": "statistic",
+    "noValueState": {},
+    "showFeatureMenu": false,
+    "valueFormat": {
+     "name": "value",
+     "prefix": false,
+     "style": "decimal",
+     "useGrouping": true,
+     "minimumFractionDigits": 0,
+     "maximumFractionDigits": 0
+    },
+    "percentageFormat": {
+     "name": "percentage",
+     "prefix": false,
+     "style": "percent",
+     "useGrouping": true
+    },
+    "ratioFormat": {
+     "name": "ratio",
+     "prefix": false,
+     "style": "decimal",
+     "useGrouping": true,
+     "maximumFractionDigits": 2
+    }
+   }
+  ],
+  "header": {
+   "type": "header",
+   "dashboardItemType": "panel",
+   "title": "Hickory Sands District AVA: the boundary as proposed to TTB",
+   "subtitle": "Docket No. TTB-2026-0005, Notice No. 243 (91 FR 52576) - changes discussed with TTB on October 15, 2026 - prepared by Dan McLaughlin, Robert Clay Vineyards (petitioner)",
+   "textColor": "#ffffff",
+   "titleTextColor": "#ffffff",
+   "backgroundColor": "#5a1e2e",
+   "logoSize": "small",
+   "backgroundImageSizing": "fit-height",
+   "normalBackgroundImagePlacement": "left",
+   "horizontalBackgroundImagePlacement": "top",
+   "showSignOutMenu": false,
+   "subtitlePlacement": "below",
+   "showMargin": true,
+   "menuContents": [],
+   "selectors": [
+    {
+     "id": "fa63e2d6-507d-512e-a408-3758436c8325",
+     "dashboardItemType": "selector",
+     "name": "Steps to show",
+     "noDataState": {},
+     "noFilterState": {},
+     "focusModeEnabled": false,
+     "label": "Steps",
+     "placeholderText": "All 104 steps",
+     "showActionButtons": true,
+     "type": "categorySelectorWidget",
+     "category": {
+      "type": "static"
+     },
+     "selection": {
+      "operator": "contains",
+      "type": "multiple"
+     },
+     "showFilter": false,
+     "displayType": "list",
+     "maxSize": "compact",
+     "presentationMode": "dropdown",
+     "datasets": [
+      {
+       "type": "staticDataset",
+       "name": "main",
+       "data": {
+        "type": "staticValues",
+        "dataType": "string",
+        "values": [
+         {
+          "type": "labelledValue",
+          "id": "1",
+          "label": "Petition wording near Grit",
+          "value": "petition wording"
+         },
+         {
+          "type": "labelledValue",
+          "id": "2",
+          "label": "New: around the granite lobe",
+          "value": "NEW"
+         },
+         {
+          "type": "labelledValue",
+          "id": "4",
+          "label": "Corrections to Notice No. 243's wording",
+          "value": "text correction"
+         },
+         {
+          "type": "labelledValue",
+          "id": "3",
+          "label": "Unchanged from Notice No. 243",
+          "value": "unchanged"
+         }
+        ]
+       }
+      }
+     ],
+     "events": [
+      {
+       "type": "selectionChanged",
+       "actions": [
+        {
+         "type": "filter",
+         "targets": [
+          {
+           "targetId": "2d63289e-8652-5363-8433-d4210d64a415#main",
+           "by": "whereClause",
+           "requiresSelection": false,
+           "fieldMap": [
+            {
+             "sourceName": "filterField",
+             "targetName": "change"
+            }
+           ]
+          },
+          {
+           "targetId": "ea476add-4264-554d-bc3b-142c6bb77f0a#hsd-1",
+           "by": "whereClause",
+           "requiresSelection": false,
+           "fieldMap": [
+            {
+             "sourceName": "filterField",
+             "targetName": "change"
+            }
+           ]
+          },
+          {
+           "targetId": "868bc072-04cc-5289-9fd9-71064ef1f97c#main",
+           "by": "whereClause",
+           "requiresSelection": false,
+           "fieldMap": [
+            {
+             "sourceName": "filterField",
+             "targetName": "change"
+            }
+           ]
+          },
+          {
+           "targetId": "65fe27cc-967c-5d04-814f-3ff3be4b4504#main",
+           "by": "whereClause",
+           "requiresSelection": false,
+           "fieldMap": [
+            {
+             "sourceName": "filterField",
+             "targetName": "change"
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  "settings": {
+   "allowElementResizing": true,
+   "allowElementExpansion": true,
+   "allowReset": true
+  }
+ },
+ "mobileView": {
+  "type": "mobile",
+  "layout": {
+   "type": "dockingLayout",
+   "rootElement": {
+    "type": "stackLayoutElement",
+    "orientation": "row",
+    "id": "a346880c-4633-5563-99c2-0399286d35a9",
+    "width": 1,
+    "height": 1,
+    "elements": [
+     {
+      "type": "stackLayoutElement",
+      "orientation": "col",
+      "id": "4eba85b0-8bf9-595d-8cf6-9088e1f24424",
+      "width": 1,
+      "height": 0.12,
+      "elements": [
+       {
+        "type": "itemLayoutElement",
+        "id": "98364e22-b800-5dfa-9a4b-5182595efd7f",
+        "width": 0.3333333333333333,
+        "height": 1
+       },
+       {
+        "type": "itemLayoutElement",
+        "id": "886d999f-d07a-5043-b3df-28d504081483",
+        "width": 0.3333333333333333,
+        "height": 1
+       },
+       {
+        "type": "itemLayoutElement",
+        "id": "04b90d57-13c2-5351-ba6d-51764df702a0",
+        "width": 0.3333333333333333,
+        "height": 1
+       }
+      ]
+     },
+     {
+      "type": "itemLayoutElement",
+      "id": "7c555544-7717-50df-ba43-79179cce7d8d",
+      "width": 1,
+      "height": 0.52
+     },
+     {
+      "type": "tabsLayoutElement",
+      "id": "ed56b5c1-3a26-5dde-833f-bba04add5636",
+      "width": 1,
+      "height": 0.36,
+      "elements": [
+       {
+        "type": "itemLayoutElement",
+        "id": "0b9203ad-5d64-5958-972a-10d679e91c90",
+        "width": 1,
+        "height": 1,
+        "tabName": "Steps"
+       },
+       {
+        "type": "itemLayoutElement",
+        "id": "ba9f1658-f96d-5d75-9602-bc9c61ae4ba0",
+        "width": 1,
+        "height": 1,
+        "tabName": "What changes"
+       },
+       {
+        "type": "itemLayoutElement",
+        "id": "8c59902e-1239-5f88-b15b-7877d94b1335",
+        "width": 1,
+        "height": 1,
+        "tabName": "Grit"
+       },
+       {
+        "type": "itemLayoutElement",
+        "id": "dbc1fa2f-3a08-52bf-9d73-81025a41a1a5",
+        "width": 1,
+        "height": 1,
+        "tabName": "Documents"
+       }
+      ]
+     }
+    ]
+   }
+  },
+  "widgets": [
+   {
+    "id": "7c555544-7717-50df-ba43-79179cce7d8d",
+    "dashboardItemType": "widget",
+    "name": "Map",
+    "type": "mapWidget",
+    "noDataState": {},
+    "noFilterState": {},
+    "focusModeEnabled": false,
+    "itemId": "00000000000000000000000000000013",
+    "flashRepeats": 3,
+    "linkedMapWidgetIds": [],
+    "pointZoomScale": 10000,
+    "mapTools": [
+     {
+      "type": "mapContentsTool"
+     },
+     {
+      "type": "legendTool"
+     }
+    ],
+    "showMeasureTool": false,
+    "showNavigation": true,
+    "showPanRotate": false,
+    "showLocate": true,
+    "showCompass": false,
+    "showPopup": true,
+    "scalebarStyle": "line",
+    "editingEnabled": false,
+    "selectionColor": "#00b4ff",
+    "highlightColor": "#00b4ff",
+    "trackedFeatureColor": "#0000ff",
+    "trackedFeatureRadius": 100,
+    "selectTool": {
+     "type": "selectTool",
+     "clickToSelect": false,
+     "advanceSketchTools": []
+    }
+   },
+   {
+    "id": "98364e22-b800-5dfa-9a4b-5182595efd7f",
+    "dashboardItemType": "widget",
+    "name": "AVA area",
+    "type": "indicatorWidget",
+    "noDataState": {},
+    "noFilterState": {},
+    "focusModeEnabled": false,
+    "datasets": [
+     {
+      "type": "serviceDataset",
+      "name": "main",
+      "dataSource": {
+       "type": "layerDataSource",
+       "itemId": "00000000000000000000000000000013",
+       "layerId": "hsd-0"
+      },
+      "groupByFields": [],
+      "orderByFields": [],
+      "statisticDefinitions": [
+       {
+        "onStatisticField": "area_sqmi",
+        "statisticType": "max",
+        "outStatisticFieldName": "value"
+       }
+      ],
+      "outFields": [
+       "*"
+      ],
+      "returnDistinctValues": false,
+      "allowSourceDownload": false,
+      "allowSummaryDownload": false
+     }
+    ],
+    "defaultSettings": {
+     "topSection": {
+      "maxHeight": 30,
+      "textInfo": {
+       "text": "AVA area",
+       "weight": "normal"
+      }
+     },
+     "middleSection": {
+      "maxHeight": 45,
+      "textInfo": {
+       "text": "{calculated/value}",
+       "weight": "bold",
+       "fillColor": "#5a1e2e"
+      }
+     },
+     "bottomSection": {
+      "maxHeight": 25,
+      "textInfo": {
+       "text": "sq mi",
+       "weight": "normal"
+      }
+     }
+    },
+    "verticalAlignment": "middle",
+    "comparison": "none",
+    "valueType": "statistic",
+    "noValueState": {},
+    "showFeatureMenu": false,
+    "valueFormat": {
+     "name": "value",
+     "prefix": false,
+     "style": "decimal",
+     "useGrouping": true,
+     "minimumFractionDigits": 2,
+     "maximumFractionDigits": 2
+    },
+    "percentageFormat": {
+     "name": "percentage",
+     "prefix": false,
+     "style": "percent",
+     "useGrouping": true
+    },
+    "ratioFormat": {
+     "name": "ratio",
+     "prefix": false,
+     "style": "decimal",
+     "useGrouping": true,
+     "maximumFractionDigits": 2
+    }
+   },
+   {
+    "id": "886d999f-d07a-5043-b3df-28d504081483",
+    "dashboardItemType": "widget",
+    "name": "Steps worded differently from Notice No. 243",
+    "type": "indicatorWidget",
+    "noDataState": {},
+    "noFilterState": {},
+    "focusModeEnabled": false,
+    "datasets": [
+     {
+      "type": "serviceDataset",
+      "name": "main",
+      "dataSource": {
+       "type": "layerDataSource",
+       "itemId": "00000000000000000000000000000013",
+       "layerId": "hsd-1"
+      },
+      "groupByFields": [],
+      "orderByFields": [],
+      "statisticDefinitions": [
+       {
+        "onStatisticField": "fid",
+        "statisticType": "count",
+        "outStatisticFieldName": "value"
+       }
+      ],
+      "outFields": [
+       "*"
+      ],
+      "returnDistinctValues": false,
+      "allowSourceDownload": false,
+      "allowSummaryDownload": false,
+      "filter": {
+       "type": "filterGroup",
+       "condition": "AND",
+       "rules": [
+        {
+         "type": "filterRule",
+         "field": {
+          "name": "change",
+          "type": "string"
+         },
+         "operator": "not_contains",
+         "constraint": {
+          "type": "value",
+          "value": "unchanged"
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "defaultSettings": {
+     "topSection": {
+      "maxHeight": 30,
+      "textInfo": {
+       "text": "Reworded from",
+       "weight": "normal"
+      }
+     },
+     "middleSection": {
+      "maxHeight": 45,
+      "textInfo": {
+       "text": "{calculated/value}",
+       "weight": "bold",
+       "fillColor": "#5a1e2e"
+      }
+     },
+     "bottomSection": {
+      "maxHeight": 25,
+      "textInfo": {
+       "text": "Notice No. 243",
+       "weight": "normal"
+      }
+     }
+    },
+    "verticalAlignment": "middle",
+    "comparison": "none",
+    "valueType": "statistic",
+    "noValueState": {},
+    "showFeatureMenu": false,
+    "valueFormat": {
+     "name": "value",
+     "prefix": false,
+     "style": "decimal",
+     "useGrouping": true,
+     "minimumFractionDigits": 0,
+     "maximumFractionDigits": 0
+    },
+    "percentageFormat": {
+     "name": "percentage",
+     "prefix": false,
+     "style": "percent",
+     "useGrouping": true
+    },
+    "ratioFormat": {
+     "name": "ratio",
+     "prefix": false,
+     "style": "decimal",
+     "useGrouping": true,
+     "maximumFractionDigits": 2
+    }
+   },
+   {
+    "id": "04b90d57-13c2-5351-ba6d-51764df702a0",
+    "dashboardItemType": "widget",
+    "name": "Big differences",
+    "type": "indicatorWidget",
+    "noDataState": {},
+    "noFilterState": {},
+    "focusModeEnabled": false,
+    "datasets": [
+     {
+      "type": "serviceDataset",
+      "name": "main",
+      "dataSource": {
+       "type": "layerDataSource",
+       "itemId": "00000000000000000000000000000013",
+       "layerId": "hsd-rings"
+      },
+      "groupByFields": [],
+      "orderByFields": [],
+      "statisticDefinitions": [
+       {
+        "onStatisticField": "fid",
+        "statisticType": "count",
+        "outStatisticFieldName": "value"
+       }
+      ],
+      "outFields": [
+       "*"
+      ],
+      "returnDistinctValues": false,
+      "allowSourceDownload": false,
+      "allowSummaryDownload": false
+     }
+    ],
+    "defaultSettings": {
+     "topSection": {
+      "maxHeight": 30,
+      "textInfo": {
+       "text": "Big differences",
+       "weight": "normal"
+      }
+     },
+     "middleSection": {
+      "maxHeight": 45,
+      "textInfo": {
+       "text": "{calculated/value}",
+       "weight": "bold",
+       "fillColor": "#5a1e2e"
+      }
+     },
+     "bottomSection": {
+      "maxHeight": 25,
+      "textInfo": {
+       "text": "100 m+ apart",
+       "weight": "normal"
+      }
+     }
+    },
+    "verticalAlignment": "middle",
+    "comparison": "none",
+    "valueType": "statistic",
+    "noValueState": {},
+    "showFeatureMenu": false,
+    "valueFormat": {
+     "name": "value",
+     "prefix": false,
+     "style": "decimal",
+     "useGrouping": true,
+     "minimumFractionDigits": 0,
+     "maximumFractionDigits": 0
+    },
+    "percentageFormat": {
+     "name": "percentage",
+     "prefix": false,
+     "style": "percent",
+     "useGrouping": true
+    },
+    "ratioFormat": {
+     "name": "ratio",
+     "prefix": false,
+     "style": "decimal",
+     "useGrouping": true,
+     "maximumFractionDigits": 2
+    }
+   },
+   {
+    "id": "0b9203ad-5d64-5958-972a-10d679e91c90",
+    "dashboardItemType": "widget",
+    "name": "Steps",
+    "type": "listWidget",
+    "noDataState": {},
+    "noFilterState": {},
+    "focusModeEnabled": false,
+    "datasets": [
+     {
+      "type": "serviceDataset",
+      "name": "main",
+      "dataSource": {
+       "type": "layerDataSource",
+       "itemId": "00000000000000000000000000000013",
+       "layerId": "hsd-1"
+      },
+      "groupByFields": [],
+      "orderByFields": [
+       "step ASC"
+      ],
+      "statisticDefinitions": [],
+      "outFields": [
+       "*"
+      ],
+      "returnDistinctValues": false,
+      "allowSourceDownload": false,
+      "allowSummaryDownload": false,
+      "maxFeatures": 200
+     }
+    ],
+    "events": [
+     {
+      "type": "selectionChanged",
+      "actions": [
+       {
+        "type": "flashGeometry",
+        "targets": [
+         {
+          "targetId": "7c555544-7717-50df-ba43-79179cce7d8d",
+          "by": "geometry",
+          "requiresSelection": false
+         }
+        ]
+       },
+       {
+        "type": "zoom",
+        "targets": [
+         {
+          "targetId": "7c555544-7717-50df-ba43-79179cce7d8d",
+          "by": "geometry",
+          "requiresSelection": false
+         }
+        ]
+       }
+      ]
+     }
+    ],
+    "selectionMode": "single",
+    "iconType": "none",
+    "showFilter": true,
+    "separatorColor": "#dddddd",
+    "selectionColor": "#f3e3e6",
+    "text": "<p><span style=\"font-size:15px\">{field/narrative}</span></p><p><span style=\"font-size:13px;color:#8a1c1c\">{field/change}</span></p><p><span style=\"font-size:13px;color:#555\">Ends at {field/endpoint} &middot; {field/quad} quad &middot; {field/length_m} m &middot; {field/txt_source}</span></p>",
+    "topCaption": "<p style=\"font-size:14px;margin:4px 6px\">Tap a step to show it on the map.</p>"
+   },
+   {
+    "id": "ba9f1658-f96d-5d75-9602-bc9c61ae4ba0",
+    "dashboardItemType": "widget",
+    "name": "What changes",
+    "type": "richTextWidget",
+    "noDataState": {},
+    "noFilterState": {},
+    "focusModeEnabled": false,
+    "datasets": [],
+    "valueType": "none",
+    "showFeatureMenu": false,
+    "text": "<div style=\"font-size:15px;line-height:1.5\"><p style=\"margin:0 0 4px\"><strong>What the proposed revision changes in Notice No. 243</strong></p><p>Steps (10)-(11) and (90)-(100) near Grit use the petition&#x27;s own wording (February 2, 2023), lane wording included, in place of TTB&#x27;s steps (10)-(11) and (90)-(92). Within them:</p><ul style=\"margin:0 0 6px;padding-left:18px\"><li>steps (93)-(96) are new: they go around a lobe of granite northwest of the area near Grit by a windmill, a fence line and Topaz Lane, instead of the petition&#x27;s straight line from the marked 1737 to the marked 1762;</li><li>two flagged changes to the petition&#x27;s wording: step (90) names the unnamed, intermittent tributary that the petition&#x27;s line follows from Honey Creek to the marked 1727, and steps (90)-(91) name the roads as Notice No. 243 names them (below).</li></ul><p>Away from the area near Grit, two flagged corrections to Notice No. 243&#x27;s own wording, one word each; the line does not change:</p><ul style=\"margin:0 0 6px;padding-left:18px\"><li>step (85) says &quot;the marked 1,802-foot summit&quot;, as the Turtle Creek map prints the summit (x1802), where Notice No. 243 says &quot;the marked 1,801-foot summit&quot; (a substantive correction);</li><li>step (49) says &quot;the marked 1,586-foot elevation point&quot;, where Notice No. 243 says &quot;the marked 1,586-elevation point&quot;, the only elevation in its steps written without &quot;-foot&quot; (an editorial correction).</li></ul><p>TTB&#x27;s steps (93)-(96) are unchanged, renumbered (101)-(104). Every other step is TTB&#x27;s published text word for word.</p><p>The petition-worded steps are written in TTB&#x27;s style, as in its published text: &quot;US Highway&quot; (petition &quot;U.S. Highway&quot;), &quot;northeasterly&quot;/&quot;northwesterly&quot; (petition &quot;north-easterly&quot;/&quot;north-westerly&quot;), elevations with a comma (&quot;1,727-foot&quot;; petition &quot;1727-foot&quot;) and &quot;then&quot; without a comma, in steps (10), (11), (90)-(92) and (99).</p><p>Roads are named as TTB names them: State Highway 29 northwest of the junction near Grit, US Highway 377 on the road the two share from the junction to Mason. The marked 1,727 is on the shared road, so step (90) says US Highway 377 where the petition said State Highway 29, and in step (91) the two names change places: along US Highway 377 to its intersection with State Highway 29 (the petition: along State Highway 29 to its intersection with U.S. Highway 377). The line does not change.</p><p style=\"margin:12px 0 4px\"><strong>On the map</strong></p><p>Red: the proposed revision, 193.83 square miles. Blue: the AVA Map Explorer polygon for Notice No. 243, from TTB's live AVAs_Production layer. Shaded: every piece of land between them (red: in the proposed revision only; blue: in the Map Explorer polygon only; grey: the proposed text change near Grit). Ringed: the 6 big differences, where the lines are 100 m or more apart (orange: the two lines take different paths; grey dashed: the proposed text change near Grit).</p><p>In the map's layer list, <em>TTB's AVA Map Explorer basemaps</em> holds the Map Explorer's four basemaps (Topographic, Streets, Imagery, USA Topo Maps): turn it on and pick one.</p><p style=\"margin:12px 0 4px\"><strong>Every change, step by step</strong></p><a href=\"https://robertclayvines.maps.arcgis.com/home/item.html?id=00000000000000000000000000000011\" target=\"_blank\" rel=\"noopener noreferrer\" style=\"display:block;padding:12px 14px;margin:0 0 10px;border:1px solid #d9c3c8;border-radius:8px;background:#faf6f7;color:#5a1e2e;text-decoration:none;font-size:16px;line-height:1.35\"><strong>Changes side by side</strong><br><span style=\"font-size:14px;color:#555\">TTB&#x27;s text, the petition, the proposed text and why (PDF)</span></a><a href=\"https://robertclayvines.maps.arcgis.com/home/item.html?id=00000000000000000000000000000007\" target=\"_blank\" rel=\"noopener noreferrer\" style=\"display:block;padding:12px 14px;margin:0 0 10px;border:1px solid #d9c3c8;border-radius:8px;background:#faf6f7;color:#5a1e2e;text-decoration:none;font-size:16px;line-height:1.35\"><strong>Notice No. 243 with the proposed changes highlighted (unofficial copy, PDF)</strong></a></div>"
+   },
+   {
+    "id": "8c59902e-1239-5f88-b15b-7877d94b1335",
+    "dashboardItemType": "widget",
+    "name": "The change near Grit",
+    "type": "richTextWidget",
+    "noDataState": {},
+    "noFilterState": {},
+    "focusModeEnabled": false,
+    "datasets": [],
+    "valueType": "none",
+    "showFeatureMenu": false,
+    "text": "<div style=\"font-size:15px;line-height:1.5\"><p>Near Grit the proposed text puts back the petition's wording in place of Notice No. 243's steps (10)-(11) and (90)-(92), and adds steps (93)-(96) around a lobe of granite. Turn on <em>The change near Grit</em> in the map's layer list (on by default) to see each line and area.</p><p>Of the 15 steps worded differently from Notice No. 243 (<em>Steps reworded</em>, at the top), 13 are here, near Grit: (10)-(11), (90)-(100). The other two, (49) and (85), correct Notice No. 243's own wording elsewhere, one word each; the line does not change. Every other step is Notice No. 243's text word for word.</p><p style=\"margin:12px 0 4px\"><strong>The lines</strong></p><ul style=\"list-style:none;padding-left:4px;margin:0\"><li><span style=\"display:inline-block;width:26px;border-top:4px dashed #005aff;vertical-align:middle;margin-right:6px\"></span>Replaced: Notice No. 243 steps (10)-(11), (90)-(92), as drawn by the petitioner on the USGS maps</li><li><span style=\"display:inline-block;width:26px;border-top:4px solid #008c3c;vertical-align:middle;margin-right:6px\"></span>Put back: the petition's wording, (10)-(11), (90)-(92), (97)-(100)</li><li><span style=\"display:inline-block;width:26px;border-top:4px solid #be0082;vertical-align:middle;margin-right:6px\"></span>New: (93)-(96), around the granite lobe</li><li><span style=\"display:inline-block;width:26px;border-top:4px dashed #008c3c;vertical-align:middle;margin-right:6px\"></span>Replaced: the petition's straight line from the marked 1,737 to the marked 1,762</li></ul><p style=\"margin:12px 0 4px\"><strong>The areas</strong> (granite: Town Mountain Granite and younger granitic intrusions; USGS SGMC shifted to the outcrops)</p><p style=\"margin:8px 0 0\"><strong>In Notice No. 243's text, left out by the petition</strong><br>2,733 acres &middot; granite 2,596 &middot; sandstone* 4</p><p style=\"margin:8px 0 0\"><strong>Granite lobe, also left out now by (93)-(96)</strong><br>140 acres &middot; granite 127 &middot; sandstone* 3</p><p style=\"margin:8px 0 0\"><strong>Put back, between the marked 1,737 and the windmill</strong><br>6 acres &middot; granite 0 &middot; sandstone* 0</p><p style=\"margin:8px 0 0\"><strong>Added by the petition's lane wording, (10)-(11)</strong><br>69 acres &middot; granite 27 &middot; sandstone* 16</p><p style=\"margin:8px 0 0\"><strong>In the petition, not Notice No. 243's text, (99)-(100)</strong><br>19 acres &middot; granite 16 &middot; sandstone* 2</p><p style=\"font-size:13px;color:#555;margin-top:4px\">* the Hickory Sandstone Member formation</p><p style=\"margin-top:8px\">The AVA drawn three ways: Notice No. 243's text 198.17 square miles; the petition 194.03; the proposed revision 193.83. All three are drawn the same way, on the printed linework of the USGS maps; none is taken from the AVA Map Explorer polygon.</p></div>"
+   },
+   {
+    "id": "dbc1fa2f-3a08-52bf-9d73-81025a41a1a5",
+    "dashboardItemType": "widget",
+    "name": "Documents",
+    "type": "richTextWidget",
+    "noDataState": {},
+    "noFilterState": {},
+    "focusModeEnabled": false,
+    "datasets": [],
+    "valueType": "none",
+    "showFeatureMenu": false,
+    "text": "<div style=\"font-size:15px;line-height:1.5\"><p style=\"margin:0 0 10px\">Each opens the item's page, where it can be read or downloaded.</p><a href=\"https://robertclayvines.maps.arcgis.com/home/item.html?id=00000000000000000000000000000002\" target=\"_blank\" rel=\"noopener noreferrer\" style=\"display:block;padding:12px 14px;margin:0 0 10px;border:1px solid #d9c3c8;border-radius:8px;background:#faf6f7;color:#5a1e2e;text-decoration:none;font-size:16px;line-height:1.35\"><strong>Read me first</strong><br><span style=\"font-size:14px;color:#555\">what is in this group, and the license</span></a><a href=\"https://robertclayvines.maps.arcgis.com/home/item.html?id=00000000000000000000000000000003\" target=\"_blank\" rel=\"noopener noreferrer\" style=\"display:block;padding:12px 14px;margin:0 0 10px;border:1px solid #d9c3c8;border-radius:8px;background:#faf6f7;color:#5a1e2e;text-decoration:none;font-size:16px;line-height:1.35\"><strong>Boundary description as proposed (PDF)</strong></a><a href=\"https://robertclayvines.maps.arcgis.com/home/item.html?id=00000000000000000000000000000007\" target=\"_blank\" rel=\"noopener noreferrer\" style=\"display:block;padding:12px 14px;margin:0 0 10px;border:1px solid #d9c3c8;border-radius:8px;background:#faf6f7;color:#5a1e2e;text-decoration:none;font-size:16px;line-height:1.35\"><strong>Notice No. 243 with the proposed changes highlighted (unofficial copy, PDF)</strong></a><a href=\"https://robertclayvines.maps.arcgis.com/home/item.html?id=00000000000000000000000000000011\" target=\"_blank\" rel=\"noopener noreferrer\" style=\"display:block;padding:12px 14px;margin:0 0 10px;border:1px solid #d9c3c8;border-radius:8px;background:#faf6f7;color:#5a1e2e;text-decoration:none;font-size:16px;line-height:1.35\"><strong>Changes side by side</strong><br><span style=\"font-size:14px;color:#555\">TTB&#x27;s text, the petition, the proposed text and why (PDF)</span></a><a href=\"https://robertclayvines.maps.arcgis.com/home/group.html?id=65720ee9c5a743f88659ae39228704ec\" target=\"_blank\" rel=\"noopener noreferrer\" style=\"display:block;padding:12px 14px;margin:0 0 10px;border:1px solid #d9c3c8;border-radius:8px;background:#faf6f7;color:#5a1e2e;text-decoration:none;font-size:16px;line-height:1.35\"><strong>Everything in the group</strong><br><span style=\"font-size:14px;color:#555\">the Word files, the GIS data and the 13 USGS quadrangles</span></a></div>"
+   }
+  ],
+  "header": {
+   "type": "header",
+   "dashboardItemType": "panel",
+   "title": "Hickory Sands District AVA",
+   "subtitle": "Proposed boundary · Notice No. 243",
+   "textColor": "#ffffff",
+   "titleTextColor": "#ffffff",
+   "backgroundColor": "#5a1e2e",
+   "logoSize": "small",
+   "backgroundImageSizing": "fit-height",
+   "normalBackgroundImagePlacement": "left",
+   "horizontalBackgroundImagePlacement": "top",
+   "showSignOutMenu": false,
+   "subtitlePlacement": "below",
+   "showMargin": false,
+   "menuContents": []
+  },
+  "drawer": {
+   "type": "drawer",
+   "dashboardItemType": "panel",
+   "selectors": [
+    {
+     "id": "56215359-ddb6-52ea-b221-1e0bebd2a00c",
+     "dashboardItemType": "selector",
+     "name": "Steps to show",
+     "noDataState": {},
+     "noFilterState": {},
+     "focusModeEnabled": false,
+     "label": "Steps",
+     "placeholderText": "All 104 steps",
+     "showActionButtons": true,
+     "type": "categorySelectorWidget",
+     "category": {
+      "type": "static"
+     },
+     "selection": {
+      "operator": "contains",
+      "type": "multiple"
+     },
+     "showFilter": false,
+     "displayType": "list",
+     "maxSize": "none",
+     "presentationMode": "drilldown",
+     "datasets": [
+      {
+       "type": "staticDataset",
+       "name": "main",
+       "data": {
+        "type": "staticValues",
+        "dataType": "string",
+        "values": [
+         {
+          "type": "labelledValue",
+          "id": "1",
+          "label": "Petition wording near Grit",
+          "value": "petition wording"
+         },
+         {
+          "type": "labelledValue",
+          "id": "2",
+          "label": "New: around the granite lobe",
+          "value": "NEW"
+         },
+         {
+          "type": "labelledValue",
+          "id": "4",
+          "label": "Corrections to Notice No. 243's wording",
+          "value": "text correction"
+         },
+         {
+          "type": "labelledValue",
+          "id": "3",
+          "label": "Unchanged from Notice No. 243",
+          "value": "unchanged"
+         }
+        ]
+       }
+      }
+     ],
+     "events": [
+      {
+       "type": "selectionChanged",
+       "actions": [
+        {
+         "type": "filter",
+         "targets": [
+          {
+           "targetId": "0b9203ad-5d64-5958-972a-10d679e91c90#main",
+           "by": "whereClause",
+           "requiresSelection": false,
+           "fieldMap": [
+            {
+             "sourceName": "filterField",
+             "targetName": "change"
+            }
+           ]
+          },
+          {
+           "targetId": "7c555544-7717-50df-ba43-79179cce7d8d#hsd-1",
+           "by": "whereClause",
+           "requiresSelection": false,
+           "fieldMap": [
+            {
+             "sourceName": "filterField",
+             "targetName": "change"
+            }
+           ]
+          },
+          {
+           "targetId": "886d999f-d07a-5043-b3df-28d504081483#main",
+           "by": "whereClause",
+           "requiresSelection": false,
+           "fieldMap": [
+            {
+             "sourceName": "filterField",
+             "targetName": "change"
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  "settings": {
+   "allowElementResizing": false,
+   "allowElementExpansion": true,
+   "allowReset": false
+  }
+ },
+ "elementMappings": {
+  "ea476add-4264-554d-bc3b-142c6bb77f0a": "7c555544-7717-50df-ba43-79179cce7d8d",
+  "2d63289e-8652-5363-8433-d4210d64a415": "0b9203ad-5d64-5958-972a-10d679e91c90",
+  "fa63e2d6-507d-512e-a408-3758436c8325": "56215359-ddb6-52ea-b221-1e0bebd2a00c",
+  "21b8acea-a7e5-582b-942f-67c7dc2c439b": "98364e22-b800-5dfa-9a4b-5182595efd7f",
+  "65fe27cc-967c-5d04-814f-3ff3be4b4504": "886d999f-d07a-5043-b3df-28d504081483",
+  "344fbccc-d57f-535a-b2c9-b100336ba2b9": "04b90d57-13c2-5351-ba6d-51764df702a0",
+  "96772228-f366-5693-8ca9-00de8d228030": "ba9f1658-f96d-5d75-9602-bc9c61ae4ba0",
+  "1ead89a0-163a-5e01-97f7-dbe4889ff064": "8c59902e-1239-5f88-b15b-7877d94b1335",
+  "01fa690f-52e5-50ca-b200-7d6dd5378508": "dbc1fa2f-3a08-52bf-9d73-81025a41a1a5"
+ }
+}

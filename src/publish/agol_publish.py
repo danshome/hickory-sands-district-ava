@@ -6,7 +6,9 @@ Idempotent: an item with the same title in the folder has its file replaced, not
 changed is found by its earlier title (WAS) and retitled, and category 2's earlier name is renamed in the group's schema.
 Sign-in: GIS(profile="hsd"), Dan's saved profile (the password stays in his macOS Keychain).
 The boundary is PROPOSED (changes discussed with TTB on October 15, 2026); never write "agreed".
-Run by ./build.sh publish (or .venv/bin/python src/publish/agol_publish.py) [text that titles must contain, to do only some items]"""
+Run by ./build.sh publish (or .venv/bin/python src/publish/agol_publish.py) [text that titles must contain, to do only some items]
+What it sends is built without signing in (ITEMS, properties(): the publish dry run, src/publish/agol_dryrun.py, writes and checks
+it); main() signs in and sends it."""
 import json, math, os, re, sys
 from arcgis.gis import GIS, ItemProperties, ItemTypeEnum
 from osgeo import gdal, osr
@@ -216,41 +218,50 @@ def rename_category(nodes, old, new):
         hit = rename_category(n.get("categories") or [], old, new) or hit
     return hit
 
-only = sys.argv[1] if len(sys.argv) > 1 else None
-gis = GIS(profile="hsd")
-folder = gis.content.folders.create(FOLDER, exist_ok=True)   # made again if it was deleted
-group = gis.groups.get(GROUP_ID)
-schema = group.categories.schema
-if isinstance(schema, list) and rename_category(schema, C2_WAS, C2.rsplit("/", 1)[1]):   # its items are put back in it below
-    group.categories.schema = schema
-    print("renamed category", C2_WAS, "->", C2)
-existing = {it.title: it for it in folder.list()}
-done = []
-for rel, title, typ, cat, snippet, desc, lic, credit in ITEMS:
-    if only and only not in title: continue
-    path = os.path.normpath(os.path.join(PKG, rel))
-    assert os.path.exists(path), path
-    assert "agree" not in (title + snippet + desc + lic + credit).lower(), title
+def properties(title, snippet, desc, lic, credit):
+    """an item's metadata, as update() sends it (and an add sets it): no sign-in needed"""
     extent = QUAD_EXTENT.get(title) or (AVA if title.startswith("4") else None)
-    meta = {"snippet": snippet, "description": desc, "licenseInfo": lic, "accessInformation": credit, "tags": ",".join(TAGS),
+    return {"snippet": snippet, "description": desc, "licenseInfo": lic, "accessInformation": credit, "tags": ",".join(TAGS),
             "culture": CULTURE, **({"extent": extent} if extent else {})}
-    it = existing.get(title) or next((existing[t] for t in WAS.get(title, ()) if t in existing), None)
-    if it is not None:
-        how = "updated" if it.title == title else "retitled"
-        it.update(item_properties={"title": title, **meta}, data=path)
-    else:
-        props = ItemProperties(title=title, item_type=typ, tags=TAGS, snippet=snippet, description=desc,
-                               license_info=lic, access_information=credit, culture=CULTURE, extent=extent)
-        it = folder.add(props, file=path).result()
-        how = "added"
-    try:
-        it.sharing.groups.add(group)
-    except AttributeError:
-        it.share(groups=[GROUP_ID])
-    if cat:
-        r = gis._con.post(f"{gis._portal.resturl}content/groups/{GROUP_ID}/updateCategories",
-                          {"f": "json", "items": json.dumps([{it.id: [cat]}])})     # for a group: {itemId: [paths]}
-        assert all(x.get("success") for x in r.get("results", [{}])), r
-    done.append((how, it.id, title))
-    print(f"{how:8s} {it.id}  {it.type:18s} {title}", flush=True)
-print(f"{len(done)} items")
+
+def main():
+    only = sys.argv[1] if len(sys.argv) > 1 else None
+    gis = GIS(profile="hsd")
+    folder = gis.content.folders.create(FOLDER, exist_ok=True)   # made again if it was deleted
+    group = gis.groups.get(GROUP_ID)
+    schema = group.categories.schema
+    if isinstance(schema, list) and rename_category(schema, C2_WAS, C2.rsplit("/", 1)[1]):   # its items are put back in it below
+        group.categories.schema = schema
+        print("renamed category", C2_WAS, "->", C2)
+    existing = {it.title: it for it in folder.list()}
+    done = []
+    for rel, title, typ, cat, snippet, desc, lic, credit in ITEMS:
+        if only and only not in title: continue
+        path = os.path.normpath(os.path.join(PKG, rel))
+        assert os.path.exists(path), path
+        assert "agree" not in (title + snippet + desc + lic + credit).lower(), title
+        meta = properties(title, snippet, desc, lic, credit)
+        extent = meta.get("extent")
+        it = existing.get(title) or next((existing[t] for t in WAS.get(title, ()) if t in existing), None)
+        if it is not None:
+            how = "updated" if it.title == title else "retitled"
+            it.update(item_properties={"title": title, **meta}, data=path)
+        else:
+            props = ItemProperties(title=title, item_type=typ, tags=TAGS, snippet=snippet, description=desc,
+                                   license_info=lic, access_information=credit, culture=CULTURE, extent=extent)
+            it = folder.add(props, file=path).result()
+            how = "added"
+        try:
+            it.sharing.groups.add(group)
+        except AttributeError:
+            it.share(groups=[GROUP_ID])
+        if cat:
+            r = gis._con.post(f"{gis._portal.resturl}content/groups/{GROUP_ID}/updateCategories",
+                              {"f": "json", "items": json.dumps([{it.id: [cat]}])})     # for a group: {itemId: [paths]}
+            assert all(x.get("success") for x in r.get("results", [{}])), r
+        done.append((how, it.id, title))
+        print(f"{how:8s} {it.id}  {it.type:18s} {title}", flush=True)
+    print(f"{len(done)} items")
+
+if __name__ == "__main__":
+    main()

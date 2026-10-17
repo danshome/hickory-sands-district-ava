@@ -1,0 +1,1584 @@
+[
+ {
+  "title": "0 Read me first - what is in this group, and the license",
+  "type": "PDF",
+  "id": "00000000000000000000000000000002",
+  "script": "agol_publish.py",
+  "file": "documents/Hickory-Sands-District-read-me-first-2026-10-15.pdf",
+  "group_category": null,
+  "org_categories": [
+   "/Categories/American Viticultural Areas (AVAs)/Hickory Sands District AVA",
+   "/Categories/Documents"
+  ],
+  "properties": {
+   "snippet": "What each item is, what the proposed changes are, how the line is drawn, the attributes, and the CC0 license.",
+   "description": "<p>Hickory Sands District AVA (Docket No. TTB-2026-0005, Notice No. 243, 91 FR 52576): the boundary the petitioners propose, with the changes discussed with TTB on October 15, 2026. Prepared by Dan McLaughlin, Robert Clay Vineyards (petitioner).</p><p>A short PDF to read first. It lists every numbered item in this group, in the group's categories: 1 the boundary description as proposed; 2 Notice No. 243 with the proposed changes highlighted, and the text of both for comparing; 3 the changes side by side; 4 the GIS data (the map, the hosted layers and the downloads); 5 the 13 USGS quadrangles with the boundary. It then sets out what the proposed text changes near Grit, how the line is drawn on the printed linework of the USGS maps, the attributes of the GIS layers, and the license: CC0 for the petitioner's work, while Notice No. 243 is a U.S. Government work. The same PDF is attached to the AVA polygon in layer 4b; the dashboard (0 Dashboard) shows the boundary on the quadrangles and links every item.</p>",
+   "licenseInfo": "CC0 1.0 Universal (public domain dedication): no rights reserved. TTB, its contractors and anyone else may copy, change and use this for any purpose without permission or attribution. https://creativecommons.org/publicdomain/zero/1.0/",
+   "accessInformation": "Dan McLaughlin, Robert Clay Vineyards (petitioner)",
+   "tags": "Hickory Sands District,AVA,TTB,Notice No. 243,TTB-2026-0005,proposed boundary",
+   "culture": "en-us"
+  },
+  "was": []
+ },
+ {
+  "title": "1a Boundary description as proposed (PDF)",
+  "type": "PDF",
+  "id": "00000000000000000000000000000003",
+  "script": "agol_publish.py",
+  "file": "pkg/Hickory-Sands-District-AVA_boundary-as-proposed-2026-10-15/1_boundary-description/Hickory-Sands-District-boundary-description-as-proposed-2026-10-15.pdf",
+  "group_category": "/Categories/1 Boundary description (proposed text)",
+  "org_categories": [
+   "/Categories/American Viticultural Areas (AVAs)/Hickory Sands District AVA",
+   "/Categories/Documents/Boundary descriptions"
+  ],
+  "properties": {
+   "snippet": "The proposed regulatory text, all 104 steps, and the changes from TTB's published text.",
+   "description": "<p>Hickory Sands District AVA (Docket No. TTB-2026-0005, Notice No. 243, 91 FR 52576): the boundary the petitioners propose, with the changes discussed with TTB on October 15, 2026. Prepared by Dan McLaughlin, Robert Clay Vineyards (petitioner).</p><p>Proposed &sect; 9.___ Hickory Sands District: paragraphs (a)&ndash;(c) and all 104 boundary steps, TTB's published text with the proposed changes near Grit, followed by the list of changes.</p>",
+   "licenseInfo": "TTB's text: U.S. Government work (public domain). The petitioner's changes: CC0 1.0 Universal (public domain dedication): no rights reserved. TTB, its contractors and anyone else may copy, change and use this for any purpose without permission or attribution. https://creativecommons.org/publicdomain/zero/1.0/",
+   "accessInformation": "Dan McLaughlin, Robert Clay Vineyards (petitioner)",
+   "tags": "Hickory Sands District,AVA,TTB,Notice No. 243,TTB-2026-0005,proposed boundary",
+   "culture": "en-us"
+  },
+  "was": []
+ },
+ {
+  "title": "1b Boundary description as proposed (Word)",
+  "type": "Microsoft Word",
+  "id": "00000000000000000000000000000004",
+  "script": "agol_publish.py",
+  "file": "pkg/Hickory-Sands-District-AVA_boundary-as-proposed-2026-10-15/1_boundary-description/Hickory-Sands-District-boundary-description-as-proposed-2026-10-15.docx",
+  "group_category": "/Categories/1 Boundary description (proposed text)",
+  "org_categories": [
+   "/Categories/American Viticultural Areas (AVAs)/Hickory Sands District AVA",
+   "/Categories/Documents/Boundary descriptions"
+  ],
+  "properties": {
+   "snippet": "The proposed regulatory text, all 104 steps, and the changes from Notice No. 243's text, as an editable Word document.",
+   "description": "<p>Hickory Sands District AVA (Docket No. TTB-2026-0005, Notice No. 243, 91 FR 52576): the boundary the petitioners propose, with the changes discussed with TTB on October 15, 2026. Prepared by Dan McLaughlin, Robert Clay Vineyards (petitioner).</p><p>Proposed &sect; 9.___ Hickory Sands District: paragraphs (a)&ndash;(c) and all 104 boundary steps, TTB's published text with the proposed changes near Grit, followed by the list of changes.</p><p>The same document as item 1a, as an editable Word file.</p>",
+   "licenseInfo": "TTB's text: U.S. Government work (public domain). The petitioner's changes: CC0 1.0 Universal (public domain dedication): no rights reserved. TTB, its contractors and anyone else may copy, change and use this for any purpose without permission or attribution. https://creativecommons.org/publicdomain/zero/1.0/",
+   "accessInformation": "Dan McLaughlin, Robert Clay Vineyards (petitioner)",
+   "tags": "Hickory Sands District,AVA,TTB,Notice No. 243,TTB-2026-0005,proposed boundary",
+   "culture": "en-us"
+  },
+  "was": []
+ },
+ {
+  "title": "1c Boundary description as proposed (plain text)",
+  "type": "Code Sample",
+  "id": "00000000000000000000000000000005",
+  "script": "agol_publish.py",
+  "file": "pkg/Hickory-Sands-District-AVA_boundary-as-proposed-2026-10-15/1_boundary-description/Hickory-Sands-District-boundary-description-as-proposed-2026-10-15.txt",
+  "group_category": "/Categories/1 Boundary description (proposed text)",
+  "org_categories": [
+   "/Categories/American Viticultural Areas (AVAs)/Hickory Sands District AVA",
+   "/Categories/Documents/Boundary descriptions"
+  ],
+  "properties": {
+   "snippet": "The proposed regulatory text as plain text (UTF-8).",
+   "description": "<p>Hickory Sands District AVA (Docket No. TTB-2026-0005, Notice No. 243, 91 FR 52576): the boundary the petitioners propose, with the changes discussed with TTB on October 15, 2026. Prepared by Dan McLaughlin, Robert Clay Vineyards (petitioner).</p><p>Proposed &sect; 9.___ Hickory Sands District as plain text (UTF-8): paragraphs (a)&ndash;(c) and all 104 boundary steps, one step to a line, Notice No. 243's text with the proposed changes near Grit. The regulatory text only: the list of changes is in items 1a and 1b, and each changed step is set beside Notice No. 243's text, with why, in 3a and 3b.</p>",
+   "licenseInfo": "TTB's text: U.S. Government work (public domain). The petitioner's changes: CC0 1.0 Universal (public domain dedication): no rights reserved. TTB, its contractors and anyone else may copy, change and use this for any purpose without permission or attribution. https://creativecommons.org/publicdomain/zero/1.0/",
+   "accessInformation": "Dan McLaughlin, Robert Clay Vineyards (petitioner)",
+   "tags": "Hickory Sands District,AVA,TTB,Notice No. 243,TTB-2026-0005,proposed boundary",
+   "culture": "en-us"
+  },
+  "was": []
+ },
+ {
+  "title": "1d Boundary steps, one row per step (CSV)",
+  "type": "CSV",
+  "id": "00000000000000000000000000000006",
+  "script": "agol_publish.py",
+  "file": "pkg/Hickory-Sands-District-AVA_boundary-as-proposed-2026-10-15/1_boundary-description/Hickory-Sands-District-boundary-description-as-proposed-2026-10-15-steps.csv",
+  "group_category": "/Categories/1 Boundary description (proposed text)",
+  "org_categories": [
+   "/Categories/American Viticultural Areas (AVAs)/Hickory Sands District AVA",
+   "/Categories/Documents/Boundary descriptions"
+  ],
+  "properties": {
+   "snippet": "The 104 steps: text, source, change from TTB's published text, quadrangle, endpoint and length.",
+   "description": "<p>Hickory Sands District AVA (Docket No. TTB-2026-0005, Notice No. 243, 91 FR 52576): the boundary the petitioners propose, with the changes discussed with TTB on October 15, 2026. Prepared by Dan McLaughlin, Robert Clay Vineyards (petitioner).</p><p>The 104 boundary steps of the proposed text, one row each (CSV, UTF-8), with the columns <i>step</i> (its number), <i>text</i> (the step as proposed), <i>text_source</i> (where the wording comes from: Notice No. 243 or the petition, and the step number there), <i>change_from_TTB_published_text</i> (unchanged, or how it differs from Notice No. 243), <i>quad</i> (its USGS quadrangle), <i>endpoint</i> (the mark or junction it ends at) and <i>length_m</i> (its length in metres, as drawn). The same steps as the boundary_line layer of the GIS data (4b-4i); the full document is item 1a.</p>",
+   "licenseInfo": "TTB's text: U.S. Government work (public domain). The petitioner's changes: CC0 1.0 Universal (public domain dedication): no rights reserved. TTB, its contractors and anyone else may copy, change and use this for any purpose without permission or attribution. https://creativecommons.org/publicdomain/zero/1.0/",
+   "accessInformation": "Dan McLaughlin, Robert Clay Vineyards (petitioner)",
+   "tags": "Hickory Sands District,AVA,TTB,Notice No. 243,TTB-2026-0005,proposed boundary",
+   "culture": "en-us"
+  },
+  "was": []
+ },
+ {
+  "title": "2a Notice No. 243 with the proposed changes highlighted (unofficial copy, PDF)",
+  "type": "PDF",
+  "id": "00000000000000000000000000000007",
+  "script": "agol_publish.py",
+  "file": "pkg/Hickory-Sands-District-AVA_boundary-as-proposed-2026-10-15/2_TTB-notice-243-with-changes-highlighted/TTB-Notice-243-with-proposed-Hickory-Sands-District-changes-highlighted-2026-10-15-UNOFFICIAL.pdf",
+  "group_category": "/Categories/2 Notice No. 243 - proposed changes highlighted",
+  "org_categories": [
+   "/Categories/American Viticultural Areas (AVAs)/Hickory Sands District AVA",
+   "/Categories/Documents/Federal Register notices"
+  ],
+  "properties": {
+   "snippet": "TTB's own Notice No. 243 with only the proposed steps set into pages 52586-52588, highlighted in yellow. Unofficial.",
+   "description": "<p>Hickory Sands District AVA (Docket No. TTB-2026-0005, Notice No. 243, 91 FR 52576): the boundary the petitioners propose, with the changes discussed with TTB on October 15, 2026. Prepared by Dan McLaughlin, Robert Clay Vineyards (petitioner).</p><p>TTB's docket copy of Notice No. 243 with only the changed steps set into its pages 52586, 52587 and 52588, in the notice's own typeface, the changed wording highlighted in yellow. Every other line of text is TTB's; GPO's digital signature and authentication seal are removed (the copy is altered), and each changed page carries a red “UNOFFICIAL COPY” line at the top. The start of the next document in that issue (Kaw Valley) is moved, unchanged, to an added last page. Prepared by the petitioner for TTB's convenience; not the official Federal Register text.</p>",
+   "licenseInfo": "TTB's notice: U.S. Government work (public domain). The petitioner's changes: CC0 1.0 Universal (public domain dedication): no rights reserved. TTB, its contractors and anyone else may copy, change and use this for any purpose without permission or attribution. https://creativecommons.org/publicdomain/zero/1.0/",
+   "accessInformation": "TTB (Notice No. 243); proposed changes: Dan McLaughlin, Robert Clay Vineyards (petitioner)",
+   "tags": "Hickory Sands District,AVA,TTB,Notice No. 243,TTB-2026-0005,proposed boundary",
+   "culture": "en-us"
+  },
+  "was": [
+   "2a TTB Notice 243 with the proposed changes highlighted (unofficial copy, PDF)"
+  ]
+ },
+ {
+  "title": "2b Notice No. 243 as published, docket TTB-2026-0005-0001 (PDF)",
+  "type": "PDF",
+  "id": "00000000000000000000000000000008",
+  "script": "agol_publish.py",
+  "file": "pkg/Hickory-Sands-District-AVA_boundary-as-proposed-2026-10-15/2_TTB-notice-243-with-changes-highlighted/TTB-Notice-243-as-published-docket-TTB-2026-0005-0001.pdf",
+  "group_category": "/Categories/2 Notice No. 243 - proposed changes highlighted",
+  "org_categories": [
+   "/Categories/American Viticultural Areas (AVAs)/Hickory Sands District AVA",
+   "/Categories/Documents/Federal Register notices"
+  ],
+  "properties": {
+   "snippet": "TTB's notice exactly as it is in the docket (downloaded October 15, 2026), for comparison.",
+   "description": "<p>TTB's Notice No. 243 (91 FR 52576), exactly as it is in the docket: an unchanged copy of the docket file TTB-2026-0005-0001, downloaded October 15, 2026, and uploaded by Dan McLaughlin, Robert Clay Vineyards (petitioner), for comparison with item 2a, which sets the proposed steps into the same pages.</p><p>Part of the Hickory Sands District AVA package (Docket No. TTB-2026-0005, Notice No. 243, 91 FR 52576): the boundary the petitioners propose, with the changes discussed with TTB on October 15, 2026.</p>",
+   "licenseInfo": "U.S. Government work (public domain).",
+   "accessInformation": "Alcohol and Tobacco Tax and Trade Bureau; Federal Register (GPO)",
+   "tags": "Hickory Sands District,AVA,TTB,Notice No. 243,TTB-2026-0005,proposed boundary",
+   "culture": "en-us"
+  },
+  "was": [
+   "2b TTB Notice 243 as published, docket TTB-2026-0005-0001 (PDF)"
+  ]
+ },
+ {
+  "title": "2c Text for comparing - 1 Notice No. 243 as published (plain text)",
+  "type": "Code Sample",
+  "id": "00000000000000000000000000000009",
+  "script": "agol_publish.py",
+  "file": "pkg/Hickory-Sands-District-AVA_boundary-as-proposed-2026-10-15/2_TTB-notice-243-with-changes-highlighted/text-for-comparing-1_TTB-Notice-243-as-published.txt",
+  "group_category": "/Categories/2 Notice No. 243 - proposed changes highlighted",
+  "org_categories": [
+   "/Categories/American Viticultural Areas (AVAs)/Hickory Sands District AVA",
+   "/Categories/Documents/Comparisons"
+  ],
+  "properties": {
+   "snippet": "The text of item 2b, one paragraph per line, for a text compare (for example Beyond Compare) against 2d.",
+   "description": "<p>The text of TTB's Notice No. 243 as published (item 2b), extracted by Dan McLaughlin, Robert Clay Vineyards (petitioner), with poppler's pdftotext in reading order, one paragraph per line, with GPO's page notes at the page breaks. Compared with 2d, the only differences are the proposed steps: (10)-(11) and (90)-(104) near Grit, and the corrections in (49) and (85).</p><p>Part of the Hickory Sands District AVA package (Docket No. TTB-2026-0005, Notice No. 243, 91 FR 52576): the boundary the petitioners propose, with the changes discussed with TTB on October 15, 2026.</p>",
+   "licenseInfo": "U.S. Government work (public domain).",
+   "accessInformation": "Text of TTB's notice; extracted by Dan McLaughlin, Robert Clay Vineyards (petitioner)",
+   "tags": "Hickory Sands District,AVA,TTB,Notice No. 243,TTB-2026-0005,proposed boundary",
+   "culture": "en-us"
+  },
+  "was": [
+   "2c Text for comparing - 1 TTB Notice 243 as published (plain text)"
+  ]
+ },
+ {
+  "title": "2d Text for comparing - 2 Notice No. 243 with the proposed changes (plain text)",
+  "type": "Code Sample",
+  "id": "00000000000000000000000000000010",
+  "script": "agol_publish.py",
+  "file": "pkg/Hickory-Sands-District-AVA_boundary-as-proposed-2026-10-15/2_TTB-notice-243-with-changes-highlighted/text-for-comparing-2_TTB-Notice-243-with-proposed-changes.txt",
+  "group_category": "/Categories/2 Notice No. 243 - proposed changes highlighted",
+  "org_categories": [
+   "/Categories/American Viticultural Areas (AVAs)/Hickory Sands District AVA",
+   "/Categories/Documents/Comparisons"
+  ],
+  "properties": {
+   "snippet": "The text of item 2a, one paragraph per line, for a text compare against 2c.",
+   "description": "<p>Hickory Sands District AVA (Docket No. TTB-2026-0005, Notice No. 243, 91 FR 52576): the boundary the petitioners propose, with the changes discussed with TTB on October 15, 2026. Prepared by Dan McLaughlin, Robert Clay Vineyards (petitioner).</p><p>Extracted with poppler's pdftotext in reading order, one paragraph per line, with GPO's page notes at the page breaks. Compared with 2c, the only differences are the proposed steps: (10)-(11) and (90)-(104) near Grit, and the corrections in (49) and (85).</p>",
+   "licenseInfo": "TTB's text: U.S. Government work (public domain). The petitioner's changes: CC0 1.0 Universal (public domain dedication): no rights reserved. TTB, its contractors and anyone else may copy, change and use this for any purpose without permission or attribution. https://creativecommons.org/publicdomain/zero/1.0/",
+   "accessInformation": "Dan McLaughlin, Robert Clay Vineyards (petitioner)",
+   "tags": "Hickory Sands District,AVA,TTB,Notice No. 243,TTB-2026-0005,proposed boundary",
+   "culture": "en-us"
+  },
+  "was": [
+   "2d Text for comparing - 2 TTB Notice 243 with the proposed changes (plain text)"
+  ]
+ },
+ {
+  "title": "3a Changes side by side - TTB's text, the petition, the proposed text and why (PDF)",
+  "type": "PDF",
+  "id": "00000000000000000000000000000011",
+  "script": "agol_publish.py",
+  "file": "pkg/Hickory-Sands-District-AVA_boundary-as-proposed-2026-10-15/3_changes-side-by-side/Hickory-Sands-District-boundary-changes-side-by-side-2026-10-15.pdf",
+  "group_category": "/Categories/3 Changes side by side",
+  "org_categories": [
+   "/Categories/American Viticultural Areas (AVAs)/Hickory Sands District AVA",
+   "/Categories/Documents/Comparisons"
+  ],
+  "properties": {
+   "snippet": "Every step that changes: TTB's published text, the original petition (for reference), the proposed text, and why.",
+   "description": "<p>Hickory Sands District AVA (Docket No. TTB-2026-0005, Notice No. 243, 91 FR 52576): the boundary the petitioners propose, with the changes discussed with TTB on October 15, 2026. Prepared by Dan McLaughlin, Robert Clay Vineyards (petitioner).</p><p>Marking compares the proposed text with TTB's published text only: red strikethrough for TTB's words dropped, yellow for words added. The petition column is for reference and is not marked.</p>",
+   "licenseInfo": "TTB's text: U.S. Government work (public domain). The petitioner's changes: CC0 1.0 Universal (public domain dedication): no rights reserved. TTB, its contractors and anyone else may copy, change and use this for any purpose without permission or attribution. https://creativecommons.org/publicdomain/zero/1.0/",
+   "accessInformation": "Dan McLaughlin, Robert Clay Vineyards (petitioner)",
+   "tags": "Hickory Sands District,AVA,TTB,Notice No. 243,TTB-2026-0005,proposed boundary",
+   "culture": "en-us"
+  },
+  "was": []
+ },
+ {
+  "title": "3b Changes side by side (Word)",
+  "type": "Microsoft Word",
+  "id": "00000000000000000000000000000012",
+  "script": "agol_publish.py",
+  "file": "pkg/Hickory-Sands-District-AVA_boundary-as-proposed-2026-10-15/3_changes-side-by-side/Hickory-Sands-District-boundary-changes-side-by-side-2026-10-15.docx",
+  "group_category": "/Categories/3 Changes side by side",
+  "org_categories": [
+   "/Categories/American Viticultural Areas (AVAs)/Hickory Sands District AVA",
+   "/Categories/Documents/Comparisons"
+  ],
+  "properties": {
+   "snippet": "Every step that changes, as an editable Word document: Notice No. 243's text, the original petition (for reference), the proposed text, and why.",
+   "description": "<p>Hickory Sands District AVA (Docket No. TTB-2026-0005, Notice No. 243, 91 FR 52576): the boundary the petitioners propose, with the changes discussed with TTB on October 15, 2026. Prepared by Dan McLaughlin, Robert Clay Vineyards (petitioner).</p><p>The side-by-side comparison of item 3a as an editable Word document. For every step that changes, four columns: Notice No. 243's text, the original petition (February 2, 2023, for reference), the proposed text, and why. Every other step is Notice No. 243's text word for word. Marking compares the proposed text with Notice No. 243's text only: red strikethrough for its words that the proposed text drops, yellow for words added. The petition column is for reference and is not marked.</p>",
+   "licenseInfo": "TTB's text: U.S. Government work (public domain). The petitioner's changes: CC0 1.0 Universal (public domain dedication): no rights reserved. TTB, its contractors and anyone else may copy, change and use this for any purpose without permission or attribution. https://creativecommons.org/publicdomain/zero/1.0/",
+   "accessInformation": "Dan McLaughlin, Robert Clay Vineyards (petitioner)",
+   "tags": "Hickory Sands District,AVA,TTB,Notice No. 243,TTB-2026-0005,proposed boundary",
+   "culture": "en-us"
+  },
+  "was": []
+ },
+ {
+  "title": "4c Proposed boundary - GeoPackage (AVA polygon, 104 steps, step endpoints)",
+  "type": "GeoPackage",
+  "id": "00000000000000000000000000000015",
+  "script": "agol_publish.py",
+  "file": "pkg/Hickory-Sands-District-AVA_boundary-as-proposed-2026-10-15/4_GIS/hickory-sands-district-boundary-proposed-2026-10-15-EPSG4269.gpkg",
+  "group_category": "/Categories/4 GIS data/Downloads (GeoPackage + shapefiles + GeoJSON)",
+  "org_categories": [
+   "/Categories/American Viticultural Areas (AVAs)/Hickory Sands District AVA",
+   "/Categories/Boundaries/Administrative"
+  ],
+  "properties": {
+   "snippet": "All three layers in one OGC GeoPackage, NAD83 (EPSG:4269), with TTB's AVAs_Production fields.",
+   "description": "<p>Hickory Sands District AVA (Docket No. TTB-2026-0005, Notice No. 243, 91 FR 52576): the boundary the petitioners propose, with the changes discussed with TTB on October 15, 2026. Prepared by Dan McLaughlin, Robert Clay Vineyards (petitioner).</p><p>Layers: boundary_area (the AVA, 193.83 square miles), boundary_line (one feature per step, 104, each with its text), boundary_points (the beginning point and the step endpoints). The hosted layer 4b is published from this file; the same layers are also downloads as shapefiles (4d-4f) and GeoJSON (4g-4i).</p>",
+   "licenseInfo": "TTB's text and data, the step text from Notice No. 243 (boundary line layer) and the values copied from TTB's AVAs_Production record (Name, Status, Counties and the like): U.S. Government work (public domain). The petitioner's work, the boundary as drawn, its other attributes and the proposed changes to the text: CC0 1.0 Universal (public domain dedication): no rights reserved. TTB, its contractors and anyone else may copy, change and use this for any purpose without permission or attribution. https://creativecommons.org/publicdomain/zero/1.0/",
+   "accessInformation": "Dan McLaughlin, Robert Clay Vineyards (petitioner); TTB (Notice No. 243 step text, AVAs_Production record values)",
+   "tags": "Hickory Sands District,AVA,TTB,Notice No. 243,TTB-2026-0005,proposed boundary",
+   "culture": "en-us",
+   "extent": [
+    [
+     -99.4172,
+     30.7112
+    ],
+    [
+     -98.8796,
+     31.0427
+    ]
+   ]
+  },
+  "was": []
+ },
+ {
+  "title": "4d Proposed boundary - AVA polygon (shapefile)",
+  "type": "Shapefile",
+  "id": "00000000000000000000000000000016",
+  "script": "agol_publish.py",
+  "file": "pkg/Hickory-Sands-District-AVA_boundary-as-proposed-2026-10-15/4_GIS/shapefiles/hickory-sands-district-boundary-proposed-2026-10-15-area-EPSG4269-shp.zip",
+  "group_category": "/Categories/4 GIS data/Downloads (GeoPackage + shapefiles + GeoJSON)",
+  "org_categories": [
+   "/Categories/American Viticultural Areas (AVAs)/Hickory Sands District AVA",
+   "/Categories/Boundaries/Administrative"
+  ],
+  "properties": {
+   "snippet": "Zipped shapefile of the AVA polygon (193.83 square miles), NAD83 (EPSG:4269); field names trimmed to 10 characters, with a field-name key.",
+   "description": "<p>Hickory Sands District AVA (Docket No. TTB-2026-0005, Notice No. 243, 91 FR 52576): the boundary the petitioners propose, with the changes discussed with TTB on October 15, 2026. Prepared by Dan McLaughlin, Robert Clay Vineyards (petitioner).</p><p>The AVA polygon (193.83 square miles), as a zipped Esri shapefile in NAD83 (EPSG:4269), for GIS software that does not read GeoPackage. The same features and attributes as the boundary_area layer of the GeoPackage (4c) and the GeoJSON (4g): TTB's AVAs_Production fields (Name, Status, CFR_Section, Counties and the rest), and <i>area_sqmi</i> (the area in square miles, GRS 1980), <i>source</i> and <i>version_note</i>. A shapefile's field names hold 10 characters at most, so the longer ones are trimmed; hickory-sands-district-boundary-proposed-2026-10-15-area-EPSG4269-field-names.txt in the zip gives the full name of each.</p>",
+   "licenseInfo": "TTB's text and data, the step text from Notice No. 243 (boundary line layer) and the values copied from TTB's AVAs_Production record (Name, Status, Counties and the like): U.S. Government work (public domain). The petitioner's work, the boundary as drawn, its other attributes and the proposed changes to the text: CC0 1.0 Universal (public domain dedication): no rights reserved. TTB, its contractors and anyone else may copy, change and use this for any purpose without permission or attribution. https://creativecommons.org/publicdomain/zero/1.0/",
+   "accessInformation": "Dan McLaughlin, Robert Clay Vineyards (petitioner); TTB (Notice No. 243 step text, AVAs_Production record values)",
+   "tags": "Hickory Sands District,AVA,TTB,Notice No. 243,TTB-2026-0005,proposed boundary",
+   "culture": "en-us",
+   "extent": [
+    [
+     -99.4172,
+     30.7112
+    ],
+    [
+     -98.8796,
+     31.0427
+    ]
+   ]
+  },
+  "was": []
+ },
+ {
+  "title": "4g Proposed boundary - AVA polygon (GeoJSON)",
+  "type": "GeoJson",
+  "id": "00000000000000000000000000000019",
+  "script": "agol_publish.py",
+  "file": "pkg/Hickory-Sands-District-AVA_boundary-as-proposed-2026-10-15/4_GIS/hickory-sands-district-boundary-proposed-2026-10-15-area-EPSG4269.geojson",
+  "group_category": "/Categories/4 GIS data/Downloads (GeoPackage + shapefiles + GeoJSON)",
+  "org_categories": [
+   "/Categories/American Viticultural Areas (AVAs)/Hickory Sands District AVA",
+   "/Categories/Boundaries/Administrative"
+  ],
+  "properties": {
+   "snippet": "GeoJSON of the AVA polygon (193.83 square miles), NAD83 (EPSG:4269).",
+   "description": "<p>Hickory Sands District AVA (Docket No. TTB-2026-0005, Notice No. 243, 91 FR 52576): the boundary the petitioners propose, with the changes discussed with TTB on October 15, 2026. Prepared by Dan McLaughlin, Robert Clay Vineyards (petitioner).</p><p>The AVA polygon (193.83 square miles), as GeoJSON: coordinates in longitude and latitude, NAD83 (EPSG:4269, named in the file's crs member), with the full field names. The same features and attributes as the boundary_area layer of the GeoPackage (4c) and the shapefile (4d): TTB's AVAs_Production fields (Name, Status, CFR_Section, Counties and the rest), and <i>area_sqmi</i> (the area in square miles, GRS 1980), <i>source</i> and <i>version_note</i>.</p>",
+   "licenseInfo": "TTB's text and data, the step text from Notice No. 243 (boundary line layer) and the values copied from TTB's AVAs_Production record (Name, Status, Counties and the like): U.S. Government work (public domain). The petitioner's work, the boundary as drawn, its other attributes and the proposed changes to the text: CC0 1.0 Universal (public domain dedication): no rights reserved. TTB, its contractors and anyone else may copy, change and use this for any purpose without permission or attribution. https://creativecommons.org/publicdomain/zero/1.0/",
+   "accessInformation": "Dan McLaughlin, Robert Clay Vineyards (petitioner); TTB (Notice No. 243 step text, AVAs_Production record values)",
+   "tags": "Hickory Sands District,AVA,TTB,Notice No. 243,TTB-2026-0005,proposed boundary",
+   "culture": "en-us",
+   "extent": [
+    [
+     -99.4172,
+     30.7112
+    ],
+    [
+     -98.8796,
+     31.0427
+    ]
+   ]
+  },
+  "was": []
+ },
+ {
+  "title": "4e Proposed boundary - 104 boundary steps (shapefile)",
+  "type": "Shapefile",
+  "id": "00000000000000000000000000000017",
+  "script": "agol_publish.py",
+  "file": "pkg/Hickory-Sands-District-AVA_boundary-as-proposed-2026-10-15/4_GIS/shapefiles/hickory-sands-district-boundary-proposed-2026-10-15-line-EPSG4269-shp.zip",
+  "group_category": "/Categories/4 GIS data/Downloads (GeoPackage + shapefiles + GeoJSON)",
+  "org_categories": [
+   "/Categories/American Viticultural Areas (AVAs)/Hickory Sands District AVA",
+   "/Categories/Boundaries/Administrative"
+  ],
+  "properties": {
+   "snippet": "Zipped shapefile of the boundary, one feature per step (104), each with its text, NAD83 (EPSG:4269); field names trimmed to 10 characters, with a field-name key.",
+   "description": "<p>Hickory Sands District AVA (Docket No. TTB-2026-0005, Notice No. 243, 91 FR 52576): the boundary the petitioners propose, with the changes discussed with TTB on October 15, 2026. Prepared by Dan McLaughlin, Robert Clay Vineyards (petitioner).</p><p>The boundary, one feature per step (104), each with its text, as a zipped Esri shapefile in NAD83 (EPSG:4269), for GIS software that does not read GeoPackage. The same features and attributes as the boundary_line layer of the GeoPackage (4c) and the GeoJSON (4h): TTB's AVAs_Production fields (Name, Status, CFR_Section, Counties and the rest), and each step's number, kind, endpoint, USGS quadrangle, length in metres, text as proposed (<i>narrative</i>), the source of its wording and its change from Notice No. 243. A shapefile's field names hold 10 characters at most, so the longer ones are trimmed; hickory-sands-district-boundary-proposed-2026-10-15-line-EPSG4269-field-names.txt in the zip gives the full name of each. Text longer than a shapefile field holds (254 bytes) continues in a second field, <i>narrativ2</i>.</p>",
+   "licenseInfo": "TTB's text and data, the step text from Notice No. 243 (boundary line layer) and the values copied from TTB's AVAs_Production record (Name, Status, Counties and the like): U.S. Government work (public domain). The petitioner's work, the boundary as drawn, its other attributes and the proposed changes to the text: CC0 1.0 Universal (public domain dedication): no rights reserved. TTB, its contractors and anyone else may copy, change and use this for any purpose without permission or attribution. https://creativecommons.org/publicdomain/zero/1.0/",
+   "accessInformation": "Dan McLaughlin, Robert Clay Vineyards (petitioner); TTB (Notice No. 243 step text, AVAs_Production record values)",
+   "tags": "Hickory Sands District,AVA,TTB,Notice No. 243,TTB-2026-0005,proposed boundary",
+   "culture": "en-us",
+   "extent": [
+    [
+     -99.4172,
+     30.7112
+    ],
+    [
+     -98.8796,
+     31.0427
+    ]
+   ]
+  },
+  "was": []
+ },
+ {
+  "title": "4h Proposed boundary - 104 boundary steps (GeoJSON)",
+  "type": "GeoJson",
+  "id": "00000000000000000000000000000020",
+  "script": "agol_publish.py",
+  "file": "pkg/Hickory-Sands-District-AVA_boundary-as-proposed-2026-10-15/4_GIS/hickory-sands-district-boundary-proposed-2026-10-15-line-EPSG4269.geojson",
+  "group_category": "/Categories/4 GIS data/Downloads (GeoPackage + shapefiles + GeoJSON)",
+  "org_categories": [
+   "/Categories/American Viticultural Areas (AVAs)/Hickory Sands District AVA",
+   "/Categories/Boundaries/Administrative"
+  ],
+  "properties": {
+   "snippet": "GeoJSON of the boundary, one feature per step (104), each with its text, NAD83 (EPSG:4269).",
+   "description": "<p>Hickory Sands District AVA (Docket No. TTB-2026-0005, Notice No. 243, 91 FR 52576): the boundary the petitioners propose, with the changes discussed with TTB on October 15, 2026. Prepared by Dan McLaughlin, Robert Clay Vineyards (petitioner).</p><p>The boundary, one feature per step (104), each with its text, as GeoJSON: coordinates in longitude and latitude, NAD83 (EPSG:4269, named in the file's crs member), with the full field names. The same features and attributes as the boundary_line layer of the GeoPackage (4c) and the shapefile (4e): TTB's AVAs_Production fields (Name, Status, CFR_Section, Counties and the rest), and each step's number, kind, endpoint, USGS quadrangle, length in metres, text as proposed (<i>narrative</i>), the source of its wording and its change from Notice No. 243.</p>",
+   "licenseInfo": "TTB's text and data, the step text from Notice No. 243 (boundary line layer) and the values copied from TTB's AVAs_Production record (Name, Status, Counties and the like): U.S. Government work (public domain). The petitioner's work, the boundary as drawn, its other attributes and the proposed changes to the text: CC0 1.0 Universal (public domain dedication): no rights reserved. TTB, its contractors and anyone else may copy, change and use this for any purpose without permission or attribution. https://creativecommons.org/publicdomain/zero/1.0/",
+   "accessInformation": "Dan McLaughlin, Robert Clay Vineyards (petitioner); TTB (Notice No. 243 step text, AVAs_Production record values)",
+   "tags": "Hickory Sands District,AVA,TTB,Notice No. 243,TTB-2026-0005,proposed boundary",
+   "culture": "en-us",
+   "extent": [
+    [
+     -99.4172,
+     30.7112
+    ],
+    [
+     -98.8796,
+     31.0427
+    ]
+   ]
+  },
+  "was": []
+ },
+ {
+  "title": "4f Proposed boundary - step endpoints (shapefile)",
+  "type": "Shapefile",
+  "id": "00000000000000000000000000000018",
+  "script": "agol_publish.py",
+  "file": "pkg/Hickory-Sands-District-AVA_boundary-as-proposed-2026-10-15/4_GIS/shapefiles/hickory-sands-district-boundary-proposed-2026-10-15-points-EPSG4269-shp.zip",
+  "group_category": "/Categories/4 GIS data/Downloads (GeoPackage + shapefiles + GeoJSON)",
+  "org_categories": [
+   "/Categories/American Viticultural Areas (AVAs)/Hickory Sands District AVA",
+   "/Categories/Boundaries/Administrative"
+  ],
+  "properties": {
+   "snippet": "Zipped shapefile of the beginning point and the 104 step endpoints, NAD83 (EPSG:4269); field names trimmed to 10 characters, with a field-name key.",
+   "description": "<p>Hickory Sands District AVA (Docket No. TTB-2026-0005, Notice No. 243, 91 FR 52576): the boundary the petitioners propose, with the changes discussed with TTB on October 15, 2026. Prepared by Dan McLaughlin, Robert Clay Vineyards (petitioner).</p><p>The beginning point and the 104 step endpoints, as a zipped Esri shapefile in NAD83 (EPSG:4269), for GIS software that does not read GeoPackage. The same features and attributes as the boundary_points layer of the GeoPackage (4c) and the GeoJSON (4i): TTB's AVAs_Production fields (Name, Status, CFR_Section, Counties and the rest), and each point's number, step, kind, name and USGS quadrangle. A shapefile's field names hold 10 characters at most, so the longer ones are trimmed; hickory-sands-district-boundary-proposed-2026-10-15-points-EPSG4269-field-names.txt in the zip gives the full name of each.</p>",
+   "licenseInfo": "TTB's text and data, the step text from Notice No. 243 (boundary line layer) and the values copied from TTB's AVAs_Production record (Name, Status, Counties and the like): U.S. Government work (public domain). The petitioner's work, the boundary as drawn, its other attributes and the proposed changes to the text: CC0 1.0 Universal (public domain dedication): no rights reserved. TTB, its contractors and anyone else may copy, change and use this for any purpose without permission or attribution. https://creativecommons.org/publicdomain/zero/1.0/",
+   "accessInformation": "Dan McLaughlin, Robert Clay Vineyards (petitioner); TTB (Notice No. 243 step text, AVAs_Production record values)",
+   "tags": "Hickory Sands District,AVA,TTB,Notice No. 243,TTB-2026-0005,proposed boundary",
+   "culture": "en-us",
+   "extent": [
+    [
+     -99.4172,
+     30.7112
+    ],
+    [
+     -98.8796,
+     31.0427
+    ]
+   ]
+  },
+  "was": []
+ },
+ {
+  "title": "4i Proposed boundary - step endpoints (GeoJSON)",
+  "type": "GeoJson",
+  "id": "00000000000000000000000000000021",
+  "script": "agol_publish.py",
+  "file": "pkg/Hickory-Sands-District-AVA_boundary-as-proposed-2026-10-15/4_GIS/hickory-sands-district-boundary-proposed-2026-10-15-points-EPSG4269.geojson",
+  "group_category": "/Categories/4 GIS data/Downloads (GeoPackage + shapefiles + GeoJSON)",
+  "org_categories": [
+   "/Categories/American Viticultural Areas (AVAs)/Hickory Sands District AVA",
+   "/Categories/Boundaries/Administrative"
+  ],
+  "properties": {
+   "snippet": "GeoJSON of the beginning point and the 104 step endpoints, NAD83 (EPSG:4269).",
+   "description": "<p>Hickory Sands District AVA (Docket No. TTB-2026-0005, Notice No. 243, 91 FR 52576): the boundary the petitioners propose, with the changes discussed with TTB on October 15, 2026. Prepared by Dan McLaughlin, Robert Clay Vineyards (petitioner).</p><p>The beginning point and the 104 step endpoints, as GeoJSON: coordinates in longitude and latitude, NAD83 (EPSG:4269, named in the file's crs member), with the full field names. The same features and attributes as the boundary_points layer of the GeoPackage (4c) and the shapefile (4f): TTB's AVAs_Production fields (Name, Status, CFR_Section, Counties and the rest), and each point's number, step, kind, name and USGS quadrangle.</p>",
+   "licenseInfo": "TTB's text and data, the step text from Notice No. 243 (boundary line layer) and the values copied from TTB's AVAs_Production record (Name, Status, Counties and the like): U.S. Government work (public domain). The petitioner's work, the boundary as drawn, its other attributes and the proposed changes to the text: CC0 1.0 Universal (public domain dedication): no rights reserved. TTB, its contractors and anyone else may copy, change and use this for any purpose without permission or attribution. https://creativecommons.org/publicdomain/zero/1.0/",
+   "accessInformation": "Dan McLaughlin, Robert Clay Vineyards (petitioner); TTB (Notice No. 243 step text, AVAs_Production record values)",
+   "tags": "Hickory Sands District,AVA,TTB,Notice No. 243,TTB-2026-0005,proposed boundary",
+   "culture": "en-us",
+   "extent": [
+    [
+     -99.4172,
+     30.7112
+    ],
+    [
+     -98.8796,
+     31.0427
+    ]
+   ]
+  },
+  "was": []
+ },
+ {
+  "title": "5a USGS quadrangle with the boundary (GeoPDF) - Fly Gap, TX (1962, photorevised 1982)",
+  "type": "PDF",
+  "id": "00000000000000000000000000000028",
+  "script": "agol_publish.py",
+  "file": "pkg/Hickory-Sands-District-AVA_boundary-as-proposed-2026-10-15/5_USGS-quadrangles-with-boundary/TX_Fly Gap_108132_1962_24000_geo.pdf",
+  "group_category": "/Categories/5 USGS quadrangles with the boundary/GeoPDF",
+  "org_categories": [
+   "/Categories/American Viticultural Areas (AVAs)/Hickory Sands District AVA",
+   "/Categories/Basemaps/Historical maps",
+   "/Categories/Boundaries/Administrative"
+  ],
+  "properties": {
+   "snippet": "The USGS 1:24,000 Fly Gap, TX (1962, photorevised 1982) quadrangle (GeoPDF) with the proposed boundary added as a solid red line.",
+   "description": "<p>Hickory Sands District AVA (Docket No. TTB-2026-0005, Notice No. 243, 91 FR 52576): the boundary the petitioners propose, with the changes discussed with TTB on October 15, 2026. Prepared by Dan McLaughlin, Robert Clay Vineyards (petitioner).</p><p>The USGS GeoPDF from topoView, unaltered except for the added boundary line (an optional-content layer, with each step's record and the line GeoJSON attached). The quadrangle keeps its NAD27 grid; the NAD83 line is carried onto it with the NADCON 5.0 CONUS grid.</p>",
+   "licenseInfo": "USGS topographic map (public domain); boundary line CC0 1.0 Universal (public domain dedication): no rights reserved. TTB, its contractors and anyone else may copy, change and use this for any purpose without permission or attribution. https://creativecommons.org/publicdomain/zero/1.0/",
+   "accessInformation": "USGS; boundary line: Dan McLaughlin, Robert Clay Vineyards (petitioner)",
+   "tags": "Hickory Sands District,AVA,TTB,Notice No. 243,TTB-2026-0005,proposed boundary",
+   "culture": "en-us",
+   "extent": [
+    [
+     -99.1254,
+     30.7501
+    ],
+    [
+     -99.0003,
+     30.8752
+    ]
+   ]
+  },
+  "was": [
+   "5a USGS quadrangle with the boundary (GeoPDF) - Fly Gap, TX (1962)"
+  ]
+ },
+ {
+  "title": "5a USGS quadrangle with the boundary (GeoPDF) - Fredonia, TX (1962)",
+  "type": "PDF",
+  "id": "00000000000000000000000000000029",
+  "script": "agol_publish.py",
+  "file": "pkg/Hickory-Sands-District-AVA_boundary-as-proposed-2026-10-15/5_USGS-quadrangles-with-boundary/TX_Fredonia_108308_1962_24000_geo.pdf",
+  "group_category": "/Categories/5 USGS quadrangles with the boundary/GeoPDF",
+  "org_categories": [
+   "/Categories/American Viticultural Areas (AVAs)/Hickory Sands District AVA",
+   "/Categories/Basemaps/Historical maps",
+   "/Categories/Boundaries/Administrative"
+  ],
+  "properties": {
+   "snippet": "The USGS 1:24,000 Fredonia, TX (1962) quadrangle (GeoPDF) with the proposed boundary added as a solid red line.",
+   "description": "<p>Hickory Sands District AVA (Docket No. TTB-2026-0005, Notice No. 243, 91 FR 52576): the boundary the petitioners propose, with the changes discussed with TTB on October 15, 2026. Prepared by Dan McLaughlin, Robert Clay Vineyards (petitioner).</p><p>The USGS GeoPDF from topoView, unaltered except for the added boundary line (an optional-content layer, with each step's record and the line GeoJSON attached). The quadrangle keeps its NAD27 grid; the NAD83 line is carried onto it with the NADCON 5.0 CONUS grid.</p>",
+   "licenseInfo": "USGS topographic map (public domain); boundary line CC0 1.0 Universal (public domain dedication): no rights reserved. TTB, its contractors and anyone else may copy, change and use this for any purpose without permission or attribution. https://creativecommons.org/publicdomain/zero/1.0/",
+   "accessInformation": "USGS; boundary line: Dan McLaughlin, Robert Clay Vineyards (petitioner)",
+   "tags": "Hickory Sands District,AVA,TTB,Notice No. 243,TTB-2026-0005,proposed boundary",
+   "culture": "en-us",
+   "extent": [
+    [
+     -99.1254,
+     30.8751
+    ],
+    [
+     -99.0003,
+     31.0002
+    ]
+   ]
+  },
+  "was": []
+ },
+ {
+  "title": "5a USGS quadrangle with the boundary (GeoPDF) - Grit, TX (1970)",
+  "type": "PDF",
+  "id": "00000000000000000000000000000030",
+  "script": "agol_publish.py",
+  "file": "pkg/Hickory-Sands-District-AVA_boundary-as-proposed-2026-10-15/5_USGS-quadrangles-with-boundary/TX_Grit_110460_1970_24000_geo.pdf",
+  "group_category": "/Categories/5 USGS quadrangles with the boundary/GeoPDF",
+  "org_categories": [
+   "/Categories/American Viticultural Areas (AVAs)/Hickory Sands District AVA",
+   "/Categories/Basemaps/Historical maps",
+   "/Categories/Boundaries/Administrative"
+  ],
+  "properties": {
+   "snippet": "The USGS 1:24,000 Grit, TX (1970) quadrangle (GeoPDF) with the proposed boundary added as a solid red line.",
+   "description": "<p>Hickory Sands District AVA (Docket No. TTB-2026-0005, Notice No. 243, 91 FR 52576): the boundary the petitioners propose, with the changes discussed with TTB on October 15, 2026. Prepared by Dan McLaughlin, Robert Clay Vineyards (petitioner).</p><p>The USGS GeoPDF from topoView, unaltered except for the added boundary line (an optional-content layer, with each step's record and the line GeoJSON attached). The quadrangle keeps its NAD27 grid; the NAD83 line is carried onto it with the NADCON 5.0 CONUS grid.</p>",
+   "licenseInfo": "USGS topographic map (public domain); boundary line CC0 1.0 Universal (public domain dedication): no rights reserved. TTB, its contractors and anyone else may copy, change and use this for any purpose without permission or attribution. https://creativecommons.org/publicdomain/zero/1.0/",
+   "accessInformation": "USGS; boundary line: Dan McLaughlin, Robert Clay Vineyards (petitioner)",
+   "tags": "Hickory Sands District,AVA,TTB,Notice No. 243,TTB-2026-0005,proposed boundary",
+   "culture": "en-us",
+   "extent": [
+    [
+     -99.3754,
+     30.7501
+    ],
+    [
+     -99.2503,
+     30.8752
+    ]
+   ]
+  },
+  "was": []
+ },
+ {
+  "title": "5a USGS quadrangle with the boundary (GeoPDF) - Katemcy, TX (1970)",
+  "type": "PDF",
+  "id": "00000000000000000000000000000031",
+  "script": "agol_publish.py",
+  "file": "pkg/Hickory-Sands-District-AVA_boundary-as-proposed-2026-10-15/5_USGS-quadrangles-with-boundary/TX_Katemcy_109911_1970_24000_geo.pdf",
+  "group_category": "/Categories/5 USGS quadrangles with the boundary/GeoPDF",
+  "org_categories": [
+   "/Categories/American Viticultural Areas (AVAs)/Hickory Sands District AVA",
+   "/Categories/Basemaps/Historical maps",
+   "/Categories/Boundaries/Administrative"
+  ],
+  "properties": {
+   "snippet": "The USGS 1:24,000 Katemcy, TX (1970) quadrangle (GeoPDF) with the proposed boundary added as a solid red line.",
+   "description": "<p>Hickory Sands District AVA (Docket No. TTB-2026-0005, Notice No. 243, 91 FR 52576): the boundary the petitioners propose, with the changes discussed with TTB on October 15, 2026. Prepared by Dan McLaughlin, Robert Clay Vineyards (petitioner).</p><p>The USGS GeoPDF from topoView, unaltered except for the added boundary line (an optional-content layer, with each step's record and the line GeoJSON attached). The quadrangle keeps its NAD27 grid; the NAD83 line is carried onto it with the NADCON 5.0 CONUS grid.</p>",
+   "licenseInfo": "USGS topographic map (public domain); boundary line CC0 1.0 Universal (public domain dedication): no rights reserved. TTB, its contractors and anyone else may copy, change and use this for any purpose without permission or attribution. https://creativecommons.org/publicdomain/zero/1.0/",
+   "accessInformation": "USGS; boundary line: Dan McLaughlin, Robert Clay Vineyards (petitioner)",
+   "tags": "Hickory Sands District,AVA,TTB,Notice No. 243,TTB-2026-0005,proposed boundary",
+   "culture": "en-us",
+   "extent": [
+    [
+     -99.3754,
+     30.8751
+    ],
+    [
+     -99.2503,
+     31.0002
+    ]
+   ]
+  },
+  "was": []
+ },
+ {
+  "title": "5a USGS quadrangle with the boundary (GeoPDF) - Long Mountain, TX (1970)",
+  "type": "PDF",
+  "id": "00000000000000000000000000000032",
+  "script": "agol_publish.py",
+  "file": "pkg/Hickory-Sands-District-AVA_boundary-as-proposed-2026-10-15/5_USGS-quadrangles-with-boundary/TX_Long Mountain_109324_1970_24000_geo.pdf",
+  "group_category": "/Categories/5 USGS quadrangles with the boundary/GeoPDF",
+  "org_categories": [
+   "/Categories/American Viticultural Areas (AVAs)/Hickory Sands District AVA",
+   "/Categories/Basemaps/Historical maps",
+   "/Categories/Boundaries/Administrative"
+  ],
+  "properties": {
+   "snippet": "The USGS 1:24,000 Long Mountain, TX (1970) quadrangle (GeoPDF) with the proposed boundary added as a solid red line.",
+   "description": "<p>Hickory Sands District AVA (Docket No. TTB-2026-0005, Notice No. 243, 91 FR 52576): the boundary the petitioners propose, with the changes discussed with TTB on October 15, 2026. Prepared by Dan McLaughlin, Robert Clay Vineyards (petitioner).</p><p>The USGS GeoPDF from topoView, unaltered except for the added boundary line (an optional-content layer, with each step's record and the line GeoJSON attached). The quadrangle keeps its NAD27 grid; the NAD83 line is carried onto it with the NADCON 5.0 CONUS grid.</p>",
+   "licenseInfo": "USGS topographic map (public domain); boundary line CC0 1.0 Universal (public domain dedication): no rights reserved. TTB, its contractors and anyone else may copy, change and use this for any purpose without permission or attribution. https://creativecommons.org/publicdomain/zero/1.0/",
+   "accessInformation": "USGS; boundary line: Dan McLaughlin, Robert Clay Vineyards (petitioner)",
+   "tags": "Hickory Sands District,AVA,TTB,Notice No. 243,TTB-2026-0005,proposed boundary",
+   "culture": "en-us",
+   "extent": [
+    [
+     -99.5004,
+     30.7501
+    ],
+    [
+     -99.3753,
+     30.8752
+    ]
+   ]
+  },
+  "was": []
+ },
+ {
+  "title": "5a USGS quadrangle with the boundary (GeoPDF) - Mason, TX (1967, photoinspected 1979)",
+  "type": "PDF",
+  "id": "00000000000000000000000000000033",
+  "script": "agol_publish.py",
+  "file": "pkg/Hickory-Sands-District-AVA_boundary-as-proposed-2026-10-15/5_USGS-quadrangles-with-boundary/TX_Mason_118127_1967_24000_geo.pdf",
+  "group_category": "/Categories/5 USGS quadrangles with the boundary/GeoPDF",
+  "org_categories": [
+   "/Categories/American Viticultural Areas (AVAs)/Hickory Sands District AVA",
+   "/Categories/Basemaps/Historical maps",
+   "/Categories/Boundaries/Administrative"
+  ],
+  "properties": {
+   "snippet": "The USGS 1:24,000 Mason, TX (1967, photoinspected 1979) quadrangle (GeoPDF) with the proposed boundary added as a solid red line.",
+   "description": "<p>Hickory Sands District AVA (Docket No. TTB-2026-0005, Notice No. 243, 91 FR 52576): the boundary the petitioners propose, with the changes discussed with TTB on October 15, 2026. Prepared by Dan McLaughlin, Robert Clay Vineyards (petitioner).</p><p>The USGS GeoPDF from topoView, unaltered except for the added boundary line (an optional-content layer, with each step's record and the line GeoJSON attached). The quadrangle keeps its NAD27 grid; the NAD83 line is carried onto it with the NADCON 5.0 CONUS grid.</p>",
+   "licenseInfo": "USGS topographic map (public domain); boundary line CC0 1.0 Universal (public domain dedication): no rights reserved. TTB, its contractors and anyone else may copy, change and use this for any purpose without permission or attribution. https://creativecommons.org/publicdomain/zero/1.0/",
+   "accessInformation": "USGS; boundary line: Dan McLaughlin, Robert Clay Vineyards (petitioner)",
+   "tags": "Hickory Sands District,AVA,TTB,Notice No. 243,TTB-2026-0005,proposed boundary",
+   "culture": "en-us",
+   "extent": [
+    [
+     -99.2504,
+     30.6251
+    ],
+    [
+     -99.1253,
+     30.7502
+    ]
+   ]
+  },
+  "was": [
+   "5a USGS quadrangle with the boundary (GeoPDF) - Mason, TX (1967)"
+  ]
+ },
+ {
+  "title": "5a USGS quadrangle with the boundary (GeoPDF) - Pecan Springs, TX (1963)",
+  "type": "PDF",
+  "id": "00000000000000000000000000000034",
+  "script": "agol_publish.py",
+  "file": "pkg/Hickory-Sands-District-AVA_boundary-as-proposed-2026-10-15/5_USGS-quadrangles-with-boundary/TX_Pecan Springs_117472_1963_24000_geo.pdf",
+  "group_category": "/Categories/5 USGS quadrangles with the boundary/GeoPDF",
+  "org_categories": [
+   "/Categories/American Viticultural Areas (AVAs)/Hickory Sands District AVA",
+   "/Categories/Basemaps/Historical maps",
+   "/Categories/Boundaries/Administrative"
+  ],
+  "properties": {
+   "snippet": "The USGS 1:24,000 Pecan Springs, TX (1963) quadrangle (GeoPDF) with the proposed boundary added as a solid red line.",
+   "description": "<p>Hickory Sands District AVA (Docket No. TTB-2026-0005, Notice No. 243, 91 FR 52576): the boundary the petitioners propose, with the changes discussed with TTB on October 15, 2026. Prepared by Dan McLaughlin, Robert Clay Vineyards (petitioner).</p><p>The USGS GeoPDF from topoView, unaltered except for the added boundary line (an optional-content layer, with each step's record and the line GeoJSON attached). The quadrangle keeps its NAD27 grid; the NAD83 line is carried onto it with the NADCON 5.0 CONUS grid.</p>",
+   "licenseInfo": "USGS topographic map (public domain); boundary line CC0 1.0 Universal (public domain dedication): no rights reserved. TTB, its contractors and anyone else may copy, change and use this for any purpose without permission or attribution. https://creativecommons.org/publicdomain/zero/1.0/",
+   "accessInformation": "USGS; boundary line: Dan McLaughlin, Robert Clay Vineyards (petitioner)",
+   "tags": "Hickory Sands District,AVA,TTB,Notice No. 243,TTB-2026-0005,proposed boundary",
+   "culture": "en-us",
+   "extent": [
+    [
+     -99.1254,
+     31.0001
+    ],
+    [
+     -99.0003,
+     31.1252
+    ]
+   ]
+  },
+  "was": []
+ },
+ {
+  "title": "5a USGS quadrangle with the boundary (GeoPDF) - Pontotoc, TX (1955)",
+  "type": "PDF",
+  "id": "00000000000000000000000000000035",
+  "script": "agol_publish.py",
+  "file": "pkg/Hickory-Sands-District-AVA_boundary-as-proposed-2026-10-15/5_USGS-quadrangles-with-boundary/TX_Pontotoc_116320_1955_24000_geo.pdf",
+  "group_category": "/Categories/5 USGS quadrangles with the boundary/GeoPDF",
+  "org_categories": [
+   "/Categories/American Viticultural Areas (AVAs)/Hickory Sands District AVA",
+   "/Categories/Basemaps/Historical maps",
+   "/Categories/Boundaries/Administrative"
+  ],
+  "properties": {
+   "snippet": "The USGS 1:24,000 Pontotoc, TX (1955) quadrangle (GeoPDF) with the proposed boundary added as a solid red line.",
+   "description": "<p>Hickory Sands District AVA (Docket No. TTB-2026-0005, Notice No. 243, 91 FR 52576): the boundary the petitioners propose, with the changes discussed with TTB on October 15, 2026. Prepared by Dan McLaughlin, Robert Clay Vineyards (petitioner).</p><p>The USGS GeoPDF from topoView, unaltered except for the added boundary line (an optional-content layer, with each step's record and the line GeoJSON attached). The quadrangle keeps its NAD27 grid; the NAD83 line is carried onto it with the NADCON 5.0 CONUS grid.</p>",
+   "licenseInfo": "USGS topographic map (public domain); boundary line CC0 1.0 Universal (public domain dedication): no rights reserved. TTB, its contractors and anyone else may copy, change and use this for any purpose without permission or attribution. https://creativecommons.org/publicdomain/zero/1.0/",
+   "accessInformation": "USGS; boundary line: Dan McLaughlin, Robert Clay Vineyards (petitioner)",
+   "tags": "Hickory Sands District,AVA,TTB,Notice No. 243,TTB-2026-0005,proposed boundary",
+   "culture": "en-us",
+   "extent": [
+    [
+     -99.0004,
+     30.8751
+    ],
+    [
+     -98.8753,
+     31.0002
+    ]
+   ]
+  },
+  "was": []
+ },
+ {
+  "title": "5a USGS quadrangle with the boundary (GeoPDF) - Purdy Hill, TX (1962)",
+  "type": "PDF",
+  "id": "00000000000000000000000000000036",
+  "script": "agol_publish.py",
+  "file": "pkg/Hickory-Sands-District-AVA_boundary-as-proposed-2026-10-15/5_USGS-quadrangles-with-boundary/TX_Purdy Hill_115045_1962_24000_geo.pdf",
+  "group_category": "/Categories/5 USGS quadrangles with the boundary/GeoPDF",
+  "org_categories": [
+   "/Categories/American Viticultural Areas (AVAs)/Hickory Sands District AVA",
+   "/Categories/Basemaps/Historical maps",
+   "/Categories/Boundaries/Administrative"
+  ],
+  "properties": {
+   "snippet": "The USGS 1:24,000 Purdy Hill, TX (1962) quadrangle (GeoPDF) with the proposed boundary added as a solid red line.",
+   "description": "<p>Hickory Sands District AVA (Docket No. TTB-2026-0005, Notice No. 243, 91 FR 52576): the boundary the petitioners propose, with the changes discussed with TTB on October 15, 2026. Prepared by Dan McLaughlin, Robert Clay Vineyards (petitioner).</p><p>The USGS GeoPDF from topoView, unaltered except for the added boundary line (an optional-content layer, with each step's record and the line GeoJSON attached). The quadrangle keeps its NAD27 grid; the NAD83 line is carried onto it with the NADCON 5.0 CONUS grid.</p>",
+   "licenseInfo": "USGS topographic map (public domain); boundary line CC0 1.0 Universal (public domain dedication): no rights reserved. TTB, its contractors and anyone else may copy, change and use this for any purpose without permission or attribution. https://creativecommons.org/publicdomain/zero/1.0/",
+   "accessInformation": "USGS; boundary line: Dan McLaughlin, Robert Clay Vineyards (petitioner)",
+   "tags": "Hickory Sands District,AVA,TTB,Notice No. 243,TTB-2026-0005,proposed boundary",
+   "culture": "en-us",
+   "extent": [
+    [
+     -99.2504,
+     30.7501
+    ],
+    [
+     -99.1253,
+     30.8752
+    ]
+   ]
+  },
+  "was": []
+ },
+ {
+  "title": "5a USGS quadrangle with the boundary (GeoPDF) - Sheep Run Creek, TX (1968)",
+  "type": "PDF",
+  "id": "00000000000000000000000000000037",
+  "script": "agol_publish.py",
+  "file": "pkg/Hickory-Sands-District-AVA_boundary-as-proposed-2026-10-15/5_USGS-quadrangles-with-boundary/TX_Sheep Run Creek_124045_1968_24000_geo.pdf",
+  "group_category": "/Categories/5 USGS quadrangles with the boundary/GeoPDF",
+  "org_categories": [
+   "/Categories/American Viticultural Areas (AVAs)/Hickory Sands District AVA",
+   "/Categories/Basemaps/Historical maps",
+   "/Categories/Boundaries/Administrative"
+  ],
+  "properties": {
+   "snippet": "The USGS 1:24,000 Sheep Run Creek, TX (1968) quadrangle (GeoPDF) with the proposed boundary added as a solid red line.",
+   "description": "<p>Hickory Sands District AVA (Docket No. TTB-2026-0005, Notice No. 243, 91 FR 52576): the boundary the petitioners propose, with the changes discussed with TTB on October 15, 2026. Prepared by Dan McLaughlin, Robert Clay Vineyards (petitioner).</p><p>The USGS GeoPDF from topoView, unaltered except for the added boundary line (an optional-content layer, with each step's record and the line GeoJSON attached). The quadrangle keeps its NAD27 grid; the NAD83 line is carried onto it with the NADCON 5.0 CONUS grid.</p>",
+   "licenseInfo": "USGS topographic map (public domain); boundary line CC0 1.0 Universal (public domain dedication): no rights reserved. TTB, its contractors and anyone else may copy, change and use this for any purpose without permission or attribution. https://creativecommons.org/publicdomain/zero/1.0/",
+   "accessInformation": "USGS; boundary line: Dan McLaughlin, Robert Clay Vineyards (petitioner)",
+   "tags": "Hickory Sands District,AVA,TTB,Notice No. 243,TTB-2026-0005,proposed boundary",
+   "culture": "en-us",
+   "extent": [
+    [
+     -99.5004,
+     30.6251
+    ],
+    [
+     -99.3753,
+     30.7502
+    ]
+   ]
+  },
+  "was": []
+ },
+ {
+  "title": "5a USGS quadrangle with the boundary (GeoPDF) - Spy Rock, TX (1963)",
+  "type": "PDF",
+  "id": "00000000000000000000000000000038",
+  "script": "agol_publish.py",
+  "file": "pkg/Hickory-Sands-District-AVA_boundary-as-proposed-2026-10-15/5_USGS-quadrangles-with-boundary/TX_Spy Rock_122373_1963_24000_geo.pdf",
+  "group_category": "/Categories/5 USGS quadrangles with the boundary/GeoPDF",
+  "org_categories": [
+   "/Categories/American Viticultural Areas (AVAs)/Hickory Sands District AVA",
+   "/Categories/Basemaps/Historical maps",
+   "/Categories/Boundaries/Administrative"
+  ],
+  "properties": {
+   "snippet": "The USGS 1:24,000 Spy Rock, TX (1963) quadrangle (GeoPDF) with the proposed boundary added as a solid red line.",
+   "description": "<p>Hickory Sands District AVA (Docket No. TTB-2026-0005, Notice No. 243, 91 FR 52576): the boundary the petitioners propose, with the changes discussed with TTB on October 15, 2026. Prepared by Dan McLaughlin, Robert Clay Vineyards (petitioner).</p><p>The USGS GeoPDF from topoView, unaltered except for the added boundary line (an optional-content layer, with each step's record and the line GeoJSON attached). The quadrangle keeps its NAD27 grid; the NAD83 line is carried onto it with the NADCON 5.0 CONUS grid.</p>",
+   "licenseInfo": "USGS topographic map (public domain); boundary line CC0 1.0 Universal (public domain dedication): no rights reserved. TTB, its contractors and anyone else may copy, change and use this for any purpose without permission or attribution. https://creativecommons.org/publicdomain/zero/1.0/",
+   "accessInformation": "USGS; boundary line: Dan McLaughlin, Robert Clay Vineyards (petitioner)",
+   "tags": "Hickory Sands District,AVA,TTB,Notice No. 243,TTB-2026-0005,proposed boundary",
+   "culture": "en-us",
+   "extent": [
+    [
+     -99.2504,
+     30.8751
+    ],
+    [
+     -99.1253,
+     31.0002
+    ]
+   ]
+  },
+  "was": []
+ },
+ {
+  "title": "5a USGS quadrangle with the boundary (GeoPDF) - Turtle Creek, TX (1968)",
+  "type": "PDF",
+  "id": "00000000000000000000000000000039",
+  "script": "agol_publish.py",
+  "file": "pkg/Hickory-Sands-District-AVA_boundary-as-proposed-2026-10-15/5_USGS-quadrangles-with-boundary/TX_Turtle Creek_116772_1968_24000_geo.pdf",
+  "group_category": "/Categories/5 USGS quadrangles with the boundary/GeoPDF",
+  "org_categories": [
+   "/Categories/American Viticultural Areas (AVAs)/Hickory Sands District AVA",
+   "/Categories/Basemaps/Historical maps",
+   "/Categories/Boundaries/Administrative"
+  ],
+  "properties": {
+   "snippet": "The USGS 1:24,000 Turtle Creek, TX (1968) quadrangle (GeoPDF) with the proposed boundary added as a solid red line.",
+   "description": "<p>Hickory Sands District AVA (Docket No. TTB-2026-0005, Notice No. 243, 91 FR 52576): the boundary the petitioners propose, with the changes discussed with TTB on October 15, 2026. Prepared by Dan McLaughlin, Robert Clay Vineyards (petitioner).</p><p>The USGS GeoPDF from topoView, unaltered except for the added boundary line (an optional-content layer, with each step's record and the line GeoJSON attached). The quadrangle keeps its NAD27 grid; the NAD83 line is carried onto it with the NADCON 5.0 CONUS grid.</p>",
+   "licenseInfo": "USGS topographic map (public domain); boundary line CC0 1.0 Universal (public domain dedication): no rights reserved. TTB, its contractors and anyone else may copy, change and use this for any purpose without permission or attribution. https://creativecommons.org/publicdomain/zero/1.0/",
+   "accessInformation": "USGS; boundary line: Dan McLaughlin, Robert Clay Vineyards (petitioner)",
+   "tags": "Hickory Sands District,AVA,TTB,Notice No. 243,TTB-2026-0005,proposed boundary",
+   "culture": "en-us",
+   "extent": [
+    [
+     -99.3754,
+     30.6251
+    ],
+    [
+     -99.2503,
+     30.7502
+    ]
+   ]
+  },
+  "was": []
+ },
+ {
+  "title": "5a USGS quadrangle with the boundary (GeoPDF) - Voca, TX (1963)",
+  "type": "PDF",
+  "id": "00000000000000000000000000000040",
+  "script": "agol_publish.py",
+  "file": "pkg/Hickory-Sands-District-AVA_boundary-as-proposed-2026-10-15/5_USGS-quadrangles-with-boundary/TX_Voca_116923_1963_24000_geo.pdf",
+  "group_category": "/Categories/5 USGS quadrangles with the boundary/GeoPDF",
+  "org_categories": [
+   "/Categories/American Viticultural Areas (AVAs)/Hickory Sands District AVA",
+   "/Categories/Basemaps/Historical maps",
+   "/Categories/Boundaries/Administrative"
+  ],
+  "properties": {
+   "snippet": "The USGS 1:24,000 Voca, TX (1963) quadrangle (GeoPDF) with the proposed boundary added as a solid red line.",
+   "description": "<p>Hickory Sands District AVA (Docket No. TTB-2026-0005, Notice No. 243, 91 FR 52576): the boundary the petitioners propose, with the changes discussed with TTB on October 15, 2026. Prepared by Dan McLaughlin, Robert Clay Vineyards (petitioner).</p><p>The USGS GeoPDF from topoView, unaltered except for the added boundary line (an optional-content layer, with each step's record and the line GeoJSON attached). The quadrangle keeps its NAD27 grid; the NAD83 line is carried onto it with the NADCON 5.0 CONUS grid.</p>",
+   "licenseInfo": "USGS topographic map (public domain); boundary line CC0 1.0 Universal (public domain dedication): no rights reserved. TTB, its contractors and anyone else may copy, change and use this for any purpose without permission or attribution. https://creativecommons.org/publicdomain/zero/1.0/",
+   "accessInformation": "USGS; boundary line: Dan McLaughlin, Robert Clay Vineyards (petitioner)",
+   "tags": "Hickory Sands District,AVA,TTB,Notice No. 243,TTB-2026-0005,proposed boundary",
+   "culture": "en-us",
+   "extent": [
+    [
+     -99.2504,
+     31.0001
+    ],
+    [
+     -99.1253,
+     31.1252
+    ]
+   ]
+  },
+  "was": []
+ },
+ {
+  "title": "5b USGS quadrangle with the boundary (GeoTIFF) - Fly Gap, TX (1962, photorevised 1982)",
+  "type": "Image",
+  "id": "00000000000000000000000000000041",
+  "script": "agol_publish.py",
+  "file": "pkg/Hickory-Sands-District-AVA_boundary-as-proposed-2026-10-15/5_USGS-quadrangles-with-boundary/TX_Fly Gap_108132_1962_24000_geo.tif",
+  "group_category": "/Categories/5 USGS quadrangles with the boundary/GeoTIFF",
+  "org_categories": [
+   "/Categories/American Viticultural Areas (AVAs)/Hickory Sands District AVA",
+   "/Categories/Basemaps/Historical maps",
+   "/Categories/Boundaries/Administrative"
+  ],
+  "properties": {
+   "snippet": "The USGS 1:24,000 Fly Gap, TX (1962, photorevised 1982) quadrangle (GeoTIFF) with the proposed boundary added as a solid red line.",
+   "description": "<p>Hickory Sands District AVA (Docket No. TTB-2026-0005, Notice No. 243, 91 FR 52576): the boundary the petitioners propose, with the changes discussed with TTB on October 15, 2026. Prepared by Dan McLaughlin, Robert Clay Vineyards (petitioner).</p><p>The USGS GeoTIFF from topoView, unaltered except for the added boundary line (only the image tiles the line crosses are rewritten). The quadrangle keeps its NAD27 grid; the NAD83 line is carried onto it with the NADCON 5.0 CONUS grid.</p>",
+   "licenseInfo": "USGS topographic map (public domain); boundary line CC0 1.0 Universal (public domain dedication): no rights reserved. TTB, its contractors and anyone else may copy, change and use this for any purpose without permission or attribution. https://creativecommons.org/publicdomain/zero/1.0/",
+   "accessInformation": "USGS; boundary line: Dan McLaughlin, Robert Clay Vineyards (petitioner)",
+   "tags": "Hickory Sands District,AVA,TTB,Notice No. 243,TTB-2026-0005,proposed boundary",
+   "culture": "en-us",
+   "extent": [
+    [
+     -99.1254,
+     30.7501
+    ],
+    [
+     -99.0003,
+     30.8752
+    ]
+   ]
+  },
+  "was": [
+   "5b USGS quadrangle with the boundary (GeoTIFF) - Fly Gap, TX (1962)"
+  ]
+ },
+ {
+  "title": "5b USGS quadrangle with the boundary (GeoTIFF) - Fredonia, TX (1962)",
+  "type": "Image",
+  "id": "00000000000000000000000000000042",
+  "script": "agol_publish.py",
+  "file": "pkg/Hickory-Sands-District-AVA_boundary-as-proposed-2026-10-15/5_USGS-quadrangles-with-boundary/TX_Fredonia_108308_1962_24000_geo.tif",
+  "group_category": "/Categories/5 USGS quadrangles with the boundary/GeoTIFF",
+  "org_categories": [
+   "/Categories/American Viticultural Areas (AVAs)/Hickory Sands District AVA",
+   "/Categories/Basemaps/Historical maps",
+   "/Categories/Boundaries/Administrative"
+  ],
+  "properties": {
+   "snippet": "The USGS 1:24,000 Fredonia, TX (1962) quadrangle (GeoTIFF) with the proposed boundary added as a solid red line.",
+   "description": "<p>Hickory Sands District AVA (Docket No. TTB-2026-0005, Notice No. 243, 91 FR 52576): the boundary the petitioners propose, with the changes discussed with TTB on October 15, 2026. Prepared by Dan McLaughlin, Robert Clay Vineyards (petitioner).</p><p>The USGS GeoTIFF from topoView, unaltered except for the added boundary line (only the image tiles the line crosses are rewritten). The quadrangle keeps its NAD27 grid; the NAD83 line is carried onto it with the NADCON 5.0 CONUS grid.</p>",
+   "licenseInfo": "USGS topographic map (public domain); boundary line CC0 1.0 Universal (public domain dedication): no rights reserved. TTB, its contractors and anyone else may copy, change and use this for any purpose without permission or attribution. https://creativecommons.org/publicdomain/zero/1.0/",
+   "accessInformation": "USGS; boundary line: Dan McLaughlin, Robert Clay Vineyards (petitioner)",
+   "tags": "Hickory Sands District,AVA,TTB,Notice No. 243,TTB-2026-0005,proposed boundary",
+   "culture": "en-us",
+   "extent": [
+    [
+     -99.1254,
+     30.8751
+    ],
+    [
+     -99.0003,
+     31.0002
+    ]
+   ]
+  },
+  "was": []
+ },
+ {
+  "title": "5b USGS quadrangle with the boundary (GeoTIFF) - Grit, TX (1970)",
+  "type": "Image",
+  "id": "00000000000000000000000000000043",
+  "script": "agol_publish.py",
+  "file": "pkg/Hickory-Sands-District-AVA_boundary-as-proposed-2026-10-15/5_USGS-quadrangles-with-boundary/TX_Grit_110460_1970_24000_geo.tif",
+  "group_category": "/Categories/5 USGS quadrangles with the boundary/GeoTIFF",
+  "org_categories": [
+   "/Categories/American Viticultural Areas (AVAs)/Hickory Sands District AVA",
+   "/Categories/Basemaps/Historical maps",
+   "/Categories/Boundaries/Administrative"
+  ],
+  "properties": {
+   "snippet": "The USGS 1:24,000 Grit, TX (1970) quadrangle (GeoTIFF) with the proposed boundary added as a solid red line.",
+   "description": "<p>Hickory Sands District AVA (Docket No. TTB-2026-0005, Notice No. 243, 91 FR 52576): the boundary the petitioners propose, with the changes discussed with TTB on October 15, 2026. Prepared by Dan McLaughlin, Robert Clay Vineyards (petitioner).</p><p>The USGS GeoTIFF from topoView, unaltered except for the added boundary line (only the image tiles the line crosses are rewritten). The quadrangle keeps its NAD27 grid; the NAD83 line is carried onto it with the NADCON 5.0 CONUS grid.</p>",
+   "licenseInfo": "USGS topographic map (public domain); boundary line CC0 1.0 Universal (public domain dedication): no rights reserved. TTB, its contractors and anyone else may copy, change and use this for any purpose without permission or attribution. https://creativecommons.org/publicdomain/zero/1.0/",
+   "accessInformation": "USGS; boundary line: Dan McLaughlin, Robert Clay Vineyards (petitioner)",
+   "tags": "Hickory Sands District,AVA,TTB,Notice No. 243,TTB-2026-0005,proposed boundary",
+   "culture": "en-us",
+   "extent": [
+    [
+     -99.3754,
+     30.7501
+    ],
+    [
+     -99.2503,
+     30.8752
+    ]
+   ]
+  },
+  "was": []
+ },
+ {
+  "title": "5b USGS quadrangle with the boundary (GeoTIFF) - Katemcy, TX (1970)",
+  "type": "Image",
+  "id": "00000000000000000000000000000044",
+  "script": "agol_publish.py",
+  "file": "pkg/Hickory-Sands-District-AVA_boundary-as-proposed-2026-10-15/5_USGS-quadrangles-with-boundary/TX_Katemcy_109911_1970_24000_geo.tif",
+  "group_category": "/Categories/5 USGS quadrangles with the boundary/GeoTIFF",
+  "org_categories": [
+   "/Categories/American Viticultural Areas (AVAs)/Hickory Sands District AVA",
+   "/Categories/Basemaps/Historical maps",
+   "/Categories/Boundaries/Administrative"
+  ],
+  "properties": {
+   "snippet": "The USGS 1:24,000 Katemcy, TX (1970) quadrangle (GeoTIFF) with the proposed boundary added as a solid red line.",
+   "description": "<p>Hickory Sands District AVA (Docket No. TTB-2026-0005, Notice No. 243, 91 FR 52576): the boundary the petitioners propose, with the changes discussed with TTB on October 15, 2026. Prepared by Dan McLaughlin, Robert Clay Vineyards (petitioner).</p><p>The USGS GeoTIFF from topoView, unaltered except for the added boundary line (only the image tiles the line crosses are rewritten). The quadrangle keeps its NAD27 grid; the NAD83 line is carried onto it with the NADCON 5.0 CONUS grid.</p>",
+   "licenseInfo": "USGS topographic map (public domain); boundary line CC0 1.0 Universal (public domain dedication): no rights reserved. TTB, its contractors and anyone else may copy, change and use this for any purpose without permission or attribution. https://creativecommons.org/publicdomain/zero/1.0/",
+   "accessInformation": "USGS; boundary line: Dan McLaughlin, Robert Clay Vineyards (petitioner)",
+   "tags": "Hickory Sands District,AVA,TTB,Notice No. 243,TTB-2026-0005,proposed boundary",
+   "culture": "en-us",
+   "extent": [
+    [
+     -99.3754,
+     30.8751
+    ],
+    [
+     -99.2503,
+     31.0002
+    ]
+   ]
+  },
+  "was": []
+ },
+ {
+  "title": "5b USGS quadrangle with the boundary (GeoTIFF) - Long Mountain, TX (1970)",
+  "type": "Image",
+  "id": "00000000000000000000000000000045",
+  "script": "agol_publish.py",
+  "file": "pkg/Hickory-Sands-District-AVA_boundary-as-proposed-2026-10-15/5_USGS-quadrangles-with-boundary/TX_Long Mountain_109324_1970_24000_geo.tif",
+  "group_category": "/Categories/5 USGS quadrangles with the boundary/GeoTIFF",
+  "org_categories": [
+   "/Categories/American Viticultural Areas (AVAs)/Hickory Sands District AVA",
+   "/Categories/Basemaps/Historical maps",
+   "/Categories/Boundaries/Administrative"
+  ],
+  "properties": {
+   "snippet": "The USGS 1:24,000 Long Mountain, TX (1970) quadrangle (GeoTIFF) with the proposed boundary added as a solid red line.",
+   "description": "<p>Hickory Sands District AVA (Docket No. TTB-2026-0005, Notice No. 243, 91 FR 52576): the boundary the petitioners propose, with the changes discussed with TTB on October 15, 2026. Prepared by Dan McLaughlin, Robert Clay Vineyards (petitioner).</p><p>The USGS GeoTIFF from topoView, unaltered except for the added boundary line (only the image tiles the line crosses are rewritten). The quadrangle keeps its NAD27 grid; the NAD83 line is carried onto it with the NADCON 5.0 CONUS grid.</p>",
+   "licenseInfo": "USGS topographic map (public domain); boundary line CC0 1.0 Universal (public domain dedication): no rights reserved. TTB, its contractors and anyone else may copy, change and use this for any purpose without permission or attribution. https://creativecommons.org/publicdomain/zero/1.0/",
+   "accessInformation": "USGS; boundary line: Dan McLaughlin, Robert Clay Vineyards (petitioner)",
+   "tags": "Hickory Sands District,AVA,TTB,Notice No. 243,TTB-2026-0005,proposed boundary",
+   "culture": "en-us",
+   "extent": [
+    [
+     -99.5004,
+     30.7501
+    ],
+    [
+     -99.3753,
+     30.8752
+    ]
+   ]
+  },
+  "was": []
+ },
+ {
+  "title": "5b USGS quadrangle with the boundary (GeoTIFF) - Mason, TX (1967, photoinspected 1979)",
+  "type": "Image",
+  "id": "00000000000000000000000000000046",
+  "script": "agol_publish.py",
+  "file": "pkg/Hickory-Sands-District-AVA_boundary-as-proposed-2026-10-15/5_USGS-quadrangles-with-boundary/TX_Mason_118127_1967_24000_geo.tif",
+  "group_category": "/Categories/5 USGS quadrangles with the boundary/GeoTIFF",
+  "org_categories": [
+   "/Categories/American Viticultural Areas (AVAs)/Hickory Sands District AVA",
+   "/Categories/Basemaps/Historical maps",
+   "/Categories/Boundaries/Administrative"
+  ],
+  "properties": {
+   "snippet": "The USGS 1:24,000 Mason, TX (1967, photoinspected 1979) quadrangle (GeoTIFF) with the proposed boundary added as a solid red line.",
+   "description": "<p>Hickory Sands District AVA (Docket No. TTB-2026-0005, Notice No. 243, 91 FR 52576): the boundary the petitioners propose, with the changes discussed with TTB on October 15, 2026. Prepared by Dan McLaughlin, Robert Clay Vineyards (petitioner).</p><p>The USGS GeoTIFF from topoView, unaltered except for the added boundary line (only the image tiles the line crosses are rewritten). The quadrangle keeps its NAD27 grid; the NAD83 line is carried onto it with the NADCON 5.0 CONUS grid.</p>",
+   "licenseInfo": "USGS topographic map (public domain); boundary line CC0 1.0 Universal (public domain dedication): no rights reserved. TTB, its contractors and anyone else may copy, change and use this for any purpose without permission or attribution. https://creativecommons.org/publicdomain/zero/1.0/",
+   "accessInformation": "USGS; boundary line: Dan McLaughlin, Robert Clay Vineyards (petitioner)",
+   "tags": "Hickory Sands District,AVA,TTB,Notice No. 243,TTB-2026-0005,proposed boundary",
+   "culture": "en-us",
+   "extent": [
+    [
+     -99.2504,
+     30.6251
+    ],
+    [
+     -99.1253,
+     30.7502
+    ]
+   ]
+  },
+  "was": [
+   "5b USGS quadrangle with the boundary (GeoTIFF) - Mason, TX (1967)"
+  ]
+ },
+ {
+  "title": "5b USGS quadrangle with the boundary (GeoTIFF) - Pecan Springs, TX (1963)",
+  "type": "Image",
+  "id": "00000000000000000000000000000047",
+  "script": "agol_publish.py",
+  "file": "pkg/Hickory-Sands-District-AVA_boundary-as-proposed-2026-10-15/5_USGS-quadrangles-with-boundary/TX_Pecan Springs_117472_1963_24000_geo.tif",
+  "group_category": "/Categories/5 USGS quadrangles with the boundary/GeoTIFF",
+  "org_categories": [
+   "/Categories/American Viticultural Areas (AVAs)/Hickory Sands District AVA",
+   "/Categories/Basemaps/Historical maps",
+   "/Categories/Boundaries/Administrative"
+  ],
+  "properties": {
+   "snippet": "The USGS 1:24,000 Pecan Springs, TX (1963) quadrangle (GeoTIFF) with the proposed boundary added as a solid red line.",
+   "description": "<p>Hickory Sands District AVA (Docket No. TTB-2026-0005, Notice No. 243, 91 FR 52576): the boundary the petitioners propose, with the changes discussed with TTB on October 15, 2026. Prepared by Dan McLaughlin, Robert Clay Vineyards (petitioner).</p><p>The USGS GeoTIFF from topoView, unaltered except for the added boundary line (only the image tiles the line crosses are rewritten). The quadrangle keeps its NAD27 grid; the NAD83 line is carried onto it with the NADCON 5.0 CONUS grid.</p>",
+   "licenseInfo": "USGS topographic map (public domain); boundary line CC0 1.0 Universal (public domain dedication): no rights reserved. TTB, its contractors and anyone else may copy, change and use this for any purpose without permission or attribution. https://creativecommons.org/publicdomain/zero/1.0/",
+   "accessInformation": "USGS; boundary line: Dan McLaughlin, Robert Clay Vineyards (petitioner)",
+   "tags": "Hickory Sands District,AVA,TTB,Notice No. 243,TTB-2026-0005,proposed boundary",
+   "culture": "en-us",
+   "extent": [
+    [
+     -99.1254,
+     31.0001
+    ],
+    [
+     -99.0003,
+     31.1252
+    ]
+   ]
+  },
+  "was": []
+ },
+ {
+  "title": "5b USGS quadrangle with the boundary (GeoTIFF) - Pontotoc, TX (1955)",
+  "type": "Image",
+  "id": "00000000000000000000000000000048",
+  "script": "agol_publish.py",
+  "file": "pkg/Hickory-Sands-District-AVA_boundary-as-proposed-2026-10-15/5_USGS-quadrangles-with-boundary/TX_Pontotoc_116320_1955_24000_geo.tif",
+  "group_category": "/Categories/5 USGS quadrangles with the boundary/GeoTIFF",
+  "org_categories": [
+   "/Categories/American Viticultural Areas (AVAs)/Hickory Sands District AVA",
+   "/Categories/Basemaps/Historical maps",
+   "/Categories/Boundaries/Administrative"
+  ],
+  "properties": {
+   "snippet": "The USGS 1:24,000 Pontotoc, TX (1955) quadrangle (GeoTIFF) with the proposed boundary added as a solid red line.",
+   "description": "<p>Hickory Sands District AVA (Docket No. TTB-2026-0005, Notice No. 243, 91 FR 52576): the boundary the petitioners propose, with the changes discussed with TTB on October 15, 2026. Prepared by Dan McLaughlin, Robert Clay Vineyards (petitioner).</p><p>The USGS GeoTIFF from topoView, unaltered except for the added boundary line (only the image tiles the line crosses are rewritten). The quadrangle keeps its NAD27 grid; the NAD83 line is carried onto it with the NADCON 5.0 CONUS grid.</p>",
+   "licenseInfo": "USGS topographic map (public domain); boundary line CC0 1.0 Universal (public domain dedication): no rights reserved. TTB, its contractors and anyone else may copy, change and use this for any purpose without permission or attribution. https://creativecommons.org/publicdomain/zero/1.0/",
+   "accessInformation": "USGS; boundary line: Dan McLaughlin, Robert Clay Vineyards (petitioner)",
+   "tags": "Hickory Sands District,AVA,TTB,Notice No. 243,TTB-2026-0005,proposed boundary",
+   "culture": "en-us",
+   "extent": [
+    [
+     -99.0004,
+     30.8751
+    ],
+    [
+     -98.8753,
+     31.0002
+    ]
+   ]
+  },
+  "was": []
+ },
+ {
+  "title": "5b USGS quadrangle with the boundary (GeoTIFF) - Purdy Hill, TX (1962)",
+  "type": "Image",
+  "id": "00000000000000000000000000000049",
+  "script": "agol_publish.py",
+  "file": "pkg/Hickory-Sands-District-AVA_boundary-as-proposed-2026-10-15/5_USGS-quadrangles-with-boundary/TX_Purdy Hill_115045_1962_24000_geo.tif",
+  "group_category": "/Categories/5 USGS quadrangles with the boundary/GeoTIFF",
+  "org_categories": [
+   "/Categories/American Viticultural Areas (AVAs)/Hickory Sands District AVA",
+   "/Categories/Basemaps/Historical maps",
+   "/Categories/Boundaries/Administrative"
+  ],
+  "properties": {
+   "snippet": "The USGS 1:24,000 Purdy Hill, TX (1962) quadrangle (GeoTIFF) with the proposed boundary added as a solid red line.",
+   "description": "<p>Hickory Sands District AVA (Docket No. TTB-2026-0005, Notice No. 243, 91 FR 52576): the boundary the petitioners propose, with the changes discussed with TTB on October 15, 2026. Prepared by Dan McLaughlin, Robert Clay Vineyards (petitioner).</p><p>The USGS GeoTIFF from topoView, unaltered except for the added boundary line (only the image tiles the line crosses are rewritten). The quadrangle keeps its NAD27 grid; the NAD83 line is carried onto it with the NADCON 5.0 CONUS grid.</p>",
+   "licenseInfo": "USGS topographic map (public domain); boundary line CC0 1.0 Universal (public domain dedication): no rights reserved. TTB, its contractors and anyone else may copy, change and use this for any purpose without permission or attribution. https://creativecommons.org/publicdomain/zero/1.0/",
+   "accessInformation": "USGS; boundary line: Dan McLaughlin, Robert Clay Vineyards (petitioner)",
+   "tags": "Hickory Sands District,AVA,TTB,Notice No. 243,TTB-2026-0005,proposed boundary",
+   "culture": "en-us",
+   "extent": [
+    [
+     -99.2504,
+     30.7501
+    ],
+    [
+     -99.1253,
+     30.8752
+    ]
+   ]
+  },
+  "was": []
+ },
+ {
+  "title": "5b USGS quadrangle with the boundary (GeoTIFF) - Sheep Run Creek, TX (1968)",
+  "type": "Image",
+  "id": "00000000000000000000000000000050",
+  "script": "agol_publish.py",
+  "file": "pkg/Hickory-Sands-District-AVA_boundary-as-proposed-2026-10-15/5_USGS-quadrangles-with-boundary/TX_Sheep Run Creek_124045_1968_24000_geo.tif",
+  "group_category": "/Categories/5 USGS quadrangles with the boundary/GeoTIFF",
+  "org_categories": [
+   "/Categories/American Viticultural Areas (AVAs)/Hickory Sands District AVA",
+   "/Categories/Basemaps/Historical maps",
+   "/Categories/Boundaries/Administrative"
+  ],
+  "properties": {
+   "snippet": "The USGS 1:24,000 Sheep Run Creek, TX (1968) quadrangle (GeoTIFF) with the proposed boundary added as a solid red line.",
+   "description": "<p>Hickory Sands District AVA (Docket No. TTB-2026-0005, Notice No. 243, 91 FR 52576): the boundary the petitioners propose, with the changes discussed with TTB on October 15, 2026. Prepared by Dan McLaughlin, Robert Clay Vineyards (petitioner).</p><p>The USGS GeoTIFF from topoView, unaltered except for the added boundary line (only the image tiles the line crosses are rewritten). The quadrangle keeps its NAD27 grid; the NAD83 line is carried onto it with the NADCON 5.0 CONUS grid.</p>",
+   "licenseInfo": "USGS topographic map (public domain); boundary line CC0 1.0 Universal (public domain dedication): no rights reserved. TTB, its contractors and anyone else may copy, change and use this for any purpose without permission or attribution. https://creativecommons.org/publicdomain/zero/1.0/",
+   "accessInformation": "USGS; boundary line: Dan McLaughlin, Robert Clay Vineyards (petitioner)",
+   "tags": "Hickory Sands District,AVA,TTB,Notice No. 243,TTB-2026-0005,proposed boundary",
+   "culture": "en-us",
+   "extent": [
+    [
+     -99.5004,
+     30.6251
+    ],
+    [
+     -99.3753,
+     30.7502
+    ]
+   ]
+  },
+  "was": []
+ },
+ {
+  "title": "5b USGS quadrangle with the boundary (GeoTIFF) - Spy Rock, TX (1963)",
+  "type": "Image",
+  "id": "00000000000000000000000000000051",
+  "script": "agol_publish.py",
+  "file": "pkg/Hickory-Sands-District-AVA_boundary-as-proposed-2026-10-15/5_USGS-quadrangles-with-boundary/TX_Spy Rock_122373_1963_24000_geo.tif",
+  "group_category": "/Categories/5 USGS quadrangles with the boundary/GeoTIFF",
+  "org_categories": [
+   "/Categories/American Viticultural Areas (AVAs)/Hickory Sands District AVA",
+   "/Categories/Basemaps/Historical maps",
+   "/Categories/Boundaries/Administrative"
+  ],
+  "properties": {
+   "snippet": "The USGS 1:24,000 Spy Rock, TX (1963) quadrangle (GeoTIFF) with the proposed boundary added as a solid red line.",
+   "description": "<p>Hickory Sands District AVA (Docket No. TTB-2026-0005, Notice No. 243, 91 FR 52576): the boundary the petitioners propose, with the changes discussed with TTB on October 15, 2026. Prepared by Dan McLaughlin, Robert Clay Vineyards (petitioner).</p><p>The USGS GeoTIFF from topoView, unaltered except for the added boundary line (only the image tiles the line crosses are rewritten). The quadrangle keeps its NAD27 grid; the NAD83 line is carried onto it with the NADCON 5.0 CONUS grid.</p>",
+   "licenseInfo": "USGS topographic map (public domain); boundary line CC0 1.0 Universal (public domain dedication): no rights reserved. TTB, its contractors and anyone else may copy, change and use this for any purpose without permission or attribution. https://creativecommons.org/publicdomain/zero/1.0/",
+   "accessInformation": "USGS; boundary line: Dan McLaughlin, Robert Clay Vineyards (petitioner)",
+   "tags": "Hickory Sands District,AVA,TTB,Notice No. 243,TTB-2026-0005,proposed boundary",
+   "culture": "en-us",
+   "extent": [
+    [
+     -99.2504,
+     30.8751
+    ],
+    [
+     -99.1253,
+     31.0002
+    ]
+   ]
+  },
+  "was": []
+ },
+ {
+  "title": "5b USGS quadrangle with the boundary (GeoTIFF) - Turtle Creek, TX (1968)",
+  "type": "Image",
+  "id": "00000000000000000000000000000052",
+  "script": "agol_publish.py",
+  "file": "pkg/Hickory-Sands-District-AVA_boundary-as-proposed-2026-10-15/5_USGS-quadrangles-with-boundary/TX_Turtle Creek_116772_1968_24000_geo.tif",
+  "group_category": "/Categories/5 USGS quadrangles with the boundary/GeoTIFF",
+  "org_categories": [
+   "/Categories/American Viticultural Areas (AVAs)/Hickory Sands District AVA",
+   "/Categories/Basemaps/Historical maps",
+   "/Categories/Boundaries/Administrative"
+  ],
+  "properties": {
+   "snippet": "The USGS 1:24,000 Turtle Creek, TX (1968) quadrangle (GeoTIFF) with the proposed boundary added as a solid red line.",
+   "description": "<p>Hickory Sands District AVA (Docket No. TTB-2026-0005, Notice No. 243, 91 FR 52576): the boundary the petitioners propose, with the changes discussed with TTB on October 15, 2026. Prepared by Dan McLaughlin, Robert Clay Vineyards (petitioner).</p><p>The USGS GeoTIFF from topoView, unaltered except for the added boundary line (only the image tiles the line crosses are rewritten). The quadrangle keeps its NAD27 grid; the NAD83 line is carried onto it with the NADCON 5.0 CONUS grid.</p>",
+   "licenseInfo": "USGS topographic map (public domain); boundary line CC0 1.0 Universal (public domain dedication): no rights reserved. TTB, its contractors and anyone else may copy, change and use this for any purpose without permission or attribution. https://creativecommons.org/publicdomain/zero/1.0/",
+   "accessInformation": "USGS; boundary line: Dan McLaughlin, Robert Clay Vineyards (petitioner)",
+   "tags": "Hickory Sands District,AVA,TTB,Notice No. 243,TTB-2026-0005,proposed boundary",
+   "culture": "en-us",
+   "extent": [
+    [
+     -99.3754,
+     30.6251
+    ],
+    [
+     -99.2503,
+     30.7502
+    ]
+   ]
+  },
+  "was": []
+ },
+ {
+  "title": "5b USGS quadrangle with the boundary (GeoTIFF) - Voca, TX (1963)",
+  "type": "Image",
+  "id": "00000000000000000000000000000053",
+  "script": "agol_publish.py",
+  "file": "pkg/Hickory-Sands-District-AVA_boundary-as-proposed-2026-10-15/5_USGS-quadrangles-with-boundary/TX_Voca_116923_1963_24000_geo.tif",
+  "group_category": "/Categories/5 USGS quadrangles with the boundary/GeoTIFF",
+  "org_categories": [
+   "/Categories/American Viticultural Areas (AVAs)/Hickory Sands District AVA",
+   "/Categories/Basemaps/Historical maps",
+   "/Categories/Boundaries/Administrative"
+  ],
+  "properties": {
+   "snippet": "The USGS 1:24,000 Voca, TX (1963) quadrangle (GeoTIFF) with the proposed boundary added as a solid red line.",
+   "description": "<p>Hickory Sands District AVA (Docket No. TTB-2026-0005, Notice No. 243, 91 FR 52576): the boundary the petitioners propose, with the changes discussed with TTB on October 15, 2026. Prepared by Dan McLaughlin, Robert Clay Vineyards (petitioner).</p><p>The USGS GeoTIFF from topoView, unaltered except for the added boundary line (only the image tiles the line crosses are rewritten). The quadrangle keeps its NAD27 grid; the NAD83 line is carried onto it with the NADCON 5.0 CONUS grid.</p>",
+   "licenseInfo": "USGS topographic map (public domain); boundary line CC0 1.0 Universal (public domain dedication): no rights reserved. TTB, its contractors and anyone else may copy, change and use this for any purpose without permission or attribution. https://creativecommons.org/publicdomain/zero/1.0/",
+   "accessInformation": "USGS; boundary line: Dan McLaughlin, Robert Clay Vineyards (petitioner)",
+   "tags": "Hickory Sands District,AVA,TTB,Notice No. 243,TTB-2026-0005,proposed boundary",
+   "culture": "en-us",
+   "extent": [
+    [
+     -99.2504,
+     31.0001
+    ],
+    [
+     -99.1253,
+     31.1252
+    ]
+   ]
+  },
+  "was": []
+ },
+ {
+  "title": "4a Proposed boundary - map over the 13 USGS quadrangles",
+  "type": "Web Map",
+  "id": "00000000000000000000000000000013",
+  "script": "agol_layer.py",
+  "file": null,
+  "group_category": "/Categories/4 GIS data/Map and layer",
+  "org_categories": [
+   "/Categories/American Viticultural Areas (AVAs)/Hickory Sands District AVA",
+   "/Categories/Boundaries/Administrative",
+   "/Categories/Infrastructure/Agriculture"
+  ],
+  "properties": {
+   "snippet": "The proposed boundary over the 13 USGS 1:24,000 quadrangles cited in paragraph (b). Click the AVA for the documents, a step for its text.",
+   "description": "<p>Hickory Sands District AVA (Docket No. TTB-2026-0005, Notice No. 243, 91 FR 52576): the boundary the petitioners propose, with the changes discussed with TTB on October 15, 2026. Prepared by Dan McLaughlin, Robert Clay Vineyards (petitioner).</p><p>The quadrangle layer is Esri's USA Historical Topo Maps service, locked to the 13 editions the proposed regulation cites. Over them: the USGS geologic units shifted to the outcrops (layer 4m), the AVA Map Explorer polygon from TTB's live AVAs_Production layer (blue), the proposed revision (red, layer 4b, with its numbered step endpoints), every piece of land between the two lines shaded (red: in the proposed revision only; blue: in the Map Explorer polygon only; grey: the proposed text change near Grit), and the 6 big differences, where the lines are 100 m or more apart, ringed (layer 4k). The group \"The change near Grit\" shows the lines the proposed text swaps and the areas (with their granite) it leaves out and puts in (layer 4o). The group \"TTB's AVA Map Explorer basemaps\" holds the four basemaps of TTB's AVA Map Explorer (Topographic, Streets, Imagery, USA Topo Maps); turn it on and pick one to see the lines over what the Map Explorer shows.</p>",
+   "tags": "Hickory Sands District,AVA,TTB,Notice No. 243,TTB-2026-0005,proposed boundary",
+   "licenseInfo": "The map and the petitioner's layers (the proposed revision, the differences, the change near Grit, the shift of the geology): CC0 1.0 Universal (public domain dedication): no rights reserved. TTB, its contractors and anyone else may copy, change and use this for any purpose without permission or attribution. https://creativecommons.org/publicdomain/zero/1.0/ The AVA Map Explorer polygon (TTB's AVAs_Production layer) and the step text from Notice No. 243: U.S. Government work (public domain). USGS quadrangles and USGS SGMC geology: public domain. Basemaps: Esri, under Esri's terms of use.",
+   "accessInformation": "Dan McLaughlin, Robert Clay Vineyards (petitioner); TTB (AVAs_Production layer, Notice No. 243); USGS (quadrangles, via Esri USA Historical Topo Maps; SGMC geology); basemaps: Esri",
+   "culture": "en-us",
+   "extent": [
+    [
+     -99.4172,
+     30.7112
+    ],
+    [
+     -98.8796,
+     31.0427
+    ]
+   ]
+  }
+ },
+ {
+  "title": "4b Proposed boundary - layer (AVA polygon, 104 steps, step endpoints)",
+  "type": "Feature Service",
+  "id": "00000000000000000000000000000014",
+  "script": "agol_layer.py",
+  "file": null,
+  "group_category": "/Categories/4 GIS data/Map and layer",
+  "org_categories": [
+   "/Categories/American Viticultural Areas (AVAs)/Hickory Sands District AVA",
+   "/Categories/Boundaries/Administrative",
+   "/Categories/Infrastructure/Agriculture"
+  ],
+  "properties": {
+   "snippet": "The proposed boundary as a hosted feature layer: the AVA polygon, the 104 boundary steps with their text, and the step endpoints. Exports allowed.",
+   "description": "<p>Hickory Sands District AVA (Docket No. TTB-2026-0005, Notice No. 243, 91 FR 52576): the boundary the petitioners propose, with the changes discussed with TTB on October 15, 2026. Prepared by Dan McLaughlin, Robert Clay Vineyards (petitioner).</p><p>Add it to ArcGIS Pro from the portal, or open it in Map Viewer. Click the AVA polygon for the documents (attached): read-me, boundary description, TTB's notice with the proposed changes highlighted, and the side-by-side. Click a step for its text and what changed. Export to shapefile, file geodatabase, GeoPackage, GeoJSON and others from the item page.</p><p>ArcGIS Online stores this hosted layer in Web Mercator (EPSG:3857), and exports from the item page are made from that copy. For the data in NAD83 (EPSG:4269), the datum of TTB's AVAs_Production layer, download items 4c-4i: the GeoPackage this layer is published from (4c), the shapefiles (4d-4f) and the GeoJSON (4g-4i), all with TTB's AVAs_Production fields.</p>",
+   "tags": "Hickory Sands District,AVA,TTB,Notice No. 243,TTB-2026-0005,proposed boundary",
+   "licenseInfo": "TTB's text and data, the step text from Notice No. 243 (boundary line layer) and the values copied from TTB's AVAs_Production record (Name, Status, Counties and the like): U.S. Government work (public domain). The petitioner's work, the boundary as drawn, its other attributes and the proposed changes to the text: CC0 1.0 Universal (public domain dedication): no rights reserved. TTB, its contractors and anyone else may copy, change and use this for any purpose without permission or attribution. https://creativecommons.org/publicdomain/zero/1.0/",
+   "accessInformation": "Dan McLaughlin, Robert Clay Vineyards (petitioner); TTB (Notice No. 243 step text, AVAs_Production record values)",
+   "culture": "en-us",
+   "extent": [
+    [
+     -99.4172,
+     30.7112
+    ],
+    [
+     -98.8796,
+     31.0427
+    ]
+   ]
+  },
+  "published from": "4c"
+ },
+ {
+  "title": "4k Differences from the AVA Map Explorer polygon - layer (the big ones, and all of them)",
+  "type": "Feature Service",
+  "id": "00000000000000000000000000000023",
+  "script": "agol_layer.py",
+  "file": null,
+  "group_category": "/Categories/4 GIS data/Map and layer",
+  "org_categories": [
+   "/Categories/American Viticultural Areas (AVAs)/Hickory Sands District AVA",
+   "/Categories/Boundaries/Administrative"
+  ],
+  "properties": {
+   "snippet": "The 6 big differences (100 m or more apart) between the proposed revision and the AVA Map Explorer polygon, and all 990 pieces of land between the two lines.",
+   "description": "<p>Hickory Sands District AVA (Docket No. TTB-2026-0005, Notice No. 243, 91 FR 52576): the boundary the petitioners propose, with the changes discussed with TTB on October 15, 2026. Prepared by Dan McLaughlin, Robert Clay Vineyards (petitioner).</p><p>Two layers comparing the proposed revision (red, drawn from the proposed text) with the AVA Map Explorer polygon (blue, TTB's AVAs_Production layer for Notice No. 243). The Map Explorer polygon was digitized by hand; the proposed revision follows the centre of the printed linework of the USGS maps. So the two lines differ a little almost everywhere: measured every 2 m along each line, the median distance to the other line is 11 m. (The pieces of land between them are narrower on average, since each tapers to nothing where the lines cross.)</p><p><b>Big differences</b> (6): the places where the two lines are 100 m or more apart, where they take different paths, or the proposed text change near Grit. Each gives the steps, how far apart the lines are, the length of the stretch, the acres in one and not the other, and how far each step's endpoint is from the Map Explorer polygon's nearest vertex.</p><p><b>All differences</b> (990 pieces): every piece of land in one and not the other. From the same text, drawn differently: 682 acres in the proposed revision only and 368 acres in the AVA Map Explorer polygon only (966 pieces). From the proposed text change near Grit: 122 and 2,868 acres (24 pieces).</p>",
+   "tags": "Hickory Sands District,AVA,TTB,Notice No. 243,TTB-2026-0005,proposed boundary",
+   "licenseInfo": "CC0 1.0 Universal (public domain dedication): no rights reserved. TTB, its contractors and anyone else may copy, change and use this for any purpose without permission or attribution. https://creativecommons.org/publicdomain/zero/1.0/",
+   "accessInformation": "Dan McLaughlin, Robert Clay Vineyards (petitioner); compared with TTB's AVAs_Production polygon (the AVA Map Explorer polygon, Notice No. 243)",
+   "culture": "en-us",
+   "extent": [
+    [
+     -99.4172,
+     30.7112
+    ],
+    [
+     -98.8795,
+     31.0428
+    ]
+   ]
+  },
+  "published from": "4j Differences from the AVA Map Explorer polygon - GeoPackage (the big ones, and all of them)",
+  "was": [
+   "4k Differences from TTB's published polygon - layer (the big ones, and all of them)",
+   "4k Differences from TTB's published polygon - layer (rings, short tips)"
+  ]
+ },
+ {
+  "title": "4m Geology - USGS SGMC units shifted to the outcrops - layer",
+  "type": "Feature Service",
+  "id": "00000000000000000000000000000025",
+  "script": "agol_layer.py",
+  "file": null,
+  "group_category": "/Categories/4 GIS data/Map and layer",
+  "org_categories": [
+   "/Categories/American Viticultural Areas (AVAs)/Hickory Sands District AVA",
+   "/Categories/Environment/Soils and geology"
+  ],
+  "properties": {
+   "snippet": "USGS geologic units near the AVA (granite and the Hickory Sandstone Member formation), shifted about 400 m to sit on the outcrops.",
+   "description": "<p>Hickory Sands District AVA (Docket No. TTB-2026-0005, Notice No. 243, 91 FR 52576): the boundary the petitioners propose, with the changes discussed with TTB on October 15, 2026. Prepared by Dan McLaughlin, Robert Clay Vineyards (petitioner).</p><p>Three USGS geologic units near the AVA: Town Mountain Granite, the younger granitic intrusions and the Hickory Sandstone Member formation, from the USGS State Geologic Map Compilation (Horton and others, 2017, USGS Data Series 1052; public domain). SGMC as published sits about 400 m south-east of the outcrops seen on USDA NAIP imagery, so every polygon is shifted -0.002356 deg longitude and +0.002993 deg latitude (about 225 m west, 331 m north, fitted to the granite outcrop trace); each feature records its source and the shift. Context only: no boundary line comes from these layers.</p>",
+   "tags": "Hickory Sands District,AVA,TTB,Notice No. 243,TTB-2026-0005,proposed boundary,geology,SGMC",
+   "licenseInfo": "USGS data (public domain); shift CC0 1.0 Universal (public domain dedication): no rights reserved. TTB, its contractors and anyone else may copy, change and use this for any purpose without permission or attribution. https://creativecommons.org/publicdomain/zero/1.0/",
+   "accessInformation": "USGS State Geologic Map Compilation; shift: Dan McLaughlin, Robert Clay Vineyards (petitioner)",
+   "culture": "en-us",
+   "extent": [
+    [
+     -99.4132,
+     30.2702
+    ],
+    [
+     -98.2627,
+     31.0461
+    ]
+   ]
+  },
+  "published from": "4l Geology - USGS SGMC units shifted to the outcrops - GeoPackage",
+  "was": []
+ },
+ {
+  "title": "4o The change near Grit - layer (lines swapped, areas moved, granite acres)",
+  "type": "Feature Service",
+  "id": "00000000000000000000000000000027",
+  "script": "agol_layer.py",
+  "file": null,
+  "group_category": "/Categories/4 GIS data/Map and layer",
+  "org_categories": [
+   "/Categories/American Viticultural Areas (AVAs)/Hickory Sands District AVA",
+   "/Categories/Boundaries/Administrative",
+   "/Categories/Environment/Soils and geology"
+  ],
+  "properties": {
+   "snippet": "The change near Grit: the lines the proposed text swaps, and the acres (and granite) it leaves out and puts in.",
+   "description": "<p>Hickory Sands District AVA (Docket No. TTB-2026-0005, Notice No. 243, 91 FR 52576): the boundary the petitioners propose, with the changes discussed with TTB on October 15, 2026. Prepared by Dan McLaughlin, Robert Clay Vineyards (petitioner).</p><p>What the proposed text swaps near Grit, all drawn on the printed linework of the USGS maps (none taken from the AVA Map Explorer polygon). Lines: Notice No. 243's steps (10)-(11) and (90)-(92), as drawn by the petitioner, which the proposed text replaces; the petition's wording put back in their place, steps (10)-(11), (90)-(92) and (97)-(100); the new steps (93)-(96) around the granite lobe; and the petition's straight line from the marked 1,737 to the marked 1,762, which they replace.</p><p>Areas, with the granite (Town Mountain Granite and younger granitic intrusions, USGS SGMC shifted to the outcrops) in each: in Notice No. 243's text and left out by the petition, 2,733 acres (2,596 granite); added by the petition's lane wording along steps (10)-(11), 69 acres (27 granite); in the petition and not Notice No. 243's text along steps (99)-(100), 19 acres (16 granite); the granite lobe now also left out by (93)-(96), 140 acres (127 granite); put back between the marked 1,737 and the windmill, 6 acres (no granite).</p>",
+   "tags": "Hickory Sands District,AVA,TTB,Notice No. 243,TTB-2026-0005,proposed boundary,granite,Grit",
+   "licenseInfo": "CC0 1.0 Universal (public domain dedication): no rights reserved. TTB, its contractors and anyone else may copy, change and use this for any purpose without permission or attribution. https://creativecommons.org/publicdomain/zero/1.0/",
+   "accessInformation": "Dan McLaughlin, Robert Clay Vineyards (petitioner); granite: USGS State Geologic Map Compilation (SGMC), shifted to the outcrops",
+   "culture": "en-us",
+   "extent": [
+    [
+     -99.3624,
+     30.7398
+    ],
+    [
+     -99.245,
+     30.7977
+    ]
+   ]
+  },
+  "published from": "4n The change near Grit - GeoPackage (lines swapped, areas moved, granite acres)",
+  "was": []
+ },
+ {
+  "title": "4j Differences from the AVA Map Explorer polygon - GeoPackage (the big ones, and all of them)",
+  "type": "GeoPackage",
+  "id": "00000000000000000000000000000022",
+  "script": "agol_layer.py",
+  "file": "hickory-sands-district-differences-from-ttb-EPSG4269.gpkg",
+  "group_category": "/Categories/4 GIS data/Downloads (GeoPackage + shapefiles + GeoJSON)",
+  "org_categories": [
+   "/Categories/American Viticultural Areas (AVAs)/Hickory Sands District AVA",
+   "/Categories/Boundaries/Administrative"
+  ],
+  "properties": {
+   "snippet": "The 6 big differences (100 m or more apart) between the proposed revision and the AVA Map Explorer polygon, and all 990 pieces of land between the two lines.",
+   "description": "<p>Hickory Sands District AVA (Docket No. TTB-2026-0005, Notice No. 243, 91 FR 52576): the boundary the petitioners propose, with the changes discussed with TTB on October 15, 2026. Prepared by Dan McLaughlin, Robert Clay Vineyards (petitioner).</p><p>Two layers comparing the proposed revision (red, drawn from the proposed text) with the AVA Map Explorer polygon (blue, TTB's AVAs_Production layer for Notice No. 243). The Map Explorer polygon was digitized by hand; the proposed revision follows the centre of the printed linework of the USGS maps. So the two lines differ a little almost everywhere: measured every 2 m along each line, the median distance to the other line is 11 m. (The pieces of land between them are narrower on average, since each tapers to nothing where the lines cross.)</p><p><b>Big differences</b> (6): the places where the two lines are 100 m or more apart, where they take different paths, or the proposed text change near Grit. Each gives the steps, how far apart the lines are, the length of the stretch, the acres in one and not the other, and how far each step's endpoint is from the Map Explorer polygon's nearest vertex.</p><p><b>All differences</b> (990 pieces): every piece of land in one and not the other. From the same text, drawn differently: 682 acres in the proposed revision only and 368 acres in the AVA Map Explorer polygon only (966 pieces). From the proposed text change near Grit: 122 and 2,868 acres (24 pieces).</p>",
+   "tags": "Hickory Sands District,AVA,TTB,Notice No. 243,TTB-2026-0005,proposed boundary",
+   "licenseInfo": "CC0 1.0 Universal (public domain dedication): no rights reserved. TTB, its contractors and anyone else may copy, change and use this for any purpose without permission or attribution. https://creativecommons.org/publicdomain/zero/1.0/",
+   "accessInformation": "Dan McLaughlin, Robert Clay Vineyards (petitioner); compared with TTB's AVAs_Production polygon (the AVA Map Explorer polygon, Notice No. 243)",
+   "culture": "en-us",
+   "extent": [
+    [
+     -99.4172,
+     30.7112
+    ],
+    [
+     -98.8795,
+     31.0428
+    ]
+   ]
+  },
+  "was": [
+   "4j Differences from TTB's published polygon - GeoPackage (the big ones, and all of them)",
+   "4j Differences from TTB's published polygon - GeoPackage (rings, short tips)"
+  ]
+ },
+ {
+  "title": "4l Geology - USGS SGMC units shifted to the outcrops - GeoPackage",
+  "type": "GeoPackage",
+  "id": "00000000000000000000000000000024",
+  "script": "agol_layer.py",
+  "file": "resources/geology/usgs-sgmc-geology-shifted-to-naip-EPSG4269.gpkg",
+  "group_category": "/Categories/4 GIS data/Downloads (GeoPackage + shapefiles + GeoJSON)",
+  "org_categories": [
+   "/Categories/American Viticultural Areas (AVAs)/Hickory Sands District AVA",
+   "/Categories/Environment/Soils and geology"
+  ],
+  "properties": {
+   "snippet": "USGS geologic units near the AVA (granite and the Hickory Sandstone Member formation), shifted about 400 m to sit on the outcrops.",
+   "description": "<p>Hickory Sands District AVA (Docket No. TTB-2026-0005, Notice No. 243, 91 FR 52576): the boundary the petitioners propose, with the changes discussed with TTB on October 15, 2026. Prepared by Dan McLaughlin, Robert Clay Vineyards (petitioner).</p><p>Three USGS geologic units near the AVA: Town Mountain Granite, the younger granitic intrusions and the Hickory Sandstone Member formation, from the USGS State Geologic Map Compilation (Horton and others, 2017, USGS Data Series 1052; public domain). SGMC as published sits about 400 m south-east of the outcrops seen on USDA NAIP imagery, so every polygon is shifted -0.002356 deg longitude and +0.002993 deg latitude (about 225 m west, 331 m north, fitted to the granite outcrop trace); each feature records its source and the shift. Context only: no boundary line comes from these layers.</p>",
+   "tags": "Hickory Sands District,AVA,TTB,Notice No. 243,TTB-2026-0005,proposed boundary,geology,SGMC",
+   "licenseInfo": "USGS data (public domain); shift CC0 1.0 Universal (public domain dedication): no rights reserved. TTB, its contractors and anyone else may copy, change and use this for any purpose without permission or attribution. https://creativecommons.org/publicdomain/zero/1.0/",
+   "accessInformation": "USGS State Geologic Map Compilation; shift: Dan McLaughlin, Robert Clay Vineyards (petitioner)",
+   "culture": "en-us",
+   "extent": [
+    [
+     -99.4132,
+     30.2702
+    ],
+    [
+     -98.2627,
+     31.0461
+    ]
+   ]
+  },
+  "was": []
+ },
+ {
+  "title": "4n The change near Grit - GeoPackage (lines swapped, areas moved, granite acres)",
+  "type": "GeoPackage",
+  "id": "00000000000000000000000000000026",
+  "script": "agol_layer.py",
+  "file": "hickory-sands-district-change-near-grit-EPSG4269.gpkg",
+  "group_category": "/Categories/4 GIS data/Downloads (GeoPackage + shapefiles + GeoJSON)",
+  "org_categories": [
+   "/Categories/American Viticultural Areas (AVAs)/Hickory Sands District AVA",
+   "/Categories/Boundaries/Administrative",
+   "/Categories/Environment/Soils and geology"
+  ],
+  "properties": {
+   "snippet": "The change near Grit: the lines the proposed text swaps, and the acres (and granite) it leaves out and puts in.",
+   "description": "<p>Hickory Sands District AVA (Docket No. TTB-2026-0005, Notice No. 243, 91 FR 52576): the boundary the petitioners propose, with the changes discussed with TTB on October 15, 2026. Prepared by Dan McLaughlin, Robert Clay Vineyards (petitioner).</p><p>What the proposed text swaps near Grit, all drawn on the printed linework of the USGS maps (none taken from the AVA Map Explorer polygon). Lines: Notice No. 243's steps (10)-(11) and (90)-(92), as drawn by the petitioner, which the proposed text replaces; the petition's wording put back in their place, steps (10)-(11), (90)-(92) and (97)-(100); the new steps (93)-(96) around the granite lobe; and the petition's straight line from the marked 1,737 to the marked 1,762, which they replace.</p><p>Areas, with the granite (Town Mountain Granite and younger granitic intrusions, USGS SGMC shifted to the outcrops) in each: in Notice No. 243's text and left out by the petition, 2,733 acres (2,596 granite); added by the petition's lane wording along steps (10)-(11), 69 acres (27 granite); in the petition and not Notice No. 243's text along steps (99)-(100), 19 acres (16 granite); the granite lobe now also left out by (93)-(96), 140 acres (127 granite); put back between the marked 1,737 and the windmill, 6 acres (no granite).</p>",
+   "tags": "Hickory Sands District,AVA,TTB,Notice No. 243,TTB-2026-0005,proposed boundary,granite,Grit",
+   "licenseInfo": "CC0 1.0 Universal (public domain dedication): no rights reserved. TTB, its contractors and anyone else may copy, change and use this for any purpose without permission or attribution. https://creativecommons.org/publicdomain/zero/1.0/",
+   "accessInformation": "Dan McLaughlin, Robert Clay Vineyards (petitioner); granite: USGS State Geologic Map Compilation (SGMC), shifted to the outcrops",
+   "culture": "en-us",
+   "extent": [
+    [
+     -99.3624,
+     30.7398
+    ],
+    [
+     -99.245,
+     30.7977
+    ]
+   ]
+  },
+  "was": []
+ },
+ {
+  "title": "0 Dashboard - the proposed boundary and everything in this group",
+  "type": "Dashboard",
+  "id": "00000000000000000000000000000001",
+  "script": "agol_dashboard.py",
+  "file": null,
+  "group_category": null,
+  "org_categories": [
+   "/Categories/American Viticultural Areas (AVAs)/Hickory Sands District AVA",
+   "/Categories/Boundaries/Administrative",
+   "/Categories/Infrastructure/Agriculture"
+  ],
+  "properties": {
+   "snippet": "Start here: the proposed revision on the 13 USGS quadrangles with the AVA Map Explorer polygon, the 104 steps, and every document, map and download in this group.",
+   "description": "<p>Hickory Sands District AVA (Docket No. TTB-2026-0005, Notice No. 243, 91 FR 52576): the boundary the petitioners propose, with the changes discussed with TTB on October 15, 2026. Prepared by Dan McLaughlin, Robert Clay Vineyards (petitioner).</p><p>One page for the whole group: pick a step to see it on the map and read it; the differences from the AVA Map Explorer polygon are listed and ringed on the map; the tabs link every document, the GIS data and the 13 USGS quadrangles.</p>",
+   "tags": "Hickory Sands District,AVA,TTB,Notice No. 243,TTB-2026-0005,proposed boundary,dashboard",
+   "licenseInfo": "The dashboard and the petitioner's layers (the proposed revision, the differences, the change near Grit, the shift of the geology): CC0 1.0 Universal (public domain dedication): no rights reserved. TTB, its contractors and anyone else may copy, change and use this for any purpose without permission or attribution. https://creativecommons.org/publicdomain/zero/1.0/ The step text it shows is Notice No. 243's, a U.S. Government work (public domain), except the proposed changes near Grit (CC0, as above). The AVA Map Explorer polygon (TTB's AVAs_Production layer): U.S. Government work (public domain). USGS quadrangles and USGS SGMC geology: public domain. Basemaps: Esri, under Esri's terms of use.",
+   "accessInformation": "Dan McLaughlin, Robert Clay Vineyards (petitioner); TTB (Notice No. 243 step text, AVAs_Production layer); USGS (quadrangles, via Esri USA Historical Topo Maps; SGMC geology); basemaps: Esri",
+   "culture": "en-us"
+  },
+  "typeKeywords (when added)": [
+   "ArcGIS Dashboards",
+   "Dashboard",
+   "Operations Dashboard"
+  ]
+ }
+]

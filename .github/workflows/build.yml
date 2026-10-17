@@ -1,10 +1,12 @@
 # The whole build, `./build.sh`, on one of GitHub's Linux machines (Dan, 2026-10-17: Linux, not paid Mac minutes), with
 # the same Homebrew tools as Dan's Mac (GDAL, PROJ with the NADCON5 grid, poppler, Python 3.14); the PDFs use the
 # Liberation fonts, which have the same character widths as Times New Roman, Arial and Courier New. Runs on pull
-# requests that touch what the build reads (not src/publish/, which only ArcGIS publishing uses), and by hand
-# (Actions > build > Run workflow). The package zip itself is not kept here (about 290 MB); the build report,
-# checksums and GIS lines are, for comparing with a local build.
-# Releases are made by release.yml.
+# requests that touch what the build reads or what the publish would send (src/publish/ and its item-list fixture), and
+# by hand (Actions > build > Run workflow). After the build, the publish dry run (./build.sh publish-dry-run): everything
+# ArcGIS Online would get, built from this build without signing in, and checked (issue #58); it needs GDAL and the
+# build's outputs, so it runs here, not in lint (lint runs the checks themselves on tests/fixtures/publish/dry-run/).
+# The package zip itself is not kept here (about 290 MB); the build report, checksums, GIS lines and the dry run's
+# JSON are, for comparing with a local build. Releases are made by release.yml.
 name: build
 on:
   workflow_dispatch:
@@ -17,7 +19,7 @@ on:
       - documents/**
       - resources/**
       - src/**
-      - "!src/publish/**"
+      - tests/fixtures/publish/**
       - .github/workflows/build.yml
 permissions:
   contents: read
@@ -67,10 +69,14 @@ jobs:
           key: usgs-quads-${{ hashFiles('resources/quads/quads-manifest.csv') }}
       - name: ./build.sh
         run: ./build.sh
+      - name: The publish dry run (everything ArcGIS Online would get, without signing in, checked; issue #58)
+        shell: bash   # -eo pipefail: a failed check fails the step through the tee
+        run: ./build.sh publish-dry-run 2>&1 | tee target/publish-dry-run.txt
       - name: Build report
         if: always()
         run: |
           { echo '```'; cat dist/build-report.txt 2>/dev/null || echo "no build report: the build stopped"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          { echo '```'; grep -E '^(ok|FAIL|skip|      -|dry-run checks)' target/publish-dry-run.txt 2>/dev/null || echo "no publish dry run"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
           name: build-report-${{ github.sha }}
@@ -80,4 +86,5 @@ jobs:
             dist/*-README.txt
             target/work/gis/*.geojson
             target/work/review/*.json
+            target/publish/*.json
           retention-days: 14

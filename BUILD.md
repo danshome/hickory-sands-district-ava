@@ -30,8 +30,39 @@ Other commands:
   layers (the boundary, the differences from the AVA Map Explorer polygon, the change near Grit, the shifted geology),
   the web map over the 13 quads with TTB's live AVA Map Explorer polygon, and the dashboard that links everything; it
   makes the folder if it is missing and shares everything publicly. It signs in with Dan's saved `arcgis` profile `hsd`.
-  Publishing is never part of a normal build; run it only when you mean to update ArcGIS Online. Its last step is
-  `check-live`, so a publish ends with the live site's pass/fail report.
+  Publishing is never part of a normal build; run it only when you mean to update ArcGIS Online. Its first step is the
+  publish dry run below, and it uploads nothing if one of its checks fails; its last step is `check-live`, so a publish
+  ends with the live site's pass/fail report.
+- `./build.sh publish-dry-run` (or `./build.sh publish --dry-run`) builds everything the publish would send, from the
+  build's outputs, without signing in or touching the network (`src/publish/agol_dryrun.py`, issue #58): it calls the
+  publish scripts' own builders (each script builds what it sends in functions that need no sign-in, and its `main()`
+  signs in and sends it), never their `main()`, and `arcgis.gis.GIS` is replaced by one that raises. What only ArcGIS
+  knows, item ids, service URLs and the hosted layers' fields, comes from stand-ins: the group's item list in
+  `tests/fixtures/publish/agol-items.json` (fake ids, and the layers' public definitions; `agol_dryrun.py --fetch FILE`
+  writes it again, anonymously). It writes `target/publish/`: `items.json` (every item's title, type, file, group and
+  organization categories, and the properties it is sent: summary, description, tags, licence, credits, extent,
+  culture), `services.json` (each hosted layer's definition, layer names, field aliases, visualization), `webmap.json`,
+  `dashboard.json`, `group.json` (access, tags, description), `item-list.json`, `facts.json`; then checks them
+  (`src/publish/agol_dryrun_checks.py`, one line per check, exit 1 on a failure):
+  - items: the publish makes exactly the items of the group's item list (a new, retitled or dropped item fails until
+    the fixture is updated with it);
+  - security: every hosted layer is set read-only, capabilities Query,Extract (#25);
+  - web map: the quadrangles with no band legend, a short pop-up naming the sheet, years without a thousands separator
+    and no time filter (#46); every layer a layer of a hosted item in the group or a known service;
+  - dashboard: the desktop and phone views both there and wired (`check_views()`, which `agol_dashboard.py` also runs
+    before sending), its map and data sources the web map's; every link to an item goes to one in the list and its text
+    is in that item's title; every item linked; indicator captions within their width (#45); link cells in tables that
+    do not wrap (#47);
+  - metadata: culture `en-us`, the tags "Notice No. 243" and "TTB-2026-0005", credits, an extent around the AVA on every
+    item numbered 4 or 5, a group category under the item's number (#31);
+  - licences: each names the terms of what the item carries, TTB's text and data, USGS's maps and geology, Esri's
+    basemaps, the petitioner's work under CC0 (#11, #30; the table `LICENCES`), and the credits name them;
+  - descriptions: each has its own text beyond the shared opening and a summary of 45 characters or more (#34); the Word
+    files and the CSV say what they are, TTB's notice is not "prepared by" the petitioner, a layer offering exports says
+    they are Web Mercator and where the NAD83 data is (#29);
+  - quadrangle titles: a GeoPDF and a GeoTIFF for each quadrangle of paragraph (b), titled with its edition (#44);
+  - wording: no "agreed", "ours", "our boundary", "TTB's published polygon", "final text" or bare "Hickory Sandstone";
+  - group: public, its tags, its description linking the dashboard and the read-me.
 - `./build.sh check-live` checks the public site the way TTB sees it, without signing in (`src/publish/agol_check.py`,
   anonymous read-only requests; it changes nothing, so it is safe to run any time). One line per check, and every failure
   names the item and what is wrong; it exits 1 on any failure:
@@ -66,7 +97,8 @@ requirements.in          the Python packages the build uses (edit this)
 requirements.txt         compiled from it: every package and indirect dependency pinned, with SHA-256 hashes
 requirements-dev.in/.txt the same for the lint, audit and lock tools, pytest and Playwright
 .pre-commit-config.yaml  the hooks; .githooks/pre-commit runs them; ruff.toml, .codespellrc, .secrets.baseline
-pytest.ini, tests/       the unit tests (./build.sh test); tests/live/: the browser tests of the dashboard (check-live)
+pytest.ini, tests/       the unit tests (./build.sh test); tests/live/: the browser tests of the dashboard (check-live);
+                         tests/fixtures/publish/: the publish dry run's item list and a dry run
 README.md, BUILD.md      this documentation; CLAUDE.md: notes for Claude Code; LICENSE.txt
 src/
   setup/                 packages.py: the security audit of the lock files (standard library only), lock helper
@@ -80,7 +112,8 @@ src/
   checks/                hard checks: quads vs manifest, every pin on its line, no self-crossing, valid polygon;
                          check_outputs: what reaches TTB (PDF fonts, compare text, figures, wording, GIS, zip paths)
   package/               make_package.sh (the zip)
-  publish/               ArcGIS Online
+  publish/               ArcGIS Online: agol_publish, agol_layer, agol_dashboard, agol_org_categories, agol_share (what
+                         is sent); agol_dryrun + agol_dryrun_checks (the dry run); agol_check (the live site)
 resources/
   boundary/              what the boundary is built from (edit these, never the outputs); see resources/boundary/README.md
     description/         the step texts: TTB's Notice 243, the petition
@@ -94,7 +127,8 @@ documents/               hand-written texts: README.template.txt ({AREA_SQMI} fi
                          read-me-first.template.html
 LICENSE.txt              CC0 1.0 (also copied into the package)
 .venv/                   the project's Python environment (made by build.sh; not in git)
-target/                  everything the build makes (not in git): work/ (recreated on every run), quads-cropped/
+target/                  everything the build makes (not in git): work/ (recreated on every run), quads-cropped/,
+                         publish/ (the publish dry run)
 dist/                    the distribution (not in git)
 tobedeleted/             set aside for review and deletion, used by nothing (not in git)
 ```
@@ -177,7 +211,12 @@ commit again. Run them all with `./build.sh lint`.
 - `test_grit_change.py`: geodesic line lengths on GRS 1980 (#35), totals summed unrounded and rounded once (#33);
 - `test_compare_ttb.py`: a big difference's acres are the whole pieces its ring touches, even inside a hole in the
   ring (#26), and the helpers that find the stretches;
-- `test_make_readme.py`: README.txt's headings ("WHAT WE PROPOSE TO CHANGE IN NOTICE NO. 243 (...)") on the read-me page.
+- `test_make_readme.py`: README.txt's headings ("WHAT WE PROPOSE TO CHANGE IN NOTICE NO. 243 (...)") on the read-me page;
+- `test_publish_dryrun.py`: the publish dry run's checks pass on a dry run of the current build
+  (`tests/fixtures/publish/dry-run/`, a copy of `target/publish/`: copy it there again after changing what the publish
+  sends) and each fails on a fault planted in it (a layer left editable, plain CC0 on TTB's text, a phone element
+  without its twin, a link to an item not in the group, a caption too long, a link cell that wraps, the quads' band
+  legend, ...); the one marked `build` runs the whole dry run on the build's outputs.
 
 The scripts keep their work under `if __name__ == "__main__":`, so the tests import them (`src.documents.pdf_text`)
 without running them. Tests marked `build` need the build's own tools (GDAL, NumPy and SciPy, poppler's pdftotext); the
@@ -224,12 +263,14 @@ Three workflows in `.github/workflows/`, every action pinned to a commit:
   only the lint tools, on every pull request and every push to `main`. The lint tools come from `requirements-dev.txt`,
   audited first, as on the Mac.
 - **build** (`build.yml`, GitHub's Linux machines): the whole `./build.sh` on pull requests that change what the build
-  reads (`build.sh`, `src/`, `resources/`, `documents/`, the lock files) and by hand (Actions > build > Run workflow).
+  reads (`build.sh`, `src/`, `resources/`, `documents/`, the lock files) or what the publish would send (`src/publish/`,
+  `tests/fixtures/publish/`), then `./build.sh publish-dry-run` on the build it made (it needs GDAL and the build's
+  outputs, so it cannot run in lint), and by hand (Actions > build > Run workflow).
   Linux, not GitHub's Mac machines, whose minutes cost ten times as much (Dan, 2026-10-17). Homebrew on Linux installs
   the same versions of the tools as on the Mac (GDAL, PROJ with the NADCON5 grid, poppler, Python 3.14); the PDFs ask
   for Times New Roman, Arial and Courier New and get the Liberation fonts there, which have the same character widths,
   so lines and pages break in the same places. The 13 USGS quads are cached between runs (the build still checks their
-  MD5s). It keeps the build report, the checksums and the GIS lines for 14 days, not the 290 MB zip.
+  MD5s). It keeps the build report, the checksums, the GIS lines and the dry run's JSON for 14 days, not the 290 MB zip.
 - **release** (`release.yml`, Linux): push a tag such as `v2026.10.20` and it builds that commit and makes a GitHub
   release of the same name with `dist/` attached (the package zip, its README, `SHA256SUMS.txt`, `build-report.txt`).
   Run it by hand with an existing tag to rebuild that release's files.
@@ -238,8 +279,8 @@ Three workflows in `.github/workflows/`, every action pinned to a commit:
 git tag v2026.10.20 && git push origin v2026.10.20
 ```
 
-Publishing to ArcGIS Online is not in Actions: it stays `./build.sh publish`, run by Dan. Changes only to `src/publish/`
-do not start a build (that code never touches `dist/`).
+Publishing to ArcGIS Online is not in Actions: it stays `./build.sh publish`, run by Dan. Changes to `src/publish/` start
+a build only for its publish dry run, which signs in to nothing (that code never touches `dist/`).
 
 The runners install whatever GDAL Homebrew has that day, and the build stops when it differs from the `GDAL==` pin in
 the lock (the Python bindings must match the library). When Homebrew moves GDAL on, every build stops with that message

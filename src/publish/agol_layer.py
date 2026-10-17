@@ -9,6 +9,10 @@ in category 4 > Map and layer:
   service locked to those editions, with the AVA Map Explorer polygon (TTB's live AVAs_Production, blue) under the proposed
   revision, the land between them shaded, and the big differences ringed.
 Re-running reuses the layer, overwrites the comparison layer and updates the map. Sign-in: GIS(profile="hsd"). Never write "agreed".
+What it sends is built without signing in (the item properties at module level; boundary_plan(), diff_plan(), geo_plan(),
+grit_plan(), webmap_plan(): pop-ups, field aliases, the layers' visualizations and the web map, from the layers given; plan()
+all of them at once), so the publish dry run (agol_dryrun.py) writes and checks it; main() signs in, publishes the layers,
+and sends each piece where it always has.
 Run by ./build.sh publish (or .venv/bin/python src/publish/agol_layer.py)"""
 import hashlib, json, math, os, time
 from arcgis.gis import GIS, ItemProperties, ItemTypeEnum
@@ -106,7 +110,7 @@ ATTACH = [os.path.join(HERE, "documents", "Hickory-Sands-District-read-me-first-
           os.path.join(PKG, "2_TTB-notice-243-with-changes-highlighted", "TTB-Notice-243-with-proposed-Hickory-Sands-District-changes-highlighted-2026-10-15-UNOFFICIAL.pdf"),
           os.path.join(PKG, "3_changes-side-by-side", "Hickory-Sands-District-boundary-changes-side-by-side-2026-10-15.pdf")]
 
-gis = GIS(profile="hsd")
+gis = folder = typed = None   # signed in and listed by main(); hosted() uses them
 
 READ_ONLY = {"capabilities": "Query,Extract"}   # public layers: no editing by anyone (issue #25: publish leaves editing on)
 
@@ -116,12 +120,6 @@ def lock(lyr):
     FeatureLayerCollection.fromitem(lyr).manager.update_definition(READ_ONLY)
     return lyr
 
-folder = gis.content.folders.get(FOLDER)
-group = gis.groups.get(GROUP_ID)
-listing = list(folder.list())
-items = {it.title: it for it in listing}
-typed = {(it.title, it.type): it for it in listing}   # a title alone can be shared (a stuck overwrite retitles the layer)
-gp = next(it for t, it in items.items() if t.startswith("4c "))
 props = {"snippet": "The proposed boundary as a hosted feature layer: the AVA polygon, the 104 boundary steps with their text, and the step endpoints. Exports allowed.",
          "description": ABOUT + "<p>Add it to ArcGIS Pro from the portal, or open it in Map Viewer. Click the AVA polygon for the documents "
                         "(attached): read-me, boundary description, TTB's notice with the proposed changes highlighted, and the side-by-side. "
@@ -132,34 +130,16 @@ props = {"snippet": "The proposed boundary as a hosted feature layer: the AVA po
                         "shapefiles (4d-4f) and the GeoJSON (4g-4i), all with TTB's AVAs_Production fields.</p>",
          "tags": ",".join(TAGS), "licenseInfo": LIC_GIS, "accessInformation": CREDIT_GIS, "culture": CULTURE, "extent": EXTENT}
 
-# ---------------------------------------------------------------- hosted feature layer
-fl = items.get(LAYER_TITLE)
-if fl is None:
-    pp = gis.content.analyze(item=gp, file_type="geoPackage")["publishParameters"]
-    pp["name"] = "Hickory_Sands_District_proposed_boundary_2026_10_15"
-    pp["maxRecordCount"] = 2000
-    fl = gp.publish(publish_parameters=pp, file_type="geoPackage")
-    if fl.ownerFolder != folder.properties.get("id"):
-        fl.move(folder)
-    print("published", fl.id, fl.url)
-fl.update(item_properties={"title": LAYER_TITLE, **props})
-flc = FeatureLayerCollection.fromitem(lock(fl))
-
-layers = {lyr.properties.geometryType: lyr for lyr in flc.layers}
-area, line, pts = layers["esriGeometryPolygon"], layers["esriGeometryPolyline"], layers["esriGeometryPoint"]
-for gtype, lyr in layers.items():
-    if lyr.properties.name != NAMES[gtype]:
-        try:
-            lyr.manager.update_definition({"name": NAMES[gtype]})
-        except Exception as e:
-            print("could not rename", lyr.properties.name, "->", NAMES[gtype], type(e).__name__)
+def boundary_layers(layers):
+    """the hosted layer 4b's three layers by geometry type: polygon (the AVA), polyline (the steps), point (the endpoints)"""
+    return {lyr.properties.geometryType: lyr for lyr in layers}
 
 # ---------------------------------------------------------------- the layer's features, as built (issue #71)
 # The layer is published from the GeoPackage once; a republish used to leave its features as first published (the live
 # steps kept old wording and attributes). Each feature is updated in place from the package's GeoJSON, matched by step
 # (lines), point (points) or as the one AVA polygon, so the object ids and the documents attached to the polygon stay.
 # Only when the build's files changed (their SHA-256 is kept in the item's properties). Editing is on for the update
-# only, and the layer is locked again whatever happens.
+# only, and the layer is locked again whatever happens (main()).
 BUILT = {g: os.path.join(PKG, "4_GIS", f"hickory-sands-district-boundary-proposed-2026-10-15-{k}-EPSG4269.geojson")
          for g, k in (("esriGeometryPolygon", "area"), ("esriGeometryPolyline", "line"), ("esriGeometryPoint", "points"))}
 KEY = {"esriGeometryPolygon": None, "esriGeometryPolyline": "step", "esriGeometryPoint": "point"}
@@ -169,60 +149,17 @@ def esri(g):   # a GeoJSON geometry (NAD83 lon/lat) as Esri JSON
     return {"Point": lambda: {"x": c[0], "y": c[1]}, "LineString": lambda: {"paths": [c]}, "MultiLineString": lambda: {"paths": c},
             "Polygon": lambda: {"rings": c}, "MultiPolygon": lambda: {"rings": [r for p in c for r in p]}}[g["type"]]() | {"spatialReference": sr}
 
-built_sha = hashlib.sha256(b"".join(open(BUILT[g], "rb").read() for g in sorted(BUILT))).hexdigest()
-if (fl.properties or {}).get("features_sha256") != built_sha:
-    plan = {}
-    for gtype, lyr in layers.items():
-        oidf, key = lyr.properties.objectIdField, KEY[gtype]
-        geo = lyr.properties.get("geometryProperties") or {}
-        system = {oidf, lyr.properties.get("globalIdField"), geo.get("shapeAreaFieldName"), geo.get("shapeLengthFieldName")}
-        names = {f["name"] for f in lyr.properties.fields} - system
-        live = lyr.query(where="1=1", out_fields=",".join(f for f in (oidf, key) if f), return_geometry=False).features
-        new = json.load(open(BUILT[gtype]))["features"]
-        live_by = {str(f.attributes[key]) if key else "": f.attributes[oidf] for f in live}
-        new_by = {str(f["properties"][key]) if key else "": f for f in new}
-        assert set(live_by) == set(new_by) and len(live) == len(new), (gtype, sorted(set(live_by) ^ set(new_by)))   # same features
-        plan[gtype] = [{"attributes": {oidf: live_by[k], **{a: v for a, v in f["properties"].items() if a in names}},
-                        "geometry": esri(f["geometry"])} for k, f in new_by.items()]
-    flc.manager.update_definition({"capabilities": "Query,Extract,Update"})
-    try:
-        for gtype, ups in plan.items():
-            for i in range(0, len(ups), 50):
-                res = layers[gtype].edit_features(updates=ups[i:i + 50])["updateResults"]
-                failed = [r for r in res if not r.get("success")]
-                assert not failed, (gtype, failed[:3])
-            print(f"updated {len(ups)} features of {layers[gtype].properties.name}")
-        fl.update(item_properties={"properties": {**(fl.properties or {}), "features_sha256": built_sha}})
-    finally:
-        lock(fl)
-else:
-    print("the layer's features are as built")
-
-# documents attached to the AVA polygon
-if not area.properties.get("hasAttachments"):
-    area.manager.add_to_definition({"hasAttachments": True})
-    area = FeatureLayerCollection.fromitem(fl).layers[[l.properties.geometryType for l in FeatureLayerCollection.fromitem(fl).layers].index("esriGeometryPolygon")]
-oid = area.query(where="1=1", return_ids_only=True)["objectIds"][0]
-have = {a["name"]: a for a in area.attachments.get_list(oid)}
-for p in ATTACH:
-    assert os.path.exists(p), p
-    old = have.get(os.path.basename(p))
-    if old and old.get("size") != os.path.getsize(p):       # the file changed: replace the attachment
-        area.attachments.delete(oid, old["id"]); old = None
-    if not old:
-        area.attachments.add(oid, p)
-print("attachments on the AVA polygon:", sorted(a["name"] for a in area.attachments.get_list(oid)))
-
 # ---------------------------------------------------------------- symbology, pop-ups and field aliases
 def fields(lyr, wanted):
     have = {f["name"].lower(): f["name"] for f in lyr.properties.fields}
     return [{"fieldName": have[k.lower()], "label": label, "visible": True} for k, label in wanted if k.lower() in have]
 WORDS = {"n": "Number", "label": "Label", "what": "Which area", "why": "Why", "side": "Side", "area_sqmi": "Area (sq mi, GRS 1980)",
          "source": "Source", "version_note": "Version", "point": "Point number", "kind": "Kind", "step": "Step"}   # fields no pop-up shows
-def aliases(lyr, wanted=(), ttb=False):
+def alias_fields(lyr, wanted=(), ttb=False):
     """readable field aliases for the attribute table, the dashboard and exports (QA #31): for TTB's AVAs_Production fields
     (ttb=True) TTB's own alias, else the name in words (CFR_Section: CFR Section); for the others the pop-up's label, else a
-    plain name. The service's own fields (object id, global id, shape area and length) keep theirs."""
+    plain name. The service's own fields (object id, global id, shape area and length) keep theirs. Returns the fields whose
+    alias changes, each whole (as update_definition takes them); set_aliases() sends them."""
     labels = {k.lower(): v for k, v in wanted}
     geom = lyr.properties.get("geometryProperties") or {}
     own = {lyr.properties.get("objectIdField"), lyr.properties.get("globalIdField"), geom.get("shapeAreaFieldName"), geom.get("shapeLengthFieldName")}
@@ -238,6 +175,8 @@ def aliases(lyr, wanted=(), ttb=False):
             a = labels.get(n.lower()) or WORDS.get(n.lower()) or words(n)
         if f.get("alias") != a:
             out.append({**json.loads(json.dumps(f, default=dict)), "alias": a})   # the whole field, as a plain dict
+    return out
+def set_aliases(lyr, out):
     if out:
         try:
             lyr.manager.update_definition({"fields": out})
@@ -265,17 +204,12 @@ AREA_F = [("Name", "Name"), ("Status", "Status"), ("Area", "Area (sq mi)"), ("Co
 LINE_F = [("narrative", "Text"), ("change", "Change from Notice No. 243's text"), ("txt_source", "Text source"),
           ("endpoint", "Ends at"), ("quad", "USGS quadrangle"), ("length_m", "Length (m)")]
 PTS_F = [("step", "Step"), ("point_name", "Point"), ("kind", "Kind"), ("quad", "USGS quadrangle")]
-area_pop = popup("Hickory Sands District AVA (proposed)", area, AREA_F, True,
-                 NOTE + " The documents are attached below: read-me, boundary description, TTB's notice with the proposed changes highlighted, and the side-by-side.")
-line_pop = popup("Step ({step})", line, LINE_F, text=NOTE)
-pts_pop = popup("{point_name}", pts, PTS_F)
-for lyr, wanted in ((area, AREA_F), (line, LINE_F), (pts, PTS_F)):
-    aliases(lyr, wanted, ttb=True)
-fl.update(data=json.dumps({"layers": [{"id": area.properties.id, "layerDefinition": area_def, "popupInfo": area_pop},
-                                      {"id": line.properties.id, "layerDefinition": line_def, "popupInfo": line_pop},
-                                      {"id": pts.properties.id, "layerDefinition": pts_def, "popupInfo": pts_pop}]}))
 
 # ---------------------------------------------------------------- GeoPackage items and the hosted layers made from them
+def hosted_props(gpkg, props):
+    """a GeoPackage item's and its hosted layer's properties: with the GeoPackage's extent, for location search (QA #31)"""
+    return {**props, "culture": CULTURE, "extent": bbox(gpkg)}
+
 def hosted(gpkg, src_title, title, service, props, was=((), ())):
     """the GeoPackage item and the hosted layer published from it, in the folder, read-only; a re-run replaces the file
     and overwrites the layer"""
@@ -284,7 +218,7 @@ def hosted(gpkg, src_title, title, service, props, was=((), ())):
     lyr = find("Feature Service", title, *was[1], src_title, *was[0])
     if lyr is None and src is not None:   # the service published from this file, whatever its title (an overwrite retitles it)
         lyr = next(iter(src.related_items("Service2Data", "reverse")), None)
-    props = {**props, "culture": CULTURE, "extent": bbox(gpkg)}   # the GeoPackage's extent, for location search (QA #31)
+    props = hosted_props(gpkg, props)
     sha = hashlib.sha256(open(gpkg, "rb").read()).hexdigest()
     if src is not None and lyr is not None and (src.properties or {}).get("sha256", "") in (sha, "") \
             and ((src.properties or {}).get("sha256") or src.size == os.path.getsize(gpkg)):   # the same file: no republish
@@ -342,12 +276,15 @@ for f in pieces["features"]:
     f["properties"]["cause"] = TEXT_CHANGE if f["properties"]["cause"] == "proposed text change" else SAME_TEXT
 NBIG, NPIECES = len(big), len(pieces["features"])
 same, change = STATS["areas"]["drawing"], STATS["areas"]["proposed text change"]
-if os.path.exists(DIFF_GPKG):
-    os.remove(DIFF_GPKG)
-for name, feats in (("big_differences", big), ("all_differences", pieces["features"])):
-    tmp = os.path.join(REVIEW, f"publish-{name}-EPSG4269.geojson")
-    json.dump({"type": "FeatureCollection", "crs": pieces["crs"], "features": feats}, open(tmp, "w"))
-    gdal.VectorTranslate(DIFF_GPKG, tmp, format="GPKG", layerName=name, accessMode="append" if os.path.exists(DIFF_GPKG) else None)
+def make_diff_gpkg(path=DIFF_GPKG):
+    """the GeoPackage 4j: the big differences and all the differences, two layers (the dry run makes its own copy)"""
+    if os.path.exists(path):
+        os.remove(path)
+    for name, feats in (("big_differences", big), ("all_differences", pieces["features"])):
+        tmp = os.path.join(os.path.dirname(path), f"publish-{name}-EPSG4269.geojson")
+        json.dump({"type": "FeatureCollection", "crs": pieces["crs"], "features": feats}, open(tmp, "w"))
+        gdal.VectorTranslate(path, tmp, format="GPKG", layerName=name, accessMode="append" if os.path.exists(path) else None)
+    return path
 DIFF_ABOUT = (ABOUT + f"<p>Two layers comparing {REV} (red, drawn from the proposed text) with {MAPX} (blue, TTB's AVAs_Production "
               "layer for Notice No. 243). The Map Explorer polygon was digitized by hand; the proposed revision follows the centre of "
               f"the printed linework of the USGS maps. So the two lines differ a little almost everywhere: measured every 2 m along each "
@@ -365,13 +302,11 @@ dprops = {"snippet": f"The {NBIG} big differences ({BIG_M:.0f} m or more apart) 
                      "pieces of land between the two lines.",
           "description": DIFF_ABOUT, "tags": ",".join(TAGS), "licenseInfo": CC0,
           "accessInformation": CREDIT + "; compared with TTB's AVAs_Production polygon (the AVA Map Explorer polygon, Notice No. 243)"}
-dsrc, dl = hosted(DIFF_GPKG, DIFF_SRC_TITLE, DIFF_TITLE, "Hickory_Sands_District_differences_from_TTB_2026_10_15", dprops, DIFF_WAS)
-dlayers = FeatureLayerCollection.fromitem(dl).layers
-bigl = next(x for x in dlayers if "big" in x.properties.name.lower())
-every_l = next(x for x in dlayers if "all" in x.properties.name.lower())
-DNAMES = {bigl: f"Big differences from the Map Explorer polygon ({NBIG})", every_l: f"All differences between the two lines ({NPIECES} pieces)"}
-for lyr, nm in DNAMES.items():
-    rename(lyr, nm)
+DIFF_SERVICE = "Hickory_Sands_District_differences_from_TTB_2026_10_15"
+DNAMES = {"big": f"Big differences from the Map Explorer polygon ({NBIG})", "all": f"All differences between the two lines ({NPIECES} pieces)"}
+def diff_layers(layers):
+    """the hosted layer 4k's two layers: the big differences and all of them"""
+    return (next(x for x in layers if "big" in x.properties.name.lower()), next(x for x in layers if "all" in x.properties.name.lower()))
 
 # ---------------------------------------------------------------- geology (USGS SGMC, shifted to the outcrops)
 GEO_ABOUT = (ABOUT + "<p>Three USGS geologic units near the AVA: Town Mountain Granite, the younger granitic intrusions and the "
@@ -383,28 +318,28 @@ GEO_ABOUT = (ABOUT + "<p>Three USGS geologic units near the AVA: Town Mountain G
 gprops = {"snippet": "USGS geologic units near the AVA (granite and the Hickory Sandstone Member formation), shifted about 400 m to sit on the outcrops.",
           "description": GEO_ABOUT, "tags": ",".join(TAGS + ["geology", "SGMC"]), "licenseInfo": "USGS data (public domain); shift " + CC0,
           "accessInformation": "USGS State Geologic Map Compilation; shift: " + CREDIT}
-gsrc, gl = hosted(GEO_GPKG, GEO_SRC_TITLE, GEO_TITLE, "Hickory_Sands_District_geology_SGMC_shifted", gprops)
+GEO_SERVICE = "Hickory_Sands_District_geology_SGMC_shifted"
 GEO = [("town", "Town Mountain Granite (USGS SGMC, shifted)", [232, 96, 140]),
        ("younger", "Younger granitic intrusions (USGS SGMC, shifted)", [150, 90, 200]),
        ("hickory", "Hickory Sandstone Member formation (USGS SGMC, shifted)", [214, 168, 50])]
 GEO_F = [("name", "SGMC unit"), ("unit_link", "Unit code"), ("generalize", "Rock type"), ("area_acres", "Area (acres)"),
          ("source", "Source"), ("alignment", "Shift"), ("unit_url", "USGS unit page")]
-geo = []
-for key, nm, rgb in GEO:
-    lyr = next(x for x in FeatureLayerCollection.fromitem(gl).layers if key in x.properties.name.lower())
-    rename(lyr, nm)
-    gdef = {"drawingInfo": {"renderer": {"type": "simple", "symbol": {"type": "esriSFS", "style": "esriSFSSolid", "color": rgb + [60],
+def geo_layers(layers):
+    """the hosted layer 4m's three layers, each with its name and colour: [(layer, name, rgb)] in GEO's order"""
+    return [(next(x for x in layers if key in x.properties.name.lower()), nm, rgb) for key, nm, rgb in GEO]
+def geo_def(rgb):
+    return {"drawingInfo": {"renderer": {"type": "simple", "symbol": {"type": "esriSFS", "style": "esriSFSSolid", "color": rgb + [60],
             "outline": {"type": "esriSLS", "style": "esriSLSSolid", "color": rgb + [255], "width": 0.8}}}}}
-    gpop = popup(nm.split(" (")[0], lyr, GEO_F)
-    aliases(lyr, GEO_F)
-    geo.append((lyr, nm, gdef, gpop))
 
 # ---------------------------------------------------------------- the change near Grit, line by line and acre by acre
 GSTATS = json.load(open(os.path.join(REVIEW, "grit-change-stats.json")))["areas"]
-if os.path.exists(GRIT_GPKG):
-    os.remove(GRIT_GPKG)
-for f, name in (("grit-change-lines-EPSG4269.geojson", "lines_swapped"), ("grit-change-areas-EPSG4269.geojson", "areas_moved")):
-    gdal.VectorTranslate(GRIT_GPKG, os.path.join(REVIEW, f), format="GPKG", layerName=name, accessMode="append" if os.path.exists(GRIT_GPKG) else None)
+def make_grit_gpkg(path=GRIT_GPKG):
+    """the GeoPackage 4n: the lines the change near Grit swaps and the areas it moves (the dry run makes its own copy)"""
+    if os.path.exists(path):
+        os.remove(path)
+    for f, name in (("grit-change-lines-EPSG4269.geojson", "lines_swapped"), ("grit-change-areas-EPSG4269.geojson", "areas_moved")):
+        gdal.VectorTranslate(path, os.path.join(REVIEW, f), format="GPKG", layerName=name, accessMode="append" if os.path.exists(path) else None)
+    return path
 def gs(k, f="acres"):   # whole acres, rounded once, half up, from the build's unrounded stats (issue #33; as the map's labels)
     return f"{math.floor(GSTATS[k][f] + 0.5):,}"
 def ga(k):   # an area's acres and its granite, for every area, put in or left out (QA #43)
@@ -423,11 +358,12 @@ GRIT_ABOUT = (ABOUT + "<p>What the proposed text swaps near Grit, all drawn on t
 rprops = {"snippet": "The change near Grit: the lines the proposed text swaps, and the acres (and granite) it leaves out and puts in.",
           "description": GRIT_ABOUT, "tags": ",".join(TAGS + ["granite", "Grit"]), "licenseInfo": CC0,
           "accessInformation": CREDIT + "; granite: USGS State Geologic Map Compilation (SGMC), shifted to the outcrops"}
-grsrc, grl = hosted(GRIT_GPKG, GRIT_SRC_TITLE, GRIT_TITLE, "Hickory_Sands_District_change_near_Grit_2026_10_15", rprops)
-glayers = {x.properties.geometryType: x for x in FeatureLayerCollection.fromitem(grl).layers}
-grit_lines, grit_areas = glayers["esriGeometryPolyline"], glayers["esriGeometryPolygon"]
-rename(grit_lines, "Lines the change near Grit swaps")
-rename(grit_areas, "Areas the change near Grit moves, with their granite")
+GRIT_SERVICE = "Hickory_Sands_District_change_near_Grit_2026_10_15"
+GRIT_NAMES = ("Lines the change near Grit swaps", "Areas the change near Grit moves, with their granite")
+def grit_layers(layers):
+    """the hosted layer 4o's two layers: the lines (polyline) and the areas (polygon)"""
+    glayers = {x.properties.geometryType: x for x in layers}
+    return glayers["esriGeometryPolyline"], glayers["esriGeometryPolygon"]
 
 ORANGE, GREY, BLUE = [230, 110, 0, 255], [110, 110, 110, 255], [0, 90, 255, 255]
 GREEN, MAGENTA, BROWN = [0, 140, 60, 255], [190, 0, 130, 255], [150, 90, 40, 255]
@@ -461,17 +397,8 @@ BIG_F = [("why", "Why"), ("steps", "Steps"), ("kind", "Kind of step"), ("max_apa
          ("endpoints", "Step endpoints vs the Map Explorer polygon's nearest vertex")]
 ALL_F = [("cause", "Cause"), ("side", "Side"), ("acres", "Acres"), ("length_m", "Length (m)"), ("mean_width_m", "Average width (m)"),
          ("widest_m", "Farthest apart (m)"), ("steps", "Proposed revision steps along it")]
-big_pop = popup("Big difference #{n}: step(s) {steps}", bigl, BIG_F, text=DIFF_NOTE)
-all_pop = popup("{acres} acres {side}", every_l, ALL_F,
-                text="One piece of land in one line and not the other. Red: in the proposed revision only; blue: in the AVA Map "
-                     "Explorer polygon only; grey: the proposed text change near Grit.")
-aliases(bigl, BIG_F + [("n", "Big difference number")])
-aliases(every_l, ALL_F)
 ttb_pop = {"title": "AVA Map Explorer polygon: {Name}", "fieldInfos": [{"fieldName": f, "label": f, "visible": True} for f in ("Name", "Status", "Counties", "Within")],
            "popupElements": [{"type": "text", "text": "TTB's AVAs_Production layer (live), shown on TTB's AVA Map Explorer for Notice No. 243."}, {"type": "fields"}]}
-dl.update(data=json.dumps({"layers": [{"id": bigl.properties.id, "layerDefinition": big_def, "popupInfo": big_pop},
-                                      {"id": every_l.properties.id, "layerDefinition": all_def, "popupInfo": all_pop}]}))
-gl.update(data=json.dumps({"layers": [{"id": lyr.properties.id, "layerDefinition": gdef, "popupInfo": gpop} for lyr, _, gdef, gpop in geo]}))
 def sls(rgba, width, style="esriSLSSolid"):
     return {"type": "esriSLS", "style": style, "color": rgba, "width": width}
 grit_lines_def = {"drawingInfo": {"renderer": {"type": "uniqueValue", "field1": "role", "uniqueValueInfos": [
@@ -497,42 +424,6 @@ grit_areas_def = {"drawingInfo": {"renderer": {"type": "uniqueValue", "field1": 
 GRIT_LINES_F = [("role", "What it is"), ("steps", "Steps"), ("length_m", "Length (m)"), ("source", "Drawn from")]
 GRIT_AREAS_F = [("acres", "Acres"), ("granite_acres", "Granite (acres)"), ("sandstone_acres", "Hickory Sandstone Member formation (acres)"),
                 ("revision_steps", "Proposed revision (or petition) steps along it"), ("notice_steps", "Notice No. 243 steps along it")]
-grit_lines_pop = popup("{label}", grit_lines, GRIT_LINES_F)
-grit_areas_pop = popup("{acres} acres: {why}", grit_areas, GRIT_AREAS_F,
-                       text="Granite: Town Mountain Granite and younger granitic intrusions, USGS SGMC shifted about 400 m to the outcrops.")
-aliases(grit_lines, GRIT_LINES_F)
-aliases(grit_areas, GRIT_AREAS_F + [("side", "Left out or put in")])
-grl.update(data=json.dumps({"layers": [{"id": grit_lines.properties.id, "layerDefinition": grit_lines_def, "popupInfo": grit_lines_pop},
-                                       {"id": grit_areas.properties.id, "layerDefinition": grit_areas_def, "popupInfo": grit_areas_pop}]}))
-
-# ---------------------------------------------------------------- web map
-def op(lyr, title, ldef, pop, visible=True, item=None, lid=None):
-    item = item or fl
-    return {"id": lid or f"hsd-{lyr.properties.id}", "title": title, "url": lyr.url, "itemId": item.id, "layerType": "ArcGISFeatureLayer",
-            "visibility": visible, "opacity": 1, "layerDefinition": ldef, "popupInfo": pop, **({"showLabels": True} if "labelingInfo" in ldef else {})}
-webmap = {
-    "operationalLayers": [
-        QUADS,
-        {"id": "ttb-basemaps", "title": "TTB's AVA Map Explorer basemaps (turn on, pick one)", "layerType": "GroupLayer",
-         "visibility": False, "visibilityMode": "exclusive", "opacity": 1, "layers": [
-             {"id": f"ttb-basemap-{i}", "title": title, "layerType": "GroupLayer", "visibility": i == 0, "opacity": 1, "layers": [
-                 {"id": f"ttb-basemap-{i}-{j}", "title": t, "layerType": kind, "visibility": True, "opacity": 1,
-                  **({"styleUrl": url} if kind == "VectorTileLayer" else {"url": url})} for j, (t, kind, url) in enumerate(parts)]}
-             for i, (title, parts) in enumerate(TTB_BASEMAPS)]},
-        *[op(lyr, nm, gdef, gpop, item=gl, lid=f"hsd-geology-{lyr.properties.id}") for lyr, nm, gdef, gpop in geo],
-        op(every_l, DNAMES[every_l], all_def, all_pop, item=dl, lid="hsd-all-differences"),
-        {"id": "hsd-ttb", "title": "AVA Map Explorer polygon (TTB AVAs_Production, Notice No. 243, live)", "url": TTB_URL, "layerType": "ArcGISFeatureLayer",
-         "visibility": True, "opacity": 1, "layerDefinition": ttb_def, "popupInfo": ttb_pop},
-        op(area, NAMES["esriGeometryPolygon"], area_def, area_pop),
-        op(line, NAMES["esriGeometryPolyline"], line_def, line_pop),
-        op(pts, NAMES["esriGeometryPoint"], pts_def, pts_pop),
-        {"id": "hsd-grit", "title": "The change near Grit: what the proposed text swaps", "layerType": "GroupLayer", "visibility": True, "opacity": 1,
-         "layers": [op(grit_areas, "Areas the change moves, with their granite", grit_areas_def, grit_areas_pop, item=grl, lid="hsd-grit-areas"),
-                    op(grit_lines, "Lines the change swaps", grit_lines_def, grit_lines_pop, item=grl, lid="hsd-grit-lines")]},
-        op(bigl, DNAMES[bigl], big_def, big_pop, item=dl, lid="hsd-rings")],
-    "baseMap": {"title": "Light Gray Canvas", "baseMapLayers": [{"id": "gray", "title": "World Light Gray Base", "layerType": "ArcGISTiledMapServiceLayer",
-                "url": "https://services.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer", "visibility": True, "opacity": 1}]},
-    "spatialReference": {"wkid": 102100, "latestWkid": 3857}, "authoringApp": "ArcGIS API for Python", "authoringAppVersion": "2.4.3", "version": "2.31"}
 mprops = {"snippet": "The proposed boundary over the 13 USGS 1:24,000 quadrangles cited in paragraph (b). Click the AVA for the documents, a step for its text.",
           "description": ABOUT + "<p>The quadrangle layer is Esri's USA Historical Topo Maps service, locked to the 13 editions the proposed "
                          "regulation cites. Over them: the USGS geologic units shifted to the outcrops (layer 4m), the AVA Map "
@@ -545,23 +436,225 @@ mprops = {"snippet": "The proposed boundary over the 13 USGS 1:24,000 quadrangle
                          "the four basemaps of TTB's AVA Map Explorer (Topographic, Streets, Imagery, USA Topo Maps); turn it on "
                          "and pick one to see the lines over what the Map Explorer shows.</p>",
           "tags": ",".join(TAGS), "licenseInfo": LIC_MAP, "accessInformation": CREDIT_MAP, "culture": CULTURE}
-wm = items.get(MAP_TITLE)
-if wm is None:
-    wm = folder.add(ItemProperties(title=MAP_TITLE, item_type=ItemTypeEnum.WEB_MAP, tags=TAGS, snippet=mprops["snippet"],
-                                   description=mprops["description"], license_info=LIC_MAP, access_information=CREDIT_MAP,
-                                   culture=CULTURE, extent=EXTENT), text=json.dumps(webmap)).result()
-else:
-    wm.update(item_properties={**mprops, "extent": EXTENT}, data=json.dumps(webmap))
-print("web map", wm.id)
 
-# ---------------------------------------------------------------- share to the group, category 4 > Map and layer (sources: Downloads)
-for it, cat in ((wm, CAT), (fl, CAT), (dl, CAT), (gl, CAT), (grl, CAT), (dsrc, C4D), (gsrc, C4D), (grsrc, C4D)):
-    for t in (it.title, it.snippet, it.description, it.licenseInfo or "", it.accessInformation or ""):
-        assert "agree" not in t.lower(), it.title
-    try:
-        it.sharing.groups.add(group)
-    except AttributeError:
-        it.share(groups=[GROUP_ID])
-    r = gis._con.post(f"{gis._portal.resturl}content/groups/{GROUP_ID}/updateCategories", {"f": "json", "items": json.dumps([{it.id: [cat]}])})
-    assert all(x.get("success") for x in r.get("results", [{}])), r
-    print("shared + categorized:", it.id, it.type, it.title)
+# ---------------------------------------------------------------- what is sent once the layers exist: built, not sent
+# Each takes the layers (live in main(); the publish dry run, agol_dryrun.py, passes stand-ins from
+# tests/fixtures/publish/agol-items.json) and returns their pop-ups, their changed field aliases ([(layer, fields)], for
+# set_aliases()) and the layer item's data (its visualization: symbols, labels, pop-ups), without sending anything.
+def boundary_plan(area, line, pts):
+    """the hosted layer 4b: the AVA polygon, the steps and the endpoints"""
+    area_pop = popup("Hickory Sands District AVA (proposed)", area, AREA_F, True,
+                     NOTE + " The documents are attached below: read-me, boundary description, TTB's notice with the proposed changes highlighted, and the side-by-side.")
+    line_pop = popup("Step ({step})", line, LINE_F, text=NOTE)
+    pts_pop = popup("{point_name}", pts, PTS_F)
+    return {"pops": (area_pop, line_pop, pts_pop),
+            "aliases": [(lyr, alias_fields(lyr, wanted, ttb=True)) for lyr, wanted in ((area, AREA_F), (line, LINE_F), (pts, PTS_F))],
+            "data": {"layers": [{"id": area.properties.id, "layerDefinition": area_def, "popupInfo": area_pop},
+                                {"id": line.properties.id, "layerDefinition": line_def, "popupInfo": line_pop},
+                                {"id": pts.properties.id, "layerDefinition": pts_def, "popupInfo": pts_pop}]}}
+
+def geo_plan(geo):
+    """the hosted layer 4m, geo: [(layer, name, rgb)] as geo_layers() gives them; "layers": [(layer, name, its definition, its pop-up)]"""
+    geo = [(lyr, nm, geo_def(rgb), popup(nm.split(" (")[0], lyr, GEO_F)) for lyr, nm, rgb in geo]
+    return {"layers": geo, "aliases": [(lyr, alias_fields(lyr, GEO_F)) for lyr, *_ in geo],
+            "data": {"layers": [{"id": lyr.properties.id, "layerDefinition": gdef, "popupInfo": gpop} for lyr, _, gdef, gpop in geo]}}
+
+def diff_plan(bigl, every_l):
+    """the hosted layer 4k: the big differences and all of them"""
+    big_pop = popup("Big difference #{n}: step(s) {steps}", bigl, BIG_F, text=DIFF_NOTE)
+    all_pop = popup("{acres} acres {side}", every_l, ALL_F,
+                    text="One piece of land in one line and not the other. Red: in the proposed revision only; blue: in the AVA Map "
+                         "Explorer polygon only; grey: the proposed text change near Grit.")
+    return {"pops": (big_pop, all_pop),
+            "aliases": [(bigl, alias_fields(bigl, BIG_F + [("n", "Big difference number")])), (every_l, alias_fields(every_l, ALL_F))],
+            "data": {"layers": [{"id": bigl.properties.id, "layerDefinition": big_def, "popupInfo": big_pop},
+                                {"id": every_l.properties.id, "layerDefinition": all_def, "popupInfo": all_pop}]}}
+
+def grit_plan(grit_lines, grit_areas):
+    """the hosted layer 4o: the lines the change near Grit swaps and the areas it moves"""
+    grit_lines_pop = popup("{label}", grit_lines, GRIT_LINES_F)
+    grit_areas_pop = popup("{acres} acres: {why}", grit_areas, GRIT_AREAS_F,
+                           text="Granite: Town Mountain Granite and younger granitic intrusions, USGS SGMC shifted about 400 m to the outcrops.")
+    return {"pops": (grit_lines_pop, grit_areas_pop),
+            "aliases": [(grit_lines, alias_fields(grit_lines, GRIT_LINES_F)), (grit_areas, alias_fields(grit_areas, GRIT_AREAS_F + [("side", "Left out or put in")]))],
+            "data": {"layers": [{"id": grit_lines.properties.id, "layerDefinition": grit_lines_def, "popupInfo": grit_lines_pop},
+                                {"id": grit_areas.properties.id, "layerDefinition": grit_areas_def, "popupInfo": grit_areas_pop}]}}
+
+def webmap_plan(fl, area, line, pts, B, dl, bigl, every_l, D, gl, G, grl, grit_lines, grit_areas, R):
+    """the web map 4a, over the layers and the plans above (B, D, G, R: boundary, differences, geology, Grit)"""
+    area_pop, line_pop, pts_pop = B["pops"]
+    big_pop, all_pop = D["pops"]
+    geo = G["layers"]
+    grit_lines_pop, grit_areas_pop = R["pops"]
+    def op(lyr, title, ldef, pop, visible=True, item=None, lid=None):
+        item = item or fl
+        return {"id": lid or f"hsd-{lyr.properties.id}", "title": title, "url": lyr.url, "itemId": item.id, "layerType": "ArcGISFeatureLayer",
+                "visibility": visible, "opacity": 1, "layerDefinition": ldef, "popupInfo": pop, **({"showLabels": True} if "labelingInfo" in ldef else {})}
+    webmap = {
+        "operationalLayers": [
+            QUADS,
+            {"id": "ttb-basemaps", "title": "TTB's AVA Map Explorer basemaps (turn on, pick one)", "layerType": "GroupLayer",
+             "visibility": False, "visibilityMode": "exclusive", "opacity": 1, "layers": [
+                 {"id": f"ttb-basemap-{i}", "title": title, "layerType": "GroupLayer", "visibility": i == 0, "opacity": 1, "layers": [
+                     {"id": f"ttb-basemap-{i}-{j}", "title": t, "layerType": kind, "visibility": True, "opacity": 1,
+                      **({"styleUrl": url} if kind == "VectorTileLayer" else {"url": url})} for j, (t, kind, url) in enumerate(parts)]}
+                 for i, (title, parts) in enumerate(TTB_BASEMAPS)]},
+            *[op(lyr, nm, gdef, gpop, item=gl, lid=f"hsd-geology-{lyr.properties.id}") for lyr, nm, gdef, gpop in geo],
+            op(every_l, DNAMES["all"], all_def, all_pop, item=dl, lid="hsd-all-differences"),
+            {"id": "hsd-ttb", "title": "AVA Map Explorer polygon (TTB AVAs_Production, Notice No. 243, live)", "url": TTB_URL, "layerType": "ArcGISFeatureLayer",
+             "visibility": True, "opacity": 1, "layerDefinition": ttb_def, "popupInfo": ttb_pop},
+            op(area, NAMES["esriGeometryPolygon"], area_def, area_pop),
+            op(line, NAMES["esriGeometryPolyline"], line_def, line_pop),
+            op(pts, NAMES["esriGeometryPoint"], pts_def, pts_pop),
+            {"id": "hsd-grit", "title": "The change near Grit: what the proposed text swaps", "layerType": "GroupLayer", "visibility": True, "opacity": 1,
+             "layers": [op(grit_areas, "Areas the change moves, with their granite", grit_areas_def, grit_areas_pop, item=grl, lid="hsd-grit-areas"),
+                        op(grit_lines, "Lines the change swaps", grit_lines_def, grit_lines_pop, item=grl, lid="hsd-grit-lines")]},
+            op(bigl, DNAMES["big"], big_def, big_pop, item=dl, lid="hsd-rings")],
+        "baseMap": {"title": "Light Gray Canvas", "baseMapLayers": [{"id": "gray", "title": "World Light Gray Base", "layerType": "ArcGISTiledMapServiceLayer",
+                    "url": "https://services.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer", "visibility": True, "opacity": 1}]},
+        "spatialReference": {"wkid": 102100, "latestWkid": 3857}, "authoringApp": "ArcGIS API for Python", "authoringAppVersion": "2.4.3", "version": "2.31"}
+    return webmap
+
+def plan(fl, area, line, pts, dl, bigl, every_l, gl, geo, grl, grit_lines, grit_areas):
+    """all of the above at once, for the publish dry run (main() calls each where it sends it): {"aliases": {item title:
+    [(layer, fields)]}, "data": {item title: its data}, "webmap": the web map}"""
+    B, D, G, R = boundary_plan(area, line, pts), diff_plan(bigl, every_l), geo_plan(geo), grit_plan(grit_lines, grit_areas)
+    return {"aliases": {LAYER_TITLE: B["aliases"], DIFF_TITLE: D["aliases"], GEO_TITLE: G["aliases"], GRIT_TITLE: R["aliases"]},
+            "data": {LAYER_TITLE: B["data"], DIFF_TITLE: D["data"], GEO_TITLE: G["data"], GRIT_TITLE: R["data"]},
+            "webmap": webmap_plan(fl, area, line, pts, B, dl, bigl, every_l, D, gl, G, grl, grit_lines, grit_areas, R)}
+
+# ---------------------------------------------------------------- sign in and send
+def main():
+    global gis, folder, typed   # hosted() uses them
+    gis = GIS(profile="hsd")
+    folder = gis.content.folders.get(FOLDER)
+    group = gis.groups.get(GROUP_ID)
+    listing = list(folder.list())
+    items = {it.title: it for it in listing}
+    typed = {(it.title, it.type): it for it in listing}   # a title alone can be shared (a stuck overwrite retitles the layer)
+    gp = next(it for t, it in items.items() if t.startswith("4c "))
+
+    # ------------------------------------------------------------ hosted feature layer
+    fl = items.get(LAYER_TITLE)
+    if fl is None:
+        pp = gis.content.analyze(item=gp, file_type="geoPackage")["publishParameters"]
+        pp["name"] = "Hickory_Sands_District_proposed_boundary_2026_10_15"
+        pp["maxRecordCount"] = 2000
+        fl = gp.publish(publish_parameters=pp, file_type="geoPackage")
+        if fl.ownerFolder != folder.properties.get("id"):
+            fl.move(folder)
+        print("published", fl.id, fl.url)
+    fl.update(item_properties={"title": LAYER_TITLE, **props})
+    flc = FeatureLayerCollection.fromitem(lock(fl))
+
+    layers = boundary_layers(flc.layers)
+    area, line, pts = layers["esriGeometryPolygon"], layers["esriGeometryPolyline"], layers["esriGeometryPoint"]
+    for gtype, lyr in layers.items():
+        if lyr.properties.name != NAMES[gtype]:
+            try:
+                lyr.manager.update_definition({"name": NAMES[gtype]})
+            except Exception as e:
+                print("could not rename", lyr.properties.name, "->", NAMES[gtype], type(e).__name__)
+
+    # the layer's features, as built (issue #71; BUILT, KEY, esri() above)
+    built_sha = hashlib.sha256(b"".join(open(BUILT[g], "rb").read() for g in sorted(BUILT))).hexdigest()
+    if (fl.properties or {}).get("features_sha256") != built_sha:
+        edits = {}
+        for gtype, lyr in layers.items():
+            oidf, key = lyr.properties.objectIdField, KEY[gtype]
+            geo = lyr.properties.get("geometryProperties") or {}
+            system = {oidf, lyr.properties.get("globalIdField"), geo.get("shapeAreaFieldName"), geo.get("shapeLengthFieldName")}
+            names = {f["name"] for f in lyr.properties.fields} - system
+            live = lyr.query(where="1=1", out_fields=",".join(f for f in (oidf, key) if f), return_geometry=False).features
+            new = json.load(open(BUILT[gtype]))["features"]
+            live_by = {str(f.attributes[key]) if key else "": f.attributes[oidf] for f in live}
+            new_by = {str(f["properties"][key]) if key else "": f for f in new}
+            assert set(live_by) == set(new_by) and len(live) == len(new), (gtype, sorted(set(live_by) ^ set(new_by)))   # same features
+            edits[gtype] = [{"attributes": {oidf: live_by[k], **{a: v for a, v in f["properties"].items() if a in names}},
+                             "geometry": esri(f["geometry"])} for k, f in new_by.items()]
+        flc.manager.update_definition({"capabilities": "Query,Extract,Update"})
+        try:
+            for gtype, ups in edits.items():
+                for i in range(0, len(ups), 50):
+                    res = layers[gtype].edit_features(updates=ups[i:i + 50])["updateResults"]
+                    failed = [r for r in res if not r.get("success")]
+                    assert not failed, (gtype, failed[:3])
+                print(f"updated {len(ups)} features of {layers[gtype].properties.name}")
+            fl.update(item_properties={"properties": {**(fl.properties or {}), "features_sha256": built_sha}})
+        finally:
+            lock(fl)
+    else:
+        print("the layer's features are as built")
+
+    # documents attached to the AVA polygon
+    if not area.properties.get("hasAttachments"):
+        area.manager.add_to_definition({"hasAttachments": True})
+        area = FeatureLayerCollection.fromitem(fl).layers[[l.properties.geometryType for l in FeatureLayerCollection.fromitem(fl).layers].index("esriGeometryPolygon")]
+    oid = area.query(where="1=1", return_ids_only=True)["objectIds"][0]
+    have = {a["name"]: a for a in area.attachments.get_list(oid)}
+    for p in ATTACH:
+        assert os.path.exists(p), p
+        old = have.get(os.path.basename(p))
+        if old and old.get("size") != os.path.getsize(p):       # the file changed: replace the attachment
+            area.attachments.delete(oid, old["id"]); old = None
+        if not old:
+            area.attachments.add(oid, p)
+    print("attachments on the AVA polygon:", sorted(a["name"] for a in area.attachments.get_list(oid)))
+
+    B = boundary_plan(area, line, pts)
+    for lyr, out in B["aliases"]:
+        set_aliases(lyr, out)
+    fl.update(data=json.dumps(B["data"]))
+
+    # ------------------------------------------------------------ the GeoPackages and the hosted layers made from them
+    make_diff_gpkg()
+    dsrc, dl = hosted(DIFF_GPKG, DIFF_SRC_TITLE, DIFF_TITLE, DIFF_SERVICE, dprops, DIFF_WAS)
+    bigl, every_l = diff_layers(FeatureLayerCollection.fromitem(dl).layers)
+    for lyr, nm in ((bigl, DNAMES["big"]), (every_l, DNAMES["all"])):
+        rename(lyr, nm)
+    gsrc, gl = hosted(GEO_GPKG, GEO_SRC_TITLE, GEO_TITLE, GEO_SERVICE, gprops)
+    geo = geo_layers(FeatureLayerCollection.fromitem(gl).layers)
+    G = geo_plan(geo)
+    for (lyr, nm, _), (_, out) in zip(geo, G["aliases"]):
+        rename(lyr, nm)
+        set_aliases(lyr, out)
+    make_grit_gpkg()
+    grsrc, grl = hosted(GRIT_GPKG, GRIT_SRC_TITLE, GRIT_TITLE, GRIT_SERVICE, rprops)
+    grit_lines, grit_areas = grit_layers(FeatureLayerCollection.fromitem(grl).layers)
+    rename(grit_lines, GRIT_NAMES[0])
+    rename(grit_areas, GRIT_NAMES[1])
+
+    # ------------------------------------------------------------ symbology, pop-ups, field aliases and the web map
+    D = diff_plan(bigl, every_l)
+    for lyr, out in D["aliases"]:
+        set_aliases(lyr, out)
+    dl.update(data=json.dumps(D["data"]))
+    gl.update(data=json.dumps(G["data"]))
+    R = grit_plan(grit_lines, grit_areas)
+    for lyr, out in R["aliases"]:
+        set_aliases(lyr, out)
+    grl.update(data=json.dumps(R["data"]))
+    webmap = webmap_plan(fl, area, line, pts, B, dl, bigl, every_l, D, gl, G, grl, grit_lines, grit_areas, R)
+    wm = items.get(MAP_TITLE)
+    if wm is None:
+        wm = folder.add(ItemProperties(title=MAP_TITLE, item_type=ItemTypeEnum.WEB_MAP, tags=TAGS, snippet=mprops["snippet"],
+                                       description=mprops["description"], license_info=LIC_MAP, access_information=CREDIT_MAP,
+                                       culture=CULTURE, extent=EXTENT), text=json.dumps(webmap)).result()
+    else:
+        wm.update(item_properties={**mprops, "extent": EXTENT}, data=json.dumps(webmap))
+    print("web map", wm.id)
+
+    # ------------------------------------------------------------ share to the group, category 4 > Map and layer (sources: Downloads)
+    for it, cat in ((wm, CAT), (fl, CAT), (dl, CAT), (gl, CAT), (grl, CAT), (dsrc, C4D), (gsrc, C4D), (grsrc, C4D)):
+        for t in (it.title, it.snippet, it.description, it.licenseInfo or "", it.accessInformation or ""):
+            assert "agree" not in t.lower(), it.title
+        try:
+            it.sharing.groups.add(group)
+        except AttributeError:
+            it.share(groups=[GROUP_ID])
+        r = gis._con.post(f"{gis._portal.resturl}content/groups/{GROUP_ID}/updateCategories", {"f": "json", "items": json.dumps([{it.id: [cat]}])})
+        assert all(x.get("success") for x in r.get("results", [{}])), r
+        print("shared + categorized:", it.id, it.type, it.title)
+
+if __name__ == "__main__":
+    main()

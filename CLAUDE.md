@@ -20,7 +20,7 @@ every pinned Python package against OSV before installing anything (`src/setup/p
 from the hash-pinned lock `requirements.txt` (compiled from `requirements.in` by `./build.sh upgrade`; never edit the
 `.txt` by hand; all Python runs in `.venv`, `-E -s -B`; nothing global), downloads/verifies the
 13 quads, then stages, traces, splices patches, builds the boundary, checks, makes the documents and quad sheets, and
-zips the package into `dist/` with `SHA256SUMS.txt` and `build-report.txt`. `./build.sh clean | distclean | env | lint | audit | upgrade | publish | check-live`.
+zips the package into `dist/` with `SHA256SUMS.txt` and `build-report.txt`. `./build.sh clean | distclean | env | lint | audit | upgrade | publish | publish-dry-run | check-live`.
 
 - `src/` all code: `quads/`, `tracing/` (the ink tracer), `fixing/` (patchlib, apply_patches), `review/` (tipcheck,
   compare_ttb), `boundary/` (ink_centerline, build_agreed, quad sheets, TTB record), `documents/`, `checks/`,
@@ -48,6 +48,7 @@ private-words check against the gitignored `.private-words`, ruff (`ruff.toml`),
 Rules: `./build.sh publish` (ArcGIS Online) is outward-facing, only on Dan's explicit say-so. Never commit `tobedeleted/`
 or private material. `./build.sh check-live` (`src/publish/agol_check.py`, publish's last step) checks the public site
 anonymously against the build (locked layers, public items, links, dashboard, figures, file sizes); read-only, run it any time.
+`./build.sh publish-dry-run` (`agol_dryrun.py`, #58; publish's first step) builds what publish would send, without signing in, into `target/publish/` and checks it: keep building apart from sending (`main()`).
 It then runs `tests/live` (marked `live`; not in `./build.sh test` or lint): Playwright drives Google Chrome over the dashboard as two phones and four screens (#68); screenshots in `target/browser-tests/`.
 
 ## Git workflow (Dan, 2026-10-16)

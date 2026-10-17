@@ -1,7 +1,9 @@
 """Split featurecheck.py queues into review batches for triage agents.
+
 Usage: split_queue.py --out-dir DIR [--per 60] QUEUE.geojson [QUEUE.geojson ...]
-Writes DIR/batch-<K>.json (items with item, step, kind, lon, lat, types, why, crop as an ABSOLUTE path) and prints the
-batches. Contours, creeks and roads go to separate batches (each kind has its own rubric).
+Writes DIR/batch-<K>.json (items with item, step, kind, lon, lat, types, why,
+crop as an ABSOLUTE path) and prints the batches. Contours, creeks and roads
+go to separate batches (each kind has its own rubric).
 """
 
 import argparse
@@ -18,7 +20,9 @@ os.makedirs(a.out_dir, exist_ok=True)
 items = []
 for q in a.queues:
     base = os.path.dirname(os.path.abspath(q))
-    for f in json.load(open(q))["features"]:
+    with open(q) as fh:
+        features = json.load(fh)["features"]
+    for f in features:
         p = dict(f["properties"])
         p["crop"] = os.path.join(base, p["crop"]) if p.get("crop") else None
         p["lon"], p["lat"] = f["geometry"]["coordinates"][:2]
@@ -31,9 +35,6 @@ for kind in ("contour", "creek", "road"):
     )
     for j in range(0, len(k), a.per):
         b = next(letters)
-        json.dump(
-            k[j : j + a.per],
-            open(os.path.join(a.out_dir, f"batch-{b}.json"), "w"),
-            indent=1,
-        )
+        with open(os.path.join(a.out_dir, f"batch-{b}.json"), "w") as fh:
+            json.dump(k[j : j + a.per], fh, indent=1)
         print(f"batch-{b}.json  {kind:8s} {len(k[j : j + a.per])} items")

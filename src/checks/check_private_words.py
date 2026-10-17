@@ -1,6 +1,9 @@
-"""Pre-commit hook: refuse to commit a file that contains a word listed in .private-words (one word or phrase per line,
-case-insensitive; # starts a comment). .private-words is gitignored, so the list itself is never committed. Binary
-files are skipped. Exit 1 and name each file and line when a word is found.
+"""Pre-commit hook: refuse to commit a file with a word from .private-words.
+
+.private-words holds one word or phrase per line, matched case-insensitively;
+# starts a comment. It is gitignored, so the list itself is never committed.
+Binary files are skipped. Exit 1 and name each file and line when a word is
+found.
 """
 
 import os
@@ -13,18 +16,18 @@ ROOT = os.path.abspath(
 LIST = os.path.join(ROOT, ".private-words")
 if not os.path.exists(LIST):
     sys.exit(0)
-words = [
-    w.strip()
-    for w in open(LIST, encoding="utf-8")
-    if w.strip() and not w.lstrip().startswith("#")
-]
+with open(LIST, encoding="utf-8") as fh:
+    words = [
+        w.strip() for w in fh if w.strip() and not w.lstrip().startswith("#")
+    ]
 if not words:
     sys.exit(0)
 pat = re.compile("|".join(re.escape(w) for w in words), re.I)
 bad = 0
 for path in sys.argv[1:]:
     try:
-        data = open(path, "rb").read()
+        with open(path, "rb") as fh:
+            data = fh.read()
     except OSError:
         continue
     if b"\0" in data[:8192]:

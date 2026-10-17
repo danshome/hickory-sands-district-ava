@@ -1,23 +1,34 @@
-"""compare_ttb.py: find where our boundary differs from TTB's published AVA polygon by more than hand-drawing noise,
-and ring each place for a look in QGIS.
+"""compare_ttb.py: where our boundary differs from TTB's published AVA polygon.
 
-TTB's polygon (AVAs_Production) was digitized by hand; ours follows the centre of the printed ink. So the two always
-differ a little everywhere. This measures that everyday difference from the data itself (distance from every 2 m of
-each boundary to the other boundary), sets the noise threshold from it (median + K x MAD, never below --min-threshold),
-and rings every stretch that is farther apart than that, from either side (ours away from TTB, or TTB away from ours).
-Each ring says which of our steps it touches, how far apart the lines are, the acres of the pieces of land between the
-two lines that it touches (whole pieces, as in the all-differences layer, so the figures add up), and whether the
-step's change register (agreed-steps.json "change"; a "text correction" does not move the line, so it counts as unchanged)
-says the difference is intended or not; rings at least --big m apart (default 100: TTB's line takes another path, or
-slips) are flagged big. It also writes every piece of land inside one polygon and not the other (the sum of all the
+It rings each place where the two differ by more than hand-drawing noise, for
+a look in QGIS.
+
+TTB's polygon (AVAs_Production) was digitized by hand; ours follows the centre
+of the printed ink. So the two always differ a little everywhere. This
+measures that everyday difference from the data itself (distance from every
+2 m of each boundary to the other boundary), sets the noise threshold from it
+(median + K x MAD, never below --min-threshold), and rings every stretch that
+is farther apart than that, from either side (ours away from TTB, or TTB away
+from ours). Each ring says which of our steps it touches, how far apart the
+lines are, the acres of the pieces of land between the two lines that it
+touches (whole pieces, as in the all-differences layer, so the figures add
+up), and whether the step's change register (agreed-steps.json "change"; a
+"text correction" does not move the line, so it counts as unchanged) says the
+difference is intended or not; rings at least --big m apart (default 100:
+TTB's line takes another path, or slips) are flagged big. It also writes every
+piece of land inside one polygon and not the other (the sum of all the
 differences), each with its side, acres, length, widths, steps and cause.
 
 Usage (the project .venv, -E -s):
-  compare_ttb.py --ours-line LINE.geojson --ours-area AREA.geojson (--ttb TTB.geojson | --ttb-url URL --ttb-name NAME)
-                 [--steps agreed-steps.json] [--out-dir DIR] [--k 4] [--min-threshold 15] [--threshold M]
-Outputs in --out-dir: ttb-diff-rings-EPSG4269.geojson (circles, one per place), ttb-diff-areas-EPSG4269.geojson (every
-piece between the two boundaries), ttb-diff-report.md, ttb-diff-stats.json.
-All inputs and outputs are NAD83 (EPSG:4269); distances are measured in NAD83 / Conus Albers (EPSG:5070) metres.
+  compare_ttb.py --ours-line LINE.geojson --ours-area AREA.geojson
+                 (--ttb TTB.geojson | --ttb-url URL --ttb-name NAME)
+                 [--steps agreed-steps.json] [--out-dir DIR] [--k 4]
+                 [--min-threshold 15] [--threshold M]
+Outputs in --out-dir: ttb-diff-rings-EPSG4269.geojson (circles, one per
+place), ttb-diff-areas-EPSG4269.geojson (every piece between the two
+boundaries), ttb-diff-report.md, ttb-diff-stats.json.
+All inputs and outputs are NAD83 (EPSG:4269); distances are measured in NAD83 /
+Conus Albers (EPSG:5070) metres.
 """
 
 import argparse
@@ -37,6 +48,7 @@ SQM_PER_ACRE = 4046.8564224
 
 
 def tr(src, dst):
+    """Returns the transformation between two EPSG codes, in lon/lat order."""
     a = osr.SpatialReference()
     a.ImportFromEPSG(src)
     b = osr.SpatialReference()
@@ -50,6 +62,7 @@ TO_M, TO_LL = tr(4269, 5070), tr(5070, 4269)
 
 
 def to_m(coords):
+    """Returns NAD83 lon/lat points as an N x 2 array of EPSG:5070 metres."""
     return np.array(
         [
             TO_M.TransformPoint(x, y)[:2]
@@ -58,21 +71,40 @@ def to_m(coords):
     )
 
 
-def densify(P, step=2.0):
-    """points every `step` m along polyline P (N x 2), with their arc position"""
-    seg = np.hypot(*np.diff(P, axis=0).T)
+def densify(polyline, step=2.0):
+    """Returns points every step m along a polyline, with their arc positions.
+
+    Args:
+        polyline: an N x 2 array of points, in metres.
+        step: the spacing, in metres.
+
+    Returns:
+        (the points, an M x 2 array; their distances along the polyline)
+    """
+    seg = np.hypot(*np.diff(polyline, axis=0).T)
     arc = np.r_[0, np.cumsum(seg)]
     s = np.arange(0, arc[-1] + 1e-9, step)
-    return np.c_[np.interp(s, arc, P[:, 0]), np.interp(s, arc, P[:, 1])], s
+    return (
+        np.c_[
+            np.interp(s, arc, polyline[:, 0]), np.interp(s, arc, polyline[:, 1])
+        ],
+        s,
+    )
 
 
 def load_ttb(a):
+    """Returns TTB's polygons (lists of rings) and properties.
+
+    Read from the file --ttb, or from the feature service --ttb-url (the
+    feature named --ttb-name).
+    """
     if a.ttb:
-        fc = json.load(open(a.ttb))
+        with open(a.ttb) as fh:
+            fc = json.load(fh)
     else:
         q = urllib.parse.urlencode(
             {
-                "where": "Name = '%s'" % a.ttb_name,
+                "where": f"Name = '{a.ttb_name}'",
                 "outFields": "Name,Status",
                 "outSR": 4269,
                 "f": "geojson",
@@ -91,6 +123,7 @@ def load_ttb(a):
 
 
 def ogr_poly_m(polys):
+    """Returns lon/lat polygons as one valid multipolygon, in EPSG:5070 m."""
     mp = ogr.Geometry(ogr.wkbMultiPolygon)
     for rings in polys:
         p = ogr.Geometry(ogr.wkbPolygon)
@@ -104,6 +137,7 @@ def ogr_poly_m(polys):
 
 
 def poly_area(g):
+    """Returns the area of the polygons in g (0 if none, empty or None)."""
     if g is None or g.IsEmpty():
         return 0.0
     t = ogr.GT_Flatten(g.GetGeometryType())
@@ -116,7 +150,8 @@ def poly_area(g):
     )
 
 
-def polygons(g):  # the polygons of a (multi)polygon or collection
+def polygons(g):
+    """Returns the polygons of a (multi)polygon or geometry collection."""
     t = ogr.GT_Flatten(g.GetGeometryType())
     if t == ogr.wkbPolygon:
         return [g]
@@ -131,43 +166,57 @@ def polygons(g):  # the polygons of a (multi)polygon or collection
     )
 
 
-def geojson_ll(
-    g,
-):  # metres (EPSG:5070) -> NAD83 lon/lat GeoJSON geometry, 8 decimals
+def geojson_ll(g):
+    """Returns an EPSG:5070 geometry as NAD83 lon/lat GeoJSON, 8 decimals."""
     g = g.Clone()
     g.Transform(TO_LL)
-    r = lambda c: (
-        [round(c[0], 8), round(c[1], 8)]
-        if isinstance(c[0], float)
-        else [r(x) for x in c]
-    )
+
+    def round_coords(c):
+        if isinstance(c[0], float):
+            return [round(c[0], 8), round(c[1], 8)]
+        return [round_coords(x) for x in c]
+
     j = json.loads(g.ExportToJson())
-    j["coordinates"] = r(j["coordinates"])
+    j["coordinates"] = round_coords(j["coordinates"])
     return j
 
 
 def touched_areas(circ, pieces, rev_only):
-    """the area (m2) of the whole pieces of land a ring touches: (in the proposed revision only, in the Map Explorer polygon only)"""
+    """Returns the area (m2) of the whole pieces of land a ring touches.
+
+    Args:
+        circ: the ring (EPSG:5070). Only its outline counts, as published: a
+            long stretch's outline can have a hole (issue #26).
+        pieces: (polygon, side) pairs, the pieces of land between the lines.
+        rev_only: the side of the pieces in the proposed revision only.
+
+    Returns:
+        (the area in the proposed revision only, the area in the Map Explorer
+        polygon only), each of whole pieces.
+    """
     filled = ogr.Geometry(ogr.wkbPolygon)
-    filled.AddGeometry(
-        circ.GetGeometryRef(0)
-    )  # the ring as published: its outline
+    filled.AddGeometry(circ.GetGeometryRef(0))  # the ring as published
     touched = [
         (g, side)
         for g, side in pieces
         if g.Intersects(filled) and poly_area(g.Intersection(filled)) > 1.0
     ]
-    add = sum(
-        g.GetArea() for g, side in touched if side == rev_only
-    )  # whole pieces (issue #26: a long stretch's
-    rem = sum(
-        g.GetArea() for g, side in touched if side != rev_only
-    )  # outline can have a hole; only its outline shows)
+    add = sum(g.GetArea() for g, side in touched if side == rev_only)
+    rem = sum(g.GetArea() for g, side in touched if side != rev_only)
     return add, rem
 
 
 def runs(mask, s, gap):
-    """contiguous index runs where mask is true, bridging gaps shorter than `gap` m along s"""
+    """Returns the runs of indexes where mask is true.
+
+    Args:
+        mask: a boolean array, one value per sample.
+        s: each sample's position along the line, in metres.
+        gap: false stretches shorter than this (m along s) are bridged.
+
+    Returns:
+        A list of (first index, last index) pairs, in order.
+    """
     idx = np.flatnonzero(mask)
     out = []
     if not len(idx):
@@ -183,6 +232,7 @@ def runs(mask, s, gap):
 
 
 def main():
+    """Measures, rings and writes the differences (see the module's text)."""
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--ours-line", required=True)
     ap.add_argument("--ours-area", required=True)
@@ -191,7 +241,8 @@ def main():
     ap.add_argument("--ttb-name", default="Hickory Sands District")
     ap.add_argument(
         "--steps",
-        help="agreed-steps.json (step -> change register) to mark intended differences",
+        help="agreed-steps.json (step -> change register) to mark intended "
+        "differences",
     )
     ap.add_argument("--out-dir", default=".")
     ap.add_argument("--k", type=float, default=4.0)
@@ -213,24 +264,30 @@ def main():
     if not (a.ttb or a.ttb_url):
         sys.exit("give --ttb FILE or --ttb-url URL")
     os.makedirs(a.out_dir, exist_ok=True)
-    # ---- ours: the step lines in boundary order, every 2 m, each sample knowing its step
-    L = sorted(
-        json.load(open(a.ours_line))["features"],
-        key=lambda f: f["properties"]["step"],
-    )
-    OP, OS, OST = [], [], []
+    # ---- ours: the step lines in boundary order, every 2 m, each sample
+    # knowing its step
+    with open(a.ours_line) as fh:
+        line_feats = sorted(
+            json.load(fh)["features"], key=lambda f: f["properties"]["step"]
+        )
+    our_xy, our_s, our_step = [], [], []
     base = 0.0
-    for f in L:
-        P = to_m(f["geometry"]["coordinates"])
-        if len(P) < 2:
+    for f in line_feats:
+        xy = to_m(f["geometry"]["coordinates"])
+        if len(xy) < 2:
             continue
-        Q, s = densify(P)
-        OP.append(Q)
-        OS.append(s + base)
-        OST.append(np.full(len(Q), f["properties"]["step"]))
+        dense, s = densify(xy)
+        our_xy.append(dense)
+        our_s.append(s + base)
+        our_step.append(np.full(len(dense), f["properties"]["step"]))
         base += s[-1] + 2.0
-    OP, OS, OST = np.vstack(OP), np.concatenate(OS), np.concatenate(OST)
-    area_f = json.load(open(a.ours_area))["features"][0]["geometry"]
+    our_xy, our_s, our_step = (
+        np.vstack(our_xy),
+        np.concatenate(our_s),
+        np.concatenate(our_step),
+    )
+    with open(a.ours_area) as fh:
+        area_f = json.load(fh)["features"][0]["geometry"]
     ours_poly = ogr_poly_m(
         [area_f["coordinates"]]
         if area_f["type"] == "Polygon"
@@ -239,17 +296,17 @@ def main():
     # ---- TTB: every ring of the polygon, every 2 m
     tpolys, tprops = load_ttb(a)
     ttb_poly = ogr_poly_m(tpolys)
-    TP, TS = [], []
+    ttb_xy, ttb_s = [], []
     base = 0.0
     for rings in tpolys:
         for ring in rings:
-            Q, s = densify(to_m(ring))
-            TP.append(Q)
-            TS.append(s + base)
+            dense, s = densify(to_m(ring))
+            ttb_xy.append(dense)
+            ttb_s.append(s + base)
             base += s[-1] + 1000.0  # ring breaks never bridge
-    TP, TS = np.vstack(TP), np.concatenate(TS)
-    d_o = cKDTree(TP).query(OP)[0]
-    d_t, near_o = cKDTree(OP).query(TP)
+    ttb_xy, ttb_s = np.vstack(ttb_xy), np.concatenate(ttb_s)
+    d_o = cKDTree(ttb_xy).query(our_xy)[0]
+    d_t, near_o = cKDTree(our_xy).query(ttb_xy)
     # ---- the everyday (hand-drawn vs ink) difference, from the data
     allv = np.r_[d_o, d_t]
     med = float(np.median(allv))
@@ -259,29 +316,34 @@ def main():
         p: round(float(np.percentile(d_o, p)), 1) for p in (50, 75, 90, 95, 99)
     }
     print(
-        f"ours->TTB distance percentiles {pct}; median {med:.1f} m, MAD {mad:.1f} m -> threshold {thr:.1f} m"
+        f"ours->TTB distance percentiles {pct}; median {med:.1f} m, "
+        f"MAD {mad:.1f} m -> threshold {thr:.1f} m"
     )
     # ---- stretches farther apart than that, from both sides
     cand = []
-    for P, S, D, side in ((OP, OS, d_o, "ours"), (TP, TS, d_t, "ttb")):
-        for i0, i1 in runs(D > thr, S, 30.0):
+    for xy, arc, dist, side in (
+        (our_xy, our_s, d_o, "ours"),
+        (ttb_xy, ttb_s, d_t, "ttb"),
+    ):
+        for i0, i1 in runs(dist > thr, arc, 30.0):
             seg = slice(i0, i1 + 1)
             cand.append(
                 {
-                    "pts": P[seg],
-                    "dmax": float(D[seg].max()),
-                    "len": float(S[i1] - S[i0] + 2.0)
+                    "pts": xy[seg],
+                    "dmax": float(dist[seg].max()),
+                    "len": float(arc[i1] - arc[i0] + 2.0)
                     if side == "ours"
                     else 0.0,
                     "from": side,
                     "i0": i0,
                     "i1": i1,
-                    "steps": sorted(set(OST[seg].tolist()))
+                    "steps": sorted(set(our_step[seg].tolist()))
                     if side == "ours"
-                    else sorted(set(OST[near_o[seg]].tolist())),
+                    else sorted(set(our_step[near_o[seg]].tolist())),
                 }
             )
-    # pair the two sides of one difference exactly: a TTB run goes with the ours runs its nearest-ours samples land in
+    # pair the two sides of one difference exactly: a TTB run goes with the
+    # ours runs its nearest-ours samples land in
     parent = list(range(len(cand)))
 
     def find(i):
@@ -304,7 +366,8 @@ def main():
             if any(o["i0"] - 25 <= h <= o["i1"] + 25 for h in hit):
                 join(k, j)
                 paired |= {k, j}
-    # runs with no partner: join a neighbour only within a capped distance (never across a whole lobe)
+    # runs with no partner: join a neighbour only within a capped distance
+    # (never across a whole lobe)
     for k, c in enumerate(cand):
         if k in paired:
             continue
@@ -335,18 +398,22 @@ def main():
     # change register: which steps were meant to differ from TTB's text
     reg, kind = {}, {}
     if a.steps:
-        for st_ in json.load(open(a.steps))["steps"]:
+        with open(a.steps) as fh:
+            register = json.load(fh)["steps"]
+        for st_ in register:
             reg[st_["step"]] = st_.get("change", "")
             kind[st_["step"]] = (
                 "straight line"
                 if "straight line" in st_.get("text", "")
                 else "follows a feature"
             )
-    # a "text correction" (steps (49) and (85): one word of TTB's step corrected) leaves the line TTB's, so it counts as unchanged
-    changed = lambda st_: (
-        bool(reg.get(st_, ""))
-        and not reg.get(st_, "").startswith(("unchanged", "text correction"))
-    )
+
+    def changed(st_):
+        # a "text correction" (steps (49) and (85): one word of TTB's step
+        # corrected) leaves the line TTB's, so it counts as unchanged
+        return bool(reg.get(st_, "")) and not reg.get(st_, "").startswith(
+            ("unchanged", "text correction")
+        )
 
     def status(steps):
         why = sorted({reg[st_][:70] for st_ in steps if changed(st_)})
@@ -354,24 +421,26 @@ def main():
             return "CHECK"
         if all(changed(st_) for st_ in steps):
             return "intended: " + "; ".join(why)
-        return "CHECK (steps %s unchanged; partly intended: %s)" % (
-            ",".join(str(st_) for st_ in steps if not changed(st_)),
-            "; ".join(why),
+        unchanged = ",".join(str(st_) for st_ in steps if not changed(st_))
+        return (
+            f"CHECK (steps {unchanged} unchanged; partly intended: "
+            f"{'; '.join(why)})"
         )
 
-    # our pins (step ends) and TTB's vertices, for "this chord moved because its pin differs"
-    PINS = {
+    # our pins (step ends) and TTB's vertices, for "this chord moved because
+    # its pin differs"
+    pin_xy = {
         f["properties"]["step"]: to_m([f["geometry"]["coordinates"][-1]])[0]
-        for f in L
+        for f in line_feats
     }
-    TV = np.vstack([to_m(r) for rings in tpolys for r in rings])
-    TVt = cKDTree(TV)
+    ttb_vertices = np.vstack([to_m(r) for rings in tpolys for r in rings])
+    ttb_vertex_tree = cKDTree(ttb_vertices)
     sym = ours_poly.SymDifference(ttb_poly)
-    REV_ONLY = "in the proposed revision only"
+    rev_only = "in the proposed revision only"
     pieces = [
         (
             g,
-            REV_ONLY
+            rev_only
             if ours_poly.Contains(g.PointOnSurface())
             else "in the Map Explorer polygon only",
         )
@@ -388,9 +457,11 @@ def main():
         rad = float(np.max(np.hypot(*(p["pts"] - c).T)))
         if rad <= 200:  # a short place: one circle round it
             circ = ogr.CreateGeometryFromWkt(
-                "POINT (%f %f)" % (c[0], c[1])
+                f"POINT ({c[0]:f} {c[1]:f})"
             ).Buffer(max(40.0, rad + 30.0), 24)
-        else:  # a long stretch: an outline 40 m round both lines, so the ring follows the stretch
+        else:
+            # a long stretch: an outline 40 m round both lines, so the ring
+            # follows the stretch
             mp = ogr.Geometry(ogr.wkbMultiPoint)
             for x, y in p["pts"][::5]:
                 q = ogr.Geometry(ogr.wkbPoint)
@@ -403,19 +474,22 @@ def main():
             )
             if circ.GetGeometryType() == ogr.wkbMultiPolygon:
                 circ = circ.ConvexHull()
-        add, rem = touched_areas(circ, pieces, REV_ONLY)
+        add, rem = touched_areas(circ, pieces, rev_only)
         stt = status(p["steps"])
         ok = stt.startswith("intended")
         kinds = sorted({kind.get(st_, "?") for st_ in p["steps"]})
         pins = [
             st_
             for st_ in sorted(set(p["steps"]) | {st_ - 1 for st_ in p["steps"]})
-            if st_ in PINS
+            if st_ in pin_xy
         ]
         pin_txt = "; ".join(
-            "point %d is %.0f m from the Map Explorer polygon's nearest vertex"
-            % (st_, TVt.query(PINS[st_])[0])
+            f"point {st_:d} is {ttb_vertex_tree.query(pin_xy[st_])[0]:.0f} m "
+            "from the Map Explorer polygon's nearest vertex"
             for st_ in pins
+        )
+        shown = ",".join(map(str, p["steps"][:3])) + (
+            "+" if len(p["steps"]) > 3 else ""
         )
         props = {
             "n": n,
@@ -429,14 +503,8 @@ def main():
             "status": stt,
             "pins": pin_txt,
             "big": int(p["dmax"] >= a.big),
-            "label": "#%d s%s %.0fm %s"
-            % (
-                n,
-                ",".join(map(str, p["steps"][:3]))
-                + ("+" if len(p["steps"]) > 3 else ""),
-                p["dmax"],
-                "intended" if ok else "CHECK",
-            ),
+            "label": f"#{n:d} s{shown} {p['dmax']:.0f}m "
+            f"{'intended' if ok else 'CHECK'}",
         }
         ring = circ.GetGeometryRef(0)
         ll = [
@@ -465,28 +533,42 @@ def main():
         },
         "features": out,
     }
-    json.dump(
-        fc,
-        open(os.path.join(a.out_dir, "ttb-diff-rings-EPSG4269.geojson"), "w"),
-        indent=1,
-    )
-    # ---- every piece of land inside one polygon and not the other: the sum of all the differences
-    our_tree, ttb_tree = cKDTree(OP), cKDTree(TP)
+    with open(
+        os.path.join(a.out_dir, "ttb-diff-rings-EPSG4269.geojson"), "w"
+    ) as fh:
+        json.dump(fc, fh, indent=1)
+    # ---- every piece of land inside one polygon and not the other: the sum
+    # of all the differences
+    our_tree, ttb_tree = cKDTree(our_xy), cKDTree(ttb_xy)
     areas, totals = [], {}
     for g in sorted(polygons(sym), key=lambda g: -g.GetArea()):
         if g.GetArea() <= 0:
             continue
         ext = g.GetGeometryRef(0)
-        B = np.array([ext.GetPoint_2D(i) for i in range(ext.GetPointCount())])
-        oi = sorted({i for l in our_tree.query_ball_point(B, 3.0) for i in l})
-        ti = sorted({i for l in ttb_tree.query_ball_point(B, 3.0) for i in l})
+        outline_xy = np.array(
+            [ext.GetPoint_2D(i) for i in range(ext.GetPointCount())]
+        )
+        oi = sorted(
+            {
+                i
+                for near in our_tree.query_ball_point(outline_xy, 3.0)
+                for i in near
+            }
+        )
+        ti = sorted(
+            {
+                i
+                for near in ttb_tree.query_ball_point(outline_xy, 3.0)
+                for i in near
+            }
+        )
         cause = (
             "proposed text change"
-            if oi and np.mean([changed(int(s_)) for s_ in OST[oi]]) >= 0.5
+            if oi and np.mean([changed(int(s_)) for s_ in our_step[oi]]) >= 0.5
             else "drawing"
         )
         side = (
-            REV_ONLY
+            rev_only
             if ours_poly.Contains(g.PointOnSurface())
             else "in the Map Explorer polygon only"
         )
@@ -521,7 +603,7 @@ def main():
                     "mean_width_m": round(g.GetArea() / max(length, 1.0), 1),
                     "widest_m": round(widest, 1),
                     "steps": ",".join(
-                        map(str, sorted({int(s_) for s_ in OST[oi]}))
+                        map(str, sorted({int(s_) for s_ in our_step[oi]}))
                     )
                     if oi
                     else "",
@@ -531,17 +613,20 @@ def main():
     for tot in totals.values():
         for k in ("revision_only_acres", "map_explorer_only_acres"):
             tot[k] = round(tot[k], 1)
-    json.dump(
-        {"type": "FeatureCollection", "crs": fc["crs"], "features": areas},
-        open(os.path.join(a.out_dir, "ttb-diff-areas-EPSG4269.geojson"), "w"),
-    )
+    with open(
+        os.path.join(a.out_dir, "ttb-diff-areas-EPSG4269.geojson"), "w"
+    ) as fh:
+        json.dump(
+            {"type": "FeatureCollection", "crs": fc["crs"], "features": areas},
+            fh,
+        )
     oa = ours_poly.GetArea() / 2589988.110336
     ta = ttb_poly.GetArea() / 2589988.110336
     sweep = {}
     for kk in (3, 4, 5, 6):
         t2 = max(a.min_threshold, med + kk * mad)
-        sweep["k=%d (%.0f m)" % (kk, t2)] = sum(
-            1 for _ in runs(d_o > t2, OS, 30.0)
+        sweep[f"k={kk:d} ({t2:.0f} m)"] = sum(
+            1 for _ in runs(d_o > t2, our_s, 30.0)
         )
     stats = {
         "threshold_m": round(thr, 1),
@@ -557,75 +642,56 @@ def main():
         "areas": totals,
         "albers_area_sqmi": {"ours": round(oa, 2), "ttb": round(ta, 2)},
     }
-    json.dump(
-        stats,
-        open(os.path.join(a.out_dir, "ttb-diff-stats.json"), "w"),
-        indent=1,
-    )
+    with open(os.path.join(a.out_dir, "ttb-diff-stats.json"), "w") as fh:
+        json.dump(stats, fh, indent=1)
     with open(os.path.join(a.out_dir, "ttb-diff-report.md"), "w") as f:
         f.write(
-            "# Our boundary vs TTB's published polygon\n\nEveryday difference (hand-drawn vs ink centre): median %.1f m, MAD %.1f m; "
-            "rings mark stretches more than **%.1f m** apart (median + %g x MAD, at least %g m).\n\n"
-            % (med, mad, thr, a.k, a.min_threshold)
+            "# Our boundary vs TTB's published polygon\n\n"
+            "Everyday difference (hand-drawn vs ink centre): "
+            f"median {med:.1f} m, MAD {mad:.1f} m; "
+            f"rings mark stretches more than **{thr:.1f} m** apart "
+            f"(median + {a.k:g} x MAD, at least {a.min_threshold:g} m).\n\n"
         )
         f.write(
-            "| # | steps | kind | max apart (m) | length (m) | ours adds (ac) | ours drops (ac) | status | pins vs TTB | lon, lat |\n|---|---|---|---|---|---|---|---|---|---|\n"
+            "| # | steps | kind | max apart (m) | length (m) | ours adds (ac) "
+            "| ours drops (ac) | status | pins vs TTB | lon, lat |\n"
+            "|---|---|---|---|---|---|---|---|---|---|\n"
         )
         for p, lon, lat in rows:
             f.write(
-                "| %d | %s | %s | %.0f | %d | %.2f | %.2f | %s | %s | %.6f, %.6f |\n"
-                % (
-                    p["n"],
-                    p["steps"],
-                    p["kind"],
-                    p["max_apart_m"],
-                    p["length_m"],
-                    p["ours_adds_acres"],
-                    p["ours_drops_acres"],
-                    p["status"],
-                    p["pins"],
-                    lon,
-                    lat,
-                )
+                f"| {p['n']:d} | {p['steps']} | {p['kind']} "
+                f"| {p['max_apart_m']:.0f} | {p['length_m']:d} "
+                f"| {p['ours_adds_acres']:.2f} | {p['ours_drops_acres']:.2f} "
+                f"| {p['status']} | {p['pins']} | {lon:.6f}, {lat:.6f} |\n"
             )
+        big = ", ".join(f"#{p['n']:d}" for p, _, _ in rows if p["big"])
         f.write(
-            "\nBig differences (at least %g m apart): %s.\n\nAll the land between the two boundaries (ttb-diff-areas-EPSG4269.geojson):\n\n"
-            "| cause | pieces | in the proposed revision only (ac) | in the Map Explorer polygon only (ac) |\n|---|---|---|---|\n"
-            % (
-                a.big,
-                ", ".join("#%d" % p["n"] for p, _, _ in rows if p["big"])
-                or "none",
-            )
+            f"\nBig differences (at least {a.big:g} m apart): "
+            f"{big or 'none'}.\n\n"
+            "All the land between the two boundaries "
+            "(ttb-diff-areas-EPSG4269.geojson):\n\n"
+            "| cause | pieces | in the proposed revision only (ac) "
+            "| in the Map Explorer polygon only (ac) |\n|---|---|---|---|\n"
         )
         for cause, tot in sorted(totals.items()):
             f.write(
-                "| %s | %d | %.1f | %.1f |\n"
-                % (
-                    cause,
-                    tot["pieces"],
-                    tot["revision_only_acres"],
-                    tot["map_explorer_only_acres"],
-                )
+                f"| {cause} | {tot['pieces']:d} "
+                f"| {tot['revision_only_acres']:.1f} "
+                f"| {tot['map_explorer_only_acres']:.1f} |\n"
             )
     print("stretches of ours beyond the threshold, by K:", sweep)
     print(
-        f"{len(out)} places ringed ({stats['check']} CHECK, {len(out) - stats['check']} intended), {stats['big']} at least {a.big:g} m apart -> {a.out_dir}"
+        f"{len(out)} places ringed ({stats['check']} CHECK, "
+        f"{len(out) - stats['check']} intended), {stats['big']} at least "
+        f"{a.big:g} m apart -> {a.out_dir}"
     )
     print("all the land between the two boundaries:", totals)
-    for p, lon, lat in rows:
+    for p, _, _ in rows:
         print(
-            "  #%-3d steps %-10s %-18s %6.0f m apart %6d m long  +%.2f/-%.2f ac  %s | %s"
-            % (
-                p["n"],
-                p["steps"],
-                p["kind"][:18],
-                p["max_apart_m"],
-                p["length_m"],
-                p["ours_adds_acres"],
-                p["ours_drops_acres"],
-                p["status"][:60],
-                p["pins"][:90],
-            )
+            f"  #{p['n']:<3d} steps {p['steps']:<10} {p['kind'][:18]:<18} "
+            f"{p['max_apart_m']:6.0f} m apart {p['length_m']:6d} m long  "
+            f"+{p['ours_adds_acres']:.2f}/-{p['ours_drops_acres']:.2f} ac  "
+            f"{p['status'][:60]} | {p['pins'][:90]}"
         )
 
 

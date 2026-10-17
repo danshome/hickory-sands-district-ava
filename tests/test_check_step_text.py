@@ -1,6 +1,9 @@
-"""src/checks/check_step_text.py (the commit hook and build check, PR #23): TTB's 96 steps are identical to the Federal
-Register's XML, and step text with a character the Federal Register does not use is refused with its fix. Run as the
-hook runs it (a script, in its own process); the edge cases in a copy of the repository's layout under a temporary folder.
+"""src/checks/check_step_text.py (the commit hook and build check, PR #23).
+
+TTB's 96 steps are identical to the Federal Register's XML, and step text with
+a character the Federal Register does not use is refused with its fix. Run as
+the hook runs it (a script, in its own process); the edge cases in a copy of
+the repository's layout under a temporary folder.
 """
 
 import json
@@ -18,7 +21,8 @@ XML = ROOT / "resources" / "ttb" / "federal-register-2026-16670-full-text.xml"
 DESC = ROOT / "resources" / "boundary" / "description"
 if not (SCRIPT.exists() and XML.exists()):
     pytest.skip(
-        "src/checks/check_step_text.py and the Federal Register's XML are not on main yet (PR #23)",
+        "src/checks/check_step_text.py and the Federal Register's XML are "
+        "not on main yet (PR #23)",
         allow_module_level=True,
     )
 
@@ -29,6 +33,7 @@ def run(script, *args):
         capture_output=True,
         text=True,
         encoding="utf-8",
+        check=False,
     )
     return p.returncode, p.stdout
 
@@ -39,7 +44,11 @@ def layout(
     petition=None,
     agreed='STEPS = ["Proceed east along the road; then"]\n',
 ):
-    """the script with its inputs where it looks for them (it finds the repository from its own path)"""
+    """Returns a copy of the script, with its inputs where it looks for them.
+
+    The script finds the repository from its own path: the copy's is under
+    tmp_path.
+    """
     root = tmp_path / "repo"
     for d in (
         "src/checks",
@@ -143,7 +152,8 @@ def test_a_blocked_character_in_the_proposed_steps(tmp_path, char, name, fix):
     rc, out = run(SCRIPT, agreed)
     assert rc == 1
     assert re.search(
-        rf"^proposed step \(7\): {re.escape(name)} \(U\+{ord(char):04X}\) at '.*'; use {re.escape(fix)}$",
+        rf"^proposed step \(7\): {re.escape(name)} \(U\+{ord(char):04X}\) "
+        rf"at '.*'; use {re.escape(fix)}$",
         out,
         re.M,
     ), out
@@ -151,17 +161,9 @@ def test_a_blocked_character_in_the_proposed_steps(tmp_path, char, name, fix):
 
 def test_the_federal_registers_curly_double_quotes_are_allowed(tmp_path):
     agreed = tmp_path / "agreed-steps.json"
+    text = "Proceed to the marked \u201cQuarry\u201d; then"
     agreed.write_text(
-        json.dumps(
-            {
-                "steps": [
-                    {
-                        "step": 36,
-                        "text": "Proceed to the marked \u201cQuarry\u201d; then",
-                    }
-                ]
-            }
-        ),
+        json.dumps({"steps": [{"step": 36, "text": text}]}),
         encoding="utf-8",
     )
     assert run(SCRIPT, agreed)[0] == 0
@@ -172,12 +174,17 @@ def test_step_text_in_build_agreed_and_the_petition_is_checked(tmp_path):
         layout(
             tmp_path,
             petition={"1": "Proceed\u00a0east; then"},
-            agreed='X = 1\nSTEP = "Proceed east\u2014along the road; then"\nNOTE = "not a step \u2014"\n',
+            agreed=(
+                "X = 1\n"
+                'STEP = "Proceed east\u2014along the road; then"\n'
+                'NOTE = "not a step \u2014"\n'
+            ),
         )
     )
     assert rc == 1
     assert re.search(
-        r"^petition step \(1\) in petition-steps.json: NO-BREAK SPACE \(U\+00A0\)",
+        r"^petition step \(1\) in petition-steps.json: "
+        r"NO-BREAK SPACE \(U\+00A0\)",
         out,
         re.M,
     ), out

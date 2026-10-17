@@ -100,8 +100,13 @@ def strings(x):   # every string in a JSON tree
 ANCHOR = re.compile(r"""<a\s[^>]*?href\s*=\s*(["'])(.*?)\1[^>]*>(.*?)</a>""", re.S | re.I)
 def links(text):
     """(url, link text or None) for every <a href> and every bare http(s) URL in a piece of HTML or text"""
-    out = [(html.unescape(u).strip(), html.unescape(re.sub(r"<[^>]+>", "", t)).strip()) for _, u, t in ANCHOR.findall(text)]
+    out = [(html.unescape(u).strip(), " ".join(html.unescape(re.sub(r"<[^>]+>", " ", t)).split())) for _, u, t in ANCHOR.findall(text)]
     return out + [(html.unescape(u).rstrip(".,;:)"), None) for u in re.findall(r"""https?://[^\s"'<>]+""", ANCHOR.sub(" ", text))]
+
+def holds(title, text):   # the link's words appear in the title, in order ("Read me first what is ..." in "0 Read me first - what is ...")
+    words = lambda s: re.findall(r"[\w']+", s.lower())
+    rest = iter(words(title))
+    return all(w in rest for w in words(text))
 
 def layers(tree):   # every layer of a list of web map layers, group layers opened
     for lyr in tree or []:
@@ -121,38 +126,43 @@ def num(v):   # a figure as people write it: 112.32, not 112.32000000000001
 def rel(p):   # a build file's path, short: in the package, in the work dir, or in the repository
     return os.path.relpath(p, next(d for d in (PKG, HERE, ROOT, "/") if p.startswith(d)))
 
-# ---------------------------------------------------------------- what the site holds
-print(f"Live checks of the public ArcGIS Online site, anonymously (group {GROUP_ID}; build outputs: "
-      f"{HERE if os.path.exists(os.path.join(HERE, 'agreed-steps.json')) else 'none'})", flush=True)
-try:
-    group = rest(REST + f"community/groups/{GROUP_ID}")
-    items, start = [], 1
-    while start > 0:
-        page = rest(REST + f"content/groups/{GROUP_ID}", num=100, start=start)
-        items += page["items"]
-        start = page.get("nextStart", -1)
-except Exception as e:
-    print(f"FAIL  group      the group cannot be read without signing in (is it public?): {e}")
-    sys.exit(1)
-by_id = {it["id"]: it for it in items}
-dashboards = [it for it in items if it["type"] == "Dashboard"]
-dash, dash_err = None, "no dashboard in the group"
-if dashboards:
+# ---------------------------------------------------------------- what the site holds (read in main(), so the module
+# imports without touching the network: the unit tests use its helpers)
+def load():
+    global group, items, by_id, dashboards, dash, dash_err, maps, web_maps, wm_item, wm, wm_err, OPS
+    print(f"Live checks of the public ArcGIS Online site, anonymously (group {GROUP_ID}; build outputs: "
+          f"{HERE if os.path.exists(os.path.join(HERE, 'agreed-steps.json')) else 'none'})", flush=True)
     try:
-        dash, dash_err = rest(REST + f"content/items/{dashboards[0]['id']}/data"), None
+        group = rest(REST + f"community/groups/{GROUP_ID}")
+        items, start = [], 1
+        while start > 0:
+            page = rest(REST + f"content/groups/{GROUP_ID}", num=100, start=start)
+            items += page["items"]
+            start = page.get("nextStart", -1)
     except Exception as e:
-        dash_err = f"its JSON cannot be read: {type(e).__name__}: {e}"
-# the web map: the one the dashboard's map shows, else the group's only web map
-maps = [d.get("itemId") for d in nodes((dash or {}).get("desktopView")) if d.get("type") == "mapWidget"]
-web_maps = [it for it in items if it["type"] == "Web Map"]
-wm_item = by_id.get(maps[0]) if maps else web_maps[0] if len(web_maps) == 1 else None
-wm, wm_err = None, "no web map in the group" if not web_maps else f"the dashboard's map {maps[:1]} is not a web map in the group"
-if wm_item:
-    try:
-        wm, wm_err = rest(REST + f"content/items/{wm_item['id']}/data"), None
-    except Exception as e:
-        wm_err = f"{wm_item['title']}: its JSON cannot be read: {type(e).__name__}: {e}"
-OPS = {lyr["id"]: lyr for lyr in layers((wm or {}).get("operationalLayers")) if "id" in lyr}
+        print(f"FAIL  group      the group cannot be read without signing in (is it public?): {e}")
+        sys.exit(1)
+    by_id = {it["id"]: it for it in items}
+    dashboards = [it for it in items if it["type"] == "Dashboard"]
+    dash, dash_err = None, "no dashboard in the group"
+    if dashboards:
+        try:
+            dash, dash_err = rest(REST + f"content/items/{dashboards[0]['id']}/data"), None
+        except Exception as e:
+            dash_err = f"its JSON cannot be read: {type(e).__name__}: {e}"
+    # the web map: the one the dashboard's map shows, else the group's only web map
+    maps = [d.get("itemId") for d in nodes((dash or {}).get("desktopView")) if d.get("type") == "mapWidget"]
+    web_maps = [it for it in items if it["type"] == "Web Map"]
+    wm_item = by_id.get(maps[0]) if maps else web_maps[0] if len(web_maps) == 1 else None
+    wm, wm_err = None, "no web map in the group" if not web_maps else f"the dashboard's map {maps[:1]} is not a web map in the group"
+    if wm_item:
+        try:
+            wm, wm_err = rest(REST + f"content/items/{wm_item['id']}/data"), None
+        except Exception as e:
+            wm_err = f"{wm_item['title']}: its JSON cannot be read: {type(e).__name__}: {e}"
+    OPS = {lyr["id"]: lyr for lyr in layers((wm or {}).get("operationalLayers")) if "id" in lyr}
+
+
 _kinds = {}
 def op_url(op_id, geometry=None):
     """the URL of a web map layer by its id (set by agol_layer.py), or of the boundary layer (hsd-<n>) of a geometry type"""
@@ -215,7 +225,7 @@ def linkcheck(bad, note):
     named = [(w, ITEM_LINK.search(u)[1], t) for w, u, t in found if ITEM_LINK.search(u)]
     for w, i, t in named:   # the group's and the dashboard's item links must stay in the group; an item's may go to any public item
         if i in by_id:
-            if t and t not in by_id[i]["title"]: bad(f"{w}: the link {t!r} goes to {by_id[i]['title']!r}")
+            if t and not holds(by_id[i]["title"], t): bad(f"{w}: the link {t!r} goes to {by_id[i]['title']!r}")
         elif problem(REST + f"content/items/{i}"): bad(f"{w}: the link {t!r} goes to item {i}, which is not public or does not exist")
         elif w in ("the group's description", "the dashboard"): bad(f"{w}: the link {t!r} goes to item {i}, which is not in the group")
     return (f"{len(where)} URLs answer 200 ({sum(map(len, where.values()))} links); {len(named)} item links go to public items in "
@@ -250,7 +260,7 @@ def dashboard(bad, note):
     every, said = set(), []
     for name, v in views.items():
         widgets = {w["id"]: w for w in v.get("widgets", [])}
-        ids = set(widgets) | {s["id"] for part in ("header", "sidePanel") for s in ((v.get(part) or {}).get("selectors") or [])}
+        ids = set(widgets) | {s["id"] for part in ("header", "sidePanel", "sidebar", "drawer") for s in ((v.get(part) or {}).get("selectors") or [])}
         every |= ids | {d["id"] for d in nodes(v.get("layout")) if "id" in d}
         placed = [d["id"] for d in nodes(v.get("layout")) if d.get("type") == "itemLayoutElement"]
         for i in placed:
@@ -370,20 +380,26 @@ def files(bad, note):
     return (f"{sized} file items the same size as the build's files, the {len(small)} up to 4 MB downloaded with the same SHA-256; "
             f"the {att} documents attached to the AVA polygon as built")
 
-results = []
-for name, fn in (("security", security), ("sharing", sharing), ("links", linkcheck), ("web map", webmap),
-                 ("dashboard", dashboard), ("figures", figures), ("files", files)):
-    bad, notes = [], []
-    try:
-        summary = fn(bad.append, notes.append)
-    except Exception as e:
-        summary = "could not finish"
-        bad.append(f"{type(e).__name__}: {e}")
-    status, once = "FAIL" if bad else "skip" if summary.startswith("skipped") else "ok  ", {b: bad.count(b) for b in bad}
-    print(f"{status}  {name:10s} " + (f"{len(once)} problem{'s' * (len(once) != 1)}:" if bad else summary), flush=True)
-    for b, k in once.items(): print(f"      - {b}" + (f" ({k} times)" if k > 1 else ""))
-    for n in notes: print(f"      note: {n}")
-    results.append(status)
-print(f"live checks: {results.count('ok  ')} of {len(results)} passed" + (f", {results.count('skip')} skipped" if "skip" in results else "")
-      + (f", {results.count('FAIL')} FAILED" if "FAIL" in results else ""))
-sys.exit(1 if "FAIL" in results else 0)
+def main():   # importable for the tests (tests/test_agol_check.py)
+    load()
+    results = []
+    for name, fn in (("security", security), ("sharing", sharing), ("links", linkcheck), ("web map", webmap),
+                     ("dashboard", dashboard), ("figures", figures), ("files", files)):
+        bad, notes = [], []
+        try:
+            summary = fn(bad.append, notes.append)
+        except Exception as e:
+            summary = "could not finish"
+            bad.append(f"{type(e).__name__}: {e}")
+        status, once = "FAIL" if bad else "skip" if summary.startswith("skipped") else "ok  ", {b: bad.count(b) for b in bad}
+        print(f"{status}  {name:10s} " + (f"{len(once)} problem{'s' * (len(once) != 1)}:" if bad else summary), flush=True)
+        for b, k in once.items(): print(f"      - {b}" + (f" ({k} times)" if k > 1 else ""))
+        for n in notes: print(f"      note: {n}")
+        results.append(status)
+    print(f"live checks: {results.count('ok  ')} of {len(results)} passed" + (f", {results.count('skip')} skipped" if "skip" in results else "")
+          + (f", {results.count('FAIL')} FAILED" if "FAIL" in results else ""))
+    sys.exit(1 if "FAIL" in results else 0)
+
+
+if __name__ == "__main__":
+    main()

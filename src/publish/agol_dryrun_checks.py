@@ -363,13 +363,19 @@ def check_items(b, bad):
         bad(f"{t}: made {made.count(t)} times")
     for t in sorted(set(made) - set(listed)):
         bad(
-            f"{t}: not in the group's item list ({b['item-list'].get('source', 'item-list.json')}): a new or retitled item? add it there"
+            f"{t}: not in the group's item list "
+            f"({b['item-list'].get('source', 'item-list.json')}): a new or "
+            "retitled item? add it there"
         )
     for t in sorted(set(listed) - set(made)):
         bad(
-            f"{t}: in the group's item list, but the publish no longer makes it (it would be left in the group)"
+            f"{t}: in the group's item list, but the publish no longer makes "
+            "it (it would be left in the group)"
         )
-    return f"the publish makes the {len(set(made))} items of the group's item list, each once"
+    return (
+        f"the publish makes the {len(set(made))} items of the group's item "
+        "list, each once"
+    )
 
 
 def check_security(b, bad):
@@ -383,7 +389,8 @@ def check_security(b, bad):
         s = b["services"].get(t)
         if not s:
             bad(
-                f"{t}: a hosted feature layer the publish does not set read-only (no definition for it)"
+                f"{t}: a hosted feature layer the publish does not set "
+                "read-only (no definition for it)"
             )
             continue
         caps = {
@@ -395,7 +402,8 @@ def check_security(b, bad):
         }
         if caps & EDIT or not caps <= READ or "Query" not in caps:
             bad(
-                f"{t}: capabilities {s['definition'].get('capabilities')!r}, not read-only (Query,Extract; #25)"
+                f"{t}: capabilities {s['definition'].get('capabilities')!r}, "
+                "not read-only (Query,Extract; #25)"
             )
         if (s.get("definition") or {}).get("syncEnabled"):
             bad(f"{t}: sync enabled")
@@ -414,24 +422,29 @@ def check_webmap(b, bad):
     for q in quads:
         if q.get("showLegend") is not False:
             bad(
-                "the quadrangles show a legend (Red: Band_1 ...): showLegend must be false (#46)"
+                "the quadrangles show a legend (Red: Band_1 ...): showLegend "
+                "must be false (#46)"
             )
         if q.get("timeAnimation") is not False:
             bad(
-                "the quadrangles' time filter is on: Map Viewer would hide the 1955-1970 sheets"
+                "the quadrangles' time filter is on: Map Viewer would hide "
+                "the 1955-1970 sheets"
             )
         pop = q.get("popupInfo") or {}
         if not pop:
             bad(
-                "the quadrangles have no pop-up of their own: Map Viewer shows the catalog's 20 raw fields (#46)"
+                "the quadrangles have no pop-up of their own: Map Viewer "
+                "shows the catalog's 20 raw fields (#46)"
             )
         if len(pop.get("fieldInfos") or []) > 6:
             bad(
-                f"the quadrangles' pop-up shows {len(pop['fieldInfos'])} fields, not a short one (#46)"
+                f"the quadrangles' pop-up shows {len(pop['fieldInfos'])} "
+                "fields, not a short one (#46)"
             )
         if pop and "{Map_Name}" not in pop.get("title", ""):
             bad(
-                f"the quadrangles' pop-up title {pop.get('title')!r} does not name the sheet"
+                f"the quadrangles' pop-up title {pop.get('title')!r} does not "
+                "name the sheet"
             )
         for f in pop.get("fieldInfos") or []:
             if (
@@ -439,7 +452,8 @@ def check_webmap(b, bad):
                 and (f.get("format") or {}).get("digitSeparator") is not False
             ):
                 bad(
-                    f"the quadrangles' pop-up prints {f.get('fieldName')} with a thousands separator (1,969; #46)"
+                    f"the quadrangles' pop-up prints {f.get('fieldName')} "
+                    "with a thousands separator (1,969; #46)"
                 )
     seen, n = set(), 0
     for lyr in ops + list(
@@ -460,17 +474,23 @@ def check_webmap(b, bad):
             it = ids.get(lyr["itemId"])
             if it is None:
                 bad(
-                    f"layer {name!r}: its item {lyr['itemId']} is not in the group's item list"
+                    f"layer {name!r}: its item {lyr['itemId']} is not in the "
+                    "group's item list"
                 )
             elif not (it.get("url") and url.startswith(it["url"] + "/")):
                 bad(
-                    f"layer {name!r}: {url} is not a layer of its item {it['title']!r}"
+                    f"layer {name!r}: {url} is not a layer of its item "
+                    f"{it['title']!r}"
                 )
         elif not url.startswith(KNOWN):
             bad(
-                f"layer {name!r}: {url} is neither a hosted layer in the group nor a known service (KNOWN)"
+                f"layer {name!r}: {url} is neither a hosted layer in the "
+                "group nor a known service (KNOWN)"
             )
-    return f"{n} layers, each with a known URL or a layer of the group; the quadrangles with no band legend and a short pop-up"
+    return (
+        f"{n} layers, each with a known URL or a layer of the group; the "
+        "quadrangles with no band legend and a short pop-up"
+    )
 
 
 def width_shares(v):
@@ -518,7 +538,8 @@ def check_dashboard(b, bad):
         for w in v["widgets"]:
             if w.get("type") == "mapWidget" and w.get("itemId") != wm_id:
                 bad(
-                    f"{name}: the map shows item {w.get('itemId')}, not the web map"
+                    f"{name}: the map shows item {w.get('itemId')}, not the "
+                    "web map"
                 )
         for x in nodes(v):
             src = (
@@ -530,7 +551,9 @@ def check_dashboard(b, bad):
                 src.get("itemId") != wm_id or src.get("layerId") not in ops
             ):
                 bad(
-                    f"{name}: a data source names layer {src.get('layerId')!r} of item {src.get('itemId')}, not a layer of the web map"
+                    f"{name}: a data source names layer "
+                    f"{src.get('layerId')!r} of item {src.get('itemId')}, not "
+                    "a layer of the web map"
                 )
     # links to items: to one in the list, each piece of the link's text in its
     # title
@@ -547,14 +570,16 @@ def check_dashboard(b, bad):
             it = ids.get(m[1])
             if it is None:
                 bad(
-                    f"a link {text(inner)!r} goes to item {m[1]}, which is not in the group's item list"
+                    f"a link {text(inner)!r} goes to item {m[1]}, which is "
+                    "not in the group's item list"
                 )
                 continue
             linked.add(it["id"])
             for t in runs(inner):
                 if t not in it["title"]:
                     bad(
-                        f"a link's text {t!r} is not in the title of the item it opens, {it['title']!r}"
+                        f"a link's text {t!r} is not in the title of the item "
+                        f"it opens, {it['title']!r}"
                     )
     for it in b["item-list"]["items"]:
         if it["type"] != "Dashboard" and it["id"] not in linked:
@@ -580,7 +605,9 @@ def check_dashboard(b, bad):
                 worst[kind] = max(worst.get(kind, 0), len(cap))
                 if len(cap) > room:
                     bad(
-                        f"{name}: the indicator {w.get('name')!r} caption {cap!r} is {len(cap)} characters; its width holds {room} (#45)"
+                        f"{name}: the indicator {w.get('name')!r} caption "
+                        f"{cap!r} is {len(cap)} characters; its width holds "
+                        f"{room} (#45)"
                     )
     # link cells in tables stay on one line (#47)
     cells = 0
@@ -592,12 +619,15 @@ def check_dashboard(b, bad):
                 cells += 1
                 if not re.search(r"white-space\s*:\s*nowrap", attrs):
                     bad(
-                        f"a table cell with the link {text(inner)!r} may wrap mid-word (no white-space:nowrap; #47)"
+                        f"a table cell with the link {text(inner)!r} may wrap "
+                        "mid-word (no white-space:nowrap; #47)"
                     )
     return (
-        f"desktop and phone views wired to the web map's layers; {n} item links, each to an item in the list and titled as it "
-        f"says, every item linked; captions within their width (longest {worst.get('desktop', 0)} desktop, "
-        f"{worst.get('mobile', 0)} phone); {cells} link cells nowrap"
+        f"desktop and phone views wired to the web map's layers; {n} item "
+        "links, each to an item in the list and titled as it says, every "
+        "item linked; captions within their width (longest "
+        f"{worst.get('desktop', 0)} desktop, {worst.get('mobile', 0)} phone); "
+        f"{cells} link cells nowrap"
     )
 
 
@@ -642,7 +672,8 @@ def check_metadata(b, bad):
             )
             if not ok:
                 bad(
-                    f"{t}: extent {e!r}, not a box around the AVA (a spatial item; #31)"
+                    f"{t}: extent {e!r}, not a box around the AVA (a spatial "
+                    "item; #31)"
                 )
             else:
                 n += 1
@@ -651,7 +682,11 @@ def check_metadata(b, bad):
             cat and re.match(r"/Categories/" + c[0] + r"\b", cat)
         ):
             bad(f"{t}: group category {cat!r}, not one under {c[0]}")
-    return f"{len(b['items'])} items: culture en-us, the docket's tags, credits; {n} spatial items with an extent around the AVA; categories by number"
+    return (
+        f"{len(b['items'])} items: culture en-us, the docket's tags, credits; "
+        f"{n} spatial items with an extent around the AVA; categories by "
+        "number"
+    )
 
 
 def check_licences(b, bad):
@@ -669,14 +704,18 @@ def check_licences(b, bad):
         for x in need:
             if x not in lic:
                 bad(
-                    f"{t}: the licence does not name {x!r} (#11, #30): {lic[:90]!r}..."
+                    f"{t}: the licence does not name {x!r} (#11, #30): "
+                    f"{lic[:90]!r}..."
                 )
         if c in NOT_CC0 and CC0 in lic:
             bad(f"{t}: TTB's own work licensed CC0")
         for x in rule(CREDITS, t) or ():
             if not re.search(NAMED[x], credit):
                 bad(f"{t}: the credits do not name {x} (#30): {credit!r}")
-    return f"{len(b['items'])} licences name the terms of what each item carries (TTB, USGS, Esri, CC0); credits name them"
+    return (
+        f"{len(b['items'])} licences name the terms of what each item carries "
+        "(TTB, USGS, Esri, CC0); credits name them"
+    )
 
 
 def check_descriptions(b, bad):
@@ -690,19 +729,22 @@ def check_descriptions(b, bad):
             own = own.replace(text(a), "")
         if len(own.strip()) < OWN_TEXT_MIN:
             bad(
-                f"{t}: the description has {len(own.strip())} characters beyond the shared opening (#34)"
+                f"{t}: the description has {len(own.strip())} characters "
+                "beyond the shared opening (#34)"
             )
         if len(snip) < SNIPPET_MIN:
             bad(f"{t}: a stub summary, {len(snip)} characters (#34): {snip!r}")
         if typ == "Microsoft Word" and "Word" not in snip + desc:
             bad(
-                f"{t}: a Word file whose summary and description do not say so (#34)"
+                f"{t}: a Word file whose summary and description do not say "
+                "so (#34)"
             )
         if typ == "CSV" and ("CSV" not in desc or "paragraphs (a)" in desc):
             bad(f"{t}: a CSV file described as something else (#29)")
         if code(t) in NOT_CC0 and "Prepared by" in desc:
             bad(
-                f"{t}: TTB's own notice described as prepared by the petitioner (#29)"
+                f"{t}: TTB's own notice described as prepared by the "
+                "petitioner (#29)"
             )
         if (
             typ == "Feature Service"
@@ -710,9 +752,13 @@ def check_descriptions(b, bad):
             and not ("Web Mercator" in desc and "NAD83" in desc)
         ):
             bad(
-                f"{t}: offers exports without saying they are Web Mercator and where the NAD83 data is (#29)"
+                f"{t}: offers exports without saying they are Web Mercator "
+                "and where the NAD83 data is (#29)"
             )
-    return "every description has its own text and every summary its substance; each says what its item is"
+    return (
+        "every description has its own text and every summary its substance; "
+        "each says what its item is"
+    )
 
 
 def check_quads(b, bad):
@@ -735,18 +781,23 @@ def check_quads(b, bad):
             it = hits[0]
             if not it["title"].endswith(f"({kind}) - {name}, TX ({edition})"):
                 bad(
-                    f"{it['title']}: not titled {name}, TX ({edition}), as paragraph (b) cites it (#44)"
+                    f"{it['title']}: not titled {name}, TX ({edition}), as "
+                    "paragraph (b) cites it (#44)"
                 )
             if f"{name}, TX ({edition})" not in it["properties"].get(
                 "snippet", ""
             ):
                 bad(
-                    f"{it['title']}: the summary does not cite {name}, TX ({edition}) (#44)"
+                    f"{it['title']}: the summary does not cite {name}, TX "
+                    f"({edition}) (#44)"
                 )
     for it in quads:
         if code(it["title"]).split(" ", 1)[1] not in pb:
             bad(f"{it['title']}: a quadrangle paragraph (b) does not cite")
-    return f"{len(quads)} quadrangle items: a GeoPDF and a GeoTIFF for each of the {len(pb)} in paragraph (b), titled with its edition"
+    return (
+        f"{len(quads)} quadrangle items: a GeoPDF and a GeoTIFF for each of "
+        f"the {len(pb)} in paragraph (b), titled with its edition"
+    )
 
 
 def check_wording(b, bad):
@@ -767,9 +818,13 @@ def check_wording(b, bad):
     for where, s in sent:
         for m in BAD.finditer(text(s)):
             bad(
-                f"{where}: {m.group(0)!r} in ...{text(s)[max(0, m.start() - 50) : m.end() + 30]}..."
+                f"{where}: {m.group(0)!r} in ..."
+                f"{text(s)[max(0, m.start() - 50) : m.end() + 30]}..."
             )
-    return f"{len(sent)} texts sent: no agreed, ours, our boundary, TTB's published polygon, final text or bare Hickory Sandstone"
+    return (
+        f"{len(sent)} texts sent: no agreed, ours, our boundary, TTB's "
+        "published polygon, final text or bare Hickory Sandstone"
+    )
 
 
 def check_group(b, bad):
@@ -794,7 +849,10 @@ def check_group(b, bad):
             "/Categories/American Viticultural Areas (AVAs)/"
         ):
             bad(f"{it['title']}: organization categories {cats!r}")
-    return "the group public, tagged, its description linking the dashboard and the read-me; every item in the AVA's organization category"
+    return (
+        "the group public, tagged, its description linking the dashboard and "
+        "the read-me; every item in the AVA's organization category"
+    )
 
 
 CHECKS = (

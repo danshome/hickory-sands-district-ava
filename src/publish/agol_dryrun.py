@@ -447,7 +447,8 @@ def fetch(path, real_ids=False):
         req = urllib.request.Request(
             url + "?" + urllib.parse.urlencode({"f": "json", **q}),
             headers={
-                "User-Agent": "Mozilla/5.0 hickory-sands-district-ava agol_dryrun.py"
+                "User-Agent": "Mozilla/5.0 hickory-sands-district-ava "
+                "agol_dryrun.py"
             },
         )
         with urllib.request.urlopen(req, timeout=60) as r:
@@ -482,11 +483,13 @@ def fetch(path, real_ids=False):
     with open(path, "w", encoding="utf-8") as f:
         json.dump(
             {
-                "about": "The group's item list as the publish dry run's stand-ins (src/publish/agol_dryrun.py --fetch): titles, "
+                "about": "The group's item list as the publish dry run's "
+                "stand-ins (src/publish/agol_dryrun.py --fetch): titles, "
                 "types, "
                 + ("the live ids" if real_ids else "fake ids")
                 + ", and each hosted layer's service URL and layer "
-                "definitions (id, name, geometry, fields), read anonymously from the public site.",
+                "definitions (id, name, geometry, fields), read anonymously "
+                "from the public site.",
                 "portal": PORTAL,
                 "items": out,
             },
@@ -507,12 +510,14 @@ def main():
     a.add_argument(
         "--items",
         default=FIXTURE,
-        help="the item list to use as stand-ins (default: the committed fixture)",
+        help="the item list to use as stand-ins (default: the committed "
+        "fixture)",
     )
     a.add_argument(
         "--fetch",
         metavar="FILE",
-        help="write the public group's item list to FILE, anonymously, and stop",
+        help="write the public group's item list to FILE, anonymously, and "
+        "stop",
     )
     a.add_argument(
         "--real-ids",
@@ -523,7 +528,9 @@ def main():
     if o.fetch:
         return fetch(o.fetch, o.real_ids)
     print(
-        f"Publish dry run: built from {HERE}, against the item list {os.path.relpath(o.items, ROOT)}, without signing in; written to {o.out}",
+        f"Publish dry run: built from {HERE}, against the item list "
+        f"{os.path.relpath(o.items, ROOT)}, without signing in; written to "
+        f"{o.out}",
         flush=True,
     )
     bundle = dry_run(o.out, o.items)

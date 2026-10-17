@@ -52,14 +52,19 @@ def description(items, url):
         return f'<a href="{url}/home/item.html?id={it.id}">{text}</a>'
 
     return (
-        "<p>The boundary the petitioners propose for the Hickory Sands District AVA (Docket No. TTB-2026-0005, Notice No. 243, "
-        "91 FR 52576), with the changes discussed with TTB on October 15, 2026. Prepared by Dan McLaughlin, Robert Clay Vineyards "
-        "(petitioner).</p>"
-        f"<p><b>Start here:</b> {link(first['0 Dashboard'], '0 Dashboard')} (the map, every step, every difference and a link to every file) "
-        f"and {link(first['0 Read me first'], '0 Read me first')} (what each item is, and the license).</p>"
-        "<p>Browse the content by category (like folders):</p><ol><li>Boundary description (proposed text)</li><li>Notice No. 243 - "
-        "proposed changes highlighted</li><li>Changes side by side</li><li>GIS data: map and layers; downloads (GeoPackage, shapefiles, "
-        "GeoJSON)</li><li>USGS quadrangles with the boundary: GeoPDF and GeoTIFF</li></ol>"
+        "<p>The boundary the petitioners propose for the Hickory Sands "
+        "District AVA (Docket No. TTB-2026-0005, Notice No. 243, 91 FR "
+        "52576), with the changes discussed with TTB on October 15, 2026. "
+        "Prepared by Dan McLaughlin, Robert Clay Vineyards (petitioner).</p>"
+        f"<p><b>Start here:</b> {link(first['0 Dashboard'], '0 Dashboard')} "
+        "(the map, every step, every difference and a link to every file) "
+        f"and {link(first['0 Read me first'], '0 Read me first')} (what each "
+        "item is, and the license).</p><p>Browse the content by category "
+        "(like folders):</p><ol><li>Boundary description (proposed text)</li>"
+        "<li>Notice No. 243 - proposed changes highlighted</li><li>Changes "
+        "side by side</li><li>GIS data: map and layers; downloads "
+        "(GeoPackage, shapefiles, GeoJSON)</li><li>USGS quadrangles with the "
+        "boundary: GeoPDF and GeoTIFF</li></ol>"
     )
 
 
@@ -89,7 +94,8 @@ def main():
         if it.access != "public"
     ]
     print(
-        f"group {gis.groups.get(GROUP_ID).access}; {len(items) - len(not_public)} of {len(items)} items public",
+        f"group {gis.groups.get(GROUP_ID).access}; "
+        f"{len(items) - len(not_public)} of {len(items)} items public",
         not_public[:5],
     )
 

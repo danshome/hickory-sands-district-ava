@@ -62,8 +62,10 @@ C5P, C5T = (
 
 CREDIT = "Dan McLaughlin, Robert Clay Vineyards (petitioner)"
 CC0 = (
-    "CC0 1.0 Universal (public domain dedication): no rights reserved. TTB, its contractors and anyone else may copy, "
-    "change and use this for any purpose without permission or attribution. https://creativecommons.org/publicdomain/zero/1.0/"
+    "CC0 1.0 Universal (public domain dedication): no rights reserved. TTB, "
+    "its contractors and anyone else may copy, change and use this for any "
+    "purpose without permission or attribution. "
+    "https://creativecommons.org/publicdomain/zero/1.0/"
 )
 TAGS = [
     "Hickory Sands District",
@@ -75,13 +77,16 @@ TAGS = [
 ]
 CULTURE = "en-us"
 ABOUT = (
-    "<p>Hickory Sands District AVA (Docket No. TTB-2026-0005, Notice No. 243, 91 FR 52576): the boundary the petitioners "
-    "propose, with the changes discussed with TTB on October 15, 2026. Prepared by Dan McLaughlin, Robert Clay Vineyards "
-    "(petitioner).</p>"
+    "<p>Hickory Sands District AVA (Docket No. TTB-2026-0005, Notice No. "
+    "243, 91 FR 52576): the boundary the petitioners propose, with the "
+    "changes discussed with TTB on October 15, 2026. Prepared by Dan "
+    "McLaughlin, Robert Clay Vineyards (petitioner).</p>"
 )
 PART = (
-    "Part of the Hickory Sands District AVA package (Docket No. TTB-2026-0005, Notice No. 243, 91 FR 52576): the boundary "
-    "the petitioners propose, with the changes discussed with TTB on October 15, 2026."
+    "Part of the Hickory Sands District AVA package (Docket No. "
+    "TTB-2026-0005, Notice No. 243, 91 FR 52576): the boundary the "
+    "petitioners propose, with the changes discussed with TTB on October 15, "
+    "2026."
 )  # for TTB's own notice (2b, 2c)
 T = ItemTypeEnum
 # Title -> earlier titles, so a re-run finds an item that was retitled and
@@ -164,8 +169,10 @@ def neatline(tif, cell=0.125):
     nad83.SetAxisMappingStrategy(osr.OAMS_TRADITIONAL_GIS_ORDER)
     o = osr.CoordinateTransformationOptions()
     o.SetOperation(
-        "+proj=pipeline +step +proj=axisswap +order=2,1 +step +proj=unitconvert +xy_in=deg +xy_out=rad "
-        f"+step +proj=hgridshift +grids={NADCON} +step +proj=unitconvert +xy_in=rad +xy_out=deg +step +proj=axisswap +order=2,1"
+        "+proj=pipeline +step +proj=axisswap +order=2,1 +step "
+        "+proj=unitconvert +xy_in=deg +xy_out=rad +step +proj=hgridshift "
+        f"+grids={NADCON} +step +proj=unitconvert +xy_in=rad +xy_out=deg "
+        "+step +proj=axisswap +order=2,1"
     )
     ct = osr.CoordinateTransformation(geo, nad83, o)
     corners = [
@@ -177,7 +184,10 @@ def neatline(tif, cell=0.125):
 
 
 # ---- the 13 quadrangles, titled as paragraph (b) cites them
-D1 = "1_boundary-description/Hickory-Sands-District-boundary-description-as-proposed-2026-10-15"
+D1 = (
+    "1_boundary-description/Hickory-Sands-District-boundary-description-as-"
+    "proposed-2026-10-15"
+)
 # Paragraph (b) of the proposed text: "(10) Fly Gap, TX., 1962, photorevised
 # 1982;" -> {"Fly Gap": "1962, photorevised 1982"}.
 with open(os.path.join(PKG, D1 + ".txt"), encoding="utf-8") as f:
@@ -218,7 +228,10 @@ def quad_items():
             # (b), with the file's year.
             edition = B[name]
             assert edition.startswith(year), (name, year, edition)
-            title = f"5{'a' if kind == 'GeoPDF' else 'b'} USGS quadrangle with the boundary ({kind}) - {name}, TX ({edition})"
+            title = (
+                f"5{'a' if kind == 'GeoPDF' else 'b'} USGS quadrangle with "
+                f"the boundary ({kind}) - {name}, TX ({edition})"
+            )
             if edition != year:
                 WAS[title] = [title.replace(f"({edition})", f"({year})")]
             QUAD_EXTENT[title] = neatline(
@@ -234,16 +247,23 @@ def quad_items():
                     title,
                     typ,
                     cat,
-                    f"The USGS 1:24,000 {name}, TX ({edition}) quadrangle ({kind}) with the proposed boundary added as a solid red line.",
+                    (
+                        f"The USGS 1:24,000 {name}, TX ({edition}) quadrangle "
+                        f"({kind}) with the proposed boundary added as a "
+                        "solid red line."
+                    ),
                     ABOUT
-                    + f"<p>The USGS {kind} from topoView, unaltered except for the added boundary line"
+                    + f"<p>The USGS {kind} from topoView, unaltered except "
+                    "for the added boundary line"
                     + (
-                        " (an optional-content layer, with each step's record and the line GeoJSON attached)."
+                        " (an optional-content layer, with each step's "
+                        "record and the line GeoJSON attached)."
                         if kind == "GeoPDF"
-                        else " (only the image tiles the line crosses are rewritten)."
+                        else " (only the image tiles the line crosses are "
+                        "rewritten)."
                     )
-                    + " The quadrangle keeps its NAD27 grid; the NAD83 line is "
-                    "carried onto it with the NADCON 5.0 CONUS grid.</p>",
+                    + " The quadrangle keeps its NAD27 grid; the NAD83 line "
+                    "is carried onto it with the NADCON 5.0 CONUS grid.</p>",
                     "USGS topographic map (public domain); boundary line "
                     + CC0,
                     "USGS; boundary line: " + CREDIT,
@@ -253,29 +273,38 @@ def quad_items():
 
 
 N2 = "2_TTB-notice-243-with-changes-highlighted/"
-S3 = "3_changes-side-by-side/Hickory-Sands-District-boundary-changes-side-by-side-2026-10-15"
+S3 = (
+    "3_changes-side-by-side/Hickory-Sands-District-boundary-changes-side-by-"
+    "side-2026-10-15"
+)
 G4 = "4_GIS/hickory-sands-district-boundary-proposed-2026-10-15-"
 AVA = bbox(
     os.path.join(PKG, G4 + "area-EPSG4269.geojson")
 )  # the extent of the 4 GIS downloads
 DESC1 = (
-    ABOUT
-    + "<p>Proposed &sect; 9.___ Hickory Sands District: paragraphs (a)&ndash;(c) and all 104 boundary steps, TTB's published text with the proposed changes near Grit, followed by the list of changes.</p>"
+    ABOUT + "<p>Proposed &sect; 9.___ Hickory Sands District: paragraphs "
+    "(a)&ndash;(c) and all 104 boundary steps, TTB's published text with the "
+    "proposed changes near Grit, followed by the list of changes.</p>"
 )
 DESC1C = (
-    ABOUT
-    + "<p>Proposed &sect; 9.___ Hickory Sands District as plain text (UTF-8): paragraphs (a)&ndash;(c) and all 104 "
-    "boundary steps, one step to a line, Notice No. 243's text with the proposed changes near Grit. The regulatory text only: "
-    "the list of changes is in items 1a and 1b, and each changed step is set beside Notice No. 243's text, with why, in 3a and 3b.</p>"
+    ABOUT + "<p>Proposed &sect; 9.___ Hickory Sands District as plain text "
+    "(UTF-8): paragraphs (a)&ndash;(c) and all 104 boundary steps, one step "
+    "to a line, Notice No. 243's text with the proposed changes near Grit. "
+    "The regulatory text only: the list of changes is in items 1a and 1b, "
+    "and each changed step is set beside Notice No. 243's text, with why, in "
+    "3a and 3b.</p>"
 )
 DESC1D = (
     ABOUT
-    + "<p>The 104 boundary steps of the proposed text, one row each (CSV, UTF-8), with the columns <i>step</i> (its "
-    "number), <i>text</i> (the step as proposed), <i>text_source</i> (where the wording comes from: Notice No. 243 or the "
-    "petition, and the step number there), <i>change_from_TTB_published_text</i> (unchanged, or how it differs from "
-    "Notice No. 243), <i>quad</i> (its USGS quadrangle), <i>endpoint</i> (the mark or junction it ends at) and "
-    "<i>length_m</i> (its length in metres, as drawn). The same steps as the boundary_line layer of the GIS data "
-    "(4b-4i); the full document is item 1a.</p>"
+    + "<p>The 104 boundary steps of the proposed text, one row each (CSV, "
+    "UTF-8), with the columns <i>step</i> (its number), <i>text</i> (the "
+    "step as proposed), <i>text_source</i> (where the wording comes from: "
+    "Notice No. 243 or the petition, and the step number there), <i>"
+    "change_from_TTB_published_text</i> (unchanged, or how it differs from "
+    "Notice No. 243), <i>quad</i> (its USGS quadrangle), <i>endpoint</i> "
+    "(the mark or junction it ends at) and <i>length_m</i> (its length in "
+    "metres, as drawn). The same steps as the boundary_line layer of the GIS "
+    "data (4b-4i); the full document is item 1a.</p>"
 )
 ITEMS = [
     (
@@ -283,15 +312,23 @@ ITEMS = [
         "0 Read me first - what is in this group, and the license",
         T.PDF,
         None,
-        "What each item is, what the proposed changes are, how the line is drawn, the attributes, and the CC0 license.",
-        ABOUT
-        + "<p>A short PDF to read first. It lists every numbered item in this group, in the group's categories: 1 the boundary "
-        "description as proposed; 2 Notice No. 243 with the proposed changes highlighted, and the text of both for comparing; 3 the "
-        "changes side by side; 4 the GIS data (the map, the hosted layers and the downloads); 5 the 13 USGS quadrangles with the "
-        "boundary. It then sets out what the proposed text changes near Grit, how the line is drawn on the printed linework of the "
-        "USGS maps, the attributes of the GIS layers, and the license: CC0 for the petitioner's work, while Notice No. 243 is a "
-        "U.S. Government work. The same PDF is attached to the AVA polygon in layer 4b; the dashboard (0 Dashboard) shows the "
-        "boundary on the quadrangles and links every item.</p>",
+        (
+            "What each item is, what the proposed changes are, how the line "
+            "is drawn, the attributes, and the CC0 license."
+        ),
+        ABOUT + "<p>A short PDF to read first. It lists every numbered item "
+        "in this group, in the group's categories: 1 the boundary "
+        "description as proposed; 2 Notice No. 243 with the proposed changes "
+        "highlighted, and the text of both for comparing; 3 the changes side "
+        "by side; 4 the GIS data (the map, the hosted layers and the "
+        "downloads); 5 the 13 USGS quadrangles with the boundary. It then "
+        "sets out what the proposed text changes near Grit, how the line is "
+        "drawn on the printed linework of the USGS maps, the attributes of "
+        "the GIS layers, and the license: CC0 for the petitioner's work, "
+        "while Notice No. 243 is a U.S. Government work. The same PDF is "
+        "attached to the AVA polygon in layer 4b; the dashboard (0 "
+        "Dashboard) shows the boundary on the quadrangles and links every "
+        "item.</p>",
         CC0,
         CREDIT,
     ),
@@ -300,7 +337,10 @@ ITEMS = [
         "1a Boundary description as proposed (PDF)",
         T.PDF,
         C1,
-        "The proposed regulatory text, all 104 steps, and the changes from TTB's published text.",
+        (
+            "The proposed regulatory text, all 104 steps, and the changes "
+            "from TTB's published text."
+        ),
         DESC1,
         CC0,
         CREDIT,
@@ -310,7 +350,10 @@ ITEMS = [
         "1b Boundary description as proposed (Word)",
         T.MICROSOFT_WORD,
         C1,
-        "The proposed regulatory text, all 104 steps, and the changes from Notice No. 243's text, as an editable Word document.",
+        (
+            "The proposed regulatory text, all 104 steps, and the changes "
+            "from Notice No. 243's text, as an editable Word document."
+        ),
         DESC1
         + "<p>The same document as item 1a, as an editable Word file.</p>",
         CC0,
@@ -331,22 +374,38 @@ ITEMS = [
         "1d Boundary steps, one row per step (CSV)",
         T.CSV,
         C1,
-        "The 104 steps: text, source, change from TTB's published text, quadrangle, endpoint and length.",
+        (
+            "The 104 steps: text, source, change from TTB's published text, "
+            "quadrangle, endpoint and length."
+        ),
         DESC1D,
         CC0,
         CREDIT,
     ),
     (
-        N2
-        + "TTB-Notice-243-with-proposed-Hickory-Sands-District-changes-highlighted-2026-10-15-UNOFFICIAL.pdf",
-        "2a Notice No. 243 with the proposed changes highlighted (unofficial copy, PDF)",
+        N2 + "TTB-Notice-243-with-proposed-Hickory-Sands-District-changes-"
+        "highlighted-2026-10-15-UNOFFICIAL.pdf",
+        (
+            "2a Notice No. 243 with the proposed changes highlighted "
+            "(unofficial copy, PDF)"
+        ),
         T.PDF,
         C2,
-        "TTB's own Notice No. 243 with only the proposed steps set into pages 52586-52588, highlighted in yellow. Unofficial.",
-        ABOUT
-        + "<p>TTB's docket copy of Notice No. 243 with only the changed steps set into its pages 52586, 52587 and 52588, in the notice's own typeface, the changed wording highlighted in yellow. Every other line of text is TTB's; GPO's digital signature and authentication seal are removed (the copy is altered), and each changed page carries a red “UNOFFICIAL COPY” line at the top. The start of the next document in that issue (Kaw Valley) is moved, unchanged, to an added last page. Prepared by the petitioner for TTB's convenience; not the official Federal Register text.</p>",
-        "TTB's notice: U.S. Government work (public domain). The petitioner's changes: "
-        + CC0,
+        (
+            "TTB's own Notice No. 243 with only the proposed steps set into "
+            "pages 52586-52588, highlighted in yellow. Unofficial."
+        ),
+        ABOUT + "<p>TTB's docket copy of Notice No. 243 with only the changed "
+        "steps set into its pages 52586, 52587 and 52588, in the notice's "
+        "own typeface, the changed wording highlighted in yellow. Every "
+        "other line of text is TTB's; GPO's digital signature and "
+        "authentication seal are removed (the copy is altered), and each "
+        "changed page carries a red “UNOFFICIAL COPY” line at the top. The "
+        "start of the next document in that issue (Kaw Valley) is moved, "
+        "unchanged, to an added last page. Prepared by the petitioner for "
+        "TTB's convenience; not the official Federal Register text.</p>",
+        "TTB's notice: U.S. Government work (public domain). The "
+        "petitioner's changes: " + CC0,
         "TTB (Notice No. 243); proposed changes: " + CREDIT,
     ),
     (
@@ -354,12 +413,15 @@ ITEMS = [
         "2b Notice No. 243 as published, docket TTB-2026-0005-0001 (PDF)",
         T.PDF,
         C2,
-        "TTB's notice exactly as it is in the docket (downloaded October 15, 2026), for comparison.",
-        "<p>TTB's Notice No. 243 (91 FR 52576), exactly as it is in the docket: an unchanged copy of the docket file "
-        "TTB-2026-0005-0001, downloaded October 15, 2026, and uploaded by Dan McLaughlin, Robert Clay Vineyards (petitioner), "
-        "for comparison with item 2a, which sets the proposed steps into the same pages.</p><p>"
-        + PART
-        + "</p>",
+        (
+            "TTB's notice exactly as it is in the docket (downloaded October "
+            "15, 2026), for comparison."
+        ),
+        "<p>TTB's Notice No. 243 (91 FR 52576), exactly as it is in the "
+        "docket: an unchanged copy of the docket file TTB-2026-0005-0001, "
+        "downloaded October 15, 2026, and uploaded by Dan McLaughlin, Robert "
+        "Clay Vineyards (petitioner), for comparison with item 2a, which "
+        "sets the proposed steps into the same pages.</p><p>" + PART + "</p>",
         "U.S. Government work (public domain).",
         "Alcohol and Tobacco Tax and Trade Bureau; Federal Register (GPO)",
     ),
@@ -368,10 +430,16 @@ ITEMS = [
         "2c Text for comparing - 1 Notice No. 243 as published (plain text)",
         T.CODE_SAMPLE,
         C2,
-        "The text of item 2b, one paragraph per line, for a text compare (for example Beyond Compare) against 2d.",
-        "<p>The text of TTB's Notice No. 243 as published (item 2b), extracted by Dan McLaughlin, Robert Clay Vineyards "
-        "(petitioner), with poppler's pdftotext in reading order, one paragraph per line, with GPO's page notes at the page "
-        "breaks. Compared with 2d, the only differences are the proposed steps: (10)-(11) and (90)-(104) near Grit, and the corrections in (49) and (85).</p><p>"
+        (
+            "The text of item 2b, one paragraph per line, for a text compare "
+            "(for example Beyond Compare) against 2d."
+        ),
+        "<p>The text of TTB's Notice No. 243 as published (item 2b), "
+        "extracted by Dan McLaughlin, Robert Clay Vineyards (petitioner), "
+        "with poppler's pdftotext in reading order, one paragraph per line, "
+        "with GPO's page notes at the page breaks. Compared with 2d, the "
+        "only differences are the proposed steps: (10)-(11) and (90)-(104) "
+        "near Grit, and the corrections in (49) and (85).</p><p>"
         + PART
         + "</p>",
         "U.S. Government work (public domain).",
@@ -379,24 +447,41 @@ ITEMS = [
     ),
     (
         N2 + "text-for-comparing-2_TTB-Notice-243-with-proposed-changes.txt",
-        "2d Text for comparing - 2 Notice No. 243 with the proposed changes (plain text)",
+        (
+            "2d Text for comparing - 2 Notice No. 243 with the proposed "
+            "changes (plain text)"
+        ),
         T.CODE_SAMPLE,
         C2,
-        "The text of item 2a, one paragraph per line, for a text compare against 2c.",
-        ABOUT
-        + "<p>Extracted with poppler's pdftotext in reading order, one paragraph per line, with GPO's page notes at the page breaks. Compared with 2c, the only differences are the proposed steps: (10)-(11) and (90)-(104) near Grit, and the corrections in (49) and (85).</p>",
-        "TTB's text: U.S. Government work (public domain). The petitioner's changes: "
-        + CC0,
+        (
+            "The text of item 2a, one paragraph per line, for a text compare "
+            "against 2c."
+        ),
+        ABOUT + "<p>Extracted with poppler's pdftotext in reading order, one "
+        "paragraph per line, with GPO's page notes at the page breaks. "
+        "Compared with 2c, the only differences are the proposed steps: "
+        "(10)-(11) and (90)-(104) near Grit, and the corrections in (49) and "
+        "(85).</p>",
+        "TTB's text: U.S. Government work (public domain). The petitioner's "
+        "changes: " + CC0,
         CREDIT,
     ),
     (
         S3 + ".pdf",
-        "3a Changes side by side - TTB's text, the petition, the proposed text and why (PDF)",
+        (
+            "3a Changes side by side - TTB's text, the petition, the proposed "
+            "text and why (PDF)"
+        ),
         T.PDF,
         C3,
-        "Every step that changes: TTB's published text, the original petition (for reference), the proposed text, and why.",
+        (
+            "Every step that changes: TTB's published text, the original "
+            "petition (for reference), the proposed text, and why."
+        ),
         ABOUT
-        + "<p>Marking compares the proposed text with TTB's published text only: red strikethrough for TTB's words dropped, yellow for words added. The petition column is for reference and is not marked.</p>",
+        + "<p>Marking compares the proposed text with TTB's published text "
+        "only: red strikethrough for TTB's words dropped, yellow for words "
+        "added. The petition column is for reference and is not marked.</p>",
         CC0,
         CREDIT,
     ),
@@ -405,28 +490,42 @@ ITEMS = [
         "3b Changes side by side (Word)",
         T.MICROSOFT_WORD,
         C3,
-        "Every step that changes, as an editable Word document: Notice No. 243's text, the original petition (for reference), the proposed text, and why.",
-        ABOUT
-        + "<p>The side-by-side comparison of item 3a as an editable Word document. For every step that changes, four columns: "
-        "Notice No. 243's text, the original petition (February 2, 2023, for reference), the proposed text, and why. Every other "
-        "step is Notice No. 243's text word for word. Marking compares the proposed text with Notice No. 243's text only: red "
-        "strikethrough for its words that the proposed text drops, yellow for words added. The petition column is for reference "
-        "and is not marked.</p>",
+        (
+            "Every step that changes, as an editable Word document: Notice "
+            "No. 243's text, the original petition (for reference), the "
+            "proposed text, and why."
+        ),
+        ABOUT + "<p>The side-by-side comparison of item 3a as an editable "
+        "Word document. For every step that changes, four columns: Notice "
+        "No. 243's text, the original petition (February 2, 2023, for "
+        "reference), the proposed text, and why. Every other step is Notice "
+        "No. 243's text word for word. Marking compares the proposed text "
+        "with Notice No. 243's text only: red strikethrough for its words "
+        "that the proposed text drops, yellow for words added. The petition "
+        "column is for reference and is not marked.</p>",
         CC0,
         CREDIT,
     ),
     (
         G4 + "EPSG4269.gpkg",
-        "4c Proposed boundary - GeoPackage (AVA polygon, 104 steps, step endpoints)",
+        (
+            "4c Proposed boundary - GeoPackage (AVA polygon, 104 steps, step "
+            "endpoints)"
+        ),
         T.GEOPACKAGE,
         C4D,
-        "All three layers in one OGC GeoPackage, NAD83 (EPSG:4269), with TTB's AVAs_Production fields.",
+        (
+            "All three layers in one OGC GeoPackage, NAD83 (EPSG:4269), with "
+            "TTB's AVAs_Production fields."
+        ),
         ABOUT
         + "<p>Layers: boundary_area (the AVA, "
         + SQMI
-        + " square miles), boundary_line (one feature per step, 104, each with its text), "
-        "boundary_points (the beginning point and the step endpoints). The hosted layer 4b is published from this file; the same "
-        "layers are also downloads as shapefiles (4d-4f) and GeoJSON (4g-4i).</p>",
+        + " square miles), boundary_line (one feature per step, 104, each "
+        "with its text), boundary_points (the beginning point and the step "
+        "endpoints). The hosted layer 4b is published from this file; the "
+        "same layers are also downloads as shapefiles (4d-4f) and GeoJSON "
+        "(4g-4i).</p>",
         CC0,
         CREDIT,
     ),
@@ -438,15 +537,19 @@ GIS_LAYERS = {
         "AVA polygon",
         "the AVA polygon (" + SQMI + " square miles)",
         "boundary_area",
-        "<i>area_sqmi</i> (the area in square miles, GRS 1980), <i>source</i> and <i>version_note</i>",
+        (
+            "<i>area_sqmi</i> (the area in square miles, GRS 1980), <i>source"
+            "</i> and <i>version_note</i>"
+        ),
     ),
     "line": (
         "104 boundary steps",
         "the boundary, one feature per step (104), each with its text",
         "boundary_line",
         (
-            "each step's number, kind, endpoint, USGS quadrangle, length in metres, text as proposed (<i>narrative</i>), the source "
-            "of its wording and its change from Notice No. 243"
+            "each step's number, kind, endpoint, USGS quadrangle, length in "
+            "metres, text as proposed (<i>narrative</i>), the source of its "
+            "wording and its change from Notice No. 243"
         ),
     ),
     "points": (
@@ -465,15 +568,21 @@ for i, (key, (what, n, layer, extra)) in enumerate(GIS_LAYERS.items()):
             f"{shp} Proposed boundary - {what} (shapefile)",
             T.SHAPEFILE,
             C4D,
-            f"Zipped shapefile of {n}, NAD83 (EPSG:4269); field names trimmed to 10 characters, with a field-name key.",
-            ABOUT
-            + f"<p>{n[0].upper() + n[1:]}, as a zipped Esri shapefile in NAD83 (EPSG:4269), for GIS software that does "
-            f"not read GeoPackage. The same features and attributes as the {layer} layer of the GeoPackage (4c) and the "
-            f"GeoJSON ({gj}): TTB's AVAs_Production fields (Name, Status, CFR_Section, Counties and the rest), and {extra}. "
-            f"A shapefile's field names hold 10 characters at most, so the longer ones are trimmed; {base}-field-names.txt "
-            "in the zip gives the full name of each."
+            (
+                f"Zipped shapefile of {n}, NAD83 (EPSG:4269); field names "
+                "trimmed to 10 characters, with a field-name key."
+            ),
+            ABOUT + f"<p>{n[0].upper() + n[1:]}, as a zipped Esri shapefile "
+            "in NAD83 (EPSG:4269), for GIS software that does not read "
+            f"GeoPackage. The same features and attributes as the {layer} "
+            f"layer of the GeoPackage (4c) and the GeoJSON ({gj}): TTB's "
+            "AVAs_Production fields (Name, Status, CFR_Section, Counties and "
+            f"the rest), and {extra}. A shapefile's field names hold 10 "
+            "characters at most, so the longer ones are trimmed; "
+            f"{base}-field-names.txt in the zip gives the full name of each."
             + (
-                " Text longer than a shapefile field holds (254 bytes) continues in a second field, <i>narrativ2</i>."
+                " Text longer than a shapefile field holds (254 bytes) "
+                "continues in a second field, <i>narrativ2</i>."
                 if key == "line"
                 else ""
             )
@@ -489,10 +598,11 @@ for i, (key, (what, n, layer, extra)) in enumerate(GIS_LAYERS.items()):
             T.GEOJSON,
             C4D,
             f"GeoJSON of {n}, NAD83 (EPSG:4269).",
-            ABOUT
-            + f"<p>{n[0].upper() + n[1:]}, as GeoJSON: coordinates in longitude and latitude, NAD83 (EPSG:4269, "
-            f"named in the file's crs member), with the full field names. The same features and attributes as the {layer} "
-            f"layer of the GeoPackage (4c) and the shapefile ({shp}): TTB's AVAs_Production fields (Name, Status, "
+            ABOUT + f"<p>{n[0].upper() + n[1:]}, as GeoJSON: coordinates in "
+            "longitude and latitude, NAD83 (EPSG:4269, named in the file's "
+            "crs member), with the full field names. The same features and "
+            f"attributes as the {layer} layer of the GeoPackage (4c) and the "
+            f"shapefile ({shp}): TTB's AVAs_Production fields (Name, Status, "
             f"CFR_Section, Counties and the rest), and {extra}.</p>",
             CC0,
             CREDIT,
@@ -503,14 +613,15 @@ for i, (key, (what, n, layer, extra)) in enumerate(GIS_LAYERS.items()):
 # hold TTB's text and data too (the step text, the AVAs_Production values), so
 # they get the same split.
 LIC_MIX = (
-    "TTB's text: U.S. Government work (public domain). The petitioner's changes: "
-    + CC0
+    "TTB's text: U.S. Government work (public domain). The petitioner's "
+    "changes: " + CC0
 )
 LIC_GIS = (
-    "TTB's text and data, the step text from Notice No. 243 (boundary line layer) and the values copied from TTB's "
-    "AVAs_Production record (Name, Status, Counties and the like): U.S. Government work (public domain). The petitioner's "
-    "work, the boundary as drawn, its other attributes and the proposed changes to the text: "
-    + CC0
+    "TTB's text and data, the step text from Notice No. 243 (boundary line "
+    "layer) and the values copied from TTB's AVAs_Production record (Name, "
+    "Status, Counties and the like): U.S. Government work (public domain). "
+    "The petitioner's work, the boundary as drawn, its other attributes and "
+    "the proposed changes to the text: " + CC0
 )
 CREDIT_GIS = (
     CREDIT + "; TTB (Notice No. 243 step text, AVAs_Production record values)"
@@ -533,8 +644,12 @@ ITEMS += quad_items()
 # (QA #31).
 WAS.update(
     {
-        "2a Notice No. 243 with the proposed changes highlighted (unofficial copy, PDF)": [
-            "2a TTB Notice 243 with the proposed changes highlighted (unofficial copy, PDF)"
+        "2a Notice No. 243 with the proposed changes highlighted (unofficial "
+        "copy, PDF)": [
+            (
+                "2a TTB Notice 243 with the proposed changes highlighted "
+                "(unofficial copy, PDF)"
+            )
         ],
         "2b Notice No. 243 as published, docket TTB-2026-0005-0001 (PDF)": [
             "2b TTB Notice 243 as published, docket TTB-2026-0005-0001 (PDF)"
@@ -542,8 +657,12 @@ WAS.update(
         "2c Text for comparing - 1 Notice No. 243 as published (plain text)": [
             "2c Text for comparing - 1 TTB Notice 243 as published (plain text)"
         ],
-        "2d Text for comparing - 2 Notice No. 243 with the proposed changes (plain text)": [
-            "2d Text for comparing - 2 TTB Notice 243 with the proposed changes (plain text)"
+        "2d Text for comparing - 2 Notice No. 243 with the proposed changes "
+        "(plain text)": [
+            (
+                "2d Text for comparing - 2 TTB Notice 243 with the proposed "
+                "changes (plain text)"
+            )
         ],
     }
 )
@@ -661,7 +780,8 @@ def main():
             it.share(groups=[GROUP_ID])
         if cat:
             r = gis._con.post(
-                f"{gis._portal.resturl}content/groups/{GROUP_ID}/updateCategories",
+                f"{gis._portal.resturl}content/groups/{GROUP_ID}"
+                "/updateCategories",
                 {"f": "json", "items": json.dumps([{it.id: [cat]}])},
             )  # for a group: {itemId: [paths]}
             assert all(x.get("success") for x in r.get("results", [{}])), r

@@ -68,7 +68,8 @@ REVIEW = os.path.join(HERE, "review")
 GROUP_ID = "65720ee9c5a743f88659ae39228704ec"
 REST = "https://www.arcgis.com/sharing/rest/"
 UA = {
-    "User-Agent": "Mozilla/5.0 (Macintosh) hickory-sands-district-ava agol_check.py"
+    "User-Agent": "Mozilla/5.0 (Macintosh) hickory-sands-district-ava "
+    "agol_check.py"
 }  # some CDNs refuse Python-urllib
 EDIT = {
     "Create",
@@ -165,7 +166,8 @@ def rest(url, **params):
     d = json.loads(body)
     if isinstance(d, dict) and "error" in d:
         raise RuntimeError(
-            f"{url}: ArcGIS error {d['error'].get('code')}: {d['error'].get('message')}"
+            f"{url}: ArcGIS error {d['error'].get('code')}: "
+            f"{d['error'].get('message')}"
         )
     return d
 
@@ -369,9 +371,10 @@ def load():
         wm, \
         wm_err, \
         OPS
+    built = os.path.exists(os.path.join(HERE, "agreed-steps.json"))
     print(
-        f"Live checks of the public ArcGIS Online site, anonymously (group {GROUP_ID}; build outputs: "
-        f"{HERE if os.path.exists(os.path.join(HERE, 'agreed-steps.json')) else 'none'})",
+        "Live checks of the public ArcGIS Online site, anonymously (group "
+        f"{GROUP_ID}; build outputs: {HERE if built else 'none'})",
         flush=True,
     )
     try:
@@ -386,7 +389,8 @@ def load():
     # Whatever the error, nothing else can be checked: report it and stop.
     except Exception as e:  # noqa: BLE001, RUF100
         print(
-            f"FAIL  group      the group cannot be read without signing in (is it public?): {e}"
+            "FAIL  group      the group cannot be read without signing in "
+            f"(is it public?): {e}"
         )
         sys.exit(1)
     by_id = {it["id"]: it for it in items}
@@ -430,7 +434,10 @@ def load():
             )
         # Whatever the error, the web map check reports it.
         except Exception as e:  # noqa: BLE001, RUF100
-            wm_err = f"{wm_item['title']}: its JSON cannot be read: {type(e).__name__}: {e}"
+            wm_err = (
+                f"{wm_item['title']}: its JSON cannot be read: "
+                f"{type(e).__name__}: {e}"
+            )
     OPS = {
         lyr["id"]: lyr
         for lyr in layers((wm or {}).get("operationalLayers"))
@@ -493,12 +500,17 @@ def security(bad, note):
             }
             if caps & EDIT:
                 bad(
-                    f"{it['title']}: {where} allows {', '.join(sorted(caps & EDIT))} (capabilities {d.get('capabilities')})"
+                    f"{it['title']}: {where} allows "
+                    f"{', '.join(sorted(caps & EDIT))} (capabilities "
+                    f"{d.get('capabilities')})"
                 )
             if d.get("syncEnabled"):
                 bad(f"{it['title']}: {where} has sync enabled")
         n += len(parts) - 1
-    return f"{len(services)} hosted feature services, {n} layers: none allows Create, Update, Delete, Editing or Sync; sync off"
+    return (
+        f"{len(services)} hosted feature services, {n} layers: none allows "
+        "Create, Update, Delete, Editing or Sync; sync off"
+    )
 
 
 def sharing(bad, note):
@@ -514,16 +526,21 @@ def sharing(bad, note):
     for c in want:
         if c not in have:
             bad(
-                f"no public item {c} in the group (missing, or not shared publicly)"
+                f"no public item {c} in the group (missing, or not shared "
+                "publicly)"
             )
     for c, titles in have.items():
         if len(titles) > 1:
             bad(f"{len(titles)} items numbered {c}: {' | '.join(titles)}")
         if c not in want:
             bad(
-                f"{titles[0]}: a number the publish scripts do not give (add it to CODES in agol_check.py if it is meant to be there)"
+                f"{titles[0]}: a number the publish scripts do not give (add "
+                "it to CODES in agol_check.py if it is meant to be there)"
             )
-    return f"the group and its {len(items)} items are public: one for each of the {len(want)} numbers"
+    return (
+        f"the group and its {len(items)} items are public: one for each of "
+        f"the {len(want)} numbers"
+    )
 
 
 def dashboard_links():
@@ -580,15 +597,18 @@ def linkcheck(bad, note):
                 bad(f"{w}: the link {t!r} goes to {by_id[i]['title']!r}")
         elif problem(REST + f"content/items/{i}"):
             bad(
-                f"{w}: the link {t!r} goes to item {i}, which is not public or does not exist"
+                f"{w}: the link {t!r} goes to item {i}, which is not public "
+                "or does not exist"
             )
         elif w in ("the group's description", "the dashboard"):
             bad(
-                f"{w}: the link {t!r} goes to item {i}, which is not in the group"
+                f"{w}: the link {t!r} goes to item {i}, which is not in the "
+                "group"
             )
     return (
-        f"{len(where)} URLs answer 200 ({sum(map(len, where.values()))} links); {len(named)} item links go to public items in "
-        "the group, each titled as the link says"
+        f"{len(where)} URLs answer 200 ({sum(map(len, where.values()))} "
+        f"links); {len(named)} item links go to public items in the group, "
+        "each titled as the link says"
     )
 
 
@@ -617,7 +637,8 @@ def webmap(bad, note):
         if lyr.get("itemId") and lyr["itemId"] not in by_id:
             p = problem(REST + f"content/items/{lyr['itemId']}")
             (bad if p else note)(
-                f"layer {lyr.get('title')!r}: its item {lyr['itemId']} is not in the group"
+                f"layer {lyr.get('title')!r}: its item {lyr['itemId']} is not "
+                "in the group"
                 + (f" and cannot be opened: {p}" if p else ", but public")
             )
     for u, p in parallel(problem, list(urls)).items():
@@ -639,8 +660,9 @@ def webmap(bad, note):
         ):
             bad(f"{lyr.get('title')}: no feature where {q}")
     return (
-        f"{wm_item['title'].split(' - ')[0]}: {len(urls)} layer and basemap URLs answer ?f=json; their items are in the group; "
-        f"the filtered layers ({len(filtered)}) return their features"
+        f"{wm_item['title'].split(' - ')[0]}: {len(urls)} layer and basemap "
+        "URLs answer ?f=json; their items are in the group; the filtered "
+        f"layers ({len(filtered)}) return their features"
     )
 
 
@@ -677,13 +699,15 @@ def dashboard(bad, note):
         for i in placed:
             if i not in widgets:
                 bad(
-                    f"{name}: the layout places {i}, which is not one of its widgets"
+                    f"{name}: the layout places {i}, which is not one of its "
+                    "widgets"
                 )
         mapw = {i for i, w in widgets.items() if w.get("type") == "mapWidget"}
         for i in mapw:
             if not wm_item or widgets[i].get("itemId") != wm_item["id"]:
                 bad(
-                    f"{name}: the map shows item {widgets[i].get('itemId')}, not the group's web map"
+                    f"{name}: the map shows item {widgets[i].get('itemId')}, "
+                    "not the group's web map"
                 )
         for d in nodes(v):
             src = (
@@ -697,18 +721,22 @@ def dashboard(bad, note):
                 or src.get("layerId") not in OPS
             ):
                 bad(
-                    f"{name}: a data source names layer {src.get('layerId')!r} of item {src.get('itemId')}, not a layer of the group's web map"
+                    f"{name}: a data source names layer "
+                    f"{src.get('layerId')!r} of item {src.get('itemId')}, not "
+                    "a layer of the group's web map"
                 )
             t = d.get("targetId")
             if isinstance(t, str):
                 w, _, sub = t.partition("#")
                 if w not in ids:
                     bad(
-                        f"{name}: an action targets {t}, which is not one of its elements"
+                        f"{name}: an action targets {t}, which is not one of "
+                        "its elements"
                     )
                 elif w in mapw and sub and sub not in OPS:
                     bad(
-                        f"{name}: an action targets the map's layer {sub!r}, which the web map does not have"
+                        f"{name}: an action targets the map's layer {sub!r}, "
+                        "which the web map does not have"
                     )
         said.append(f"{name} {len(widgets)} widgets ({len(placed)} placed)")
     mapped = dash.get("elementMappings") or {}
@@ -730,13 +758,20 @@ def dashboard(bad, note):
     for it in items:
         if it["id"] not in linked and it["type"] != "Dashboard":
             bad(f"the dashboard does not link {it['title']}")
-    return f"{dashboards[0]['title'].split(' - ')[0]}: the JSON parses; {'; '.join(said)}, all wired to what exists; links all {len(linked)} other items"
+    return (
+        f"{dashboards[0]['title'].split(' - ')[0]}: the JSON parses; "
+        f"{'; '.join(said)}, all wired to what exists; links all "
+        f"{len(linked)} other items"
+    )
 
 
 def figures(bad, note):
     """Figures: the live layers' area, counts, attributes and acres as built."""
     if not os.path.exists(os.path.join(HERE, "agreed-steps.json")):
-        return f"skipped: no build outputs in {HERE} (run ./build.sh first, or point HSD_WORK at them)"
+        return (
+            f"skipped: no build outputs in {HERE} (run ./build.sh first, or "
+            "point HSD_WORK at them)"
+        )
     if wm is None:
         bad(f"the layers cannot be found: {wm_err}")
         return "not checked"
@@ -759,7 +794,8 @@ def figures(bad, note):
             v = f["attributes"].get(k)
             if not isinstance(v, (int, float)) or abs(v - sqmi) > 0.01:
                 bad(
-                    f"the AVA polygon's {k} is {num(v)}, the build's area {num(sqmi)} sq mi"
+                    f"the AVA polygon's {k} is {num(v)}, the build's area "
+                    f"{num(sqmi)} sq mi"
                 )
     said.append(f"AVA {sqmi:.2f} sq mi")
     for what, geometry, pat in (
@@ -771,7 +807,8 @@ def figures(bad, note):
         )
         if not files:
             note(
-                f"no gis/*-{pat}-EPSG4269.geojson in the build outputs: {what} not counted"
+                f"no gis/*-{pat}-EPSG4269.geojson in the build outputs: "
+                f"{what} not counted"
             )
             continue
         with open(files[0]) as f:
@@ -819,7 +856,9 @@ def figures(bad, note):
                             min(len(sw), len(sv)),
                         )
                         bad(
-                            f"{what} {f['properties'][key]}: {a} is {excerpt(sw, i)!r} live, {excerpt(sv, i)!r} in the build"
+                            f"{what} {f['properties'][key]}: {a} is "
+                            f"{excerpt(sw, i)!r} live, {excerpt(sv, i)!r} in "
+                            "the build"
                         )
         if off > 5:
             bad(f"{what}: {off - 5} more attributes differ from the build")
@@ -856,13 +895,15 @@ def figures(bad, note):
             n = sum(live.get((cause, side), {}).get("n") or 0 for side in SIDES)
             if n != s["pieces"]:
                 bad(
-                    f"differences, {cause}: {n} pieces live, {s['pieces']} in the build"
+                    f"differences, {cause}: {n} pieces live, {s['pieces']} in "
+                    "the build"
                 )
             for side, k in SIDES.items():
                 a = live.get((cause, side), {}).get("acres") or 0
                 if abs(a - s[k]) > 0.1:
                     bad(
-                        f"differences, {cause}, {side}: {a:,.1f} acres live, {s[k]:,.1f} in the build"
+                        f"differences, {cause}, {side}: {a:,.1f} acres live, "
+                        f"{s[k]:,.1f} in the build"
                     )
         rings = query(
             op_url("hsd-rings"),
@@ -871,7 +912,8 @@ def figures(bad, note):
         )["features"]
         if len(rings) != stats["big"]:
             bad(
-                f"big differences: {len(rings)} live, {stats['big']} in the build"
+                f"big differences: {len(rings)} live, {stats['big']} in the "
+                "build"
             )
         built = load(os.path.join(REVIEW, "ttb-diff-rings-EPSG4269.geojson"))
         for n, (b, r) in enumerate(
@@ -892,10 +934,13 @@ def figures(bad, note):
             ):
                 if abs((r["attributes"].get(lk) or 0) - b[bk]) > 0.1:
                     bad(
-                        f"big difference #{n}: {lk} {num(r['attributes'].get(lk))} live, {num(b[bk])} in the build's rings"
+                        f"big difference #{n}: {lk} "
+                        f"{num(r['attributes'].get(lk))} live, {num(b[bk])} "
+                        "in the build's rings"
                     )
         said.append(
-            f"{sum(s['pieces'] for s in stats['areas'].values())} pieces of land between the lines and {stats['big']} big differences"
+            f"{sum(s['pieces'] for s in stats['areas'].values())} pieces of "
+            f"land between the lines and {stats['big']} big differences"
         )
     grit = load(os.path.join(REVIEW, "grit-change-stats.json"))
     if grit:
@@ -908,7 +953,8 @@ def figures(bad, note):
         }
         for what in set(live) ^ set(grit["areas"]):
             bad(
-                f"Grit areas: {what!r} is {'live only' if what in live else 'in the build only'}"
+                f"Grit areas: {what!r} is "
+                f"{'live only' if what in live else 'in the build only'}"
             )
         for what, s in grit["areas"].items():
             for k in ("acres", "granite_acres", "sandstone_acres"):
@@ -917,7 +963,8 @@ def figures(bad, note):
                     not isinstance(v, (int, float)) or abs(v - s[k]) > 0.01
                 ):
                     bad(
-                        f"Grit, {what}: {k} {num(v)} live, {num(s[k])} in the build"
+                        f"Grit, {what}: {k} {num(v)} live, {num(s[k])} in the "
+                        "build"
                     )
         lines = load(os.path.join(REVIEW, "grit-change-lines-EPSG4269.geojson"))
         n = (
@@ -934,7 +981,10 @@ def figures(bad, note):
 def files(bad, note):
     """Files: each file the build makes is an item of the same size and hash."""
     if not os.path.isdir(PKG):
-        return f"skipped: no package in {PKG} (run ./build.sh first, or point HSD_WORK at the build outputs)"
+        return (
+            f"skipped: no package in {PKG} (run ./build.sh first, or point "
+            "HSD_WORK at the build outputs)"
+        )
 
     # ArcGIS keeps an uploaded file's name with its spaces made underscores.
     def norm(name):
@@ -973,7 +1023,8 @@ def files(bad, note):
         if p is None:
             if sha:
                 note(
-                    f"{it['title']}: its GeoPackage is made by agol_layer.py when publishing; not in these build outputs, not compared"
+                    f"{it['title']}: its GeoPackage is made by agol_layer.py "
+                    "when publishing; not in these build outputs, not compared"
                 )
             else:
                 bad(
@@ -982,7 +1033,8 @@ def files(bad, note):
             continue
         if it.get("size") != os.path.getsize(p):
             bad(
-                f"{it['title']}: {it.get('size'):,} bytes live, the build's {rel(p)} {os.path.getsize(p):,}"
+                f"{it['title']}: {it.get('size'):,} bytes live, the build's "
+                f"{rel(p)} {os.path.getsize(p):,}"
             )
             continue
         sized += 1
@@ -995,11 +1047,14 @@ def files(bad, note):
     ).items():
         if err or len(body) != named[name]["size"]:
             bad(
-                f"{named[name]['title']}: the download fails: {err or f'{len(body):,} bytes, not {named[name]["size"]:,}'}"
+                f"{named[name]['title']}: the download fails: "
+                f"{err or f'{len(body):,} bytes, not {named[name]["size"]:,}'}"
             )
         elif hashlib.sha256(body).hexdigest() != sha256(local[name]):
             bad(
-                f"{named[name]['title']}: the same size as {rel(local[name])}, but a different file (not the one this build made)"
+                f"{named[name]['title']}: the same size as "
+                f"{rel(local[name])}, but a different file (not the one this "
+                "build made)"
             )
     att, url = 0, op_url(None, "esriGeometryPolygon") if wm else None
     for oid in (
@@ -1009,15 +1064,19 @@ def files(bad, note):
             p, att = built.get(norm(a["name"])), att + 1
             if p is None:
                 bad(
-                    f"the AVA polygon's attachment {a['name']} is not a file the build makes"
+                    f"the AVA polygon's attachment {a['name']} is not a file "
+                    "the build makes"
                 )
             elif a.get("size") != os.path.getsize(p):
                 bad(
-                    f"the AVA polygon's attachment {a['name']}: {a.get('size'):,} bytes live, the build's {os.path.getsize(p):,}"
+                    f"the AVA polygon's attachment {a['name']}: "
+                    f"{a.get('size'):,} bytes live, the build's "
+                    f"{os.path.getsize(p):,}"
                 )
     return (
-        f"{sized} file items the same size as the build's files, the {len(small)} up to 4 MB downloaded with the same SHA-256; "
-        f"the {att} documents attached to the AVA polygon as built"
+        f"{sized} file items the same size as the build's files, the "
+        f"{len(small)} up to 4 MB downloaded with the same SHA-256; the {att} "
+        "documents attached to the AVA polygon as built"
     )
 
 

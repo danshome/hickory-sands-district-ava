@@ -82,28 +82,35 @@ MAP_TITLE = "4a Proposed boundary - map over the 13 USGS quadrangles"
 LAYER_TITLE = (
     "4b Proposed boundary - layer (AVA polygon, 104 steps, step endpoints)"
 )
-DIFF_TITLE = "4k Differences from the AVA Map Explorer polygon - layer (the big ones, and all of them)"
+DIFF_TITLE = (
+    "4k Differences from the AVA Map Explorer polygon - layer (the big ones, "
+    "and all of them)"
+)
 # The cause agol_layer.py gives the pieces not from the text change.
 SAME_TEXT = "the same text, drawn differently"
 CREDIT = "Dan McLaughlin, Robert Clay Vineyards (petitioner)"
 CC0 = (
-    "CC0 1.0 Universal (public domain dedication): no rights reserved. TTB, its contractors and anyone else may copy, "
-    "change and use this for any purpose without permission or attribution. https://creativecommons.org/publicdomain/zero/1.0/"
+    "CC0 1.0 Universal (public domain dedication): no rights reserved. TTB, "
+    "its contractors and anyone else may copy, change and use this for any "
+    "purpose without permission or attribution. "
+    "https://creativecommons.org/publicdomain/zero/1.0/"
 )
 # The dashboard shows more than the petitioner's work, so its license and
 # credits name each part (QA #30).
 LIC = (
-    "The dashboard and the petitioner's layers (the proposed revision, the differences, the change near Grit, the shift of the "
-    "geology): "
+    "The dashboard and the petitioner's layers (the proposed revision, the "
+    "differences, the change near Grit, the shift of the geology): "
     + CC0
-    + " The step text it shows is Notice No. 243's, a U.S. Government work (public domain), except the "
-    "proposed changes near Grit (CC0, as above). The AVA Map Explorer polygon (TTB's AVAs_Production layer): U.S. Government "
-    "work (public domain). USGS quadrangles and USGS SGMC geology: public domain. Basemaps: Esri, under Esri's terms of use."
+    + " The step text it shows is Notice No. 243's, a U.S. Government work "
+    "(public domain), except the proposed changes near Grit (CC0, as above). "
+    "The AVA Map Explorer polygon (TTB's AVAs_Production layer): U.S. "
+    "Government work (public domain). USGS quadrangles and USGS SGMC "
+    "geology: public domain. Basemaps: Esri, under Esri's terms of use."
 )
 CREDITS = (
-    CREDIT
-    + "; TTB (Notice No. 243 step text, AVAs_Production layer); USGS (quadrangles, via Esri USA Historical Topo "
-    "Maps; SGMC geology); basemaps: Esri"
+    CREDIT + "; TTB (Notice No. 243 step text, AVAs_Production layer); USGS "
+    "(quadrangles, via Esri USA Historical Topo Maps; SGMC geology); "
+    "basemaps: Esri"
 )
 TAGS = [
     "Hickory Sands District",
@@ -121,9 +128,10 @@ TYPE_KEYWORDS = [
     "Operations Dashboard",
 ]  # set when the item is added
 ABOUT = (
-    "<p>Hickory Sands District AVA (Docket No. TTB-2026-0005, Notice No. 243, 91 FR 52576): the boundary the petitioners "
-    "propose, with the changes discussed with TTB on October 15, 2026. Prepared by Dan McLaughlin, Robert Clay Vineyards "
-    "(petitioner).</p>"
+    "<p>Hickory Sands District AVA (Docket No. TTB-2026-0005, Notice No. "
+    "243, 91 FR 52576): the boundary the petitioners propose, with the "
+    "changes discussed with TTB on October 15, 2026. Prepared by Dan "
+    "McLaughlin, Robert Clay Vineyards (petitioner).</p>"
 )
 SECTIONS = {
     "0": "Start here",
@@ -269,11 +277,15 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
     # below it.
     def button(url, title, note=""):
         return (
-            f'<a href="{url}" target="_blank" rel="noopener noreferrer" style="display:block;padding:12px 14px;margin:0 0 10px;'
-            f"border:1px solid #d9c3c8;border-radius:8px;background:#faf6f7;color:{WINE};text-decoration:none;font-size:16px;"
+            f'<a href="{url}" target="_blank" rel="noopener noreferrer" '
+            'style="display:block;padding:12px 14px;margin:0 0 10px;'
+            "border:1px solid "
+            f"#d9c3c8;border-radius:8px;background:#faf6f7;color:{WINE}"
+            ";text-decoration:none;font-size:16px;"
             f'line-height:1.35"><strong>{html.escape(title)}</strong>'
             + (
-                f'<br><span style="font-size:14px;color:#555">{html.escape(note)}</span>'
+                '<br><span style="font-size:14px;color:#555">'
+                f"{html.escape(note)}</span>"
                 if note
                 else ""
             )
@@ -304,18 +316,24 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
         if not group_items:
             continue
         parts.append(
-            f'<p style="margin:10px 0 2px"><strong>{html.escape(head)}</strong></p>'
+            f'<p style="margin:10px 0 2px"><strong>{html.escape(head)}'
+            "</strong></p>"
         )
         if key == "5":
             parts.append(
-                f"<p>The {sum(1 for it in group_items if 'GeoPDF' in it.title)} quadrangles as GeoPDF and GeoTIFF, "
-                "with the boundary added as a solid red line: see the <em>USGS quadrangles</em> tab.</p>"
+                "<p>The "
+                f"{sum(1 for it in group_items if 'GeoPDF' in it.title)} "
+                "quadrangles as GeoPDF and GeoTIFF, with the boundary added "
+                "as a solid red line: see the <em>USGS quadrangles</em> tab."
+                "</p>"
             )
             continue
         parts.append(
             '<ul style="margin:0;padding-left:18px">'
             + "".join(
-                f'<li><span style="color:#666">{html.escape(it.title.split(" ", 1)[0])}</span> {link(it)}</li>'
+                '<li><span style="color:#666">'
+                f"{html.escape(it.title.split(' ', 1)[0])}</span> {link(it)}"
+                "</li>"
                 for it in group_items
             )
             + "</ul>"
@@ -334,7 +352,8 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
     )
     documents_phone = (
         PHONE
-        + '<p style="margin:0 0 10px">Each opens the item\'s page, where it can be read or downloaded.</p>'
+        + '<p style="margin:0 0 10px">Each opens the item\'s page, where it '
+        "can be read or downloaded.</p>"
         + "".join(item_button(numbered[n]) for n in ("0", "1a", "2a", "3a"))
         + group_button
         + "</div>"
@@ -352,22 +371,31 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
                 sheet["edition"], m.group(3), key=len
             )  # one row even if only one of the pair is retitled yet
     rows = "".join(
-        f'<tr><td style="padding:3px 6px">{html.escape(q)}, TX ({f["edition"]})</td>'
+        f'<tr><td style="padding:3px 6px">{html.escape(q)}, TX '
+        f"({f['edition']})</td>"
         # nowrap: never "GeoPD / F" (QA #47)
-        f'<td style="padding:3px 6px;white-space:nowrap">{link(f["GeoPDF"], "GeoPDF")}</td>'
-        f'<td style="padding:3px 6px;white-space:nowrap">{link(f["GeoTIFF"], "GeoTIFF")}</td>'
-        f'<td style="padding:3px 6px">{spans(s["step"] for s in steps if s["quad"] == q) or "-"}</td></tr>'
+        '<td style="padding:3px 6px;white-space:nowrap">'
+        f"{link(f['GeoPDF'], 'GeoPDF')}</td>"
+        '<td style="padding:3px 6px;white-space:nowrap">'
+        f'{link(f["GeoTIFF"], "GeoTIFF")}</td><td style="padding:3px 6px">'
+        f"{spans(s['step'] for s in steps if s['quad'] == q) or '-'}</td></tr>"
         for q, f in sorted(quads.items())
     )
     quads_html = (
-        '<div style="font-size:13px"><p>The 13 USGS 1:24,000 quadrangles cited in paragraph (b), each with the boundary '
-        "added as a solid red line. The GeoPDF is the USGS file with the line as an optional-content layer; in the GeoTIFF "
-        "only the image tiles the line crosses are rewritten. The quads keep their NAD27 grids; the NAD83 line is carried "
-        "onto them with the NADCON 5.0 CONUS grid.</p>"
-        '<table style="border-collapse:collapse;width:100%"><tr style="text-align:left;border-bottom:1px solid #ccc">'
-        '<th style="padding:3px 6px">Quadrangle</th><th style="padding:3px 6px" colspan="2">Files</th>'
+        '<div style="font-size:13px"><p>The 13 USGS 1:24,000 quadrangles '
+        "cited in paragraph (b), each with the boundary "
+        "added as a solid red line. The GeoPDF is the USGS file with the "
+        "line as an optional-content layer; in the GeoTIFF only the image "
+        "tiles the line crosses are rewritten. The quads keep their NAD27 "
+        "grids; the NAD83 line is carried onto them with the NADCON 5.0 "
+        "CONUS grid.</p>"
+        '<table style="border-collapse:collapse;width:100%">'
+        '<tr style="text-align:left;border-bottom:1px solid #ccc">'
+        '<th style="padding:3px 6px">Quadrangle</th>'
+        '<th style="padding:3px 6px" colspan="2">Files</th>'
         f'<th style="padding:3px 6px">Steps</th></tr>{rows}</table>'
-        '<p style="color:#666">Each step is listed under the one quadrangle named in its record; a step that crosses '
+        '<p style="color:#666">Each step is listed under the one quadrangle '
+        "named in its record; a step that crosses "
         "onto another map is listed once.</p></div>"
     )
 
@@ -425,42 +453,59 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
     changes_html = readme_section("WHAT WE PROPOSE TO CHANGE")
     # the map's key, in both views
     map_red = f"Red: the proposed revision, {SQMI} square miles."
-    map_blue = "Blue: the AVA Map Explorer polygon for Notice No. 243, from TTB's live AVAs_Production layer."
+    map_blue = (
+        "Blue: the AVA Map Explorer polygon for Notice No. 243, from TTB's "
+        "live AVAs_Production layer."
+    )
     map_shaded = (
-        "Shaded: every piece of land between them (red: in the proposed revision only; blue: in the Map Explorer polygon "
-        "only; grey: the proposed text change near Grit)"
+        "Shaded: every piece of land between them (red: in the proposed "
+        "revision only; blue: in the Map Explorer polygon only; grey: the "
+        "proposed text change near Grit)"
     )
     map_ringed = (
-        f"Ringed: the {STATS['big']} big differences, where the lines are {STATS['big_m']:.0f} m or more apart (orange: the "
-        "two lines take different paths; grey dashed: the proposed text change near Grit)"
+        f"Ringed: the {STATS['big']} big differences, where the lines are "
+        f"{STATS['big_m']:.0f} m or more apart (orange: the two lines take "
+        "different paths; grey dashed: the proposed text change near Grit)"
     )
     map_basemaps = (
-        "In the map's layer list, <em>TTB's AVA Map Explorer basemaps</em> holds the Map Explorer's four basemaps "
-        "(Topographic, Streets, Imagery, USA Topo Maps): turn it on and pick one."
+        "In the map's layer list, <em>TTB's AVA Map Explorer basemaps</em> "
+        "holds the Map Explorer's four basemaps (Topographic, Streets, "
+        "Imagery, USA Topo Maps): turn it on and pick one."
+    )
+    license_line = head[2].replace(
+        "(see LICENSE.txt)", "(full text in item 0, the read me)"
     )
     about_html = (
         '<div style="font-size:13px;line-height:1.45">'
-        f"<p>{html.escape(head[1])}<br>{html.escape(head[2].replace('(see LICENSE.txt)', '(full text in item 0, the read me)'))}</p>"
-        '<p style="margin:10px 0 2px"><strong>What the proposed revision changes in Notice No. 243</strong></p>'
+        f"<p>{html.escape(head[1])}<br>{html.escape(license_line)}</p>"
+        '<p style="margin:10px 0 2px"><strong>What the proposed revision '
+        "changes in Notice No. 243</strong></p>"
         + changes_html
-        + '<p style="margin:10px 0 2px"><strong>How the line is drawn</strong></p>'
+        + '<p style="margin:10px 0 2px"><strong>How the line is drawn'
+        "</strong></p>"
         + readme_section("HOW THE LINE IS DRAWN")
         + '<p style="margin:10px 0 2px"><strong>The map</strong></p>'
-        f"<p>{map_red} {map_blue} The Map Explorer polygon was digitized by hand and the proposed revision follows the printed "
-        f"linework, so the two differ a little almost everywhere (median {STATS['median_m']:.0f} m apart, measured every 2 m along "
-        f"each line). {map_shaded}; from the same text drawn differently they add up to {same['revision_only_acres']:,.0f} acres "
-        f"in the proposed revision only and {same['map_explorer_only_acres']:,.0f} in the Map Explorer polygon only. {map_ringed}. "
-        "Under them: the USGS geologic units "
-        "(Town Mountain Granite, younger granitic intrusions, Hickory Sandstone Member formation), shifted about 400 m to "
-        f"sit on the outcrops, and the 13 USGS quadrangles. {map_basemaps}</p></div>"
+        f"<p>{map_red} {map_blue} The Map Explorer polygon was digitized by "
+        "hand and the proposed revision follows the printed linework, so the "
+        "two differ a little almost everywhere (median "
+        f"{STATS['median_m']:.0f} m apart, measured every 2 m along each "
+        f"line). {map_shaded}; from the same text drawn differently they add "
+        f"up to {same['revision_only_acres']:,.0f} acres in the proposed "
+        f"revision only and {same['map_explorer_only_acres']:,.0f} in the Map "
+        f"Explorer polygon only. {map_ringed}. Under them: the USGS geologic "
+        "units (Town Mountain Granite, younger granitic intrusions, Hickory "
+        "Sandstone Member formation), shifted about 400 m to sit on the "
+        f"outcrops, and the 13 USGS quadrangles. {map_basemaps}</p></div>"
     )
     about_phone = (
-        PHONE
-        + '<p style="margin:0 0 4px"><strong>What the proposed revision changes in Notice No. 243</strong></p>'
+        PHONE + '<p style="margin:0 0 4px"><strong>What the proposed revision '
+        "changes in Notice No. 243</strong></p>"
         + changes_html
-        + f'<p style="margin:12px 0 4px"><strong>On the map</strong></p><p>{map_red} {map_blue} {map_shaded}. {map_ringed}.</p>'
+        + '<p style="margin:12px 0 4px"><strong>On the map</strong></p><p>'
+        f"{map_red} {map_blue} {map_shaded}. {map_ringed}.</p>"
         f"<p>{map_basemaps}</p>"
-        '<p style="margin:12px 0 4px"><strong>Every change, step by step</strong></p>'
+        '<p style="margin:12px 0 4px"><strong>Every change, step by step'
+        "</strong></p>"
         + item_button(numbered["3a"])
         + item_button(numbered["2a"])
         + "</div>"
@@ -476,41 +521,57 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
     def grow(key, label):
         r = grit_acres[key]
         return (
-            f'<tr><td style="padding:3px 6px">{label}</td><td style="padding:3px 6px;text-align:right;white-space:nowrap">{ac(r["acres"])}</td>'
-            f'<td style="padding:3px 6px;text-align:right;white-space:nowrap">{ac(r["granite_acres"])}</td>'
-            f'<td style="padding:3px 6px;text-align:right;white-space:nowrap">{ac(r["sandstone_acres"])}</td></tr>'
+            f'<tr><td style="padding:3px 6px">{label}</td>'
+            '<td style="padding:3px 6px;text-align:right;white-space:nowrap">'
+            f'{ac(r["acres"])}</td><td style="padding:3px '
+            '6px;text-align:right;white-space:nowrap">'
+            f"{ac(r['granite_acres'])}</td><td "
+            'style="padding:3px 6px;text-align:right;white-space:nowrap">'
+            f"{ac(r['sandstone_acres'])}</td></tr>"
         )
 
     # a row of the table as a paragraph, for the phone (no wide tables)
     def gblock(key, label):
         r = grit_acres[key]
         return (
-            f'<p style="margin:8px 0 0"><strong>{label}</strong><br>{ac(r["acres"])} acres &middot; granite {ac(r["granite_acres"])} '
+            f'<p style="margin:8px 0 0"><strong>{label}</strong><br>'
+            f"{ac(r['acres'])} acres &middot; granite "
+            f"{ac(r['granite_acres'])} "
             f"&middot; sandstone* {ac(r['sandstone_acres'])}</p>"
         )
 
     def key(color, dash, label):
         return (
-            f'<li><span style="display:inline-block;width:26px;border-top:4px {"dashed" if dash else "solid"} {color};vertical-align:middle;'
-            f'margin-right:6px"></span>{label}</li>'
+            '<li><span style="display:inline-block;width:26px;border-top:4px '
+            f"{'dashed' if dash else 'solid'} {color}"
+            f';vertical-align:middle;margin-right:6px"></span>{label}</li>'
         )
 
     grit_lines = (
         (
             "#005aff",
             True,
-            "Replaced: Notice No. 243 steps (10)-(11), (90)-(92), as drawn by the petitioner on the USGS maps",
+            (
+                "Replaced: Notice No. 243 steps (10)-(11), (90)-(92), as "
+                "drawn by the petitioner on the USGS maps"
+            ),
         ),
         (
             "#008c3c",
             False,
-            "Put back: the petition's wording, (10)-(11), (90)-(92), (97)-(100)",
+            (
+                "Put back: the petition's wording, (10)-(11), (90)-(92), "
+                "(97)-(100)"
+            ),
         ),
         ("#be0082", False, "New: (93)-(96), around the granite lobe"),
         (
             "#008c3c",
             True,
-            "Replaced: the petition's straight line from the marked 1,737 to the marked 1,762",
+            (
+                "Replaced: the petition's straight line from the marked "
+                "1,737 to the marked 1,762"
+            ),
         ),
     )
     grit_areas = (
@@ -540,16 +601,21 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
         return s[0] if len(s) == 1 else ", ".join(s[:-1]) + " and " + s[-1]
 
     reworded_html = (
-        f"All {len(reworded)} steps worded differently from Notice No. 243 (<em>Steps reworded</em>, at the top) are here, "
-        f"near Grit: {spans(reworded)}."
+        f"All {len(reworded)} steps worded differently from Notice No. 243 ("
+        "<em>Steps reworded</em>, at the top) are here, near Grit: "
+        f"{spans(reworded)}."
         if not fixes
-        else f"Of the {len(reworded)} steps worded differently from Notice No. 243 (<em>Steps reworded</em>, at the top), "
-        f"{len(near_grit)} are here, near Grit: {spans(near_grit)}. "
+        else f"Of the {len(reworded)} steps worded differently from Notice "
+        f"No. 243 (<em>Steps reworded</em>, at the top), {len(near_grit)} are "
+        f"here, near Grit: {spans(near_grit)}. "
         + (
-            f"The other one, {and_list(fixes)}, corrects Notice No. 243's own wording elsewhere, one word; "
+            f"The other one, {and_list(fixes)}, corrects Notice No. 243's own "
+            "wording elsewhere, one word; "
             if len(fixes) == 1
-            else f"The other {({2: 'two', 3: 'three', 4: 'four'}).get(len(fixes), len(fixes))}, {and_list(fixes)}, correct Notice "
-            "No. 243's own wording elsewhere, one word each; "
+            else "The other "
+            f"{({2: 'two', 3: 'three', 4: 'four'}).get(len(fixes), len(fixes))}"
+            f", {and_list(fixes)}, correct Notice No. 243's own wording "
+            "elsewhere, one word each; "
         )
         + "the line does not change."
     )
@@ -565,9 +631,13 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
         areas = (
             "".join(gblock(*a) for a in grit_areas)
             if phone
-            else '<table style="border-collapse:collapse;width:100%"><tr style="text-align:left;border-bottom:1px solid #ccc">'
-            '<th style="padding:3px 6px"></th><th style="padding:3px 6px;text-align:right">acres</th><th style="padding:3px 6px;text-align:right;white-space:nowrap">granite</th>'
-            '<th style="padding:3px 6px;text-align:right;white-space:nowrap">sandstone*</th></tr>'
+            else '<table style="border-collapse:collapse;width:100%">'
+            '<tr style="text-align:left;border-bottom:1px solid #ccc">'
+            '<th style="padding:3px 6px"></th>'
+            '<th style="padding:3px 6px;text-align:right">acres</th>'
+            '<th style="padding:3px 6px;text-align:right;white-space:nowrap">'
+            'granite</th><th style="padding:3px '
+            '6px;text-align:right;white-space:nowrap">sandstone*</th></tr>'
             + "".join(grow(*a) for a in grit_areas)
             + "</table>"
         )
@@ -577,17 +647,20 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
                 if phone
                 else '<div style="font-size:13px;line-height:1.45">'
             )
-            + "<p>Near Grit the proposed text puts back the petition's wording in place of "
-            "Notice No. 243's steps (10)-(11) and (90)-(92), and adds steps (93)-(96) around a lobe of granite. Turn on <em>The change near Grit</em> in "
-            "the map's layer list (on by default) to see each line and area.</p>"
-            f"<p>{reworded_html} Every other step is Notice No. 243's text word for word.</p>"
-            + head
-            + '<strong>The lines</strong></p><ul style="list-style:none;padding-left:4px;margin:0">'
+            + "<p>Near Grit the proposed text puts back the petition's "
+            "wording in place of Notice No. 243's steps (10)-(11) and "
+            "(90)-(92), and adds steps (93)-(96) around a lobe of granite. "
+            "Turn on <em>The change near Grit</em> in the map's layer list "
+            "(on by default) to see each line and area.</p><p>"
+            f"{reworded_html} Every other step is Notice No. 243's text word "
+            "for word.</p>" + head + "<strong>The lines</strong></p><ul "
+            'style="list-style:none;padding-left:4px;margin:0">'
             + "".join(key(*k) for k in grit_lines)
             + "</ul>"
             + head
-            + "<strong>The areas</strong> (granite: Town Mountain Granite and younger granitic intrusions; "
-            "USGS SGMC shifted to the outcrops)</p>"
+            + "<strong>The areas</strong> (granite: Town Mountain Granite "
+            "and younger granitic intrusions; USGS SGMC shifted to the "
+            "outcrops)</p>"
             + areas
             + (
                 '<p style="font-size:13px;color:#555;margin-top:4px">'
@@ -595,9 +668,12 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
                 else '<p style="font-size:11px;color:#666;margin-top:2px">'
             )
             + "* the Hickory Sandstone Member formation</p>"
-            f'<p style="margin-top:8px">The AVA drawn three ways: Notice No. 243\'s text {GRIT["sqmi"]["notice_243"]:.2f} square miles; the petition '
-            f"{GRIT['sqmi']['petition']:.2f}; the proposed revision {GRIT['sqmi']['revision']:.2f}. All three are drawn the same way, on the "
-            "printed linework of the USGS maps; none is taken from the AVA Map Explorer polygon.</p></div>"
+            '<p style="margin-top:8px">The AVA drawn three ways: Notice No. '
+            f"243's text {GRIT['sqmi']['notice_243']:.2f} square miles; the "
+            f"petition {GRIT['sqmi']['petition']:.2f}; the proposed revision "
+            f"{GRIT['sqmi']['revision']:.2f}. All three are drawn the same "
+            "way, on the printed linework of the USGS maps; none is taken "
+            "from the AVA Map Explorer polygon.</p></div>"
         )
 
     grit_html, grit_phone = grit_tab(), grit_tab(phone=True)
@@ -806,15 +882,17 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
         )
 
     step_html = (
-        f'<p><span style="font-size:13px">{{field/narrative}}</span></p>'
-        f'<p><span style="font-size:11px;color:{INK}">{{field/change}}</span><span style="font-size:11px;color:#777"> &middot; '
+        '<p><span style="font-size:13px">{field/narrative}</span></p><p>'
+        f'<span style="font-size:11px;color:{INK}">{{field/change}}</span>'
+        '<span style="font-size:11px;color:#777"> &middot; '
         "{field/quad} quad &middot; {field/length_m} m</span></p>"
     )
     # the phone has no details panel: the whole record
     step_phone_html = (
-        '<p><span style="font-size:15px">{field/narrative}</span></p>'
-        f'<p><span style="font-size:13px;color:{INK}">{{field/change}}</span></p>'
-        '<p><span style="font-size:13px;color:#555">Ends at {field/endpoint} &middot; {field/quad} quad &middot; '
+        '<p><span style="font-size:15px">{field/narrative}</span></p><p>'
+        f'<span style="font-size:13px;color:{INK}">{{field/change}}</span></p>'
+        '<p><span style="font-size:13px;color:#555">Ends at '
+        "{field/endpoint} &middot; {field/quad} quad &middot; "
         "{field/length_m} m &middot; {field/txt_source}</span></p>"
     )
 
@@ -850,7 +928,8 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
             text=step_phone_html if phone else step_html,
             **(
                 {
-                    "topCaption": '<p style="font-size:14px;margin:4px 6px">Tap a step to show it on the map.</p>'
+                    "topCaption": '<p style="font-size:14px;margin:4px 6px">'
+                    "Tap a step to show it on the map.</p>"
                 }
                 if phone
                 else {}
@@ -907,10 +986,13 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
             separatorColor="#dddddd",
             selectionColor="#fdebd9",
             text=(
-                '<p><span style="font-size:13px"><strong>#{field/n}</strong> &middot; step(s) {field/steps}: up to {field/max_apart_m} m apart '
-                "over {field/length_m} m</span></p>"
-                f'<p><span style="font-size:11px;color:{INK}">{{field/why}}</span><span style="font-size:11px;color:#777"> &middot; '
-                "in the proposed revision only: {field/revision_only_acres} ac &middot; in the Map Explorer polygon only: "
+                '<p><span style="font-size:13px"><strong>#{field/n}</strong> '
+                "&middot; step(s) {field/steps}: up to {field/max_apart_m} m "
+                "apart over {field/length_m} m</span></p>"
+                f'<p><span style="font-size:11px;color:{INK}">{{field/why}}'
+                '</span><span style="font-size:11px;color:#777"> &middot; '
+                "in the proposed revision only: {field/revision_only_acres} "
+                "ac &middot; in the Map Explorer polygon only: "
                 "{field/map_explorer_only_acres} ac</span></p>"
             ),
         ),
@@ -930,16 +1012,24 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
             separatorColor="#dddddd",
             selectionColor="#e8eef9",
             topCaption=(
-                f'<p style="font-size:12px;margin:4px 6px">Every piece of land in one line and not the other, largest first. '
-                f"Same text drawn differently: <strong>{same['revision_only_acres']:,.0f} acres</strong> in the proposed revision only and "
-                f"<strong>{same['map_explorer_only_acres']:,.0f} acres</strong> in the AVA Map Explorer polygon only, in {same['pieces']} pieces. "
-                f"The proposed text change near Grit: {change['revision_only_acres']:,.0f} and {change['map_explorer_only_acres']:,.0f} acres, "
-                f"in {change['pieces']} pieces.</p>"
+                '<p style="font-size:12px;margin:4px 6px">Every piece of '
+                "land in one line and not the other, largest first. "
+                "Same text drawn differently: <strong>"
+                f"{same['revision_only_acres']:,.0f} acres</strong> in the "
+                "proposed revision only and <strong>"
+                f"{same['map_explorer_only_acres']:,.0f} acres</strong> in "
+                f"the AVA Map Explorer polygon only, in {same['pieces']} "
+                "pieces. The proposed text change near Grit: "
+                f"{change['revision_only_acres']:,.0f} and "
+                f"{change['map_explorer_only_acres']:,.0f} acres, in "
+                f"{change['pieces']} pieces.</p>"
             ),
             text=(
-                '<p><span style="font-size:13px"><strong>{field/acres} ac</strong> &middot; {field/side}</span></p>'
-                '<p><span style="font-size:11px;color:#777">{field/cause} &middot; steps {field/steps} &middot; {field/length_m} m long '
-                "&middot; up to {field/widest_m} m apart</span></p>"
+                '<p><span style="font-size:13px"><strong>{field/acres} ac'
+                "</strong> &middot; {field/side}</span></p><p>"
+                '<span style="font-size:11px;color:#777">{field/cause} '
+                "&middot; steps {field/steps} &middot; {field/length_m} m "
+                "long &middot; up to {field/widest_m} m apart</span></p>"
             ),
         ),
         widget(
@@ -1226,8 +1316,9 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
         "widgets": widgets,
         "header": header(
             "Hickory Sands District AVA: the boundary as proposed to TTB",
-            "Docket No. TTB-2026-0005, Notice No. 243 (91 FR 52576) - changes discussed with TTB on October 15, 2026 - "
-            "prepared by Dan McLaughlin, Robert Clay Vineyards (petitioner)",
+            "Docket No. TTB-2026-0005, Notice No. 243 (91 FR 52576) - "
+            "changes discussed with TTB on October 15, 2026 - prepared by "
+            "Dan McLaughlin, Robert Clay Vineyards (petitioner)",
         ),
         "settings": {
             "allowElementResizing": True,
@@ -1290,12 +1381,14 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
     }
 
     props = {
-        "snippet": "Start here: the proposed revision on the 13 USGS quadrangles with the AVA Map Explorer polygon, the 104 steps, and every "
-        "document, map and download in this group.",
+        "snippet": "Start here: the proposed revision on the 13 USGS "
+        "quadrangles with the AVA Map Explorer polygon, the 104 steps, and "
+        "every document, map and download in this group.",
         "description": ABOUT
-        + "<p>One page for the whole group: pick a step to see it on the map and read it; the differences from "
-        "the AVA Map Explorer polygon are listed and ringed on the map; the tabs link every document, the GIS data and the "
-        "13 USGS quadrangles.</p>",
+        + "<p>One page for the whole group: pick a step to see it on the map "
+        "and read it; the differences from the AVA Map Explorer polygon are "
+        "listed and ringed on the map; the tabs link every document, the GIS "
+        "data and the 13 USGS quadrangles.</p>",
         "tags": ",".join(TAGS),
         "licenseInfo": LIC,
         "accessInformation": CREDITS,

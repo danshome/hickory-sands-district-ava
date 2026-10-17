@@ -67,17 +67,35 @@ REVIEW = os.path.join(HERE, "review")
 DIFF_GPKG = os.path.join(
     REVIEW, "hickory-sands-district-differences-from-ttb-EPSG4269.gpkg"
 )
-DIFF_SRC_TITLE = "4j Differences from the AVA Map Explorer polygon - GeoPackage (the big ones, and all of them)"
-DIFF_TITLE = "4k Differences from the AVA Map Explorer polygon - layer (the big ones, and all of them)"
+DIFF_SRC_TITLE = (
+    "4j Differences from the AVA Map Explorer polygon - GeoPackage (the big "
+    "ones, and all of them)"
+)
+DIFF_TITLE = (
+    "4k Differences from the AVA Map Explorer polygon - layer (the big ones, "
+    "and all of them)"
+)
 # Earlier titles, so a re-run finds and retitles those items.
 DIFF_WAS = (
     [
-        "4j Differences from TTB's published polygon - GeoPackage (the big ones, and all of them)",
-        "4j Differences from TTB's published polygon - GeoPackage (rings, short tips)",
+        (
+            "4j Differences from TTB's published polygon - GeoPackage (the "
+            "big ones, and all of them)"
+        ),
+        (
+            "4j Differences from TTB's published polygon - GeoPackage (rings, "
+            "short tips)"
+        ),
     ],
     [
-        "4k Differences from TTB's published polygon - layer (the big ones, and all of them)",
-        "4k Differences from TTB's published polygon - layer (rings, short tips)",
+        (
+            "4k Differences from TTB's published polygon - layer (the big "
+            "ones, and all of them)"
+        ),
+        (
+            "4k Differences from TTB's published polygon - layer (rings, "
+            "short tips)"
+        ),
     ],
 )
 # The names used everywhere a reader sees them (Dan, 2026-10-16: the official
@@ -104,8 +122,14 @@ GEO_TITLE = "4m Geology - USGS SGMC units shifted to the outcrops - layer"
 GRIT_GPKG = os.path.join(
     REVIEW, "hickory-sands-district-change-near-grit-EPSG4269.gpkg"
 )  # from src/review/grit_change.py
-GRIT_SRC_TITLE = "4n The change near Grit - GeoPackage (lines swapped, areas moved, granite acres)"
-GRIT_TITLE = "4o The change near Grit - layer (lines swapped, areas moved, granite acres)"
+GRIT_SRC_TITLE = (
+    "4n The change near Grit - GeoPackage (lines swapped, areas moved, "
+    "granite acres)"
+)
+GRIT_TITLE = (
+    "4o The change near Grit - layer (lines swapped, areas moved, granite "
+    "acres)"
+)
 TOPO = "https://historical1.arcgis.com/arcgis/rest/services/USA_Historical_Topo_Maps/ImageServer"
 # The four basemaps of TTB's AVA Map Explorer (https://www.ttb.gov/ava; its web
 # map ae8e5830627f439c97b05ff285568c80).
@@ -200,7 +224,8 @@ def year(field, label):
 
 QUADS = {
     "id": "usgs-quads",
-    "title": "USGS 1:24,000 quadrangles cited in paragraph (b) (Esri USA Historical Topo Maps)",
+    "title": "USGS 1:24,000 quadrangles cited in paragraph (b) (Esri USA "
+    "Historical Topo Maps)",
     "url": TOPO,
     "layerType": "ArcGISImageServiceLayer",
     "visibility": True,
@@ -230,8 +255,8 @@ QUADS = {
         "popupElements": [
             {
                 "type": "text",
-                "text": "USGS 1:24,000 quadrangle cited in paragraph (b), from Esri's USA "
-                "Historical Topo Maps.",
+                "text": "USGS 1:24,000 quadrangle cited in paragraph (b), "
+                "from Esri's USA Historical Topo Maps.",
             },
             {"type": "fields"},
         ],
@@ -239,35 +264,39 @@ QUADS = {
 }
 CREDIT = "Dan McLaughlin, Robert Clay Vineyards (petitioner)"
 CC0 = (
-    "CC0 1.0 Universal (public domain dedication): no rights reserved. TTB, its contractors and anyone else may copy, "
-    "change and use this for any purpose without permission or attribution. https://creativecommons.org/publicdomain/zero/1.0/"
+    "CC0 1.0 Universal (public domain dedication): no rights reserved. TTB, "
+    "its contractors and anyone else may copy, change and use this for any "
+    "purpose without permission or attribution. "
+    "https://creativecommons.org/publicdomain/zero/1.0/"
 )
 # The web map shows more than the petitioner's work, so its license and credits
 # name each part (QA #30).
 LIC_MAP = (
-    "The map and the petitioner's layers (the proposed revision, the differences, the change near Grit, the shift of the "
-    "geology): "
+    "The map and the petitioner's layers (the proposed revision, the "
+    "differences, the change near Grit, the shift of the geology): "
     + CC0
-    + " The AVA Map Explorer polygon (TTB's AVAs_Production layer) and the step text from Notice No. 243: "
-    "U.S. Government work (public domain). USGS quadrangles and USGS SGMC geology: public domain. Basemaps: Esri, under "
-    "Esri's terms of use."
+    + " The AVA Map Explorer polygon (TTB's AVAs_Production layer) and the "
+    "step text from Notice No. 243: U.S. Government work (public domain). "
+    "USGS quadrangles and USGS SGMC geology: public domain. Basemaps: Esri, "
+    "under Esri's terms of use."
 )
 # The boundary layer (4b) holds TTB's text and data too (the step text, the
 # AVAs_Production values): the same split as the downloads 4c-4i
 # (agol_publish.py).
 LIC_GIS = (
-    "TTB's text and data, the step text from Notice No. 243 (boundary line layer) and the values copied from TTB's "
-    "AVAs_Production record (Name, Status, Counties and the like): U.S. Government work (public domain). The petitioner's "
-    "work, the boundary as drawn, its other attributes and the proposed changes to the text: "
-    + CC0
+    "TTB's text and data, the step text from Notice No. 243 (boundary line "
+    "layer) and the values copied from TTB's AVAs_Production record (Name, "
+    "Status, Counties and the like): U.S. Government work (public domain). "
+    "The petitioner's work, the boundary as drawn, its other attributes and "
+    "the proposed changes to the text: " + CC0
 )
 CREDIT_GIS = (
     CREDIT + "; TTB (Notice No. 243 step text, AVAs_Production record values)"
 )
 CREDIT_MAP = (
     CREDIT
-    + "; TTB (AVAs_Production layer, Notice No. 243); USGS (quadrangles, via Esri USA Historical Topo Maps; "
-    "SGMC geology); basemaps: Esri"
+    + "; TTB (AVAs_Production layer, Notice No. 243); USGS (quadrangles, via "
+    "Esri USA Historical Topo Maps; SGMC geology); basemaps: Esri"
 )
 TAGS = [
     "Hickory Sands District",
@@ -322,13 +351,15 @@ EXTENT = bbox(
     os.path.join(
         PKG,
         "4_GIS",
-        "hickory-sands-district-boundary-proposed-2026-10-15-area-EPSG4269.geojson",
+        "hickory-sands-district-boundary-proposed-2026-10-15-area-"
+        "EPSG4269.geojson",
     )
 )  # the AVA
 ABOUT = (
-    "<p>Hickory Sands District AVA (Docket No. TTB-2026-0005, Notice No. 243, 91 FR 52576): the boundary the petitioners "
-    "propose, with the changes discussed with TTB on October 15, 2026. Prepared by Dan McLaughlin, Robert Clay Vineyards "
-    "(petitioner).</p>"
+    "<p>Hickory Sands District AVA (Docket No. TTB-2026-0005, Notice No. "
+    "243, 91 FR 52576): the boundary the petitioners propose, with the "
+    "changes discussed with TTB on October 15, 2026. Prepared by Dan "
+    "McLaughlin, Robert Clay Vineyards (petitioner).</p>"
 )
 LAYER_TITLE = (
     "4b Proposed boundary - layer (AVA polygon, 104 steps, step endpoints)"
@@ -346,12 +377,14 @@ ATTACH = [
     os.path.join(
         PKG,
         "1_boundary-description",
-        "Hickory-Sands-District-boundary-description-as-proposed-2026-10-15.pdf",
+        "Hickory-Sands-District-boundary-description-as-proposed-2026-10-"
+        "15.pdf",
     ),
     os.path.join(
         PKG,
         "2_TTB-notice-243-with-changes-highlighted",
-        "TTB-Notice-243-with-proposed-Hickory-Sands-District-changes-highlighted-2026-10-15-UNOFFICIAL.pdf",
+        "TTB-Notice-243-with-proposed-Hickory-Sands-District-changes-"
+        "highlighted-2026-10-15-UNOFFICIAL.pdf",
     ),
     os.path.join(
         PKG,
@@ -385,15 +418,21 @@ def lock(lyr):
 
 
 props = {
-    "snippet": "The proposed boundary as a hosted feature layer: the AVA polygon, the 104 boundary steps with their text, and the step endpoints. Exports allowed.",
+    "snippet": "The proposed boundary as a hosted feature layer: the AVA "
+    "polygon, the 104 boundary steps with their text, and the step "
+    "endpoints. Exports allowed.",
     "description": ABOUT
-    + "<p>Add it to ArcGIS Pro from the portal, or open it in Map Viewer. Click the AVA polygon for the documents "
-    "(attached): read-me, boundary description, TTB's notice with the proposed changes highlighted, and the side-by-side. "
-    "Click a step for its text and what changed. Export to shapefile, file geodatabase, GeoPackage, GeoJSON and others "
-    "from the item page.</p><p>ArcGIS Online stores this hosted layer in Web Mercator (EPSG:3857), and exports "
-    "from the item page are made from that copy. For the data in NAD83 (EPSG:4269), the datum of TTB's "
-    "AVAs_Production layer, download items 4c-4i: the GeoPackage this layer is published from (4c), the "
-    "shapefiles (4d-4f) and the GeoJSON (4g-4i), all with TTB's AVAs_Production fields.</p>",
+    + "<p>Add it to ArcGIS Pro from the portal, or open it in Map Viewer. "
+    "Click the AVA polygon for the documents (attached): read-me, boundary "
+    "description, TTB's notice with the proposed changes highlighted, and "
+    "the side-by-side. Click a step for its text and what changed. Export to "
+    "shapefile, file geodatabase, GeoPackage, GeoJSON and others from the "
+    "item page.</p><p>ArcGIS Online stores this hosted layer in Web Mercator "
+    "(EPSG:3857), and exports from the item page are made from that copy. "
+    "For the data in NAD83 (EPSG:4269), the datum of TTB's AVAs_Production "
+    "layer, download items 4c-4i: the GeoPackage this layer is published "
+    "from (4c), the shapefiles (4d-4f) and the GeoJSON (4g-4i), all with "
+    "TTB's AVAs_Production fields.</p>",
     "tags": ",".join(TAGS),
     "licenseInfo": LIC_GIS,
     "accessInformation": CREDIT_GIS,
@@ -427,7 +466,8 @@ BUILT = {
     g: os.path.join(
         PKG,
         "4_GIS",
-        f"hickory-sands-district-boundary-proposed-2026-10-15-{k}-EPSG4269.geojson",
+        f"hickory-sands-district-boundary-proposed-2026-10-15-{k}"
+        "-EPSG4269.geojson",
     )
     for g, k in (
         ("esriGeometryPolygon", "area"),
@@ -558,7 +598,10 @@ def set_aliases(lyr, out):
             )
 
 
-NOTE = "The boundary as proposed to TTB; the changes near Grit were discussed with TTB on October 15, 2026."
+NOTE = (
+    "The boundary as proposed to TTB; the changes near Grit were discussed "
+    "with TTB on October 15, 2026."
+)
 
 
 def popup(title, lyr, wanted, attachments=False, text=None):
@@ -641,7 +684,8 @@ pts_def = {
         "labelingInfo": [
             {
                 "labelExpressionInfo": {
-                    "expression": "IIf(IsEmpty($feature.step), '', '(' + $feature.step + ')')"
+                    "expression": "IIf(IsEmpty($feature.step), '', '(' + "
+                    "$feature.step + ')')"
                 },
                 "labelPlacement": "esriServerPointLabelPlacementAboveRight",
                 "symbol": {
@@ -790,7 +834,10 @@ def hosted(gpkg, src_title, title, service, props, was=((), ())):
         src.publish(
             publish_parameters=pp, file_type="geoPackage", overwrite=True
         )
-        status = f"{gis._portal.resturl}content/users/{lyr.owner}/items/{lyr.id}/status"
+        status = (
+            f"{gis._portal.resturl}content/users/{lyr.owner}/items/{lyr.id}"
+            "/status"
+        )
         # The job retitles the service when it finishes, so set the title after
         # that (2 min at most).
         for _ in range(60):
@@ -912,28 +959,37 @@ def make_diff_gpkg(path=DIFF_GPKG):
 
 DIFF_ABOUT = (
     ABOUT
-    + f"<p>Two layers comparing {REV} (red, drawn from the proposed text) with {MAPX} (blue, TTB's AVAs_Production "
-    "layer for Notice No. 243). The Map Explorer polygon was digitized by hand; the proposed revision follows the centre of "
-    f"the printed linework of the USGS maps. So the two lines differ a little almost everywhere: measured every 2 m along each "
-    f"line, the median distance to the other line is {MED:.0f} m. (The pieces of land between them are narrower on average, "
-    "since each tapers to nothing where the lines cross.)</p>"
-    f"<p><b>Big differences</b> ({NBIG}): the places where the two lines are {BIG_M:.0f} m or more apart, where they take "
-    "different paths, or the proposed text change near Grit. Each gives the steps, how far apart the lines are, the "
-    "length of the stretch, the acres in one and not the other, and how far each step's endpoint is from the Map "
-    "Explorer polygon's nearest vertex.</p>"
-    f"<p><b>All differences</b> ({NPIECES} pieces): every piece of land in one and not the other. From {SAME_TEXT}: "
-    f"{same['revision_only_acres']:,.0f} acres in {REV} only and {same['map_explorer_only_acres']:,.0f} acres in "
-    f"{MAPX} only ({same['pieces']} pieces). From {TEXT_CHANGE}: {change['revision_only_acres']:,.0f} and "
-    f"{change['map_explorer_only_acres']:,.0f} acres ({change['pieces']} pieces).</p>"
+    + f"<p>Two layers comparing {REV} (red, drawn from the proposed text) "
+    f"with {MAPX} (blue, TTB's AVAs_Production layer for Notice No. 243). The "
+    "Map Explorer polygon was digitized by hand; the proposed revision "
+    "follows the centre of the printed linework of the USGS maps. So the two "
+    "lines differ a little almost everywhere: measured every 2 m along each "
+    f"line, the median distance to the other line is {MED:.0f} m. (The pieces "
+    "of land between them are narrower on average, since each tapers to "
+    f"nothing where the lines cross.)</p><p><b>Big differences</b> ({NBIG}): "
+    f"the places where the two lines are {BIG_M:.0f} m or more apart, where "
+    "they take different paths, or the proposed text change near Grit. Each "
+    "gives the steps, how far apart the lines are, the length of the "
+    "stretch, the acres in one and not the other, and how far each step's "
+    "endpoint is from the Map Explorer polygon's nearest vertex.</p><p><b>"
+    f"All differences</b> ({NPIECES} pieces): every piece of land in one and "
+    f"not the other. From {SAME_TEXT}: {same['revision_only_acres']:,.0f} "
+    f"acres in {REV} only and {same['map_explorer_only_acres']:,.0f} acres in "
+    f"{MAPX} only ({same['pieces']} pieces). From {TEXT_CHANGE}: "
+    f"{change['revision_only_acres']:,.0f} and "
+    f"{change['map_explorer_only_acres']:,.0f} acres ({change['pieces']} "
+    "pieces).</p>"
 )
 dprops = {
-    "snippet": f"The {NBIG} big differences ({BIG_M:.0f} m or more apart) between {REV} and {MAPX}, and all {NPIECES} "
-    "pieces of land between the two lines.",
+    "snippet": f"The {NBIG} big differences ({BIG_M:.0f} m or more apart) "
+    f"between {REV} and {MAPX}, and all {NPIECES} pieces of land between the "
+    "two lines.",
     "description": DIFF_ABOUT,
     "tags": ",".join(TAGS),
     "licenseInfo": CC0,
     "accessInformation": CREDIT
-    + "; compared with TTB's AVAs_Production polygon (the AVA Map Explorer polygon, Notice No. 243)",
+    + "; compared with TTB's AVAs_Production polygon (the AVA Map Explorer "
+    "polygon, Notice No. 243)",
 }
 DIFF_SERVICE = "Hickory_Sands_District_differences_from_TTB_2026_10_15"
 DNAMES = {
@@ -953,15 +1009,19 @@ def diff_layers(layers):
 # ---- geology (USGS SGMC, shifted to the outcrops)
 GEO_ABOUT = (
     ABOUT
-    + "<p>Three USGS geologic units near the AVA: Town Mountain Granite, the younger granitic intrusions and the "
-    "Hickory Sandstone Member formation, from the USGS State Geologic Map Compilation (Horton and others, 2017, USGS Data "
-    "Series 1052; public domain). SGMC as published sits about 400 m south-east of the outcrops seen on USDA NAIP "
-    "imagery, so every polygon is shifted -0.002356 deg longitude and +0.002993 deg latitude (about 225 m west, 331 m "
-    "north, fitted to the granite outcrop trace); each feature records its source and the shift. Context only: no "
+    + "<p>Three USGS geologic units near the AVA: Town Mountain Granite, the "
+    "younger granitic intrusions and the Hickory Sandstone Member formation, "
+    "from the USGS State Geologic Map Compilation (Horton and others, 2017, "
+    "USGS Data Series 1052; public domain). SGMC as published sits about 400 "
+    "m south-east of the outcrops seen on USDA NAIP imagery, so every "
+    "polygon is shifted -0.002356 deg longitude and +0.002993 deg latitude "
+    "(about 225 m west, 331 m north, fitted to the granite outcrop trace); "
+    "each feature records its source and the shift. Context only: no "
     "boundary line comes from these layers.</p>"
 )
 gprops = {
-    "snippet": "USGS geologic units near the AVA (granite and the Hickory Sandstone Member formation), shifted about 400 m to sit on the outcrops.",
+    "snippet": "USGS geologic units near the AVA (granite and the Hickory "
+    "Sandstone Member formation), shifted about 400 m to sit on the outcrops.",
     "description": GEO_ABOUT,
     "tags": ",".join([*TAGS, "geology", "SGMC"]),
     "licenseInfo": "USGS data (public domain); shift " + CC0,
@@ -1090,24 +1150,32 @@ def ga(k):
 
 GRIT_ABOUT = (
     ABOUT
-    + "<p>What the proposed text swaps near Grit, all drawn on the printed linework of the USGS maps (none taken from "
-    "the AVA Map Explorer polygon). Lines: Notice No. 243's steps (10)-(11) and (90)-(92), as drawn by the petitioner, which "
-    "the proposed text replaces; the "
-    "petition's wording put back in their place, steps (10)-(11), (90)-(92) and (97)-(100); the new steps (93)-(96) around "
-    "the granite lobe; and the petition's straight line from the marked 1,737 to the marked 1,762, which they replace.</p>"
-    f"<p>Areas, with the granite (Town Mountain Granite and younger granitic intrusions, USGS SGMC shifted to the outcrops) in each: "
-    f"in Notice No. 243's text and left out by the petition, {ga('Notice No. 243, not the petition')}; added by the "
-    f"petition's lane wording along steps (10)-(11), {ga('lane wording')}; in the petition and not Notice No. 243's text "
-    f"along steps (99)-(100), {ga('petition, not Notice No. 243')}; the granite lobe now also left out by (93)-(96), "
-    f"{ga('granite lobe')}; put back between the marked 1,737 and the windmill, {ga('put back')}.</p>"
+    + "<p>What the proposed text swaps near Grit, all drawn on the printed "
+    "linework of the USGS maps (none taken from the AVA Map Explorer "
+    "polygon). Lines: Notice No. 243's steps (10)-(11) and (90)-(92), as "
+    "drawn by the petitioner, which the proposed text replaces; the "
+    "petition's wording put back in their place, steps (10)-(11), (90)-(92) "
+    "and (97)-(100); the new steps (93)-(96) around the granite lobe; and "
+    "the petition's straight line from the marked 1,737 to the marked 1,762, "
+    "which they replace.</p><p>Areas, with the granite (Town Mountain "
+    "Granite and younger granitic intrusions, USGS SGMC shifted to the "
+    "outcrops) in each: in Notice No. 243's text and left out by the "
+    f"petition, {ga('Notice No. 243, not the petition')}; added by the "
+    f"petition's lane wording along steps (10)-(11), {ga('lane wording')}; in "
+    "the petition and not Notice No. 243's text along steps (99)-(100), "
+    f"{ga('petition, not Notice No. 243')}; the granite lobe now also left "
+    f"out by (93)-(96), {ga('granite lobe')}; put back between the marked "
+    f"1,737 and the windmill, {ga('put back')}.</p>"
 )
 rprops = {
-    "snippet": "The change near Grit: the lines the proposed text swaps, and the acres (and granite) it leaves out and puts in.",
+    "snippet": "The change near Grit: the lines the proposed text swaps, and "
+    "the acres (and granite) it leaves out and puts in.",
     "description": GRIT_ABOUT,
     "tags": ",".join([*TAGS, "granite", "Grit"]),
     "licenseInfo": CC0,
     "accessInformation": CREDIT
-    + "; granite: USGS State Geologic Map Compilation (SGMC), shifted to the outcrops",
+    + "; granite: USGS State Geologic Map Compilation (SGMC), shifted to the "
+    "outcrops",
 }
 GRIT_SERVICE = "Hickory_Sands_District_change_near_Grit_2026_10_15"
 GRIT_NAMES = (
@@ -1166,8 +1234,10 @@ big_def = {
         "labelingInfo": [
             {
                 "labelExpressionInfo": {
-                    "expression": "'#' + $feature.n + IIf(Find(',', $feature.steps) > -1, ' steps ', ' step ') + "
-                    "$feature.steps + ': ' + Round($feature.max_apart_m) + ' m'"
+                    "expression": "'#' + $feature.n + IIf(Find(',', "
+                    "$feature.steps) > -1, ' steps ', ' step ') + "
+                    "$feature.steps + ': ' + Round($feature.max_apart_m) + ' "
+                    "m'"
                 },
                 "labelPlacement": "esriServerPolygonPlacementAlwaysHorizontal",
                 "symbol": {
@@ -1204,7 +1274,9 @@ all_def = {
         "renderer": {
             "type": "uniqueValue",
             "valueExpressionTitle": "Land between the two boundaries",
-            "valueExpression": f"IIf($feature.cause == '{TEXT_CHANGE}', 'text', IIf($feature.side == 'in the proposed revision only', 'rev', 'mapx'))",
+            "valueExpression": f"IIf($feature.cause == '{TEXT_CHANGE}', "
+            "'text', IIf($feature.side == 'in the proposed revision only', "
+            "'rev', 'mapx'))",
             "uniqueValueInfos": [
                 {
                     "value": "rev",
@@ -1218,7 +1290,8 @@ all_def = {
                 },
                 {
                     "value": "text",
-                    "label": "Between the two near Grit (the proposed text change)",
+                    "label": "Between the two near Grit (the proposed text "
+                    "change)",
                     "symbol": fill([120, 120, 120, 70]),
                 },
             ],
@@ -1244,9 +1317,10 @@ ttb_def = {
     },
 }
 DIFF_NOTE = (
-    f"Red: the proposed revision. Blue: the AVA Map Explorer polygon (AVAs_Production, Notice No. 243). Ringed where they are "
-    f"{BIG_M:.0f} m or more apart; elsewhere they differ as a hand-digitized line and a traced one do (median {MED:.0f} m, "
-    "measured every 2 m along each line)."
+    "Red: the proposed revision. Blue: the AVA Map Explorer polygon "
+    f"(AVAs_Production, Notice No. 243). Ringed where they are {BIG_M:.0f} m "
+    "or more apart; elsewhere they differ as a hand-digitized line and a "
+    f"traced one do (median {MED:.0f} m, measured every 2 m along each line)."
 )
 BIG_F = [
     ("why", "Why"),
@@ -1279,7 +1353,8 @@ ttb_pop = {
     "popupElements": [
         {
             "type": "text",
-            "text": "TTB's AVAs_Production layer (live), shown on TTB's AVA Map Explorer for Notice No. 243.",
+            "text": "TTB's AVAs_Production layer (live), shown on TTB's AVA "
+            "Map Explorer for Notice No. 243.",
         },
         {"type": "fields"},
     ],
@@ -1299,12 +1374,14 @@ grit_lines_def = {
             "uniqueValueInfos": [
                 {
                     "value": "replaced: a Notice No. 243 step",
-                    "label": "Replaced: Notice No. 243 steps (10)-(11), (90)-(92), as drawn by the petitioner",
+                    "label": "Replaced: Notice No. 243 steps (10)-(11), "
+                    "(90)-(92), as drawn by the petitioner",
                     "symbol": sls(BLUE, 3, "esriSLSDash"),
                 },
                 {
                     "value": "put back: the petition's wording",
-                    "label": "Put back: the petition's wording, (10)-(11), (90)-(92), (97)-(100)",
+                    "label": "Put back: the petition's wording, (10)-(11), "
+                    "(90)-(92), (97)-(100)",
                     "symbol": sls(GREEN, 3.5),
                 },
                 {
@@ -1314,7 +1391,8 @@ grit_lines_def = {
                 },
                 {
                     "value": "replaced: the petition's straight line",
-                    "label": "Replaced: the petition's straight line from the marked 1,737 to the marked 1,762",
+                    "label": "Replaced: the petition's straight line from "
+                    "the marked 1,737 to the marked 1,762",
                     "symbol": sls(GREEN, 2.5, "esriSLSDash"),
                 },
             ],
@@ -1356,7 +1434,8 @@ grit_areas_def = {
             "uniqueValueInfos": [
                 {
                     "value": "Notice No. 243, not the petition",
-                    "label": "In Notice No. 243's text, left out by the petition",
+                    "label": "In Notice No. 243's text, left out by the "
+                    "petition",
                     "symbol": hatch(BROWN, "esriSFSBackwardDiagonal"),
                 },
                 {
@@ -1371,12 +1450,14 @@ grit_areas_def = {
                 },
                 {
                     "value": "petition, not Notice No. 243",
-                    "label": "In the petition, not Notice No. 243's text, (99)-(100)",
+                    "label": "In the petition, not Notice No. 243's text, "
+                    "(99)-(100)",
                     "symbol": fill([0, 140, 60, 90]),
                 },
                 {
                     "value": "put back",
-                    "label": "Put back, between the marked 1,737 and the windmill",
+                    "label": "Put back, between the marked 1,737 and the "
+                    "windmill",
                     "symbol": fill([0, 140, 60, 90]),
                 },
             ],
@@ -1384,7 +1465,8 @@ grit_areas_def = {
         "labelingInfo": [
             {
                 "labelExpressionInfo": {
-                    "expression": "Text($feature.acres, '#,###') + ' ac, ' + Text($feature.granite_acres, '#,###') + ' ac granite'"
+                    "expression": "Text($feature.acres, '#,###') + ' ac, ' + "
+                    "Text($feature.granite_acres, '#,###') + ' ac granite'"
                 },
                 "labelPlacement": "esriServerPolygonPlacementAlwaysHorizontal",
                 "symbol": {
@@ -1413,18 +1495,26 @@ GRIT_AREAS_F = [
     ("notice_steps", "Notice No. 243 steps along it"),
 ]
 mprops = {
-    "snippet": "The proposed boundary over the 13 USGS 1:24,000 quadrangles cited in paragraph (b). Click the AVA for the documents, a step for its text.",
+    "snippet": "The proposed boundary over the 13 USGS 1:24,000 quadrangles "
+    "cited in paragraph (b). Click the AVA for the documents, a step for its "
+    "text.",
     "description": ABOUT
-    + "<p>The quadrangle layer is Esri's USA Historical Topo Maps service, locked to the 13 editions the proposed "
-    "regulation cites. Over them: the USGS geologic units shifted to the outcrops (layer 4m), the AVA Map "
-    "Explorer polygon from TTB's live AVAs_Production layer (blue), the proposed revision (red, layer 4b, with its "
-    "numbered step endpoints), every piece of land between the two lines shaded (red: in the proposed revision only; "
-    f"blue: in the Map Explorer polygon only; grey: the proposed text change near Grit), and the {NBIG} big "
-    "differences, where the lines are "
-    f'{BIG_M:.0f} m or more apart, ringed (layer 4k). The group "The change near Grit" shows the lines the proposed '
-    'text swaps and the areas (with their granite) it leaves out and puts in (layer 4o). The group "TTB\'s AVA Map Explorer basemaps" holds '
-    "the four basemaps of TTB's AVA Map Explorer (Topographic, Streets, Imagery, USA Topo Maps); turn it on "
-    "and pick one to see the lines over what the Map Explorer shows.</p>",
+    + "<p>The quadrangle layer is Esri's USA Historical Topo Maps service, "
+    "locked to the 13 editions the proposed regulation cites. Over them: the "
+    "USGS geologic units shifted to the outcrops (layer 4m), the AVA Map "
+    "Explorer polygon from TTB's live AVAs_Production layer (blue), the "
+    "proposed revision (red, layer 4b, with its numbered step endpoints), "
+    "every piece of land between the two lines shaded (red: in the proposed "
+    "revision only; blue: in the Map Explorer polygon only; grey: the "
+    f"proposed text change near Grit), and the {NBIG} big differences, where "
+    "the lines are "
+    f'{BIG_M:.0f} m or more apart, ringed (layer 4k). The group "The change '
+    'near Grit" shows the lines the proposed text swaps and the areas (with '
+    "their granite) it leaves out and puts in (layer 4o). The group \"TTB's "
+    'AVA Map Explorer basemaps" holds '
+    "the four basemaps of TTB's AVA Map Explorer (Topographic, Streets, "
+    "Imagery, USA Topo Maps); turn it on and pick one to see the lines over "
+    "what the Map Explorer shows.</p>",
     "tags": ",".join(TAGS),
     "licenseInfo": LIC_MAP,
     "accessInformation": CREDIT_MAP,
@@ -1456,7 +1546,9 @@ def boundary_plan(area, line, pts):
         AREA_F,
         True,
         NOTE
-        + " The documents are attached below: read-me, boundary description, TTB's notice with the proposed changes highlighted, and the side-by-side.",
+        + " The documents are attached below: read-me, boundary description, "
+        "TTB's notice with the proposed changes highlighted, and the "
+        "side-by-side.",
     )
     line_pop = popup("Step ({step})", line, LINE_F, text=NOTE)
     pts_pop = popup("{point_name}", pts, PTS_F)
@@ -1536,8 +1628,9 @@ def diff_plan(bigl, every_l):
         "{acres} acres {side}",
         every_l,
         ALL_F,
-        text="One piece of land in one line and not the other. Red: in the proposed revision only; blue: in the AVA Map "
-        "Explorer polygon only; grey: the proposed text change near Grit.",
+        text="One piece of land in one line and not the other. Red: in the "
+        "proposed revision only; blue: in the AVA Map Explorer polygon only; "
+        "grey: the proposed text change near Grit.",
     )
     return {
         "pops": (big_pop, all_pop),
@@ -1581,7 +1674,8 @@ def grit_plan(grit_lines, grit_areas):
         "{acres} acres: {why}",
         grit_areas,
         GRIT_AREAS_F,
-        text="Granite: Town Mountain Granite and younger granitic intrusions, USGS SGMC shifted about 400 m to the outcrops.",
+        text="Granite: Town Mountain Granite and younger granitic "
+        "intrusions, USGS SGMC shifted about 400 m to the outcrops.",
     )
     return {
         "pops": (grit_lines_pop, grit_areas_pop),
@@ -1729,7 +1823,8 @@ def webmap_plan(
             ),
             {
                 "id": "hsd-ttb",
-                "title": "AVA Map Explorer polygon (TTB AVAs_Production, Notice No. 243, live)",
+                "title": "AVA Map Explorer polygon (TTB AVAs_Production, "
+                "Notice No. 243, live)",
                 "url": TTB_URL,
                 "layerType": "ArcGISFeatureLayer",
                 "visibility": True,
@@ -1968,7 +2063,8 @@ def main():
                     failed = [r for r in res if not r.get("success")]
                     assert not failed, (gtype, failed[:3])
                 print(
-                    f"updated {len(ups)} features of {layers[gtype].properties.name}"
+                    f"updated {len(ups)} features of "
+                    f"{layers[gtype].properties.name}"
                 )
             fl.update(
                 item_properties={

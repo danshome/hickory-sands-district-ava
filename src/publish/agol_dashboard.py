@@ -64,7 +64,7 @@ ROOT = os.path.abspath(
 HERE = os.environ.get("HSD_WORK") or os.path.join(
     ROOT, "target", "work"
 )  # build work dir
-with open(os.path.join(HERE, "agreed-steps.json")) as f:
+with open(os.path.join(HERE, "proposed-steps.json")) as f:
     SQMI = f"{json.load(f)['sqmi']:.2f}"  # the AVA's area, GRS80 square miles
 with open(os.path.join(HERE, "review", "ttb-diff-stats.json")) as f:
     STATS = json.load(f)
@@ -590,7 +590,7 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
     reworded = [
         s["step"] for s in steps if "unchanged" not in (s["change"] or "")
     ]  # as the indicator counts them
-    # How build_agreed.py's change notes for (49) and (85) start: Notice No.
+    # How build_proposed.py's change notes for (49) and (85) start: Notice No.
     # 243's wording corrected.
     correction = "text correction"
     fixes = [s["step"] for s in steps if correction in (s["change"] or "")]

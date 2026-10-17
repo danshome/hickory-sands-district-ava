@@ -3,7 +3,7 @@
 The regulatory text in TTB's style (HTML for PDF/DOCX, plain text), a CSV of
 the steps, and the changes from TTB's published text. Paragraphs (a)-(c) and
 the steps are TTB's words (Notice No. 243, 91 FR 52576, 52585-86) except where
-agreed-steps.json says otherwise: near Grit, and the two corrections to TTB's
+proposed-steps.json says otherwise: near Grit, and the two corrections to TTB's
 own wording in steps (49) and (85).
 """
 
@@ -28,7 +28,7 @@ def load_json(path, encoding=None):
         return json.load(f)
 
 
-S = load_json(os.path.join(HERE, "agreed-steps.json"))
+S = load_json(os.path.join(HERE, "proposed-steps.json"))
 L = {
     f["properties"]["step"]: f["properties"]
     for f in load_json(

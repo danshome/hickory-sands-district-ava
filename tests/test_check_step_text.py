@@ -42,7 +42,7 @@ def layout(
     tmp_path,
     ttb=None,
     petition=None,
-    agreed='STEPS = ["Proceed east along the road; then"]\n',
+    proposed='STEPS = ["Proceed east along the road; then"]\n',
 ):
     """Returns a copy of the script, with its inputs where it looks for them.
 
@@ -79,7 +79,9 @@ def layout(
     (root / "resources/boundary/description/petition-steps.json").write_text(
         json.dumps(petition), encoding="utf-8"
     )
-    (root / "src/boundary/build_agreed.py").write_text(agreed, encoding="utf-8")
+    (root / "src/boundary/build_proposed.py").write_text(
+        proposed, encoding="utf-8"
+    )
     return root / "src" / "checks" / SCRIPT.name
 
 
@@ -135,8 +137,8 @@ BLOCKED = [
     "char, name, fix", BLOCKED, ids=[n for _, n, _ in BLOCKED]
 )
 def test_a_blocked_character_in_the_proposed_steps(tmp_path, char, name, fix):
-    agreed = tmp_path / "agreed-steps.json"
-    agreed.write_text(
+    proposed = tmp_path / "proposed-steps.json"
+    proposed.write_text(
         json.dumps(
             {
                 "steps": [
@@ -149,7 +151,7 @@ def test_a_blocked_character_in_the_proposed_steps(tmp_path, char, name, fix):
         ),
         encoding="utf-8",
     )
-    rc, out = run(SCRIPT, agreed)
+    rc, out = run(SCRIPT, proposed)
     assert rc == 1
     assert re.search(
         rf"^proposed step \(7\): {re.escape(name)} \(U\+{ord(char):04X}\) "
@@ -160,21 +162,21 @@ def test_a_blocked_character_in_the_proposed_steps(tmp_path, char, name, fix):
 
 
 def test_the_federal_registers_curly_double_quotes_are_allowed(tmp_path):
-    agreed = tmp_path / "agreed-steps.json"
+    proposed = tmp_path / "proposed-steps.json"
     text = "Proceed to the marked \u201cQuarry\u201d; then"
-    agreed.write_text(
+    proposed.write_text(
         json.dumps({"steps": [{"step": 36, "text": text}]}),
         encoding="utf-8",
     )
-    assert run(SCRIPT, agreed)[0] == 0
+    assert run(SCRIPT, proposed)[0] == 0
 
 
-def test_step_text_in_build_agreed_and_the_petition_is_checked(tmp_path):
+def test_step_text_in_build_proposed_and_the_petition_is_checked(tmp_path):
     rc, out = run(
         layout(
             tmp_path,
             petition={"1": "Proceed\u00a0east; then"},
-            agreed=(
+            proposed=(
                 "X = 1\n"
                 'STEP = "Proceed east\u2014along the road; then"\n'
                 'NOTE = "not a step \u2014"\n'
@@ -189,6 +191,8 @@ def test_step_text_in_build_agreed_and_the_petition_is_checked(tmp_path):
         re.M,
     ), out
     assert re.search(
-        r"^step text in build_agreed.py line 2: EM DASH \(U\+2014\)", out, re.M
+        r"^step text in build_proposed.py line 2: EM DASH \(U\+2014\)",
+        out,
+        re.M,
     ), out
     assert len(out.splitlines()) == 2  # "NOTE" is not step text

@@ -121,17 +121,17 @@ linework() {
     run src/fixing/apply_patches.py --traced "$WORK/ink-centerline-steps.geojson" --patches resources/boundary/tracing/hand-patches-EPSG4269.geojson \
         --out "$WORK/ink-centerline-steps-patched.geojson" --smooth-joins 25 | tail -n 1
     step "boundary: pins, chords, traced steps, polygon, points, GeoPackage, shapefiles"
-    run src/boundary/build_agreed.py | grep -E "^AVA|written|pins moved|traced lines" | cut -c1-160
+    run src/boundary/build_proposed.py | grep -E "^AVA|written|pins moved|traced lines" | cut -c1-160
 }
 
 checks() {
     step "checks"
     run src/checks/check_build.py "$WORK/gis"                                            # hard: stops the build on failure
-    run src/checks/check_step_text.py "$WORK/agreed-steps.json"                         # hard: the Federal Register's characters
+    run src/checks/check_step_text.py "$WORK/proposed-steps.json"                       # hard: the Federal Register's characters
     run src/review/tipcheck.py --line "$WORK/gis/$STEM-line-EPSG4269.geojson" --traced "$WORK/ink-centerline-steps.geojson" \
         --out "$WORK/review/tips-short-EPSG4269.geojson" | head -n 1                       # report
     run src/review/compare_ttb.py --ours-line "$WORK/gis/$STEM-line-EPSG4269.geojson" --ours-area "$WORK/gis/$STEM-area-EPSG4269.geojson" \
-        --ttb "$ROOT/resources/ttb/ttb-avas-production-hickory-sands-district-EPSG4269-NAD83.geojson" --steps "$WORK/agreed-steps.json" \
+        --ttb "$ROOT/resources/ttb/ttb-avas-production-hickory-sands-district-EPSG4269-NAD83.geojson" --steps "$WORK/proposed-steps.json" \
         --out-dir "$WORK/review" 2>/dev/null | grep -E "places ringed|threshold" || true    # report
     run src/review/grit_change.py --line "$WORK/gis/$STEM-line-EPSG4269.geojson" \
         --oct14 "$ROOT/resources/boundary/proposed/step-lines-2026-10-14-EPSG4269.geojson" \
@@ -161,7 +161,7 @@ documents() {
 
 quadsheets() {
     step "the 13 USGS quads with the boundary (GeoPDF + GeoTIFF)"
-    run src/boundary/build_agreed_quads.py > "$WORK/quads-build.log" 2>&1 || { tail -n 20 "$WORK/quads-build.log"; exit 1; }
+    run src/boundary/build_proposed_quads.py > "$WORK/quads-build.log" 2>&1 || { tail -n 20 "$WORK/quads-build.log"; exit 1; }
     echo "$(ls "$WORK"/quads/*_geo.pdf | wc -l | tr -d ' ') GeoPDFs, $(ls "$WORK"/quads/*_geo.tif | wc -l | tr -d ' ') GeoTIFFs"
 }
 
@@ -177,7 +177,7 @@ package() {
         echo "Hickory Sands District AVA - boundary as proposed to TTB: build report"
         echo "built      $(date '+%Y-%m-%d %H:%M %Z') on $(hostname -s) ($(uname -s), GDAL $(gdal-config --version), $(pdftotext -v 2>&1 | head -n 1))"
         echo "source     git $(git rev-parse --short HEAD 2>/dev/null || echo '?')$(git diff --quiet 2>/dev/null || echo ' (with uncommitted changes)')"
-        run -c "import json; d = json.load(open('$WORK/agreed-steps.json')); print('area       %.3f sq mi (GRS 1980), %d steps' % (d['sqmi'], len(d['steps'])))"
+        run -c "import json; d = json.load(open('$WORK/proposed-steps.json')); print('area       %.3f sq mi (GRS 1980), %d steps' % (d['sqmi'], len(d['steps'])))"
         run src/checks/check_build.py "$WORK/gis" | sed 's/^/check      /'
         grep -E '^(output checks|WARNING)' "$WORK/review/output-checks.txt" | sed 's/^/check      /'
         [ -f "$WORK/review/tips-short-EPSG4269.geojson" ] && run -c "import json; print('tips       %d tips of contours/creeks the line stops short of (report)' % len(json.load(open('$WORK/review/tips-short-EPSG4269.geojson'))['features']))"

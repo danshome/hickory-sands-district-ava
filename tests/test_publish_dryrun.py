@@ -536,7 +536,7 @@ def test_the_dry_run_of_the_build(tmp_path):
     As ./build.sh publish-dry-run runs it.
     """
     work = os.environ.get("HSD_WORK") or os.path.join(ROOT, "target", "work")
-    if not os.path.exists(os.path.join(work, "agreed-steps.json")):
+    if not os.path.exists(os.path.join(work, "proposed-steps.json")):
         pytest.skip(f"no build outputs in {work}: run ./build.sh first")
     pytest.importorskip(
         "arcgis",

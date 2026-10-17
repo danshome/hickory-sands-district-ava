@@ -13,7 +13,7 @@ added:
 Inputs are read, never written: the step lines (resources/boundary/proposed/)
 and the USGS originals (resources/quads/geopdf/*.pdf;
 resources/quads/geotiff/*.zip, read inside the zip). The TTB package build uses
-only its functions, through src/boundary/build_agreed_quads.py.
+only its functions, through src/boundary/build_proposed_quads.py.
 
 GeoPDF: a PDF incremental update. The USGS file is copied byte for byte and the
   additions are appended after it: one optional-content layer holding the line

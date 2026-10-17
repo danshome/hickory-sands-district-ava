@@ -1153,7 +1153,7 @@ def trace(sheets, prior, kind, label=""):
         ):  # casings or a band readable along the step: centre on them
             # END HOOKS (Oct. 16, 2026): with the end readings blanked, the
             # interior offset carries straight to the pin and the line runs
-            # parallel to the road centre until build_agreed's tie to the pin.
+            # parallel to the road centre until build_proposed's tie to the pin.
             # At a pin checked ON the ink centre where the line 12-40 m in is
             # not (start of step 68: pin 67 on the highway centre, the line 3.2
             # m low) the offset is held to 0 at the pin and tapered in over

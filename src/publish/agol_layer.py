@@ -52,7 +52,7 @@ ROOT = os.path.abspath(
 HERE = os.environ.get("HSD_WORK") or os.path.join(
     ROOT, "target", "work"
 )  # build work dir (build.sh stages resources/ here)
-with open(os.path.join(HERE, "agreed-steps.json")) as f:
+with open(os.path.join(HERE, "proposed-steps.json")) as f:
     SQMI = f"{json.load(f)['sqmi']:.2f}"  # the AVA's area, GRS80 square miles
 PKG = os.path.join(
     HERE, "pkg", "Hickory-Sands-District-AVA_boundary-as-proposed-2026-10-15"

@@ -63,7 +63,7 @@ def test_readme_and_page(tmp_path, monkeypatch):
 
     main() itself stops if a word of README.txt is not on the page.
     """
-    (tmp_path / "agreed-steps.json").write_text(
+    (tmp_path / "proposed-steps.json").write_text(
         json.dumps(
             {"sqmi": 123.456, "steps": [{"step": n} for n in range(1, 8)]}
         )

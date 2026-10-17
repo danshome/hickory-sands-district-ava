@@ -108,7 +108,7 @@ src/
   fixing/                hand patches: patchlib (making them) and apply_patches (splicing them onto the traces)
   review/                tipcheck (tips the line stops short of), compare_ttb (vs the AVA Map Explorer polygon),
                          grit_change (the change near Grit, acre by acre, with its granite), triage tools
-  boundary/              ink_centerline (runs the tracer), build_agreed (pins, polygon, GIS), quad sheets, TTB record
+  boundary/              ink_centerline (runs the tracer), build_proposed (pins, polygon, GIS), quad sheets, TTB record
   documents/             description, side-by-side, notice copy, DOCX, README / read-me-first, PDF text
   checks/                hard checks: quads vs manifest, every pin on its line, no self-crossing, valid polygon;
                          check_outputs: what reaches TTB (PDF fonts, compare text, figures, wording, GIS, zip paths)
@@ -154,7 +154,7 @@ tobedeleted/             set aside for review and deletion, used by nothing (not
    reaches TTB (`src/checks/check_outputs.py`, output in `target/work/review/output-checks.txt` and the build report):
    every font embedded in the PDFs the build makes and none Mac-only (Helvetica Neue, Menlo); the notice copy (2a)
    with no AcroForm, /Perms, document XMP, signature or annotation but links; the two compare-text files differing in
-   exactly the steps whose `change` in `agreed-steps.json` is not "unchanged", as the proposed text, and README.txt
+   exactly the steps whose `change` in `proposed-steps.json` is not "unchanged", as the proposed text, and README.txt
    naming those steps; the area and README.md's figures equal to the build's statistics, rounded once, half up;
    no "agreed", "ours", "our boundary", "TTB's published polygon", "final text" or bare "Hickory Sandstone" in a
    generated document; every point's and step end's `quad` the quadrangle whose neatline holds it (the 7.5-minute

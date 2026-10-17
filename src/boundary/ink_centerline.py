@@ -10,7 +10,7 @@ Input: the step lines as they stood at Oct. 15, 2026, 22:11
 are the pins, kept exactly. The doubled road near Grit (steps 10, 11, 91, 92)
 keeps its 30 m lanes and is not traced.
 Output: ink-centerline-steps.geojson (one traced line per step, with the
-check's figures), which build_agreed.py splices into the ring.
+check's figures), which build_proposed.py splices into the ring.
 
 Usage (the project .venv, via ./build.sh):
   ink_centerline.py [STEP ...]   default: every step in KIND

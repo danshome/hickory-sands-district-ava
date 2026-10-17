@@ -69,7 +69,7 @@ def figures():
     """Returns what the indicators and the step list should show."""
     work = Path(os.environ.get("HSD_WORK") or ROOT / "target" / "work")
     try:
-        built = json.loads((work / "agreed-steps.json").read_text())
+        built = json.loads((work / "proposed-steps.json").read_text())
         stats = json.loads(
             (work / "review" / "ttb-diff-stats.json").read_text()
         )

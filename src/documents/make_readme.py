@@ -1,7 +1,7 @@
 """README.txt and the read-me-first page, from the templates in documents/.
 
-The figures are taken from the build (agreed-steps.json, written by
-build_agreed.py). Writes <work>/README.txt and
+The figures are taken from the build (proposed-steps.json, written by
+build_proposed.py). Writes <work>/README.txt and
 <work>/documents/...read-me-first...html. The page is typeset from README.txt
 itself (one source): its ALL-CAPS headings become headings, the package
 listing becomes a table per folder (file | what it is), blank-line-separated
@@ -228,7 +228,7 @@ def main():
     (AssertionError) on a placeholder left unfilled or on a word of README.txt
     or LICENSE.txt that the page does not have.
     """
-    with open(os.path.join(HERE, "agreed-steps.json")) as f:
+    with open(os.path.join(HERE, "proposed-steps.json")) as f:
         built = json.load(f)
     fill = {
         "AREA_SQMI": f"{built['sqmi']:.2f}",

@@ -29,7 +29,7 @@ Method, per pin, for each traced step that starts or ends there:
 Writes <work>/pin-moves.json (a proposal; copy it to resources/boundary/tracing/
 once reviewed): {step n (the END of step n == start of step n+1): {old, new,
 moved_m, method, ...}} for every pin whose move is >= MIN_MOVE m;
-build_agreed.py applies them to END[n] and the ring vertex, and
+build_proposed.py applies them to END[n] and the ring vertex, and
 ink_centerline.py (write_input) to the priors' endpoints before re-tracing.
 Usage (GDAL venv): fix_pins.py [--min-move 0.5] [--apply]
   (without --apply: report only)
@@ -64,7 +64,7 @@ PRIORS = os.path.join(
 )
 OUT = os.path.join(HERE, "pin-moves.json")
 NEAR, FAR = 10.0, 30.0
-# highway passes drawn 30 m off the road centre (build_agreed.py); not traced
+# highway passes drawn 30 m off the road centre (build_proposed.py); not traced
 LANE_STEPS = {10, 11, 91, 92}
 HALF, POOL = 12.0, 2
 MIN_MOVE = (

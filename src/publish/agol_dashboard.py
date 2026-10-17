@@ -395,8 +395,8 @@ def step_selector(id_, targets, phone=False):   # which steps to show, by the `c
 selector = step_selector(SELECT, (LIST + "#main", f"{MAP}#{LINE_OP}", IND["steps"] + "#main", IND["changed"] + "#main"))
 phone_selector = step_selector(M_SELECT, (M_LIST + "#main", f"{M_MAP}#{LINE_OP}", M_IND["changed"] + "#main"), phone=True)
 
-COLS = (0.3, 0.42, 0.28)    # left, map, right: shares of the width (the left was 0.27, the map 0.45: QA #45)
-ROWS = (0.2, 0.18, 0.62)    # left column: indicators, indicators, tabs: shares of the height (were 0.16, 0.15, 0.69)
+COLS = (0.33, 0.41, 0.26)   # left, map, right: shares of the width (QA #45: 0.27/0.45/0.28, then 0.3/0.42/0.28)
+ROWS = (0.25, 0.23, 0.52)   # left column: indicators, indicators, tabs: shares of the height (QA #45: room for two-line captions at 1280x720)
 PHONE_ROWS = (0.12, 0.52, 0.36)   # the phone, top to bottom: indicators, map, tabs: shares of the screen below the header
 assert abs(sum(COLS) - 1) < 1e-9 and abs(sum(ROWS) - 1) < 1e-9 and abs(sum(PHONE_ROWS) - 1) < 1e-9
 def item(id_, w=1, h=1, **kw):

@@ -17,26 +17,57 @@ Field names that equal one of these ignoring case (GDAL, QGIS and ArcGIS match f
 renamed in the layers that carry them: name -> point_name / line_name, note -> point_note, description ->
 point_description / line_description.
 """
-import json, os
-from osgeo import ogr, osr
+
+import json
+import os
+
+from osgeo import ogr
+from osgeo import osr
 
 ogr.UseExceptions()
-ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))   # the repository root (src/boundary/..)
-GIS = os.path.join(ROOT, "resources", "boundary", "proposed")   # (the filed Attachment 2 layers are no longer read)
+ROOT = os.path.dirname(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+)  # the repository root (src/boundary/..)
+GIS = os.path.join(
+    ROOT, "resources", "boundary", "proposed"
+)  # (the filed Attachment 2 layers are no longer read)
 CORRECTED = os.path.join(ROOT, "resources", "boundary", "proposed")
 
 
 def source(name):
     """The corrected copy of a filed Attachment 2 layer where one exists (made Oct. 14 by a script now in tobedeleted/),
-    otherwise the layer as filed."""
+    otherwise the layer as filed.
+    """
     c = os.path.join(CORRECTED, name)
     return c if os.path.exists(c) else os.path.join(GIS, name)
 
 
-TTB_RECORD = os.path.join(ROOT, "resources", "ttb", "hickory-sands-district-AVAs_Production-2026-10-14.json")
-TTB_FIELDS = ["OBJECTID", "Name", "Id", "Area", "States", "Phase", "Level_", "Contains_", "Within", "Established",
-              "Status", "CFR_Section", "Partially_Overlaps", "Note", "Counties", "Shape__Area", "Shape__Length"]
-SQ_MILE = 1609.344 ** 2
+TTB_RECORD = os.path.join(
+    ROOT,
+    "resources",
+    "ttb",
+    "hickory-sands-district-AVAs_Production-2026-10-14.json",
+)
+TTB_FIELDS = [
+    "OBJECTID",
+    "Name",
+    "Id",
+    "Area",
+    "States",
+    "Phase",
+    "Level_",
+    "Contains_",
+    "Within",
+    "Established",
+    "Status",
+    "CFR_Section",
+    "Partially_Overlaps",
+    "Note",
+    "Counties",
+    "Shape__Area",
+    "Shape__Length",
+]
+SQ_MILE = 1609.344**2
 
 VERSIONS = {
     "proposed-text": "boundary-per-proposed-text",
@@ -45,14 +76,20 @@ VERSIONS = {
 RENAME = {  # per layer kind
     "area": {},
     "line": {"name": "line_name", "description": "line_description"},
-    "points": {"name": "point_name", "note": "point_note", "description": "point_description"},
+    "points": {
+        "name": "point_name",
+        "note": "point_note",
+        "description": "point_description",
+    },
 }
 
 
 def ava_record(version):
     """TTB fields + ours for one version (OBJECTID left as None; set per feature)."""
     ttb = json.load(open(TTB_RECORD))["features"][0]["attributes"]
-    area_fc = json.load(open(source(f"{VERSIONS[version]}-area-EPSG4269.geojson")))
+    area_fc = json.load(
+        open(source(f"{VERSIONS[version]}-area-EPSG4269.geojson"))
+    )
     srs = osr.SpatialReference()
     srs.ImportFromEPSG(4269)
     srs.SetAxisMappingStrategy(osr.OAMS_TRADITIONAL_GIS_ORDER)
@@ -63,14 +100,24 @@ def ava_record(version):
     filed = f["properties"]
     assert abs(sqmi - filed["area_sqmi"]) < 0.005, (sqmi, filed["area_sqmi"])
     rec = {k: ttb.get(k) for k in TTB_FIELDS}
-    rec.update(OBJECTID=None, Area=sqmi, Shape__Area=g.Area(), Shape__Length=g.Boundary().Length())
-    rec.update(area_sqmi=filed["area_sqmi"], source=filed["source"], version_note=filed["Note"])
+    rec.update(
+        OBJECTID=None,
+        Area=sqmi,
+        Shape__Area=g.Area(),
+        Shape__Length=g.Boundary().Length(),
+    )
+    rec.update(
+        area_sqmi=filed["area_sqmi"],
+        source=filed["source"],
+        version_note=filed["Note"],
+    )
     return rec
 
 
 def feature_record(ava, kind, props, oid):
     """The record for one feature: the AVA record (OBJECTID = oid), then the layer's own fields, renamed where they
-    would collide with a TTB field. For the area layer the AVA record is the whole record."""
+    would collide with a TTB field. For the area layer the AVA record is the whole record.
+    """
     rec = dict(ava, OBJECTID=oid)
     if kind != "area":
         ren = RENAME[kind]

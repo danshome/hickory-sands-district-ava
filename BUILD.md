@@ -96,7 +96,8 @@ build.sh                 the build
 requirements.in          the Python packages the build uses (edit this)
 requirements.txt         compiled from it: every package and indirect dependency pinned, with SHA-256 hashes
 requirements-dev.in/.txt the same for the lint, audit and lock tools, pytest and Playwright
-.pre-commit-config.yaml  the hooks; .githooks/pre-commit runs them; ruff.toml, .codespellrc, .secrets.baseline
+.pre-commit-config.yaml  the hooks; .githooks/pre-commit runs them; ruff.toml, .codespellrc, .secrets.baseline;
+                         .editorconfig: the same rules for editors
 pytest.ini, tests/       the unit tests (./build.sh test); tests/live/: the browser tests of the dashboard (check-live);
                          tests/fixtures/publish/: the publish dry run's item list and a dry run
 README.md, BUILD.md      this documentation; CLAUDE.md: notes for Claude Code; LICENSE.txt
@@ -190,11 +191,25 @@ other package. `GDAL` must equal Homebrew's GDAL library (`gdal-config --version
 - secrets and private material: no private keys; detect-secrets (passwords, tokens, API keys; the three known false
   alarms are recorded in `.secrets.baseline`); no word listed in `.private-words` (gitignored: put names that must
   never be committed there, one per line); the OSV audit whenever a requirements file changes;
-- Python: parses, no debugger calls, literals not `list()`; ruff with the bug-finding rules in `ruff.toml`;
+- Python: parses, no debugger calls, literals not `list()`; laid out by `ruff format`; `ruff check` with the rules
+  in `ruff.toml` (below);
 - shell: shellcheck (warnings and errors); spelling: codespell (`.codespellrc`).
 
-Hooks that fix files (whitespace, newlines, line endings) stop the commit after fixing; `git add` the fixes and
-commit again. Run them all with `./build.sh lint`.
+Hooks that fix files (whitespace, newlines, line endings, Python layout) stop the commit after fixing; `git add` the
+fixes and commit again. Run them all with `./build.sh lint`.
+
+### Python style
+
+The Python follows the [Google Python Style Guide](https://google.github.io/styleguide/pyguide.html) (no federal or
+TTB rule covers code): lines of at most 80 columns (long URLs excepted), 4-space indents, one statement per line,
+imports one per line in three sorted groups (standard library, third party, local), Google-style docstrings (a summary
+line, then Args/Returns/Raises), `lower_with_under` names (CAPS for module constants, CapWords for classes).
+`ruff format` lays the code out (Black's style at 80 columns, as the guide allows); `ruff check` enforces a strict rule
+set approximating Google's pylintrc plus stricter checks (bugbear, bandit, simplify, ...). Both read `ruff.toml`, which
+gives the reason for each rule left out for good, and lists, as TEMPORARY with a count each, the rules the code still
+breaks: they are being fixed by hand, one family per pull request, each PR deleting its lines from that list.
+`.editorconfig` gives editors the same settings (UTF-8, LF, final newline, no trailing whitespace, spaces; 80 columns
+for Python; 2-space YAML and TOML). By hand: `.venv/bin/ruff format .` and `.venv/bin/ruff check .`.
 
 ## Tests
 

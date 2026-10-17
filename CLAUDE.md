@@ -43,7 +43,9 @@ the stats, wording, quads/lengths/NAD83; zip path lengths only warn). Current bu
 
 Commits run the pre-commit hooks (`.pre-commit-config.yaml`, tools from `requirements-dev.txt` in `.venv`, via
 `.githooks/pre-commit`; `./build.sh lint` runs them all): file hygiene, JSON/YAML/TOML, detect-secrets, a
-private-words check against the gitignored `.private-words`, ruff (`ruff.toml`), shellcheck, codespell.
+private-words check against the gitignored `.private-words`, ruff format and ruff check (`ruff.toml`), shellcheck, codespell.
+Python follows the Google Python Style Guide (Dan, 2026-10-17; no more dense one-line style): 80 columns, `ruff format`,
+one import per line, Google docstrings; `.editorconfig` matches. Fix `ruff.toml`'s TEMPORARY rules one family per PR.
 
 Rules: `./build.sh publish` (ArcGIS Online) is outward-facing, only on Dan's explicit say-so. Never commit `tobedeleted/`
 or private material. `./build.sh check-live` (`src/publish/agol_check.py`, publish's last step) checks the public site

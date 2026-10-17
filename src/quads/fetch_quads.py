@@ -8,9 +8,18 @@ QGIS projects and the cropped VRTs expect:
 ./build.sh runs it whenever a quad is missing or altered.
 Already-present files that pass the MD5 check are skipped.
 """
-import csv, hashlib, os, sys, tempfile, urllib.request, zipfile
 
-ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))   # repository root (src/quads/..)
+import csv
+import hashlib
+import os
+import sys
+import tempfile
+import urllib.request
+import zipfile
+
+ROOT = os.path.dirname(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+)  # repository root (src/quads/..)
 TIF_DIR = os.path.join(ROOT, "resources", "quads", "geotiff")
 PDF_DIR = os.path.join(ROOT, "resources", "quads", "geopdf")
 
@@ -32,7 +41,9 @@ def md5_of_zip_member(zpath, member):
 
 
 def download(url, dst):
-    req = urllib.request.Request(url, headers={"User-Agent": "hickory-sands-ava-fetch/1.0"})
+    req = urllib.request.Request(
+        url, headers={"User-Agent": "hickory-sands-ava-fetch/1.0"}
+    )
     with urllib.request.urlopen(req, timeout=600) as r, open(dst, "wb") as f:
         for chunk in iter(lambda: r.read(1 << 20), b""):
             f.write(chunk)
@@ -42,12 +53,21 @@ def main():
     os.makedirs(TIF_DIR, exist_ok=True)
     os.makedirs(PDF_DIR, exist_ok=True)
     failures = 0
-    with open(os.path.join(ROOT, "resources", "quads", "quads-manifest.csv"), newline="") as f:
+    with open(
+        os.path.join(ROOT, "resources", "quads", "quads-manifest.csv"),
+        newline="",
+    ) as f:
         rows = list(csv.DictReader(f))
     for row in rows:
         # GeoTIFF, stored inside its own zip
-        tif, zpath = row["geotiff"], os.path.join(TIF_DIR, row["geotiff"] + ".zip")
-        if os.path.exists(zpath) and md5_of_zip_member(zpath, tif) == row["geotiff_md5"]:
+        tif, zpath = (
+            row["geotiff"],
+            os.path.join(TIF_DIR, row["geotiff"] + ".zip"),
+        )
+        if (
+            os.path.exists(zpath)
+            and md5_of_zip_member(zpath, tif) == row["geotiff_md5"]
+        ):
             print(f"ok    {tif}")
         else:
             with tempfile.TemporaryDirectory() as tmp:
@@ -56,7 +76,12 @@ def main():
                 download(row["geotiff_url"], tmpfile)
                 got = md5_of(tmpfile)
                 if got != row["geotiff_md5"]:
-                    print(f"  MD5 MISMATCH {got} != {row['geotiff_md5']}", file=sys.stderr); failures += 1; continue
+                    print(
+                        f"  MD5 MISMATCH {got} != {row['geotiff_md5']}",
+                        file=sys.stderr,
+                    )
+                    failures += 1
+                    continue
                 with zipfile.ZipFile(zpath, "w", zipfile.ZIP_STORED) as z:
                     z.write(tmpfile, tif)
         # GeoPDF
@@ -68,7 +93,11 @@ def main():
             download(row["geopdf_url"], ppath)
             got = md5_of(ppath)
             if got != row["geopdf_md5"]:
-                print(f"  MD5 MISMATCH {got} != {row['geopdf_md5']}", file=sys.stderr); failures += 1
+                print(
+                    f"  MD5 MISMATCH {got} != {row['geopdf_md5']}",
+                    file=sys.stderr,
+                )
+                failures += 1
     print(f"done: {len(rows)} quadrangles, {failures} failure(s)")
     sys.exit(1 if failures else 0)
 

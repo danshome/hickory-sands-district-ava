@@ -6,7 +6,11 @@ only, so it runs before anything is installed:
                                       package has a known vulnerability, 2 if the database cannot be reached.
   packages.py pick LOCK NAME [...]    print the entries (pin + hashes) for NAME... from LOCK, for a first-stage install
 """
-import json, re, sys, urllib.request
+
+import json
+import re
+import sys
+import urllib.request
 
 PIN = re.compile(r"^([A-Za-z0-9][A-Za-z0-9._-]*)==([^\s;\\]+)")
 OSV = "https://api.osv.dev/v1"
@@ -18,7 +22,12 @@ def entries(path):
     for line in open(path, encoding="utf-8"):
         m = PIN.match(line)
         if m:
-            cur = [line.rstrip("\n")]; out[re.sub(r"[-_.]+", "-", m.group(1)).lower()] = (m.group(1), m.group(2), cur)
+            cur = [line.rstrip("\n")]
+            out[re.sub(r"[-_.]+", "-", m.group(1)).lower()] = (
+                m.group(1),
+                m.group(2),
+                cur,
+            )
         elif cur is not None and line.startswith(" "):
             cur.append(line.rstrip("\n"))
         else:
@@ -27,7 +36,11 @@ def entries(path):
 
 
 def post(url, body):
-    req = urllib.request.Request(url, data=json.dumps(body).encode(), headers={"Content-Type": "application/json"})
+    req = urllib.request.Request(
+        url,
+        data=json.dumps(body).encode(),
+        headers={"Content-Type": "application/json"},
+    )
     with urllib.request.urlopen(req, timeout=60) as r:
         return json.load(r)
 
@@ -46,27 +59,62 @@ def audit(locks):
     try:
         found = {}
         for i in range(0, len(keys), 500):
-            chunk = keys[i:i + 500]
-            res = post(OSV + "/querybatch", {"queries": [{"package": {"name": pkgs[k], "ecosystem": "PyPI"}, "version": k[1]} for k in chunk]})
+            chunk = keys[i : i + 500]
+            res = post(
+                OSV + "/querybatch",
+                {
+                    "queries": [
+                        {
+                            "package": {"name": pkgs[k], "ecosystem": "PyPI"},
+                            "version": k[1],
+                        }
+                        for k in chunk
+                    ]
+                },
+            )
             for k, r in zip(chunk, res.get("results", [])):
-                if r.get("vulns"): found[k] = [v["id"] for v in r["vulns"]]
+                if r.get("vulns"):
+                    found[k] = [v["id"] for v in r["vulns"]]
     except OSError as e:
-        print(f"security audit: cannot reach the OSV database ({e})", file=sys.stderr); return 2
+        print(
+            f"security audit: cannot reach the OSV database ({e})",
+            file=sys.stderr,
+        )
+        return 2
     if not found:
-        print(f"security audit: {len(keys)} packages pinned in {', '.join(locks)}: no known vulnerabilities (OSV)")
+        print(
+            f"security audit: {len(keys)} packages pinned in {', '.join(locks)}: no known vulnerabilities (OSV)"
+        )
         return 0
-    print(f"SECURITY AUDIT FAILED: {len(found)} of {len(keys)} pinned packages have known vulnerabilities (OSV):", file=sys.stderr)
+    print(
+        f"SECURITY AUDIT FAILED: {len(found)} of {len(keys)} pinned packages have known vulnerabilities (OSV):",
+        file=sys.stderr,
+    )
     for k in sorted(found):
         for vid in found[k]:
             try:
                 v = get(f"{OSV}/vulns/{vid}")
                 cves = [a for a in v.get("aliases", []) if a.startswith("CVE-")]
-                fixed = sorted({e["fixed"] for a in v.get("affected", []) for r in a.get("ranges", []) for e in r.get("events", []) if "fixed" in e})
-                print(f"  {pkgs[k]} {k[1]}: {vid} {' '.join(cves)} - {v.get('summary', '').strip()[:100]}"
-                      f"{'  (fixed in ' + ', '.join(fixed) + ')' if fixed else ''}", file=sys.stderr)
+                fixed = sorted(
+                    {
+                        e["fixed"]
+                        for a in v.get("affected", [])
+                        for r in a.get("ranges", [])
+                        for e in r.get("events", [])
+                        if "fixed" in e
+                    }
+                )
+                print(
+                    f"  {pkgs[k]} {k[1]}: {vid} {' '.join(cves)} - {v.get('summary', '').strip()[:100]}"
+                    f"{'  (fixed in ' + ', '.join(fixed) + ')' if fixed else ''}",
+                    file=sys.stderr,
+                )
             except OSError:
                 print(f"  {pkgs[k]} {k[1]}: {vid}", file=sys.stderr)
-    print("Update the package (./build.sh upgrade) or wait for a fixed release; nothing has been installed.", file=sys.stderr)
+    print(
+        "Update the package (./build.sh upgrade) or wait for a fixed release; nothing has been installed.",
+        file=sys.stderr,
+    )
     return 1
 
 
@@ -74,12 +122,15 @@ def pick(lock, names):
     e = entries(lock)
     for n in names:
         k = re.sub(r"[-_.]+", "-", n).lower()
-        if k not in e: sys.exit(f"{n} is not pinned in {lock}")
+        if k not in e:
+            sys.exit(f"{n} is not pinned in {lock}")
         print("\n".join(e[k][2]).rstrip(" \\"))
     return 0
 
 
 if __name__ == "__main__":
-    if len(sys.argv) >= 3 and sys.argv[1] == "audit": sys.exit(audit(sys.argv[2:]))
-    if len(sys.argv) >= 4 and sys.argv[1] == "pick": sys.exit(pick(sys.argv[2], sys.argv[3:]))
+    if len(sys.argv) >= 3 and sys.argv[1] == "audit":
+        sys.exit(audit(sys.argv[2:]))
+    if len(sys.argv) >= 4 and sys.argv[1] == "pick":
+        sys.exit(pick(sys.argv[2], sys.argv[3:]))
     sys.exit(__doc__)

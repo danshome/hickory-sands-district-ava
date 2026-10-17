@@ -30,9 +30,10 @@ def description(items, url):
         for it in items
         if it.title.startswith("0 ")
     }
-    link = lambda it, text: (
-        f'<a href="{url}/home/item.html?id={it.id}">{text}</a>'
-    )
+
+    def link(it, text):
+        return f'<a href="{url}/home/item.html?id={it.id}">{text}</a>'
+
     return (
         "<p>The boundary the petitioners propose for the Hickory Sands District AVA (Docket No. TTB-2026-0005, Notice No. 243, "
         "91 FR 52576), with the changes discussed with TTB on October 15, 2026. Prepared by Dan McLaughlin, Robert Clay Vineyards "

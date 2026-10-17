@@ -70,12 +70,8 @@ CODES = [
     *["1a", "1b", "1c", "1d", "2a", "2b", "2c", "2d", "3a", "3b"],
     *(f"4{c}" for c in "abcdefghijklmno"),
 ]
-QUADS = [
-    r["quad"].removesuffix(", TX")
-    for r in csv.DictReader(
-        open(os.path.join(ROOT, "resources", "quads", "quads-manifest.csv"))
-    )
-]
+with open(os.path.join(ROOT, "resources", "quads", "quads-manifest.csv")) as f:
+    QUADS = [r["quad"].removesuffix(", TX") for r in csv.DictReader(f)]
 SAME_TEXT, TEXT_CHANGE = (
     "the same text, drawn differently",
     "the proposed text change near Grit",
@@ -110,9 +106,9 @@ def get(url, params=None, limit=None, tries=3):
             code, err = e.code, f"HTTP {e.code}"
             if e.code < 500 and e.code != 429:
                 break
-        except (
-            Exception
-        ) as e:  # no answer: DNS, TLS, timeout, a dropped connection
+        # No answer (DNS, TLS, a timeout, a dropped connection, a bad URL):
+        # whatever the error, it is the link's result, not the check's.
+        except Exception as e:  # noqa: BLE001, RUF100
             code, err = None, f"{type(e).__name__}: {getattr(e, 'reason', e)}"
         if i < tries - 1:
             time.sleep(2 * (i + 1))
@@ -135,7 +131,8 @@ def rest(url, **params):
 def problem(url, **params):  # what is wrong with a REST resource, or None
     try:
         rest(url, **params)
-    except Exception as e:
+    # Whatever goes wrong is the answer: it is reported, not raised.
+    except Exception as e:  # noqa: BLE001, RUF100
         return f"{type(e).__name__}: {e}"
 
 
@@ -145,7 +142,7 @@ def query(url, **params):
 
 def parallel(fn, xs, n=8):
     with ThreadPoolExecutor(n) as pool:
-        return dict(zip(xs, pool.map(fn, xs)))
+        return dict(zip(xs, pool.map(fn, xs), strict=True))
 
 
 # ---------------------------------------------------------------- JSON and HTML helpers
@@ -191,7 +188,9 @@ def links(text):
 def holds(
     title, text
 ):  # the link's words appear in the title, in order ("Read me first what is ..." in "0 Read me first - what is ...")
-    words = lambda s: re.findall(r"[\w']+", s.lower())
+    def words(s):
+        return re.findall(r"[\w']+", s.lower())
+
     rest = iter(words(title))
     return all(w in rest for w in words(text))
 
@@ -218,7 +217,8 @@ def code(
 
 
 def sha256(path):
-    return hashlib.sha256(open(path, "rb").read()).hexdigest()
+    with open(path, "rb") as f:
+        return hashlib.sha256(f.read()).hexdigest()
 
 
 def num(v):  # a figure as people write it: 112.32, not 112.32000000000001
@@ -227,6 +227,10 @@ def num(v):  # a figure as people write it: 112.32, not 112.32000000000001
         if isinstance(v, (int, float))
         else repr(v)
     )
+
+
+def excerpt(s, i):
+    return ("..." if i > 25 else "") + s[max(0, i - 25) : i + 35]
 
 
 def rel(
@@ -267,7 +271,8 @@ def load():
             )
             items += page["items"]
             start = page.get("nextStart", -1)
-    except Exception as e:
+    # Whatever the error, nothing else can be checked: report it and stop.
+    except Exception as e:  # noqa: BLE001, RUF100
         print(
             f"FAIL  group      the group cannot be read without signing in (is it public?): {e}"
         )
@@ -281,7 +286,8 @@ def load():
                 rest(REST + f"content/items/{dashboards[0]['id']}/data"),
                 None,
             )
-        except Exception as e:
+        # Whatever the error, the dashboard check reports it.
+        except Exception as e:  # noqa: BLE001, RUF100
             dash_err = f"its JSON cannot be read: {type(e).__name__}: {e}"
     # the web map: the one the dashboard's map shows, else the group's only web map
     maps = [
@@ -309,7 +315,8 @@ def load():
                 rest(REST + f"content/items/{wm_item['id']}/data"),
                 None,
             )
-        except Exception as e:
+        # Whatever the error, the web map check reports it.
+        except Exception as e:  # noqa: BLE001, RUF100
             wm_err = f"{wm_item['title']}: its JSON cannot be read: {type(e).__name__}: {e}"
     OPS = {
         lyr["id"]: lyr
@@ -601,11 +608,14 @@ def figures(bad, note):
 
     def load(path):
         if os.path.exists(path):
-            return json.load(open(path))
+            with open(path) as f:
+                return json.load(f)
         note(f"{rel(path)} is not in the build outputs: not compared")
+        return None
 
     said = []
-    sqmi = json.load(open(os.path.join(HERE, "agreed-steps.json")))["sqmi"]
+    with open(os.path.join(HERE, "agreed-steps.json")) as f:
+        sqmi = json.load(f)["sqmi"]
     ava = query(op_url(None, "esriGeometryPolygon"), outFields="*")["features"]
     if len(ava) != 1:
         bad(f"the AVA layer holds {len(ava)} polygons, not 1")
@@ -629,7 +639,8 @@ def figures(bad, note):
                 f"no gis/*-{pat}-EPSG4269.geojson in the build outputs: {what} not counted"
             )
             continue
-        built = json.load(open(files[0]))["features"]
+        with open(files[0]) as f:
+            built = json.load(f)["features"]
         want, got = (
             len(built),
             query(op_url(None, geometry), returnCountOnly="true")["count"],
@@ -666,17 +677,15 @@ def figures(bad, note):
                         i = next(
                             (
                                 j
-                                for j, (x, y) in enumerate(zip(sw, sv))
+                                for j, (x, y) in enumerate(
+                                    zip(sw, sv, strict=False)
+                                )
                                 if x != y
                             ),
                             min(len(sw), len(sv)),
                         )
-                        cut = lambda s: (
-                            ("..." if i > 25 else "")
-                            + s[max(0, i - 25) : i + 35]
-                        )
                         bad(
-                            f"{what} {f['properties'][key]}: {a} is {cut(sw)!r} live, {cut(sv)!r} in the build"
+                            f"{what} {f['properties'][key]}: {a} is {excerpt(sw, i)!r} live, {excerpt(sv, i)!r} in the build"
                         )
         if off > 5:
             bad(f"{what}: {off - 5} more attributes differ from the build")
@@ -739,6 +748,7 @@ def figures(bad, note):
                     if f["properties"].get("big")
                 ],
                 rings,
+                strict=False,  # a count that differs is reported above
             ),
             1,
         ):
@@ -790,9 +800,11 @@ def figures(bad, note):
 def files(bad, note):
     if not os.path.isdir(PKG):
         return f"skipped: no package in {PKG} (run ./build.sh first, or point HSD_WORK at the build outputs)"
-    norm = lambda name: name.replace(
-        " ", "_"
-    )  # ArcGIS keeps an uploaded file's name with its spaces made underscores
+
+    # ArcGIS keeps an uploaded file's name with its spaces made underscores.
+    def norm(name):
+        return name.replace(" ", "_")
+
     built = {
         norm(os.path.basename(p)): p
         for p in sorted(
@@ -889,7 +901,8 @@ def main():  # importable for the tests (tests/test_agol_check.py)
         bad, notes = [], []
         try:
             summary = fn(bad.append, notes.append)
-        except Exception as e:
+        # Any error is that check's failure, reported with the others.
+        except Exception as e:  # noqa: BLE001, RUF100
             summary = "could not finish"
             bad.append(f"{type(e).__name__}: {e}")
         status, once = (

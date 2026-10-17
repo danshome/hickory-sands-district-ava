@@ -41,7 +41,7 @@ RULES = [
 
 def categories(title):
     """an item's organization categories, by its title's number"""
-    return [AVA] + next(c for prefix, c in RULES if title.startswith(prefix))
+    return [AVA, *next(c for prefix, c in RULES if title.startswith(prefix))]
 
 
 def main():

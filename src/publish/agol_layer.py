@@ -36,9 +36,8 @@ ROOT = os.path.abspath(
 HERE = os.environ.get("HSD_WORK") or os.path.join(
     ROOT, "target", "work"
 )  # build work dir (build.sh stages resources/ here)
-SQMI = (
-    "%.2f" % json.load(open(os.path.join(HERE, "agreed-steps.json")))["sqmi"]
-)  # the built AVA area, GRS80 square miles
+with open(os.path.join(HERE, "agreed-steps.json")) as f:
+    SQMI = f"{json.load(f)['sqmi']:.2f}"  # the AVA's area, GRS80 square miles
 PKG = os.path.join(
     HERE, "pkg", "Hickory-Sands-District-AVA_boundary-as-proposed-2026-10-15"
 )
@@ -247,19 +246,17 @@ TAGS = [
 ]
 CULTURE = "en-us"
 # TTB's own aliases for its AVAs_Production fields (Level_ is "Level", Contains_ is "Contains"), from the layer's definition
-TTB_ALIAS = {
-    f["name"]: f["alias"]
-    for f in json.load(
-        open(
-            os.path.join(
-                ROOT,
-                "resources",
-                "ttb",
-                "AVAs_Production-layer0-definition-2026-10-14.json",
-            )
-        )
-    )["fields"]
-}
+with open(
+    os.path.join(
+        ROOT,
+        "resources",
+        "ttb",
+        "AVAs_Production-layer0-definition-2026-10-14.json",
+    )
+) as f:
+    TTB_ALIAS = {
+        field["name"]: field["alias"] for field in json.load(f)["fields"]
+    }
 
 
 def bbox(path):
@@ -435,7 +432,10 @@ def alias_fields(lyr, wanted=(), ttb=False):
         geom.get("shapeAreaFieldName"),
         geom.get("shapeLengthFieldName"),
     }
-    words = lambda n: " ".join(n.replace("_", " ").split())
+
+    def words(n):
+        return " ".join(n.replace("_", " ").split())
+
     out = []
     for f in lyr.properties.fields:
         n = f["name"]
@@ -456,7 +456,9 @@ def set_aliases(lyr, out):
     if out:
         try:
             lyr.manager.update_definition({"fields": out})
-        except Exception as e:
+        # The ArcGIS API raises bare Exception: a failure is reported, and
+        # the publish goes on.
+        except Exception as e:  # noqa: BLE001, RUF100
             print(
                 "could not set the field aliases of",
                 lyr.properties.name,
@@ -586,9 +588,12 @@ def hosted(gpkg, src_title, title, service, props, was=((), ())):
     """the GeoPackage item and the hosted layer published from it, in the folder, read-only; a re-run replaces the file
     and overwrites the layer
     """
-    find = lambda kind, *titles: next(
-        (typed[(x, kind)] for x in titles if (x, kind) in typed), None
-    )
+
+    def find(kind, *titles):
+        return next(
+            (typed[(x, kind)] for x in titles if (x, kind) in typed), None
+        )
+
     src = find("GeoPackage", src_title, *was[0], title)
     lyr = find("Feature Service", title, *was[1], src_title, *was[0])
     if (
@@ -596,7 +601,8 @@ def hosted(gpkg, src_title, title, service, props, was=((), ())):
     ):  # the service published from this file, whatever its title (an overwrite retitles it)
         lyr = next(iter(src.related_items("Service2Data", "reverse")), None)
     props = hosted_props(gpkg, props)
-    sha = hashlib.sha256(open(gpkg, "rb").read()).hexdigest()
+    with open(gpkg, "rb") as f:
+        sha = hashlib.sha256(f.read()).hexdigest()
     if (
         src is not None
         and lyr is not None
@@ -673,7 +679,9 @@ def rename(lyr, nm):
     if lyr.properties.name != nm:
         try:
             lyr.manager.update_definition({"name": nm})
-        except Exception as e:
+        # The ArcGIS API raises bare Exception: a failure is reported, and
+        # the publish goes on.
+        except Exception as e:  # noqa: BLE001, RUF100
             print(
                 "could not rename",
                 lyr.properties.name,
@@ -687,16 +695,14 @@ def rename(lyr, nm):
 # From the build's comparison (src/review/compare_ttb.py): the big differences (rings where the two lines are at least
 # STATS["big_m"] apart, renumbered 1.. in step order) and every piece of land between the two boundaries, in one
 # GeoPackage and one hosted layer, overwritten on a re-run. The comparison's working fields (its CHECK status, labels) stay home.
-STATS = json.load(open(os.path.join(REVIEW, "ttb-diff-stats.json")))
+with open(os.path.join(REVIEW, "ttb-diff-stats.json")) as f:
+    STATS = json.load(f)
 BIG_M, MED = STATS["big_m"], STATS["median_m"]
 OTHER_PATH = "the two lines take different paths"
-big = [
-    f
-    for f in json.load(
-        open(os.path.join(REVIEW, "ttb-diff-rings-EPSG4269.geojson"))
-    )["features"]
-    if f["properties"]["big"]
-]
+with open(os.path.join(REVIEW, "ttb-diff-rings-EPSG4269.geojson")) as f:
+    big = [
+        ring for ring in json.load(f)["features"] if ring["properties"]["big"]
+    ]
 for n, f in enumerate(big, 1):
     p = f["properties"]
     f["properties"] = {
@@ -712,9 +718,8 @@ for n, f in enumerate(big, 1):
         "map_explorer_only_acres": p["ours_drops_acres"],
         "endpoints": p["pins"],
     }
-pieces = json.load(
-    open(os.path.join(REVIEW, "ttb-diff-areas-EPSG4269.geojson"))
-)
+with open(os.path.join(REVIEW, "ttb-diff-areas-EPSG4269.geojson")) as f:
+    pieces = json.load(f)
 for f in pieces["features"]:
     f["properties"]["cause"] = (
         TEXT_CHANGE
@@ -736,14 +741,15 @@ def make_diff_gpkg(path=DIFF_GPKG):
         tmp = os.path.join(
             os.path.dirname(path), f"publish-{name}-EPSG4269.geojson"
         )
-        json.dump(
-            {
-                "type": "FeatureCollection",
-                "crs": pieces["crs"],
-                "features": feats,
-            },
-            open(tmp, "w"),
-        )
+        with open(tmp, "w") as f:
+            json.dump(
+                {
+                    "type": "FeatureCollection",
+                    "crs": pieces["crs"],
+                    "features": feats,
+                },
+                f,
+            )
         gdal.VectorTranslate(
             path,
             tmp,
@@ -807,7 +813,7 @@ GEO_ABOUT = (
 gprops = {
     "snippet": "USGS geologic units near the AVA (granite and the Hickory Sandstone Member formation), shifted about 400 m to sit on the outcrops.",
     "description": GEO_ABOUT,
-    "tags": ",".join(TAGS + ["geology", "SGMC"]),
+    "tags": ",".join([*TAGS, "geology", "SGMC"]),
     "licenseInfo": "USGS data (public domain); shift " + CC0,
     "accessInformation": "USGS State Geologic Map Compilation; shift: "
     + CREDIT,
@@ -853,11 +859,11 @@ def geo_def(rgb):
                 "symbol": {
                     "type": "esriSFS",
                     "style": "esriSFSSolid",
-                    "color": rgb + [60],
+                    "color": [*rgb, 60],
                     "outline": {
                         "type": "esriSLS",
                         "style": "esriSLSSolid",
-                        "color": rgb + [255],
+                        "color": [*rgb, 255],
                         "width": 0.8,
                     },
                 },
@@ -867,9 +873,8 @@ def geo_def(rgb):
 
 
 # ---------------------------------------------------------------- the change near Grit, line by line and acre by acre
-GSTATS = json.load(open(os.path.join(REVIEW, "grit-change-stats.json")))[
-    "areas"
-]
+with open(os.path.join(REVIEW, "grit-change-stats.json")) as f:
+    GSTATS = json.load(f)["areas"]
 
 
 def make_grit_gpkg(path=GRIT_GPKG):
@@ -919,7 +924,7 @@ GRIT_ABOUT = (
 rprops = {
     "snippet": "The change near Grit: the lines the proposed text swaps, and the acres (and granite) it leaves out and puts in.",
     "description": GRIT_ABOUT,
-    "tags": ",".join(TAGS + ["granite", "Grit"]),
+    "tags": ",".join([*TAGS, "granite", "Grit"]),
     "licenseInfo": CC0,
     "accessInformation": CREDIT
     + "; granite: USGS State Geologic Map Compilation (SGMC), shifted to the outcrops",
@@ -1326,7 +1331,7 @@ def diff_plan(bigl, every_l):
         "aliases": [
             (
                 bigl,
-                alias_fields(bigl, BIG_F + [("n", "Big difference number")]),
+                alias_fields(bigl, [*BIG_F, ("n", "Big difference number")]),
             ),
             (every_l, alias_fields(every_l, ALL_F)),
         ],
@@ -1363,7 +1368,7 @@ def grit_plan(grit_lines, grit_areas):
             (
                 grit_areas,
                 alias_fields(
-                    grit_areas, GRIT_AREAS_F + [("side", "Left out or put in")]
+                    grit_areas, [*GRIT_AREAS_F, ("side", "Left out or put in")]
                 ),
             ),
         ],
@@ -1389,23 +1394,23 @@ def webmap_plan(
     area,
     line,
     pts,
-    B,
+    boundary,
     dl,
     bigl,
     every_l,
-    D,
+    diffs,
     gl,
-    G,
+    geology,
     grl,
     grit_lines,
     grit_areas,
-    R,
+    grit,
 ):
-    """the web map 4a, over the layers and the plans above (B, D, G, R: boundary, differences, geology, Grit)"""
-    area_pop, line_pop, pts_pop = B["pops"]
-    big_pop, all_pop = D["pops"]
-    geo = G["layers"]
-    grit_lines_pop, grit_areas_pop = R["pops"]
+    """the web map 4a, over the layers and the plans above (boundary, diffs, geology, grit: boundary, differences, geology, Grit)"""
+    area_pop, line_pop, pts_pop = boundary["pops"]
+    big_pop, all_pop = diffs["pops"]
+    geo = geology["layers"]
+    grit_lines_pop, grit_areas_pop = grit["pops"]
 
     def op(lyr, title, ldef, pop, visible=True, item=None, lid=None):
         item = item or fl
@@ -1422,7 +1427,7 @@ def webmap_plan(
             **({"showLabels": True} if "labelingInfo" in ldef else {}),
         }
 
-    webmap = {
+    return {
         "operationalLayers": [
             QUADS,
             {
@@ -1535,7 +1540,6 @@ def webmap_plan(
         "authoringAppVersion": "2.4.3",
         "version": "2.31",
     }
-    return webmap
 
 
 def plan(
@@ -1544,7 +1548,7 @@ def plan(
     """all of the above at once, for the publish dry run (main() calls each where it sends it): {"aliases": {item title:
     [(layer, fields)]}, "data": {item title: its data}, "webmap": the web map}
     """
-    B, D, G, R = (
+    boundary, diffs, geology, grit = (
         boundary_plan(area, line, pts),
         diff_plan(bigl, every_l),
         geo_plan(geo),
@@ -1552,33 +1556,33 @@ def plan(
     )
     return {
         "aliases": {
-            LAYER_TITLE: B["aliases"],
-            DIFF_TITLE: D["aliases"],
-            GEO_TITLE: G["aliases"],
-            GRIT_TITLE: R["aliases"],
+            LAYER_TITLE: boundary["aliases"],
+            DIFF_TITLE: diffs["aliases"],
+            GEO_TITLE: geology["aliases"],
+            GRIT_TITLE: grit["aliases"],
         },
         "data": {
-            LAYER_TITLE: B["data"],
-            DIFF_TITLE: D["data"],
-            GEO_TITLE: G["data"],
-            GRIT_TITLE: R["data"],
+            LAYER_TITLE: boundary["data"],
+            DIFF_TITLE: diffs["data"],
+            GEO_TITLE: geology["data"],
+            GRIT_TITLE: grit["data"],
         },
         "webmap": webmap_plan(
             fl,
             area,
             line,
             pts,
-            B,
+            boundary,
             dl,
             bigl,
             every_l,
-            D,
+            diffs,
             gl,
-            G,
+            geology,
             grl,
             grit_lines,
             grit_areas,
-            R,
+            grit,
         ),
     }
 
@@ -1621,7 +1625,9 @@ def main():
         if lyr.properties.name != NAMES[gtype]:
             try:
                 lyr.manager.update_definition({"name": NAMES[gtype]})
-            except Exception as e:
+            # The ArcGIS API raises bare Exception: a failure is reported,
+            # and the publish goes on.
+            except Exception as e:  # noqa: BLE001, RUF100
                 print(
                     "could not rename",
                     lyr.properties.name,
@@ -1631,9 +1637,11 @@ def main():
                 )
 
     # the layer's features, as built (issue #71; BUILT, KEY, esri() above)
-    built_sha = hashlib.sha256(
-        b"".join(open(BUILT[g], "rb").read() for g in sorted(BUILT))
-    ).hexdigest()
+    built_files = []
+    for g in sorted(BUILT):
+        with open(BUILT[g], "rb") as f:
+            built_files.append(f.read())
+    built_sha = hashlib.sha256(b"".join(built_files)).hexdigest()
     if (fl.properties or {}).get("features_sha256") != built_sha:
         edits = {}
         for gtype, lyr in layers.items():
@@ -1651,7 +1659,8 @@ def main():
                 out_fields=",".join(f for f in (oidf, key) if f),
                 return_geometry=False,
             ).features
-            new = json.load(open(BUILT[gtype]))["features"]
+            with open(BUILT[gtype]) as f:
+                new = json.load(f)["features"]
             live_by = {
                 str(f.attributes[key]) if key else "": f.attributes[oidf]
                 for f in live
@@ -1705,8 +1714,8 @@ def main():
         area.manager.add_to_definition({"hasAttachments": True})
         area = FeatureLayerCollection.fromitem(fl).layers[
             [
-                l.properties.geometryType
-                for l in FeatureLayerCollection.fromitem(fl).layers
+                lyr.properties.geometryType
+                for lyr in FeatureLayerCollection.fromitem(fl).layers
             ].index("esriGeometryPolygon")
         ]
     oid = area.query(where="1=1", return_ids_only=True)["objectIds"][0]
@@ -1726,10 +1735,10 @@ def main():
         sorted(a["name"] for a in area.attachments.get_list(oid)),
     )
 
-    B = boundary_plan(area, line, pts)
-    for lyr, out in B["aliases"]:
+    boundary = boundary_plan(area, line, pts)
+    for lyr, out in boundary["aliases"]:
         set_aliases(lyr, out)
-    fl.update(data=json.dumps(B["data"]))
+    fl.update(data=json.dumps(boundary["data"]))
 
     # ------------------------------------------------------------ the GeoPackages and the hosted layers made from them
     make_diff_gpkg()
@@ -1741,8 +1750,8 @@ def main():
         rename(lyr, nm)
     gsrc, gl = hosted(GEO_GPKG, GEO_SRC_TITLE, GEO_TITLE, GEO_SERVICE, gprops)
     geo = geo_layers(FeatureLayerCollection.fromitem(gl).layers)
-    G = geo_plan(geo)
-    for (lyr, nm, _), (_, out) in zip(geo, G["aliases"]):
+    geology = geo_plan(geo)
+    for (lyr, nm, _), (_, out) in zip(geo, geology["aliases"], strict=True):
         rename(lyr, nm)
         set_aliases(lyr, out)
     make_grit_gpkg()
@@ -1756,31 +1765,31 @@ def main():
     rename(grit_areas, GRIT_NAMES[1])
 
     # ------------------------------------------------------------ symbology, pop-ups, field aliases and the web map
-    D = diff_plan(bigl, every_l)
-    for lyr, out in D["aliases"]:
+    diffs = diff_plan(bigl, every_l)
+    for lyr, out in diffs["aliases"]:
         set_aliases(lyr, out)
-    dl.update(data=json.dumps(D["data"]))
-    gl.update(data=json.dumps(G["data"]))
-    R = grit_plan(grit_lines, grit_areas)
-    for lyr, out in R["aliases"]:
+    dl.update(data=json.dumps(diffs["data"]))
+    gl.update(data=json.dumps(geology["data"]))
+    grit = grit_plan(grit_lines, grit_areas)
+    for lyr, out in grit["aliases"]:
         set_aliases(lyr, out)
-    grl.update(data=json.dumps(R["data"]))
+    grl.update(data=json.dumps(grit["data"]))
     webmap = webmap_plan(
         fl,
         area,
         line,
         pts,
-        B,
+        boundary,
         dl,
         bigl,
         every_l,
-        D,
+        diffs,
         gl,
-        G,
+        geology,
         grl,
         grit_lines,
         grit_areas,
-        R,
+        grit,
     )
     wm = items.get(MAP_TITLE)
     if wm is None:

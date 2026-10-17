@@ -31,9 +31,8 @@ ROOT = os.path.abspath(
 HERE = os.environ.get("HSD_WORK") or os.path.join(
     ROOT, "target", "work"
 )  # build work dir (build.sh stages resources/ here)
-SQMI = (
-    "%.2f" % json.load(open(os.path.join(HERE, "agreed-steps.json")))["sqmi"]
-)  # the built AVA area, GRS80 square miles
+with open(os.path.join(HERE, "agreed-steps.json")) as f:
+    SQMI = f"{json.load(f)['sqmi']:.2f}"  # the AVA's area, GRS80 square miles
 PKG = os.path.join(
     HERE, "pkg", "Hickory-Sands-District-AVA_boundary-as-proposed-2026-10-15"
 )
@@ -100,8 +99,9 @@ def bbox(geojson):
             for x in c:
                 walk(x)
 
-    for f in json.load(open(geojson))["features"]:
-        walk(f["geometry"]["coordinates"])
+    with open(geojson) as f:
+        for feature in json.load(f)["features"]:
+            walk(feature["geometry"]["coordinates"])
     return outward(xs, ys)
 
 
@@ -141,13 +141,14 @@ def neatline(tif, cell=0.125):
 
 # ---------------------------------------------------------------- the 13 quadrangles, titled as paragraph (b) cites them
 D1 = "1_boundary-description/Hickory-Sands-District-boundary-description-as-proposed-2026-10-15"
-B = {
-    name: year + note
-    for name, year, note in re.findall(  # paragraph (b) of the proposed text: "(10) Fly Gap, TX., 1962, photorevised 1982;"
-        r"\(\d+\) ([A-Z][\w ]+?), TX\., (\d{4})((?:, [a-z]+ \d{4})?)[;.]",
-        open(os.path.join(PKG, D1 + ".txt"), encoding="utf-8").read(),
-    )
-}
+with open(os.path.join(PKG, D1 + ".txt"), encoding="utf-8") as f:
+    B = {
+        name: year + note
+        for name, year, note in re.findall(  # paragraph (b) of the proposed text: "(10) Fly Gap, TX., 1962, photorevised 1982;"
+            r"\(\d+\) ([A-Z][\w ]+?), TX\., (\d{4})((?:, [a-z]+ \d{4})?)[;.]",
+            f.read(),
+        )
+    }
 QUAD_EXTENT = {}  # title -> the quadrangle's neatline
 
 
@@ -392,8 +393,10 @@ GIS_LAYERS = {  # the three layers of the GIS downloads: what each holds, and it
         "104 boundary steps",
         "the boundary, one feature per step (104), each with its text",
         "boundary_line",
-        "each step's number, kind, endpoint, USGS quadrangle, length in metres, text as proposed (<i>narrative</i>), the source "
-        "of its wording and its change from Notice No. 243",
+        (
+            "each step's number, kind, endpoint, USGS quadrangle, length in metres, text as proposed (<i>narrative</i>), the source "
+            "of its wording and its change from Notice No. 243"
+        ),
     ),
     "points": (
         "step endpoints",

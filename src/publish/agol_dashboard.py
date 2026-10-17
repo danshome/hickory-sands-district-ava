@@ -45,17 +45,16 @@ ROOT = os.path.abspath(
 HERE = os.environ.get("HSD_WORK") or os.path.join(
     ROOT, "target", "work"
 )  # build work dir
-SQMI = (
-    "%.2f" % json.load(open(os.path.join(HERE, "agreed-steps.json")))["sqmi"]
-)  # the built AVA area, GRS80 square miles
-STATS = json.load(open(os.path.join(HERE, "review", "ttb-diff-stats.json")))
+with open(os.path.join(HERE, "agreed-steps.json")) as f:
+    SQMI = f"{json.load(f)['sqmi']:.2f}"  # the AVA's area, GRS80 square miles
+with open(os.path.join(HERE, "review", "ttb-diff-stats.json")) as f:
+    STATS = json.load(f)
 same = STATS["areas"][
     "drawing"
 ]  # acres between the two boundaries from the same text drawn differently
 change = STATS["areas"]["proposed text change"]
-GRIT = json.load(
-    open(os.path.join(HERE, "review", "grit-change-stats.json"))
-)  # src/review/grit_change.py
+with open(os.path.join(HERE, "review", "grit-change-stats.json")) as f:
+    GRIT = json.load(f)  # src/review/grit_change.py
 README = os.path.join(HERE, "README.txt")
 FOLDER = "Hickory Sands District - Final Proposed Boundary and Narrative"
 GROUP_ID = "65720ee9c5a743f88659ae39228704ec"
@@ -163,15 +162,14 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
     layer's object id field, the steps' records (step, quad, change) and the portal's URL. main() passes the live ones;
     the publish dry run (agol_dryrun.py) passes stand-ins. Returns (dashboard, props).
     """
-    LINE_OP, AREA_OP, RINGS_OP, ALL_OP = (
+    line_op, area_op, rings_op, all_op = (
         f"hsd-{line.properties.id}",
         f"hsd-{area.properties.id}",
         "hsd-rings",
         "hsd-all-differences",
     )  # ids set by agol_layer.py
-    assert {LINE_OP, AREA_OP, RINGS_OP, ALL_OP} <= ops, ops
-    OID = line.properties.objectIdField
-    RINGS_OID = rings_oid
+    assert {line_op, area_op, rings_op, all_op} <= ops, ops
+    line_oid = line.properties.objectIdField
 
     def ds(op):
         return {"type": "layerDataSource", "itemId": wm.id, "layerId": op}
@@ -329,7 +327,8 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
 
     def readme_section(start):
         """a section of the package README as HTML: paragraphs, and '- ' bullets with their indented continuation lines"""
-        lines = open(README, encoding="utf-8").read().splitlines()
+        with open(README, encoding="utf-8") as f:
+            lines = f.read().splitlines()
         i = next(k for k, s in enumerate(lines) if s.startswith(start))
         out, para, bullets = [], [], []
 
@@ -365,19 +364,20 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
         flush()
         return "".join(out)
 
-    head = open(README, encoding="utf-8").read().splitlines()[:3]
-    CHANGES = readme_section("WHAT WE PROPOSE TO CHANGE")
-    MAP_RED = f"Red: the proposed revision, {SQMI} square miles."  # the map's key, in both views
-    MAP_BLUE = "Blue: the AVA Map Explorer polygon for Notice No. 243, from TTB's live AVAs_Production layer."
-    MAP_SHADED = (
+    with open(README, encoding="utf-8") as f:
+        head = f.read().splitlines()[:3]
+    changes_html = readme_section("WHAT WE PROPOSE TO CHANGE")
+    map_red = f"Red: the proposed revision, {SQMI} square miles."  # the map's key, in both views
+    map_blue = "Blue: the AVA Map Explorer polygon for Notice No. 243, from TTB's live AVAs_Production layer."
+    map_shaded = (
         "Shaded: every piece of land between them (red: in the proposed revision only; blue: in the Map Explorer polygon "
         "only; grey: the proposed text change near Grit)"
     )
-    MAP_RINGED = (
+    map_ringed = (
         f"Ringed: the {STATS['big']} big differences, where the lines are {STATS['big_m']:.0f} m or more apart (orange: the "
         "two lines take different paths; grey dashed: the proposed text change near Grit)"
     )
-    MAP_BASEMAPS = (
+    map_basemaps = (
         "In the map's layer list, <em>TTB's AVA Map Explorer basemaps</em> holds the Map Explorer's four basemaps "
         "(Topographic, Streets, Imagery, USA Topo Maps): turn it on and pick one."
     )
@@ -385,37 +385,37 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
         '<div style="font-size:13px;line-height:1.45">'
         f"<p>{html.escape(head[1])}<br>{html.escape(head[2].replace('(see LICENSE.txt)', '(full text in item 0, the read me)'))}</p>"
         '<p style="margin:10px 0 2px"><strong>What the proposed revision changes in Notice No. 243</strong></p>'
-        + CHANGES
+        + changes_html
         + '<p style="margin:10px 0 2px"><strong>How the line is drawn</strong></p>'
         + readme_section("HOW THE LINE IS DRAWN")
         + '<p style="margin:10px 0 2px"><strong>The map</strong></p>'
-        f"<p>{MAP_RED} {MAP_BLUE} The Map Explorer polygon was digitized by hand and the proposed revision follows the printed "
+        f"<p>{map_red} {map_blue} The Map Explorer polygon was digitized by hand and the proposed revision follows the printed "
         f"linework, so the two differ a little almost everywhere (median {STATS['median_m']:.0f} m apart, measured every 2 m along "
-        f"each line). {MAP_SHADED}; from the same text drawn differently they add up to {same['revision_only_acres']:,.0f} acres "
-        f"in the proposed revision only and {same['map_explorer_only_acres']:,.0f} in the Map Explorer polygon only. {MAP_RINGED}. "
+        f"each line). {map_shaded}; from the same text drawn differently they add up to {same['revision_only_acres']:,.0f} acres "
+        f"in the proposed revision only and {same['map_explorer_only_acres']:,.0f} in the Map Explorer polygon only. {map_ringed}. "
         "Under them: the USGS geologic units "
         "(Town Mountain Granite, younger granitic intrusions, Hickory Sandstone Member formation), shifted about 400 m to "
-        f"sit on the outcrops, and the 13 USGS quadrangles. {MAP_BASEMAPS}</p></div>"
+        f"sit on the outcrops, and the 13 USGS quadrangles. {map_basemaps}</p></div>"
     )
     about_phone = (
         PHONE
         + '<p style="margin:0 0 4px"><strong>What the proposed revision changes in Notice No. 243</strong></p>'
-        + CHANGES
-        + f'<p style="margin:12px 0 4px"><strong>On the map</strong></p><p>{MAP_RED} {MAP_BLUE} {MAP_SHADED}. {MAP_RINGED}.</p>'
-        f"<p>{MAP_BASEMAPS}</p>"
+        + changes_html
+        + f'<p style="margin:12px 0 4px"><strong>On the map</strong></p><p>{map_red} {map_blue} {map_shaded}. {map_ringed}.</p>'
+        f"<p>{map_basemaps}</p>"
         '<p style="margin:12px 0 4px"><strong>Every change, step by step</strong></p>'
         + item_button(numbered["3a"])
         + item_button(numbered["2a"])
         + "</div>"
     )
 
-    A = GRIT["areas"]
+    grit_acres = GRIT["areas"]
 
     def ac(x):
         return f"{int(x + 0.5):,}"  # whole acres, rounded once, half up, from the build's unrounded stats (issue #33)
 
     def grow(key, label):
-        r = A[key]
+        r = grit_acres[key]
         return (
             f'<tr><td style="padding:3px 6px">{label}</td><td style="padding:3px 6px;text-align:right;white-space:nowrap">{ac(r["acres"])}</td>'
             f'<td style="padding:3px 6px;text-align:right;white-space:nowrap">{ac(r["granite_acres"])}</td>'
@@ -425,7 +425,7 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
     def gblock(
         key, label
     ):  # a row of the table as a paragraph, for the phone (no wide tables)
-        r = A[key]
+        r = grit_acres[key]
         return (
             f'<p style="margin:8px 0 0"><strong>{label}</strong><br>{ac(r["acres"])} acres &middot; granite {ac(r["granite_acres"])} '
             f"&middot; sandstone* {ac(r['sandstone_acres'])}</p>"
@@ -437,7 +437,7 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
             f'margin-right:6px"></span>{label}</li>'
         )
 
-    GRIT_LINES = (
+    grit_lines = (
         (
             "#005aff",
             True,
@@ -455,7 +455,7 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
             "Replaced: the petition's straight line from the marked 1,737 to the marked 1,762",
         ),
     )
-    GRIT_AREAS = (
+    grit_areas = (
         (
             "Notice No. 243, not the petition",
             "In Notice No. 243's text, left out by the petition",
@@ -471,15 +471,15 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
     reworded = [
         s["step"] for s in steps if "unchanged" not in (s["change"] or "")
     ]  # as the indicator counts them
-    FIX = "text correction"  # how build_agreed.py's change notes for (49) and (85) start: Notice No. 243's wording corrected
-    fixes = [s["step"] for s in steps if FIX in (s["change"] or "")]
+    correction = "text correction"  # how build_agreed.py's change notes for (49) and (85) start: Notice No. 243's wording corrected
+    fixes = [s["step"] for s in steps if correction in (s["change"] or "")]
     near_grit = [n for n in reworded if n not in fixes]
 
     def and_list(nums):  # 49, 85 -> (49) and (85)
         s = [f"({n})" for n in sorted(nums)]
         return s[0] if len(s) == 1 else ", ".join(s[:-1]) + " and " + s[-1]
 
-    REWORDED = (
+    reworded_html = (
         f"All {len(reworded)} steps worded differently from Notice No. 243 (<em>Steps reworded</em>, at the top) are here, "
         f"near Grit: {spans(reworded)}."
         if not fixes
@@ -503,12 +503,12 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
             else '<p style="margin:10px 0 2px">'
         )
         areas = (
-            "".join(gblock(*a) for a in GRIT_AREAS)
+            "".join(gblock(*a) for a in grit_areas)
             if phone
             else '<table style="border-collapse:collapse;width:100%"><tr style="text-align:left;border-bottom:1px solid #ccc">'
             '<th style="padding:3px 6px"></th><th style="padding:3px 6px;text-align:right">acres</th><th style="padding:3px 6px;text-align:right;white-space:nowrap">granite</th>'
             '<th style="padding:3px 6px;text-align:right;white-space:nowrap">sandstone*</th></tr>'
-            + "".join(grow(*a) for a in GRIT_AREAS)
+            + "".join(grow(*a) for a in grit_areas)
             + "</table>"
         )
         return (
@@ -520,10 +520,10 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
             + "<p>Near Grit the proposed text puts back the petition's wording in place of "
             "Notice No. 243's steps (10)-(11) and (90)-(92), and adds steps (93)-(96) around a lobe of granite. Turn on <em>The change near Grit</em> in "
             "the map's layer list (on by default) to see each line and area.</p>"
-            f"<p>{REWORDED} Every other step is Notice No. 243's text word for word.</p>"
+            f"<p>{reworded_html} Every other step is Notice No. 243's text word for word.</p>"
             + head
             + '<strong>The lines</strong></p><ul style="list-style:none;padding-left:4px;margin:0">'
-            + "".join(key(*k) for k in GRIT_LINES)
+            + "".join(key(*k) for k in grit_lines)
             + "</ul>"
             + head
             + "<strong>The areas</strong> (granite: Town Mountain Granite and younger granitic intrusions; "
@@ -545,8 +545,8 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
     # ---------------------------------------------------------------- elements
     def indicator(
         id_, k, captions
-    ):  # the same number in both views (IND_DATA), with each view's captions
-        name, op, stat, digits, flt = IND_DATA[k]
+    ):  # the same number in both views (indicator_data), with each view's captions
+        name, op, stat, digits, flt = indicator_data[k]
         top, bottom = captions[k]
         return widget(
             id_,
@@ -606,7 +606,7 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
         )
 
     count = {
-        "onStatisticField": OID,
+        "onStatisticField": line_oid,
         "statisticType": "count",
         "outStatisticFieldName": "value",
     }
@@ -622,10 +622,10 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
             }
         ],
     }
-    IND_DATA = {  # key: name, layer, statistic, decimals, filter
+    indicator_data = {  # key: name, layer, statistic, decimals, filter
         "area": (
             "AVA area",
-            AREA_OP,
+            area_op,
             {
                 "onStatisticField": "area_sqmi",
                 "statisticType": "max",
@@ -634,19 +634,19 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
             2,
             None,
         ),
-        "steps": ("Steps shown", LINE_OP, count, 0, None),
+        "steps": ("Steps shown", line_op, count, 0, None),
         "changed": (
             "Steps worded differently from Notice No. 243",
-            LINE_OP,
+            line_op,
             count,
             0,
             changed,
         ),
         "places": (
             "Big differences",
-            RINGS_OP,
+            rings_op,
             {
-                "onStatisticField": RINGS_OID,
+                "onStatisticField": rings_oid,
                 "statisticType": "count",
                 "outStatisticFieldName": "value",
             },
@@ -655,7 +655,7 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
         ),
         "acres": (
             "Land between the boundaries",
-            ALL_OP,
+            all_op,
             {
                 "onStatisticField": "acres",
                 "statisticType": "sum",
@@ -676,7 +676,7 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
             },
         ),
     }
-    CAPTIONS = {
+    desktop_captions = {
         "area": ("AVA as proposed", "sq mi (GRS 1980)"),
         "steps": ("Steps shown", f"of {len(steps)}"),
         "changed": ("Steps reworded", "from Notice No. 243"),
@@ -689,12 +689,12 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
             "same text, drawn differently",
         ),
     }
-    PHONE_CAPTIONS = {
+    phone_captions = {
         "area": ("AVA area", "sq mi"),
         "changed": ("Reworded from", "Notice No. 243"),  # one line each (#68)
         "places": ("Big differences", f"{STATS['big_m']:.0f} m+ apart"),
     }  # a third of a phone's width each: short
-    indicators = [indicator(IND[k], k, CAPTIONS) for k in IND]
+    indicators = [indicator(IND[k], k, desktop_captions) for k in IND]
 
     def zoom_and_flash(map_id):
         return [
@@ -735,12 +735,12 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
             },
         )
 
-    STEP_ITEM = (
+    step_html = (
         f'<p><span style="font-size:13px">{{field/narrative}}</span></p>'
         f'<p><span style="font-size:11px;color:{INK}">{{field/change}}</span><span style="font-size:11px;color:#777"> &middot; '
         "{field/quad} quad &middot; {field/length_m} m</span></p>"
     )
-    STEP_PHONE = (
+    step_phone_html = (
         '<p><span style="font-size:15px">{field/narrative}</span></p>'  # the phone has no details panel: the whole record
         f'<p><span style="font-size:13px;color:{INK}">{{field/change}}</span></p>'
         '<p><span style="font-size:13px;color:#555">Ends at {field/endpoint} &middot; {field/quad} quad &middot; '
@@ -763,7 +763,7 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
             "Steps",
             "listWidget",
             datasets=[
-                dataset(LINE_OP, orderByFields=["step ASC"], maxFeatures=200)
+                dataset(line_op, orderByFields=["step ASC"], maxFeatures=200)
             ],
             events=[
                 {
@@ -776,7 +776,7 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
             showFilter=True,
             separatorColor="#dddddd",
             selectionColor="#f3e3e6",
-            text=STEP_PHONE if phone else STEP_ITEM,
+            text=step_phone_html if phone else step_html,
             **(
                 {
                     "topCaption": '<p style="font-size:14px;margin:4px 6px">Tap a step to show it on the map.</p>'
@@ -803,7 +803,7 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
             layers=[
                 {
                     "type": "layer",
-                    "dataSource": ds(LINE_OP),
+                    "dataSource": ds(line_op),
                     "events": [
                         {
                             "type": "selectionChanged",
@@ -824,7 +824,7 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
             "Big differences from the Map Explorer polygon",
             "listWidget",
             datasets=[
-                dataset(RINGS_OP, orderByFields=["n ASC"], maxFeatures=100)
+                dataset(rings_op, orderByFields=["n ASC"], maxFeatures=100)
             ],
             events=[
                 {"type": "selectionChanged", "actions": zoom_and_flash(MAP)}
@@ -847,7 +847,7 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
             "All differences between the two lines",
             "listWidget",
             datasets=[
-                dataset(ALL_OP, orderByFields=["acres DESC"], maxFeatures=2000)
+                dataset(all_op, orderByFields=["acres DESC"], maxFeatures=2000)
             ],
             events=[
                 {"type": "selectionChanged", "actions": zoom_and_flash(MAP)}
@@ -874,7 +874,7 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
             DETAILS,
             "Selected step",
             "detailsWidget",
-            datasets=[dataset(LINE_OP, maxFeatures=1)],
+            datasets=[dataset(line_op, maxFeatures=1)],
             mapWidgetId=MAP,
             showTitle=True,
             showContents=True,
@@ -890,24 +890,24 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
     ]
     phone_widgets = [
         map_widget(M_MAP, phone=True),
-        *(indicator(M_IND[k], k, PHONE_CAPTIONS) for k in M_IND),
+        *(indicator(M_IND[k], k, phone_captions) for k in M_IND),
         steps_list(M_LIST, M_MAP, phone=True),
         text_widget(M_TXT["about"], "What changes", about_phone),
         text_widget(M_TXT["grit"], "The change near Grit", grit_phone),
         text_widget(M_TXT["documents"], "Documents", documents_phone),
     ]
 
-    CHOICES = (
+    choices = (
         ("1", "Petition wording near Grit", "petition wording"),
         ("2", "New: around the granite lobe", "NEW"),
-        ("4", "Corrections to Notice No. 243's wording", FIX),
+        ("4", "Corrections to Notice No. 243's wording", correction),
         ("3", "Unchanged from Notice No. 243", "unchanged"),
     )
     for s in steps:  # the filter is "contains": every step in exactly one choice, matched with or without case
         for fold in (str, str.lower):
             hits = [
                 value
-                for _, _, value in CHOICES
+                for _, _, value in choices
                 if fold(value) in fold(s["change"] or "")
             ]
             assert len(hits) == 1, (
@@ -951,7 +951,7 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
                                 "label": label,
                                 "value": value,
                             }
-                            for i, label, value in CHOICES
+                            for i, label, value in choices
                         ],
                     },
                 }
@@ -984,36 +984,36 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
         SELECT,
         (
             LIST + "#main",
-            f"{MAP}#{LINE_OP}",
+            f"{MAP}#{line_op}",
             IND["steps"] + "#main",
             IND["changed"] + "#main",
         ),
     )
     phone_selector = step_selector(
         M_SELECT,
-        (M_LIST + "#main", f"{M_MAP}#{LINE_OP}", M_IND["changed"] + "#main"),
+        (M_LIST + "#main", f"{M_MAP}#{line_op}", M_IND["changed"] + "#main"),
         phone=True,
     )
 
-    COLS = (
+    col_shares = (
         0.33,
         0.41,
         0.26,
     )  # left, map, right: shares of the width (QA #45: 0.27/0.45/0.28, then 0.3/0.42/0.28)
-    ROWS = (
+    row_shares = (
         0.25,
         0.23,
         0.52,
     )  # left column: indicators, indicators, tabs: shares of the height (QA #45: room for two-line captions at 1280x720)
-    PHONE_ROWS = (
+    phone_row_shares = (
         0.12,
         0.52,
         0.36,
     )  # the phone, top to bottom: indicators, map, tabs: shares of the screen below the header
     assert (
-        abs(sum(COLS) - 1) < 1e-9
-        and abs(sum(ROWS) - 1) < 1e-9
-        and abs(sum(PHONE_ROWS) - 1) < 1e-9
+        abs(sum(col_shares) - 1) < 1e-9
+        and abs(sum(row_shares) - 1) < 1e-9
+        and abs(sum(phone_row_shares) - 1) < 1e-9
     )
 
     def item(id_, w=1, h=1, **kw):
@@ -1044,15 +1044,15 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
                     "col",
                     [item(M_IND[k], 1 / 3) for k in M_IND],
                     "indicators",
-                    h=PHONE_ROWS[0],
+                    h=phone_row_shares[0],
                     ids=mwid,
                 ),
-                item(M_MAP, h=PHONE_ROWS[1]),
+                item(M_MAP, h=phone_row_shares[1]),
                 {
                     "type": "tabsLayoutElement",
                     "id": mwid("layout-tabs"),
                     "width": 1,
-                    "height": PHONE_ROWS[2],
+                    "height": phone_row_shares[2],
                     "elements": [
                         item(M_LIST, tabName="Steps"),
                         item(M_TXT["about"], tabName="What changes"),
@@ -1080,19 +1080,19 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
                                 for k in ("area", "steps", "changed")
                             ],
                             "indicators",
-                            h=ROWS[0],
+                            h=row_shares[0],
                         ),
                         stack(
                             "col",
                             [item(IND[k], 0.5) for k in ("places", "acres")],
                             "indicators-2",
-                            h=ROWS[1],
+                            h=row_shares[1],
                         ),
                         {
                             "type": "tabsLayoutElement",
                             "id": wid("layout-tabs-left"),
                             "width": 1,
-                            "height": ROWS[2],
+                            "height": row_shares[2],
                             "elements": [
                                 item(TXT["documents"], tabName="Documents"),
                                 item(
@@ -1104,9 +1104,9 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
                         },
                     ],
                     "left",
-                    w=COLS[0],
+                    w=col_shares[0],
                 ),
-                item(MAP, COLS[1]),
+                item(MAP, col_shares[1]),
                 stack(
                     "row",
                     [
@@ -1124,7 +1124,7 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
                         item(DETAILS, h=0.4),
                     ],
                     "right",
-                    w=COLS[2],
+                    w=col_shares[2],
                 ),
             ],
             "root",

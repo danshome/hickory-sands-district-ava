@@ -208,6 +208,26 @@ def check_views(d, ops):
     element of the same type, one to one. ops: the ids of the web map's operational layers.
     agol_dashboard.py runs it before sending the dashboard; the dry run's dashboard check too.
     """
+
+    def walk(e, name, placed, boxes):
+        if e["type"] == "itemLayoutElement":
+            placed.append(e["id"])
+            return
+        boxes.append(e["id"])
+        if e["type"] == "stackLayoutElement":  # a stack's shares add up to 1
+            assert (
+                abs(
+                    sum(
+                        c["width" if e["orientation"] == "col" else "height"]
+                        for c in e["elements"]
+                    )
+                    - 1
+                )
+                < 1e-9
+            ), (name, e["id"])
+        for c in e["elements"]:
+            walk(c, name, placed, boxes)
+
     seen = {}
     for name in ("desktopView", "mobileView"):
         v = d[name]
@@ -218,33 +238,7 @@ def check_views(d, ops):
             for s in v.get(p, {}).get("selectors", [])
         }
         placed, boxes = [], []
-
-        def walk(e):
-            if e["type"] == "itemLayoutElement":
-                placed.append(e["id"])
-                return
-            boxes.append(e["id"])
-            if (
-                e["type"] == "stackLayoutElement"
-            ):  # a stack's shares add up to 1
-                assert (
-                    abs(
-                        sum(
-                            c[
-                                "width"
-                                if e["orientation"] == "col"
-                                else "height"
-                            ]
-                            for c in e["elements"]
-                        )
-                        - 1
-                    )
-                    < 1e-9
-                ), (name, e["id"])
-            for c in e["elements"]:
-                walk(c)
-
-        walk(v["layout"]["rootElement"])
+        walk(v["layout"]["rootElement"], name, placed, boxes)
         assert sorted(placed) == sorted(widgets_), (
             name,
             set(placed) ^ set(widgets_),
@@ -469,8 +463,8 @@ def check_dashboard(b, bad):
     # links to items: to one in the list, each piece of the link's text in its title
     linked, n = set(), 0
     for s in strings(d):
-        for _, url, inner in ANCHOR.findall(s):
-            url = html.unescape(url)
+        for _, href, inner in ANCHOR.findall(s):
+            url = html.unescape(href)
             m = ITEM_LINK.search(url)
             if not m:
                 if not url.startswith("https://"):
@@ -745,7 +739,8 @@ def run(b, out=print):
         bad = []
         try:
             summary = fn(b, bad.append)
-        except Exception as e:
+        # Any error is that check's failure, reported with the others.
+        except Exception as e:  # noqa: BLE001, RUF100
             summary = "could not finish"
             bad.append(f"{type(e).__name__}: {e}")
         once = {x: bad.count(x) for x in bad}
@@ -769,10 +764,11 @@ def run(b, out=print):
 
 
 def load(folder):
-    return {
-        k: json.load(open(os.path.join(folder, k + ".json"), encoding="utf-8"))
-        for k in FILES
-    }
+    bundle = {}
+    for k in FILES:
+        with open(os.path.join(folder, k + ".json"), encoding="utf-8") as f:
+            bundle[k] = json.load(f)
+    return bundle
 
 
 if __name__ == "__main__":

@@ -1,9 +1,17 @@
-"""Makes everything in Dan's folder "Hickory Sands District - Final Proposed Boundary and Narrative" public, and the group
-"Hickory Sands District AVA - Final Proposed Boundary and Narrative" public too, so TTB can open the dashboard, the map
-and every item without an ArcGIS account (Dan, 2026-10-16). Items stay shared to the group as well. The group gets the
-items' tags and a description that lists its categories. Re-running is safe.
-description() builds the group's description without signing in (the publish dry run, agol_dryrun.py, checks it).
-Sign-in: GIS(profile="hsd"). Run last by ./build.sh publish (or .venv/bin/python src/publish/agol_share.py)
+"""Makes the group and everything in Dan's folder public (Dan, 2026-10-16).
+
+Everything in Dan's folder "Hickory Sands District - Final Proposed Boundary
+and Narrative" is made public, and the group "Hickory Sands District AVA -
+Final Proposed Boundary and Narrative" too, so TTB can open the dashboard, the
+map and every item without an ArcGIS account. Items stay shared to the group as
+well. The group gets the items' tags and a description that lists its
+categories. Re-running is safe.
+
+description() builds the group's description without signing in (the publish
+dry run, agol_dryrun.py, checks it).
+
+Sign-in: GIS(profile="hsd"). Run last by ./build.sh publish (or
+.venv/bin/python src/publish/agol_share.py).
 """
 
 from arcgis.gis import GIS
@@ -22,8 +30,17 @@ ACCESS = "public"  # the group, and every item in the folder ("EVERYONE")
 
 
 def description(items, url):
-    """the group's description: start with the two 0 items, then the numbered categories (QA, 2026-10-16); items: the
-    folder's items (.title, .id), url: the portal's
+    """Builds the group's description, without signing in.
+
+    It starts with links to the two 0 items (the dashboard and the read-me),
+    then lists the numbered categories (QA, 2026-10-16).
+
+    Args:
+        items: The folder's items, each with .title and .id.
+        url: The portal's URL.
+
+    Returns:
+        The description, as HTML.
     """
     first = {
         it.title.split(" - ")[0]: it
@@ -47,6 +64,12 @@ def description(items, url):
 
 
 def main():
+    """Signs in and makes the group and every item in the folder public.
+
+    The group's access, tags and description are sent only where they differ
+    from these; each item not yet shared with everyone is shared so. Prints
+    how many items are public, and the first few that are not.
+    """
     gis = GIS(profile="hsd")
     group = gis.groups.get(GROUP_ID)
     if group.access != ACCESS:

@@ -1,29 +1,48 @@
-"""Dashboard for the PROPOSED boundary, in Dan's folder, shared only to the private group: one page that organizes
-everything in the group for TTB's reviewer.
-- header: the docket, and a selector for which steps to show (petition wording near Grit, new around the granite lobe,
-  the two corrections to Notice No. 243's wording, (49) and (85), unchanged from Notice No. 243's text);
-- left: the AVA's area, the steps shown, how many differ from Notice No. 243, the big differences from the AVA Map
-  Explorer polygon and the acres
-  between the two boundaries from the same text drawn differently; tabs with every item in the group by number, the 13 USGS quadrangles (GeoPDF, GeoTIFF, the steps
-  on each), and what changes and how the line is drawn (taken from the package README, so it matches the build);
-- centre: the web map 4a (quadrangles, geology, the Map Explorer polygon, the proposed revision, the differences);
-Wording (Dan, 2026-10-16): the official names, Notice No. 243, the AVA Map Explorer polygon, the proposed revision; never
-"ours" against "TTB's".
-- right: the 104 steps, the big differences and all the differences, as lists that zoom the map, and the selected
-  step's record; a tab on the left sets out the change near Grit, acre by acre, with its granite.
-On a phone (narrow screens; issue #49) ArcGIS Dashboards shows a second layout, the mobileView, with its own copies of
-the elements (ids "mobile-" + the desktop name; elementMappings pairs each with its desktop twin):
-- header: the title and one line; the step selector is in the drawer (a phone header holds text and images only);
-- top: the AVA's area, the steps reworded and the big differences; then the same web map, half the screen;
-- below it, tabs: the steps (tap one to zoom the map; the list item holds the step's whole record), what changes,
-  the change near Grit (its table as stacked rows) and the documents (one large link each).
-Both views are built from the same builders and data below, so they cannot drift; check_views() (in
-agol_dryrun_checks.py) stops the publish if an element is not placed, or an action points outside its own view.
-Items are found by title in the folder at run time (their ids change if they are republished). Re-running updates the
-dashboard in place. Sign-in: GIS(profile="hsd"). Never write "agreed".
-build() makes the dashboard without signing in (from the build, the items and the layers it is given), so the publish dry
-run (agol_dryrun.py) writes and checks it; main() signs in, reads the live items and layers, and sends it.
-Run by ./build.sh publish after agol_layer.py (or .venv/bin/python src/publish/agol_dashboard.py)
+"""The dashboard for the PROPOSED boundary, in Dan's folder.
+
+Shared only to the private group: one page that organizes everything in the
+group for TTB's reviewer.
+- header: the docket, and a selector for which steps to show (petition
+  wording near Grit, new around the granite lobe, the two corrections to
+  Notice No. 243's wording, (49) and (85), unchanged from Notice No. 243's
+  text);
+- left: the AVA's area, the steps shown, how many differ from Notice No. 243,
+  the big differences from the AVA Map Explorer polygon and the acres between
+  the two boundaries from the same text drawn differently; tabs with every
+  item in the group by number, the 13 USGS quadrangles (GeoPDF, GeoTIFF, the
+  steps on each), and what changes and how the line is drawn (taken from the
+  package README, so it matches the build);
+- centre: the web map 4a (quadrangles, geology, the Map Explorer polygon, the
+  proposed revision, the differences);
+- right: the 104 steps, the big differences and all the differences, as lists
+  that zoom the map, and the selected step's record; a tab on the left sets
+  out the change near Grit, acre by acre, with its granite.
+Wording (Dan, 2026-10-16): the official names, Notice No. 243, the AVA Map
+Explorer polygon, the proposed revision; never "ours" against "TTB's".
+
+On a phone (narrow screens; issue #49) ArcGIS Dashboards shows a second
+layout, the mobileView, with its own copies of the elements (ids "mobile-" +
+the desktop name; elementMappings pairs each with its desktop twin):
+- header: the title and one line; the step selector is in the drawer (a phone
+  header holds text and images only);
+- top: the AVA's area, the steps reworded and the big differences; then the
+  same web map, half the screen;
+- below it, tabs: the steps (tap one to zoom the map; the list item holds the
+  step's whole record), what changes, the change near Grit (its table as
+  stacked rows) and the documents (one large link each).
+Both views are built from the same builders and data below, so they cannot
+drift; check_views() (in agol_dryrun_checks.py) stops the publish if an
+element is not placed, or an action points outside its own view.
+
+Items are found by title in the folder at run time (their ids change if they
+are republished). Re-running updates the dashboard in place. Never write
+"agreed". build() makes the dashboard without signing in (from the build, the
+items and the layers it is given), so the publish dry run (agol_dryrun.py)
+writes and checks it; main() signs in, reads the live items and layers, and
+sends it.
+
+Sign-in: GIS(profile="hsd"). Run by ./build.sh publish after agol_layer.py
+(or .venv/bin/python src/publish/agol_dashboard.py).
 """
 
 import html
@@ -64,13 +83,15 @@ LAYER_TITLE = (
     "4b Proposed boundary - layer (AVA polygon, 104 steps, step endpoints)"
 )
 DIFF_TITLE = "4k Differences from the AVA Map Explorer polygon - layer (the big ones, and all of them)"
-SAME_TEXT = "the same text, drawn differently"  # the cause agol_layer.py gives the pieces not from the text change
+# The cause agol_layer.py gives the pieces not from the text change.
+SAME_TEXT = "the same text, drawn differently"
 CREDIT = "Dan McLaughlin, Robert Clay Vineyards (petitioner)"
 CC0 = (
     "CC0 1.0 Universal (public domain dedication): no rights reserved. TTB, its contractors and anyone else may copy, "
     "change and use this for any purpose without permission or attribution. https://creativecommons.org/publicdomain/zero/1.0/"
 )
-# the dashboard shows more than the petitioner's work, so its license and credits name each part (QA #30)
+# The dashboard shows more than the petitioner's work, so its license and
+# credits name each part (QA #30).
 LIC = (
     "The dashboard and the petitioner's layers (the proposed revision, the differences, the change near Grit, the shift of the "
     "geology): "
@@ -115,7 +136,15 @@ SECTIONS = {
 WINE, INK = "#5a1e2e", "#8a1c1c"
 
 
-def wid(name):  # stable element ids, so a re-run changes only what changed
+def wid(name):
+    """Returns an element's stable id, so a re-run changes only what changed.
+
+    Args:
+        name: The element's name ("map", "indicator-area", ...).
+
+    Returns:
+        A UUID made from the name (uuid5).
+    """
     return str(
         uuid.uuid5(
             uuid.NAMESPACE_URL, "hickory-sands-district-dashboard/" + name
@@ -138,7 +167,8 @@ IND = {
 TXT = {k: wid("text-" + k) for k in ("documents", "quads", "about", "grit")}
 
 
-def mwid(name):  # the phone layout's twin of the element wid(name)
+def mwid(name):
+    """Returns the id of the phone layout's twin of the element wid(name)."""
     return wid("mobile-" + name)
 
 
@@ -152,15 +182,30 @@ TWINS = {
     **{IND[k]: M_IND[k] for k in M_IND},
     **{TXT[k]: M_TXT[k] for k in M_TXT},
 }
-PHONE = '<div style="font-size:15px;line-height:1.5">'  # the phone's text: 15 px, its small print 13 px (desktop 13 and 11)
+# The phone's text: 15 px, its small print 13 px (desktop 13 and 11).
+PHONE = '<div style="font-size:15px;line-height:1.5">'
 
 
 def build(items, wm, ops, line, area, rings_oid, steps, url):
-    """The dashboard's JSON and its item properties, built without signing in or sending anything, from the build's outputs
-    and: the items in the folder (title -> item, with .id and .title), the web map 4a (.id) and the ids of its operational
-    layers (ops), the boundary layer 4b's line and area layers (.properties.id, .objectIdField), the big differences
-    layer's object id field, the steps' records (step, quad, change) and the portal's URL. main() passes the live ones;
-    the publish dry run (agol_dryrun.py) passes stand-ins. Returns (dashboard, props).
+    """Builds the dashboard's JSON and its item properties.
+
+    Built without signing in or sending anything, from the build's outputs and
+    what it is given: main() passes the live items and layers; the publish dry
+    run (agol_dryrun.py) passes stand-ins.
+
+    Args:
+        items: The items in the folder: title -> item, with .id and .title.
+        wm: The web map 4a (.id).
+        ops: The ids of its operational layers.
+        line: The boundary layer 4b's line layer (.properties.id,
+            .objectIdField).
+        area: Its area layer (.properties.id).
+        rings_oid: The big differences layer's object id field.
+        steps: The steps' records (step, quad, change).
+        url: The portal's URL.
+
+    Returns:
+        (dashboard, props): the dashboard's JSON, and the item's properties.
     """
     line_op, area_op, rings_op, all_op = (
         f"hsd-{line.properties.id}",
@@ -209,9 +254,9 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
             **kw,
         }
 
-    def page(
-        it,
-    ):  # the item's page: its description, license and download (an item's /data link would only download)
+    # The item's page: its description, license and download (an item's /data
+    # link would only download).
+    def page(it):
         return f"{url}/home/item.html?id={it.id}"
 
     def link(it, text=None):
@@ -220,9 +265,9 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
             f"{html.escape(text or it.title.split(' ', 1)[1])}</a>"
         )
 
-    def button(
-        url, title, note=""
-    ):  # a link the size of a finger, for the phone: "Title - note" -> title, note below it
+    # A link the size of a finger, for the phone: "Title - note" -> title, note
+    # below it.
+    def button(url, title, note=""):
         return (
             f'<a href="{url}" target="_blank" rel="noopener noreferrer" style="display:block;padding:12px 14px;margin:0 0 10px;'
             f"border:1px solid #d9c3c8;border-radius:8px;background:#faf6f7;color:{WINE};text-decoration:none;font-size:16px;"
@@ -247,7 +292,7 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
                 out.append([n, n])
         return ", ".join(f"({a})" if a == b else f"({a})-({b})" for a, b in out)
 
-    # ---------------------------------------------------------------- the three text tabs
+    # ---- the three text tabs
     docs = sorted(
         (t, it)
         for t, it in items.items()
@@ -308,7 +353,8 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
             )  # one row even if only one of the pair is retitled yet
     rows = "".join(
         f'<tr><td style="padding:3px 6px">{html.escape(q)}, TX ({f["edition"]})</td>'
-        f'<td style="padding:3px 6px;white-space:nowrap">{link(f["GeoPDF"], "GeoPDF")}</td>'  # never "GeoPD / F" (QA #47)
+        # nowrap: never "GeoPD / F" (QA #47)
+        f'<td style="padding:3px 6px;white-space:nowrap">{link(f["GeoPDF"], "GeoPDF")}</td>'
         f'<td style="padding:3px 6px;white-space:nowrap">{link(f["GeoTIFF"], "GeoTIFF")}</td>'
         f'<td style="padding:3px 6px">{spans(s["step"] for s in steps if s["quad"] == q) or "-"}</td></tr>'
         for q, f in sorted(quads.items())
@@ -326,7 +372,17 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
     )
 
     def readme_section(start):
-        """a section of the package README as HTML: paragraphs, and '- ' bullets with their indented continuation lines"""
+        """Returns a section of the package README as HTML.
+
+        Its paragraphs, and its '- ' bullets with their indented continuation
+        lines.
+
+        Args:
+            start: How the section's heading line starts.
+
+        Returns:
+            The section's indented lines, up to the next heading, as HTML.
+        """
         with open(README, encoding="utf-8") as f:
             lines = f.read().splitlines()
         i = next(k for k, s in enumerate(lines) if s.startswith(start))
@@ -367,7 +423,8 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
     with open(README, encoding="utf-8") as f:
         head = f.read().splitlines()[:3]
     changes_html = readme_section("WHAT WE PROPOSE TO CHANGE")
-    map_red = f"Red: the proposed revision, {SQMI} square miles."  # the map's key, in both views
+    # the map's key, in both views
+    map_red = f"Red: the proposed revision, {SQMI} square miles."
     map_blue = "Blue: the AVA Map Explorer polygon for Notice No. 243, from TTB's live AVAs_Production layer."
     map_shaded = (
         "Shaded: every piece of land between them (red: in the proposed revision only; blue: in the Map Explorer polygon "
@@ -411,8 +468,10 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
 
     grit_acres = GRIT["areas"]
 
+    # whole acres, rounded once, half up, from the build's unrounded stats
+    # (issue #33)
     def ac(x):
-        return f"{int(x + 0.5):,}"  # whole acres, rounded once, half up, from the build's unrounded stats (issue #33)
+        return f"{int(x + 0.5):,}"
 
     def grow(key, label):
         r = grit_acres[key]
@@ -422,9 +481,8 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
             f'<td style="padding:3px 6px;text-align:right;white-space:nowrap">{ac(r["sandstone_acres"])}</td></tr>'
         )
 
-    def gblock(
-        key, label
-    ):  # a row of the table as a paragraph, for the phone (no wide tables)
+    # a row of the table as a paragraph, for the phone (no wide tables)
+    def gblock(key, label):
         r = grit_acres[key]
         return (
             f'<p style="margin:8px 0 0"><strong>{label}</strong><br>{ac(r["acres"])} acres &middot; granite {ac(r["granite_acres"])} '
@@ -471,7 +529,9 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
     reworded = [
         s["step"] for s in steps if "unchanged" not in (s["change"] or "")
     ]  # as the indicator counts them
-    correction = "text correction"  # how build_agreed.py's change notes for (49) and (85) start: Notice No. 243's wording corrected
+    # How build_agreed.py's change notes for (49) and (85) start: Notice No.
+    # 243's wording corrected.
+    correction = "text correction"
     fixes = [s["step"] for s in steps if correction in (s["change"] or "")]
     near_grit = [n for n in reworded if n not in fixes]
 
@@ -494,9 +554,9 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
         + "the line does not change."
     )
 
-    def grit_tab(
-        phone=False,
-    ):  # the same text in both views; on the phone larger, and the table as stacked rows
+    # the same text in both views; on the phone larger, and the table as
+    # stacked rows
+    def grit_tab(phone=False):
         head = (
             '<p style="margin:12px 0 4px">'
             if phone
@@ -542,10 +602,9 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
 
     grit_html, grit_phone = grit_tab(), grit_tab(phone=True)
 
-    # ---------------------------------------------------------------- elements
-    def indicator(
-        id_, k, captions
-    ):  # the same number in both views (indicator_data), with each view's captions
+    # ---- elements
+    # the same number in both views (indicator_data), with each view's captions
+    def indicator(id_, k, captions):
         name, op, stat, digits, flt = indicator_data[k]
         top, bottom = captions[k]
         return widget(
@@ -703,8 +762,19 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
         ]
 
     def map_widget(id_, phone=False, layers=()):
-        """the web map 4a. The phone's: no measure tool, a locate button (is this place in the AVA?), and no selection by
-        tapping (nothing on the phone listens to it); pop-ups stay on, to tell what a tapped line or area is.
+        """Returns the map widget of the web map 4a.
+
+        The phone's: no measure tool, a locate button (is this place in the
+        AVA?), and no selection by tapping (nothing on the phone listens to
+        it); pop-ups stay on, to tell what a tapped line or area is.
+
+        Args:
+            id_: The widget's id.
+            phone: Whether it is the phone's.
+            layers: The map's layer settings (data sources and their events).
+
+        Returns:
+            The widget.
         """
         return widget(
             id_,
@@ -740,8 +810,9 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
         f'<p><span style="font-size:11px;color:{INK}">{{field/change}}</span><span style="font-size:11px;color:#777"> &middot; '
         "{field/quad} quad &middot; {field/length_m} m</span></p>"
     )
+    # the phone has no details panel: the whole record
     step_phone_html = (
-        '<p><span style="font-size:15px">{field/narrative}</span></p>'  # the phone has no details panel: the whole record
+        '<p><span style="font-size:15px">{field/narrative}</span></p>'
         f'<p><span style="font-size:13px;color:{INK}">{{field/change}}</span></p>'
         '<p><span style="font-size:13px;color:#555">Ends at {field/endpoint} &middot; {field/quad} quad &middot; '
         "{field/length_m} m &middot; {field/txt_source}</span></p>"
@@ -807,7 +878,8 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
                     "events": [
                         {
                             "type": "selectionChanged",
-                            "actions": [  # the list's selection gates the details
+                            # the list's selection gates the details
+                            "actions": [
                                 {
                                     "type": "filter",
                                     "targets": [target(DETAILS + "#main")],
@@ -903,7 +975,9 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
         ("4", "Corrections to Notice No. 243's wording", correction),
         ("3", "Unchanged from Notice No. 243", "unchanged"),
     )
-    for s in steps:  # the filter is "contains": every step in exactly one choice, matched with or without case
+    # The filter is "contains": every step in exactly one choice, matched with
+    # or without case.
+    for s in steps:
         for fold in (str, str.lower):
             hits = [
                 value
@@ -995,21 +1069,15 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
         phone=True,
     )
 
-    col_shares = (
-        0.33,
-        0.41,
-        0.26,
-    )  # left, map, right: shares of the width (QA #45: 0.27/0.45/0.28, then 0.3/0.42/0.28)
-    row_shares = (
-        0.25,
-        0.23,
-        0.52,
-    )  # left column: indicators, indicators, tabs: shares of the height (QA #45: room for two-line captions at 1280x720)
-    phone_row_shares = (
-        0.12,
-        0.52,
-        0.36,
-    )  # the phone, top to bottom: indicators, map, tabs: shares of the screen below the header
+    # left, map, right: shares of the width (QA #45: 0.27/0.45/0.28, then
+    # 0.3/0.42/0.28)
+    col_shares = (0.33, 0.41, 0.26)
+    # left column: indicators, indicators, tabs: shares of the height (QA #45:
+    # room for two-line captions at 1280x720)
+    row_shares = (0.25, 0.23, 0.52)
+    # the phone, top to bottom: indicators, map, tabs: shares of the screen
+    # below the header
+    phone_row_shares = (0.12, 0.52, 0.36)
     assert (
         abs(sum(col_shares) - 1) < 1e-9
         and abs(sum(row_shares) - 1) < 1e-9
@@ -1131,9 +1199,8 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
         ),
     }
 
-    def header(
-        title, subtitle, phone=False
-    ):  # a phone header holds text and images only: its selector is in the drawer
+    # a phone header holds text and images only: its selector is in the drawer
+    def header(title, subtitle, phone=False):
         return {
             "type": "header",
             "dashboardItemType": "panel",
@@ -1174,7 +1241,8 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
         "widgets": phone_widgets,
         "header": header(
             "Hickory Sands District AVA",
-            "Proposed boundary \u00b7 Notice No. 243",  # one line each on a phone (#68)
+            # one line each on a phone (#68)
+            "Proposed boundary \u00b7 Notice No. 243",
             phone=True,
         ),
         "drawer": {
@@ -1237,6 +1305,11 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
 
 
 def main():
+    """Signs in, builds the dashboard from the live items and layers, sends it.
+
+    The dashboard is checked (check_views(), no "agree"), then added to the
+    folder or updated in place, and shared to the group.
+    """
     gis = GIS(profile="hsd")
     folder = gis.content.folders.get(FOLDER)
     group = gis.groups.get(GROUP_ID)

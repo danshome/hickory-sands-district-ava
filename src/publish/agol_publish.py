@@ -1,14 +1,23 @@
-"""Publishes the proposed-boundary deliverable to ArcGIS Online, one item per file, in Dan's folder
-"Hickory Sands District - Final Proposed Boundary and Narrative", shared only to the private group
-"Hickory Sands District AVA - Final Proposed Boundary and Narrative" and placed in the group's categories.
+"""Publishes the proposed-boundary package to ArcGIS Online, one item per file.
 
-Idempotent: an item with the same title in the folder has its file replaced, not duplicated. An item whose title has
-changed is found by its earlier title (WAS) and retitled, and category 2's earlier name is renamed in the group's schema.
-Sign-in: GIS(profile="hsd"), Dan's saved profile (the password stays in his macOS Keychain).
-The boundary is PROPOSED (changes discussed with TTB on October 15, 2026); never write "agreed".
-Run by ./build.sh publish (or .venv/bin/python src/publish/agol_publish.py) [text that titles must contain, to do only some items]
-What it sends is built without signing in (ITEMS, properties(): the publish dry run, src/publish/agol_dryrun.py, writes and checks
-it); main() signs in and sends it.
+The items go in Dan's folder "Hickory Sands District - Final Proposed Boundary
+and Narrative", shared only to the private group "Hickory Sands District AVA -
+Final Proposed Boundary and Narrative" and placed in the group's categories.
+
+Idempotent: an item with the same title in the folder has its file replaced,
+not duplicated. An item whose title has changed is found by its earlier title
+(WAS) and retitled, and category 2's earlier name is renamed in the group's
+schema. The boundary is PROPOSED (changes discussed with TTB on October 15,
+2026); never write "agreed".
+
+What it sends is built without signing in (ITEMS, properties(): the publish
+dry run, src/publish/agol_dryrun.py, writes and checks it); main() signs in
+and sends it.
+
+Sign-in: GIS(profile="hsd"), Dan's saved profile (the password stays in his
+macOS Keychain). Run by ./build.sh publish (or .venv/bin/python
+src/publish/agol_publish.py [text that titles must contain, to do only some
+items]).
 """
 
 import json
@@ -43,7 +52,8 @@ C1, C2, C3 = (
     "/Categories/2 Notice No. 243 - proposed changes highlighted",
     "/Categories/3 Changes side by side",
 )
-C2_WAS = "2 TTB Notice 243 - proposed changes highlighted"  # category 2's earlier name in the group's schema (QA #31)
+# Category 2's earlier name in the group's schema (QA #31).
+C2_WAS = "2 TTB Notice 243 - proposed changes highlighted"
 C4D = "/Categories/4 GIS data/Downloads (GeoPackage + shapefiles + GeoJSON)"
 C5P, C5T = (
     "/Categories/5 USGS quadrangles with the boundary/GeoPDF",
@@ -74,13 +84,22 @@ PART = (
     "the petitioners propose, with the changes discussed with TTB on October 15, 2026."
 )  # for TTB's own notice (2b, 2c)
 T = ItemTypeEnum
-WAS = {}  # title -> earlier titles, so a re-run finds an item that was retitled and gives it its new title
+# Title -> earlier titles, so a re-run finds an item that was retitled and
+# gives it its new title.
+WAS = {}
 
 
-# ---------------------------------------------------------------- extents (an item's extent puts it in location search)
-def outward(
-    xs, ys
-):  # [[xmin, ymin], [xmax, ymax]], rounded outward to 4 decimals
+# ---- extents (an item's extent puts it in location search)
+def outward(xs, ys):
+    """Returns the extent of some points, rounded outward to 4 decimals.
+
+    Args:
+        xs: The points' x coordinates (longitudes).
+        ys: Their y coordinates (latitudes).
+
+    Returns:
+        [[xmin, ymin], [xmax, ymax]].
+    """
     return [
         [math.floor(min(xs) * 1e4) / 1e4, math.floor(min(ys) * 1e4) / 1e4],
         [math.ceil(max(xs) * 1e4) / 1e4, math.ceil(max(ys) * 1e4) / 1e4],
@@ -88,7 +107,16 @@ def outward(
 
 
 def bbox(geojson):
-    """the extent of a GeoJSON file's features (NAD83; WGS84 agrees to about a metre here)"""
+    """Returns the extent of a GeoJSON file's features.
+
+    The coordinates are NAD83; WGS84 agrees to about a metre here.
+
+    Args:
+        geojson: The GeoJSON file's path.
+
+    Returns:
+        [[xmin, ymin], [xmax, ymax]], rounded outward to 4 decimals.
+    """
     xs, ys = [], []
 
     def walk(c):
@@ -109,8 +137,17 @@ NADCON = "us_noaa_nadcon5_nad27_nad83_1986_conus.tif"
 
 
 def neatline(tif, cell=0.125):
-    """a 1:24,000 quadrangle's 7.5-minute neatline as an extent: the NAD27 cell that holds the sheet's centre, its corners
-    carried to NAD83 with the NADCON 5.0 CONUS grid
+    """Returns a 1:24,000 quadrangle's 7.5-minute neatline as an extent.
+
+    The neatline is the NAD27 cell that holds the sheet's centre, its corners
+    carried to NAD83 with the NADCON 5.0 CONUS grid.
+
+    Args:
+        tif: The quadrangle's GeoTIFF.
+        cell: The cell's size in degrees (7.5 minutes).
+
+    Returns:
+        [[xmin, ymin], [xmax, ymax]] in NAD83, rounded outward to 4 decimals.
     """
     ds = gdal.Open(tif)
     g = ds.GetGeoTransform()
@@ -139,12 +176,14 @@ def neatline(tif, cell=0.125):
     return outward([c[0] for c in corners], [c[1] for c in corners])
 
 
-# ---------------------------------------------------------------- the 13 quadrangles, titled as paragraph (b) cites them
+# ---- the 13 quadrangles, titled as paragraph (b) cites them
 D1 = "1_boundary-description/Hickory-Sands-District-boundary-description-as-proposed-2026-10-15"
+# Paragraph (b) of the proposed text: "(10) Fly Gap, TX., 1962, photorevised
+# 1982;" -> {"Fly Gap": "1962, photorevised 1982"}.
 with open(os.path.join(PKG, D1 + ".txt"), encoding="utf-8") as f:
     B = {
         name: year + note
-        for name, year, note in re.findall(  # paragraph (b) of the proposed text: "(10) Fly Gap, TX., 1962, photorevised 1982;"
+        for name, year, note in re.findall(
             r"\(\d+\) ([A-Z][\w ]+?), TX\., (\d{4})((?:, [a-z]+ \d{4})?)[;.]",
             f.read(),
         )
@@ -153,6 +192,16 @@ QUAD_EXTENT = {}  # title -> the quadrangle's neatline
 
 
 def quad_items():
+    """Returns the 26 quadrangle items: a GeoPDF (5a) and a GeoTIFF (5b) each.
+
+    Each is titled with its edition as paragraph (b) cites it (QA #44); a
+    title that once had the file's year only is recorded in WAS, and each
+    quadrangle's neatline in QUAD_EXTENT.
+
+    Returns:
+        A list of (file, title, type, group category, summary, description,
+        license, credits), as in ITEMS.
+    """
     out = []
     for kind, ext, cat, typ in (
         ("GeoPDF", "pdf", C5P, T.PDF),
@@ -165,9 +214,9 @@ def quad_items():
             if not m:
                 continue
             name, year = m.groups()
-            edition = B[
-                name
-            ]  # "1962, photorevised 1982" (QA #44); every quad is in paragraph (b), with the file's year
+            # "1962, photorevised 1982" (QA #44); every quad is in paragraph
+            # (b), with the file's year.
+            edition = B[name]
             assert edition.startswith(year), (name, year, edition)
             title = f"5{'a' if kind == 'GeoPDF' else 'b'} USGS quadrangle with the boundary ({kind}) - {name}, TX ({edition})"
             if edition != year:
@@ -382,7 +431,9 @@ ITEMS = [
         CREDIT,
     ),
 ]
-GIS_LAYERS = {  # the three layers of the GIS downloads: what each holds, and its fields beyond TTB's AVAs_Production fields
+# The three layers of the GIS downloads: what each holds, and its fields beyond
+# TTB's AVAs_Production fields.
+GIS_LAYERS = {
     "area": (
         "AVA polygon",
         "the AVA polygon (" + SQMI + " square miles)",
@@ -447,8 +498,10 @@ for i, (key, (what, n, layer, extra)) in enumerate(GIS_LAYERS.items()):
             CREDIT,
         )
     )
-# the description (1a-1d) and the side-by-side (3a, 3b) are mostly TTB's text, so they carry the same split license as 2a, 2d;
-# the GIS downloads (4c-4i) hold TTB's text and data too (the step text, the AVAs_Production values), so they get the same split
+# The description (1a-1d) and the side-by-side (3a, 3b) are mostly TTB's text,
+# so they carry the same split license as 2a, 2d; the GIS downloads (4c-4i)
+# hold TTB's text and data too (the step text, the AVAs_Production values), so
+# they get the same split.
 LIC_MIX = (
     "TTB's text: U.S. Government work (public domain). The petitioner's changes: "
     + CC0
@@ -476,8 +529,10 @@ ITEMS = [
     for r, ti, ty, c, s, d, lic, cr in ITEMS
 ]
 ITEMS += quad_items()
+# 2a-2d: "Notice No. 243", the official name, in place of "TTB Notice 243"
+# (QA #31).
 WAS.update(
-    {  # 2a-2d: "Notice No. 243", the official name, in place of "TTB Notice 243" (QA #31)
+    {
         "2a Notice No. 243 with the proposed changes highlighted (unofficial copy, PDF)": [
             "2a TTB Notice 243 with the proposed changes highlighted (unofficial copy, PDF)"
         ],
@@ -498,7 +553,17 @@ assert set(WAS) <= {ti for _, ti, *_ in ITEMS}, set(WAS) - {
 
 
 def rename_category(nodes, old, new):
-    """renames a category, at any depth, in a group's category schema; True if it was there"""
+    """Renames a category, at any depth, in a group's category schema.
+
+    Args:
+        nodes: The schema's list of categories (each a dict with "title" and
+            maybe "categories"), changed in place.
+        old: The category's title now.
+        new: Its new title.
+
+    Returns:
+        True if a category was titled old.
+    """
     hit = False
     for n in nodes:
         if n.get("title") == old:
@@ -509,7 +574,22 @@ def rename_category(nodes, old, new):
 
 
 def properties(title, snippet, desc, lic, credit):
-    """an item's metadata, as update() sends it (and an add sets it): no sign-in needed"""
+    """Returns an item's metadata, as update() sends it (and an add sets it).
+
+    No sign-in is needed. A quadrangle's extent is its neatline, a GIS item's
+    (number 4) the AVA's; other items have none.
+
+    Args:
+        title: The item's title.
+        snippet: Its summary.
+        desc: Its description (HTML).
+        lic: Its license.
+        credit: Its credits.
+
+    Returns:
+        A dict of the item's properties: snippet, description, licenseInfo,
+        accessInformation, tags, culture and, for a spatial item, extent.
+    """
     extent = QUAD_EXTENT.get(title) or (AVA if title.startswith("4") else None)
     return {
         "snippet": snippet,
@@ -523,16 +603,24 @@ def properties(title, snippet, desc, lic, credit):
 
 
 def main():
+    """Signs in and sends every item of ITEMS to the folder and the group.
+
+    The folder is made again if it was deleted, and category 2's earlier name
+    is renamed in the group's schema. Each item (with an argument, only those
+    whose titles contain it) is updated, retitled or added, shared to the
+    group and, if it has one, put in its group category; its title, summary,
+    description, license and credits must not say "agree".
+    """
     only = sys.argv[1] if len(sys.argv) > 1 else None
     gis = GIS(profile="hsd")
-    folder = gis.content.folders.create(
-        FOLDER, exist_ok=True
-    )  # made again if it was deleted
+    # Made again if it was deleted.
+    folder = gis.content.folders.create(FOLDER, exist_ok=True)
     group = gis.groups.get(GROUP_ID)
     schema = group.categories.schema
+    # Its items are put back in it below.
     if isinstance(schema, list) and rename_category(
         schema, C2_WAS, C2.rsplit("/", 1)[1]
-    ):  # its items are put back in it below
+    ):
         group.categories.schema = schema
         print("renamed category", C2_WAS, "->", C2)
     existing = {it.title: it for it in folder.list()}

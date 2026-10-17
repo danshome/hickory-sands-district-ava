@@ -1,19 +1,35 @@
-"""Hosted feature layer and web map for the PROPOSED boundary, in Dan's folder, shared only to the private group and placed
-in category 4 > Map and layer:
-- publishes the GeoPackage item (4c) as a hosted feature layer (4b), with exports allowed (Query, Extract);
-- attaches the key PDFs (read-me, description, TTB notice with the changes highlighted, side-by-side) to the AVA polygon;
-- sets symbology and pop-ups on the layer item, and readable field aliases on every hosted layer;
-- publishes the build's comparison with the AVA Map Explorer polygon (target/work/review) as a GeoPackage (4j) and hosted layer
-  (4k): the big differences (the lines 100 m or more apart) and every piece of land between the two boundaries;
-- builds a web map (4a) over the 13 USGS quadrangle scans cited in paragraph (b), from Esri's USA Historical Topo Maps
-  service locked to those editions, with the AVA Map Explorer polygon (TTB's live AVAs_Production, blue) under the proposed
-  revision, the land between them shaded, and the big differences ringed.
-Re-running reuses the layer, overwrites the comparison layer and updates the map. Sign-in: GIS(profile="hsd"). Never write "agreed".
-What it sends is built without signing in (the item properties at module level; boundary_plan(), diff_plan(), geo_plan(),
-grit_plan(), webmap_plan(): pop-ups, field aliases, the layers' visualizations and the web map, from the layers given; plan()
-all of them at once), so the publish dry run (agol_dryrun.py) writes and checks it; main() signs in, publishes the layers,
+"""Hosted feature layers and the web map for the PROPOSED boundary.
+
+They go in Dan's folder, shared only to the private group and placed in
+category 4 > Map and layer:
+- publishes the GeoPackage item (4c) as a hosted feature layer (4b), with
+  exports allowed (Query, Extract);
+- attaches the key PDFs (read-me, description, TTB notice with the changes
+  highlighted, side-by-side) to the AVA polygon;
+- sets symbology and pop-ups on the layer item, and readable field aliases on
+  every hosted layer;
+- publishes the build's comparison with the AVA Map Explorer polygon
+  (target/work/review) as a GeoPackage (4j) and hosted layer (4k): the big
+  differences (the lines 100 m or more apart) and every piece of land between
+  the two boundaries;
+- builds a web map (4a) over the 13 USGS quadrangle scans cited in paragraph
+  (b), from Esri's USA Historical Topo Maps service locked to those editions,
+  with the AVA Map Explorer polygon (TTB's live AVAs_Production, blue) under
+  the proposed revision, the land between them shaded, and the big
+  differences ringed.
+
+Re-running reuses the layer, overwrites the comparison layer and updates the
+map. Never write "agreed".
+
+What it sends is built without signing in (the item properties at module
+level; boundary_plan(), diff_plan(), geo_plan(), grit_plan(), webmap_plan():
+pop-ups, field aliases, the layers' visualizations and the web map, from the
+layers given; plan() all of them at once), so the publish dry run
+(agol_dryrun.py) writes and checks it; main() signs in, publishes the layers,
 and sends each piece where it always has.
-Run by ./build.sh publish (or .venv/bin/python src/publish/agol_layer.py)
+
+Sign-in: GIS(profile="hsd"). Run by ./build.sh publish (or .venv/bin/python
+src/publish/agol_layer.py).
 """
 
 import hashlib
@@ -53,17 +69,19 @@ DIFF_GPKG = os.path.join(
 )
 DIFF_SRC_TITLE = "4j Differences from the AVA Map Explorer polygon - GeoPackage (the big ones, and all of them)"
 DIFF_TITLE = "4k Differences from the AVA Map Explorer polygon - layer (the big ones, and all of them)"
+# Earlier titles, so a re-run finds and retitles those items.
 DIFF_WAS = (
     [
-        "4j Differences from TTB's published polygon - GeoPackage (the big ones, and all of them)",  # earlier titles, so a
+        "4j Differences from TTB's published polygon - GeoPackage (the big ones, and all of them)",
         "4j Differences from TTB's published polygon - GeoPackage (rings, short tips)",
-    ],  # re-run finds and
+    ],
     [
-        "4k Differences from TTB's published polygon - layer (the big ones, and all of them)",  # retitles those items
+        "4k Differences from TTB's published polygon - layer (the big ones, and all of them)",
         "4k Differences from TTB's published polygon - layer (rings, short tips)",
     ],
 )
-# the names used everywhere a reader sees them (Dan, 2026-10-16: the official names, no "ours" and "TTB's")
+# The names used everywhere a reader sees them (Dan, 2026-10-16: the official
+# names, no "ours" and "TTB's").
 REV, MAPX, N243 = (
     "the proposed revision",
     "the AVA Map Explorer polygon",
@@ -89,9 +107,13 @@ GRIT_GPKG = os.path.join(
 GRIT_SRC_TITLE = "4n The change near Grit - GeoPackage (lines swapped, areas moved, granite acres)"
 GRIT_TITLE = "4o The change near Grit - layer (lines swapped, areas moved, granite acres)"
 TOPO = "https://historical1.arcgis.com/arcgis/rest/services/USA_Historical_Topo_Maps/ImageServer"
-# the four basemaps of TTB's AVA Map Explorer (https://www.ttb.gov/ava; its web map ae8e5830627f439c97b05ff285568c80)
+# The four basemaps of TTB's AVA Map Explorer (https://www.ttb.gov/ava; its web
+# map ae8e5830627f439c97b05ff285568c80).
 ESRI = "https://services.arcgisonline.com/arcgis/rest/services/"
 VTS = "https://cdn.arcgis.com/sharing/rest/content/items/{}/resources/styles/root.json"
+# Esri public style item ids
+TOPO_STYLE = "7dc6cea0b1764a1f9af2e679f642f0f5"  # pragma: allowlist secret
+STREETS_STYLE = "de26a3cf4cc9451298ea173c4b324736"  # pragma: allowlist secret
 TTB_BASEMAPS = [
     (
         "Topographic (TTB's default)",
@@ -104,10 +126,7 @@ TTB_BASEMAPS = [
             (
                 "World Topographic Map",
                 "VectorTileLayer",
-                # Esri public style item ids
-                VTS.format(
-                    "7dc6cea0b1764a1f9af2e679f642f0f5"  # pragma: allowlist secret
-                ),
+                VTS.format(TOPO_STYLE),
             ),
         ],
     ),
@@ -117,9 +136,7 @@ TTB_BASEMAPS = [
             (
                 "World Street Map",
                 "VectorTileLayer",
-                VTS.format(
-                    "de26a3cf4cc9451298ea173c4b324736"  # pragma: allowlist secret
-                ),
+                VTS.format(STREETS_STYLE),
             )
         ],
     ),
@@ -161,9 +178,18 @@ RASTERS = [
 ]  # the 13 editions
 
 
-def year(
-    field, label
-):  # a year from the quadrangle catalog, printed 1970, not 1,970
+def year(field, label):
+    """Returns a pop-up field for a year of the quadrangle catalog.
+
+    The year is printed 1970, not 1,970.
+
+    Args:
+        field: The catalog's field.
+        label: The label the pop-up shows.
+
+    Returns:
+        The pop-up's fieldInfo.
+    """
     return {
         "fieldName": field,
         "label": label,
@@ -179,16 +205,21 @@ QUADS = {
     "layerType": "ArcGISImageServiceLayer",
     "visibility": True,
     "opacity": 1,
-    "timeAnimation": False,  # the service is time-enabled; without this Map Viewer filters to 1878-1891 and hides the 1955-1970 sheets
+    # The service is time-enabled; without this Map Viewer filters to
+    # 1878-1891 and hides the 1955-1970 sheets.
+    "timeAnimation": False,
     "mosaicRule": {
         "mosaicMethod": "esriMosaicLockRaster",
         "lockRasterIds": RASTERS,
         "ascending": True,
         "mosaicOperation": "MT_FIRST",
     },
-    "showLegend": False,  # scanned maps: no "Red: Band_1, Green: Band_2, Blue: Band_3" legend (QA #46)
+    # Scanned maps: no "Red: Band_1, Green: Band_2, Blue: Band_3" legend (QA
+    # #46).
+    "showLegend": False,
     "popupInfo": {
-        "title": "{Map_Name}, {Primary_State} ({Date_On_Map})",  # the sheet, not the catalog's 20 raw fields (QA #46)
+        # the sheet, not the catalog's 20 raw fields (QA #46)
+        "title": "{Map_Name}, {Primary_State} ({Date_On_Map})",
         "fieldInfos": [
             {"fieldName": "Map_Name", "label": "Map name", "visible": True},
             {"fieldName": "Primary_State", "label": "State", "visible": True},
@@ -211,7 +242,8 @@ CC0 = (
     "CC0 1.0 Universal (public domain dedication): no rights reserved. TTB, its contractors and anyone else may copy, "
     "change and use this for any purpose without permission or attribution. https://creativecommons.org/publicdomain/zero/1.0/"
 )
-# the web map shows more than the petitioner's work, so its license and credits name each part (QA #30)
+# The web map shows more than the petitioner's work, so its license and credits
+# name each part (QA #30).
 LIC_MAP = (
     "The map and the petitioner's layers (the proposed revision, the differences, the change near Grit, the shift of the "
     "geology): "
@@ -220,8 +252,9 @@ LIC_MAP = (
     "U.S. Government work (public domain). USGS quadrangles and USGS SGMC geology: public domain. Basemaps: Esri, under "
     "Esri's terms of use."
 )
-# the boundary layer (4b) holds TTB's text and data too (the step text, the AVAs_Production values): the same split as
-# the downloads 4c-4i (agol_publish.py)
+# The boundary layer (4b) holds TTB's text and data too (the step text, the
+# AVAs_Production values): the same split as the downloads 4c-4i
+# (agol_publish.py).
 LIC_GIS = (
     "TTB's text and data, the step text from Notice No. 243 (boundary line layer) and the values copied from TTB's "
     "AVAs_Production record (Name, Status, Counties and the like): U.S. Government work (public domain). The petitioner's "
@@ -245,7 +278,8 @@ TAGS = [
     "proposed boundary",
 ]
 CULTURE = "en-us"
-# TTB's own aliases for its AVAs_Production fields (Level_ is "Level", Contains_ is "Contains"), from the layer's definition
+# TTB's own aliases for its AVAs_Production fields (Level_ is "Level",
+# Contains_ is "Contains"), from the layer's definition.
 with open(
     os.path.join(
         ROOT,
@@ -260,7 +294,14 @@ with open(
 
 
 def bbox(path):
-    """[[xmin, ymin], [xmax, ymax]] of every layer in a vector file (NAD83 lon/lat), rounded outward to 4 decimals: an item's extent"""
+    """Returns an item's extent: that of every layer in a vector file.
+
+    Args:
+        path: The vector file (NAD83 longitude and latitude).
+
+    Returns:
+        [[xmin, ymin], [xmax, ymax]], rounded outward to 4 decimals.
+    """
     ds = gdal.OpenEx(path, gdal.OF_VECTOR)
     e = [
         ds.GetLayer(i).GetExtent() for i in range(ds.GetLayerCount())
@@ -329,7 +370,16 @@ READ_ONLY = {
 
 
 def lock(lyr):
-    """a hosted layer read-only: viewers may query and export it, never add, change or delete features"""
+    """Makes a hosted layer read-only.
+
+    Viewers may query and export it, never add, change or delete features.
+
+    Args:
+        lyr: The hosted feature layer item.
+
+    Returns:
+        The same item.
+    """
     FeatureLayerCollection.fromitem(lyr).manager.update_definition(READ_ONLY)
     return lyr
 
@@ -353,16 +403,26 @@ props = {
 
 
 def boundary_layers(layers):
-    """the hosted layer 4b's three layers by geometry type: polygon (the AVA), polyline (the steps), point (the endpoints)"""
+    """Returns the hosted layer 4b's three layers by geometry type.
+
+    Args:
+        layers: The layers of 4b.
+
+    Returns:
+        {geometry type: layer}: polygon (the AVA), polyline (the steps), point
+        (the endpoints).
+    """
     return {lyr.properties.geometryType: lyr for lyr in layers}
 
 
-# ---------------------------------------------------------------- the layer's features, as built (issue #71)
-# The layer is published from the GeoPackage once; a republish used to leave its features as first published (the live
-# steps kept old wording and attributes). Each feature is updated in place from the package's GeoJSON, matched by step
-# (lines), point (points) or as the one AVA polygon, so the object ids and the documents attached to the polygon stay.
-# Only when the build's files changed (their SHA-256 is kept in the item's properties). Editing is on for the update
-# only, and the layer is locked again whatever happens (main()).
+# ---- the layer's features, as built (issue #71)
+# The layer is published from the GeoPackage once; a republish used to leave its
+# features as first published (the live steps kept old wording and attributes).
+# Each feature is updated in place from the package's GeoJSON, matched by step
+# (lines), point (points) or as the one AVA polygon, so the object ids and the
+# documents attached to the polygon stay. Only when the build's files changed
+# (their SHA-256 is kept in the item's properties). Editing is on for the
+# update only, and the layer is locked again whatever happens (main()).
 BUILT = {
     g: os.path.join(
         PKG,
@@ -382,7 +442,8 @@ KEY = {
 }
 
 
-def esri(g):  # a GeoJSON geometry (NAD83 lon/lat) as Esri JSON
+def esri(g):
+    """Returns a GeoJSON geometry (NAD83 lon/lat) as Esri JSON (wkid 4269)."""
     sr, c = {"wkid": 4269}, g["coordinates"]
     return {
         "Point": lambda: {"x": c[0], "y": c[1]},
@@ -393,8 +454,19 @@ def esri(g):  # a GeoJSON geometry (NAD83 lon/lat) as Esri JSON
     }[g["type"]]() | {"spatialReference": sr}
 
 
-# ---------------------------------------------------------------- symbology, pop-ups and field aliases
+# ---- symbology, pop-ups and field aliases
 def fields(lyr, wanted):
+    """Returns a pop-up's fieldInfos: the wanted fields the layer has.
+
+    Args:
+        lyr: The layer.
+        wanted: (field, label) pairs, in order; a field is matched whatever
+            its case.
+
+    Returns:
+        A visible fieldInfo for each wanted field the layer has, named as the
+        layer names it.
+    """
     have = {f["name"].lower(): f["name"] for f in lyr.properties.fields}
     return [
         {"fieldName": have[k.lower()], "label": label, "visible": True}
@@ -419,10 +491,22 @@ WORDS = {
 
 
 def alias_fields(lyr, wanted=(), ttb=False):
-    """readable field aliases for the attribute table, the dashboard and exports (QA #31): for TTB's AVAs_Production fields
-    (ttb=True) TTB's own alias, else the name in words (CFR_Section: CFR Section); for the others the pop-up's label, else a
-    plain name. The service's own fields (object id, global id, shape area and length) keep theirs. Returns the fields whose
-    alias changes, each whole (as update_definition takes them); set_aliases() sends them.
+    """Returns readable field aliases for a layer (QA #31).
+
+    The aliases show in the attribute table, the dashboard and exports. For
+    TTB's AVAs_Production fields (ttb=True) TTB's own alias, else the name in
+    words (CFR_Section: CFR Section); for the others the pop-up's label, else
+    a plain name. The service's own fields (object id, global id, shape area
+    and length) keep theirs.
+
+    Args:
+        lyr: The layer.
+        wanted: The pop-up's (field, label) pairs.
+        ttb: Whether the layer has TTB's AVAs_Production fields.
+
+    Returns:
+        The fields whose alias changes, each whole (as update_definition
+        takes them); set_aliases() sends them.
     """
     labels = {k.lower(): v for k, v in wanted}
     geom = lyr.properties.get("geometryProperties") or {}
@@ -453,6 +537,14 @@ def alias_fields(lyr, wanted=(), ttb=False):
 
 
 def set_aliases(lyr, out):
+    """Sends a layer's changed fields (alias_fields()), if any.
+
+    A failure is printed, not raised.
+
+    Args:
+        lyr: The layer.
+        out: The fields to send.
+    """
     if out:
         try:
             lyr.manager.update_definition({"fields": out})
@@ -470,6 +562,18 @@ NOTE = "The boundary as proposed to TTB; the changes near Grit were discussed wi
 
 
 def popup(title, lyr, wanted, attachments=False, text=None):
+    """Returns a layer's pop-up.
+
+    Args:
+        title: The pop-up's title ({field} placeholders allowed).
+        lyr: The layer.
+        wanted: The (field, label) pairs to show, in order.
+        attachments: Whether to list the feature's attachments.
+        text: A text to show above the fields, if any.
+
+    Returns:
+        The popupInfo: the text, the fields, then the attachments.
+    """
     p = {
         "title": title,
         "fieldInfos": fields(lyr, wanted),
@@ -578,15 +682,39 @@ PTS_F = [
 ]
 
 
-# ---------------------------------------------------------------- GeoPackage items and the hosted layers made from them
+# ---- GeoPackage items and the hosted layers made from them
 def hosted_props(gpkg, props):
-    """a GeoPackage item's and its hosted layer's properties: with the GeoPackage's extent, for location search (QA #31)"""
+    """Returns a GeoPackage item's and its hosted layer's properties.
+
+    They get the GeoPackage's extent, for location search (QA #31).
+
+    Args:
+        gpkg: The GeoPackage.
+        props: The item's properties (snippet, description, tags, ...).
+
+    Returns:
+        The properties with the culture and the extent.
+    """
     return {**props, "culture": CULTURE, "extent": bbox(gpkg)}
 
 
 def hosted(gpkg, src_title, title, service, props, was=((), ())):
-    """the GeoPackage item and the hosted layer published from it, in the folder, read-only; a re-run replaces the file
-    and overwrites the layer
+    """Publishes a GeoPackage item and a read-only hosted layer from it.
+
+    Both are in the folder. A re-run replaces the file and overwrites the
+    layer, or, if the file is the same, only updates their properties.
+
+    Args:
+        gpkg: The GeoPackage.
+        src_title: The GeoPackage item's title.
+        title: The hosted layer's title.
+        service: The feature service's name.
+        props: The items' properties (snippet, description, tags, ...).
+        was: (the GeoPackage item's earlier titles, the layer's), so a re-run
+            finds an item that was retitled.
+
+    Returns:
+        (the GeoPackage item, the hosted layer item).
     """
 
     def find(kind, *titles):
@@ -596,9 +724,9 @@ def hosted(gpkg, src_title, title, service, props, was=((), ())):
 
     src = find("GeoPackage", src_title, *was[0], title)
     lyr = find("Feature Service", title, *was[1], src_title, *was[0])
-    if (
-        lyr is None and src is not None
-    ):  # the service published from this file, whatever its title (an overwrite retitles it)
+    # The service published from this file, whatever its title (an overwrite
+    # retitles it).
+    if lyr is None and src is not None:
         lyr = next(iter(src.related_items("Service2Data", "reverse")), None)
     props = hosted_props(gpkg, props)
     with open(gpkg, "rb") as f:
@@ -656,14 +784,16 @@ def hosted(gpkg, src_title, title, service, props, was=((), ())):
         if lyr.ownerFolder != folder.properties.get("id"):
             lyr.move(folder)
         print("published", lyr.id, lyr.url)
-    else:  # the item's file was replaced above; republish over the same service (manager.overwrite names it from the title)
+    else:
+        # The item's file was replaced above; republish over the same service
+        # (manager.overwrite names it from the title).
         src.publish(
             publish_parameters=pp, file_type="geoPackage", overwrite=True
         )
         status = f"{gis._portal.resturl}content/users/{lyr.owner}/items/{lyr.id}/status"
-        for _ in range(
-            60
-        ):  # the job retitles the service when it finishes, so set the title after that (2 min at most)
+        # The job retitles the service when it finishes, so set the title after
+        # that (2 min at most).
+        for _ in range(60):
             if (
                 gis._con.get(status, {"f": "json"}).get("status")
                 != "processing"
@@ -676,6 +806,12 @@ def hosted(gpkg, src_title, title, service, props, was=((), ())):
 
 
 def rename(lyr, nm):
+    """Renames a layer of a service, unless it has that name; prints a failure.
+
+    Args:
+        lyr: The layer.
+        nm: Its name.
+    """
     if lyr.properties.name != nm:
         try:
             lyr.manager.update_definition({"name": nm})
@@ -691,17 +827,21 @@ def rename(lyr, nm):
             )
 
 
-# ---------------------------------------------------------------- differences from the AVA Map Explorer polygon
-# From the build's comparison (src/review/compare_ttb.py): the big differences (rings where the two lines are at least
-# STATS["big_m"] apart, renumbered 1.. in step order) and every piece of land between the two boundaries, in one
-# GeoPackage and one hosted layer, overwritten on a re-run. The comparison's working fields (its CHECK status, labels) stay home.
+# ---- differences from the AVA Map Explorer polygon
+# From the build's comparison (src/review/compare_ttb.py): the big differences
+# (rings where the two lines are at least STATS["big_m"] apart, renumbered 1..
+# in step order) and every piece of land between the two boundaries, in one
+# GeoPackage and one hosted layer, overwritten on a re-run. The comparison's
+# working fields (its CHECK status, labels) stay home.
 with open(os.path.join(REVIEW, "ttb-diff-stats.json")) as f:
     STATS = json.load(f)
 BIG_M, MED = STATS["big_m"], STATS["median_m"]
 OTHER_PATH = "the two lines take different paths"
 with open(os.path.join(REVIEW, "ttb-diff-rings-EPSG4269.geojson")) as f:
     big = [
-        ring for ring in json.load(f)["features"] if ring["properties"]["big"]
+        feature
+        for feature in json.load(f)["features"]
+        if feature["properties"]["big"]
     ]
 for n, f in enumerate(big, 1):
     p = f["properties"]
@@ -731,7 +871,17 @@ same, change = STATS["areas"]["drawing"], STATS["areas"]["proposed text change"]
 
 
 def make_diff_gpkg(path=DIFF_GPKG):
-    """the GeoPackage 4j: the big differences and all the differences, two layers (the dry run makes its own copy)"""
+    """Makes the GeoPackage 4j: the big differences and all the differences.
+
+    Two layers, big_differences and all_differences, each first written as a
+    GeoJSON file beside it. The dry run makes its own copy.
+
+    Args:
+        path: The GeoPackage to make (replaced if it is there).
+
+    Returns:
+        path.
+    """
     if os.path.exists(path):
         os.remove(path)
     for name, feats in (
@@ -793,14 +943,14 @@ DNAMES = {
 
 
 def diff_layers(layers):
-    """the hosted layer 4k's two layers: the big differences and all of them"""
+    """Returns the hosted layer 4k's two layers: (big differences, all)."""
     return (
         next(x for x in layers if "big" in x.properties.name.lower()),
         next(x for x in layers if "all" in x.properties.name.lower()),
     )
 
 
-# ---------------------------------------------------------------- geology (USGS SGMC, shifted to the outcrops)
+# ---- geology (USGS SGMC, shifted to the outcrops)
 GEO_ABOUT = (
     ABOUT
     + "<p>Three USGS geologic units near the AVA: Town Mountain Granite, the younger granitic intrusions and the "
@@ -844,7 +994,14 @@ GEO_F = [
 
 
 def geo_layers(layers):
-    """the hosted layer 4m's three layers, each with its name and colour: [(layer, name, rgb)] in GEO's order"""
+    """Returns the hosted layer 4m's three layers, with their names and colours.
+
+    Args:
+        layers: The layers of 4m.
+
+    Returns:
+        [(layer, name, rgb)], in GEO's order.
+    """
     return [
         (next(x for x in layers if key in x.properties.name.lower()), nm, rgb)
         for key, nm, rgb in GEO
@@ -852,6 +1009,7 @@ def geo_layers(layers):
 
 
 def geo_def(rgb):
+    """Returns a geology layer's definition: an rgb fill, solid outline."""
     return {
         "drawingInfo": {
             "renderer": {
@@ -872,13 +1030,23 @@ def geo_def(rgb):
     }
 
 
-# ---------------------------------------------------------------- the change near Grit, line by line and acre by acre
+# ---- the change near Grit, line by line and acre by acre
 with open(os.path.join(REVIEW, "grit-change-stats.json")) as f:
     GSTATS = json.load(f)["areas"]
 
 
 def make_grit_gpkg(path=GRIT_GPKG):
-    """the GeoPackage 4n: the lines the change near Grit swaps and the areas it moves (the dry run makes its own copy)"""
+    """Makes the GeoPackage 4n: what the change near Grit swaps and moves.
+
+    Two layers: lines_swapped (the lines the change swaps) and areas_moved
+    (the areas it moves). The dry run makes its own copy.
+
+    Args:
+        path: The GeoPackage to make (replaced if it is there).
+
+    Returns:
+        path.
+    """
     if os.path.exists(path):
         os.remove(path)
     for f, name in (
@@ -895,15 +1063,27 @@ def make_grit_gpkg(path=GRIT_GPKG):
     return path
 
 
-def gs(
-    k, f="acres"
-):  # whole acres, rounded once, half up, from the build's unrounded stats (issue #33; as the map's labels)
+def gs(k, f="acres"):
+    """Returns whole acres of a Grit area, as the map's labels show them.
+
+    Rounded once, half up, from the build's unrounded stats (issue #33).
+
+    Args:
+        k: The area (a key of grit-change-stats.json's areas).
+        f: The figure: acres, granite_acres or sandstone_acres.
+
+    Returns:
+        The acres, with thousands separators.
+    """
     return f"{math.floor(GSTATS[k][f] + 0.5):,}"
 
 
-def ga(
-    k,
-):  # an area's acres and its granite, for every area, put in or left out (QA #43)
+def ga(k):
+    """Returns a Grit area's acres and its granite (QA #43).
+
+    For every area, put in or left out: "12 acres (3 granite)", or "(no
+    granite)".
+    """
     g = gs(k, "granite_acres")
     return f"{gs(k)} acres ({'no' if g == '0' else g} granite)"
 
@@ -937,7 +1117,7 @@ GRIT_NAMES = (
 
 
 def grit_layers(layers):
-    """the hosted layer 4o's two layers: the lines (polyline) and the areas (polygon)"""
+    """Returns the hosted layer 4o's two layers: (the lines, the areas)."""
     glayers = {x.properties.geometryType: x for x in layers}
     return glayers["esriGeometryPolyline"], glayers["esriGeometryPolygon"]
 
@@ -951,6 +1131,7 @@ GREEN, MAGENTA, BROWN = (
 
 
 def ring(color, style):
+    """Returns a ring: no fill, an outline 3 wide of a color and style."""
     return {
         "type": "esriSFS",
         "style": "esriSFSNull",
@@ -1004,6 +1185,7 @@ big_def = {
 
 
 def fill(rgba):
+    """Returns a fill symbol of an RGBA colour, with no outline."""
     return {
         "type": "esriSFS",
         "style": "esriSFSSolid",
@@ -1105,6 +1287,7 @@ ttb_pop = {
 
 
 def sls(rgba, width, style="esriSLSSolid"):
+    """Returns a line symbol (esriSLS) of a colour, width and style."""
     return {"type": "esriSLS", "style": style, "color": rgba, "width": width}
 
 
@@ -1156,6 +1339,7 @@ grit_lines_def = {
 
 
 def hatch(rgba, style):
+    """Returns a fill symbol of a colour and style, outlined in that colour."""
     return {
         "type": "esriSFS",
         "style": style,
@@ -1248,12 +1432,24 @@ mprops = {
 }
 
 
-# ---------------------------------------------------------------- what is sent once the layers exist: built, not sent
-# Each takes the layers (live in main(); the publish dry run, agol_dryrun.py, passes stand-ins from
-# tests/fixtures/publish/agol-items.json) and returns their pop-ups, their changed field aliases ([(layer, fields)], for
-# set_aliases()) and the layer item's data (its visualization: symbols, labels, pop-ups), without sending anything.
+# ---- what is sent once the layers exist: built, not sent
+# Each takes the layers (live in main(); the publish dry run, agol_dryrun.py,
+# passes stand-ins from tests/fixtures/publish/agol-items.json) and returns
+# their pop-ups, their changed field aliases ([(layer, fields)], for
+# set_aliases()) and the layer item's data (its visualization: symbols, labels,
+# pop-ups), without sending anything.
 def boundary_plan(area, line, pts):
-    """the hosted layer 4b: the AVA polygon, the steps and the endpoints"""
+    """Plans the hosted layer 4b: the AVA polygon, the steps and the endpoints.
+
+    Args:
+        area: The AVA polygon's layer.
+        line: The steps' layer.
+        pts: The endpoints' layer.
+
+    Returns:
+        {"pops": (the three pop-ups), "aliases": [(layer, fields)], "data":
+        the layer item's data}.
+    """
     area_pop = popup(
         "Hickory Sands District AVA (proposed)",
         area,
@@ -1293,7 +1489,15 @@ def boundary_plan(area, line, pts):
 
 
 def geo_plan(geo):
-    """the hosted layer 4m, geo: [(layer, name, rgb)] as geo_layers() gives them; "layers": [(layer, name, its definition, its pop-up)]"""
+    """Plans the hosted layer 4m: the three geology layers.
+
+    Args:
+        geo: [(layer, name, rgb)], as geo_layers() gives them.
+
+    Returns:
+        {"layers": [(layer, name, its definition, its pop-up)], "aliases":
+        [(layer, fields)], "data": the layer item's data}.
+    """
     geo = [
         (lyr, nm, geo_def(rgb), popup(nm.split(" (")[0], lyr, GEO_F))
         for lyr, nm, rgb in geo
@@ -1315,7 +1519,16 @@ def geo_plan(geo):
 
 
 def diff_plan(bigl, every_l):
-    """the hosted layer 4k: the big differences and all of them"""
+    """Plans the hosted layer 4k: the big differences and all of them.
+
+    Args:
+        bigl: The big differences' layer.
+        every_l: The layer of all the differences.
+
+    Returns:
+        {"pops": (the two pop-ups), "aliases": [(layer, fields)], "data": the
+        layer item's data}.
+    """
     big_pop = popup(
         "Big difference #{n}: step(s) {steps}", bigl, BIG_F, text=DIFF_NOTE
     )
@@ -1353,7 +1566,16 @@ def diff_plan(bigl, every_l):
 
 
 def grit_plan(grit_lines, grit_areas):
-    """the hosted layer 4o: the lines the change near Grit swaps and the areas it moves"""
+    """Plans the hosted layer 4o: what the change near Grit swaps and moves.
+
+    Args:
+        grit_lines: The layer of the lines the change swaps.
+        grit_areas: The layer of the areas it moves.
+
+    Returns:
+        {"pops": (the two pop-ups), "aliases": [(layer, fields)], "data": the
+        layer item's data}.
+    """
     grit_lines_pop = popup("{label}", grit_lines, GRIT_LINES_F)
     grit_areas_pop = popup(
         "{acres} acres: {why}",
@@ -1406,7 +1628,30 @@ def webmap_plan(
     grit_areas,
     grit,
 ):
-    """the web map 4a, over the layers and the plans above (boundary, diffs, geology, grit: boundary, differences, geology, Grit)"""
+    """Plans the web map 4a, over the layers and the plans above.
+
+    Args:
+        fl: The hosted layer item 4b.
+        area: Its AVA polygon's layer.
+        line: Its steps' layer.
+        pts: Its endpoints' layer.
+        boundary: boundary_plan()'s plan.
+        dl: The hosted layer item 4k.
+        bigl: Its big differences' layer.
+        every_l: Its layer of all the differences.
+        diffs: diff_plan()'s plan.
+        gl: The hosted layer item 4m.
+        geology: geo_plan()'s plan.
+        grl: The hosted layer item 4o.
+        grit_lines: Its lines' layer.
+        grit_areas: Its areas' layer.
+        grit: grit_plan()'s plan.
+
+    Returns:
+        The web map's JSON: the quadrangles, TTB's basemaps, the geology, the
+        differences, the AVA Map Explorer polygon, the proposed revision, the
+        change near Grit and the big differences, over Light Gray Canvas.
+    """
     area_pop, line_pop, pts_pop = boundary["pops"]
     big_pop, all_pop = diffs["pops"]
     geo = geology["layers"]
@@ -1545,8 +1790,27 @@ def webmap_plan(
 def plan(
     fl, area, line, pts, dl, bigl, every_l, gl, geo, grl, grit_lines, grit_areas
 ):
-    """all of the above at once, for the publish dry run (main() calls each where it sends it): {"aliases": {item title:
-    [(layer, fields)]}, "data": {item title: its data}, "webmap": the web map}
+    """Plans all of the above at once, for the publish dry run.
+
+    main() calls each plan where it sends it.
+
+    Args:
+        fl: The hosted layer item 4b.
+        area: Its AVA polygon's layer.
+        line: Its steps' layer.
+        pts: Its endpoints' layer.
+        dl: The hosted layer item 4k.
+        bigl: Its big differences' layer.
+        every_l: Its layer of all the differences.
+        gl: The hosted layer item 4m.
+        geo: Its layers, as geo_layers() gives them.
+        grl: The hosted layer item 4o.
+        grit_lines: Its lines' layer.
+        grit_areas: Its areas' layer.
+
+    Returns:
+        {"aliases": {item title: [(layer, fields)]}, "data": {item title: its
+        data}, "webmap": the web map}.
     """
     boundary, diffs, geology, grit = (
         boundary_plan(area, line, pts),
@@ -1587,8 +1851,18 @@ def plan(
     }
 
 
-# ---------------------------------------------------------------- sign in and send
+# ---- sign in and send
 def main():
+    """Signs in, publishes the hosted layers and sends the plans and the map.
+
+    The hosted layer 4b is published from 4c once, then reused: its layers are
+    renamed, its features updated to the build's (issue #71) when the build's
+    files changed, and the documents attached to the AVA polygon. The
+    GeoPackages 4j, 4l and 4n and their hosted layers 4k, 4m and 4o follow,
+    then every layer's pop-ups, field aliases and visualization, and the web
+    map 4a. Each item is shared to the group and put in its category; none may
+    say "agree".
+    """
     global gis, folder, typed  # hosted() uses them
     gis = GIS(profile="hsd")
     folder = gis.content.folders.get(FOLDER)
@@ -1600,7 +1874,7 @@ def main():
     }  # a title alone can be shared (a stuck overwrite retitles the layer)
     gp = next(it for t, it in items.items() if t.startswith("4c "))
 
-    # ------------------------------------------------------------ hosted feature layer
+    # ---- hosted feature layer
     fl = items.get(LAYER_TITLE)
     if fl is None:
         pp = gis.content.analyze(item=gp, file_type="geoPackage")[
@@ -1740,7 +2014,7 @@ def main():
         set_aliases(lyr, out)
     fl.update(data=json.dumps(boundary["data"]))
 
-    # ------------------------------------------------------------ the GeoPackages and the hosted layers made from them
+    # ---- the GeoPackages and the hosted layers made from them
     make_diff_gpkg()
     dsrc, dl = hosted(
         DIFF_GPKG, DIFF_SRC_TITLE, DIFF_TITLE, DIFF_SERVICE, dprops, DIFF_WAS
@@ -1764,7 +2038,7 @@ def main():
     rename(grit_lines, GRIT_NAMES[0])
     rename(grit_areas, GRIT_NAMES[1])
 
-    # ------------------------------------------------------------ symbology, pop-ups, field aliases and the web map
+    # ---- symbology, pop-ups, field aliases and the web map
     diffs = diff_plan(bigl, every_l)
     for lyr, out in diffs["aliases"]:
         set_aliases(lyr, out)
@@ -1814,7 +2088,7 @@ def main():
         )
     print("web map", wm.id)
 
-    # ------------------------------------------------------------ share to the group, category 4 > Map and layer (sources: Downloads)
+    # ---- share to the group, category 4 > Map and layer (sources: Downloads)
     for it, cat in (
         (wm, CAT),
         (fl, CAT),

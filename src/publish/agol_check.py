@@ -1,28 +1,44 @@
-"""Live smoke tests of the public ArcGIS Online site (issue #59): what TTB sees without an ArcGIS account. Anonymous REST
-GETs only (no sign-in, nothing written). One line per check, each failure naming the item and what is wrong; exit 1 if any
-check fails.
-- security: every hosted feature service in the group, and each of its layers and tables, has no Create, Update, Delete,
-  Editing or Sync capability, and sync is off (#25);
-- sharing: the group and every item in it are public, with one item for each number the publish scripts give (0 Read me
-  first, 0 Dashboard, 1a-1d, 2a-2d, 3a-3b, 4a-4o, a 5a GeoPDF and a 5b GeoTIFF for each of the 13 quadrangles), so a
-  missing, private or duplicated item shows;
-- links: every URL in the group's description, in each item's description, snippet, license and credits, and in the
-  dashboard answers 200 (redirects followed, 3 tries, mailto: skipped); every link to home/item.html?id=... goes to a
-  public item in the group whose title holds the link's text;
-- web map: every layer and basemap URL answers ?f=json without an error, each layer's item is in the group (another's
-  must at least be public), and a filtered layer (the AVA Map Explorer polygon) still returns its feature;
-- dashboard: its JSON parses; desktopView's layout, data sources and actions name widgets and web map layers that exist,
-  its map is the group's web map, and it links every other item in the group; mobileView is checked the same way once
-  there is one (no phone layout yet is a note, #49), and every id in elementMappings must be in a view;
-- figures, from the build's outputs in HSD_WORK or target/work (skipped when they are not there): the AVA
-  polygon's Area and area_sqmi equal agreed-steps.json (0.01 sq mi); as many steps and points as the build's GeoJSON; the
-  differences' pieces and acres by cause and side equal ttb-diff-stats.json, and each big difference's acres the build's
-  rings (0.1 acre); the Grit areas' acres, granite and sandstone equal grit-change-stats.json (0.01 acre);
-- files: every file the build packages (and the read-me) is an item of the same size, downloaded and of the same SHA-256
-  up to 4 MB (the 26 quadrangles by size only); the GeoPackages agol_layer.py makes match their recorded SHA-256; the
-  documents attached to the AVA polygon match the build's by name and size (skipped without a package).
-Run last by ./build.sh publish, or by hand: ./build.sh check-live (or .venv/bin/python -E -s -B src/publish/agol_check.py).
-Right after a publish ArcGIS may take a minute to show a change to anonymous users: run it again before chasing a failure.
+"""Live smoke tests of the public ArcGIS Online site (issue #59).
+
+What TTB sees without an ArcGIS account. Anonymous REST GETs only (no sign-in,
+nothing written). One line per check, each failure naming the item and what is
+wrong; exit 1 if any check fails.
+- security: every hosted feature service in the group, and each of its layers
+  and tables, has no Create, Update, Delete, Editing or Sync capability, and
+  sync is off (#25);
+- sharing: the group and every item in it are public, with one item for each
+  number the publish scripts give (0 Read me first, 0 Dashboard, 1a-1d, 2a-2d,
+  3a-3b, 4a-4o, a 5a GeoPDF and a 5b GeoTIFF for each of the 13 quadrangles),
+  so a missing, private or duplicated item shows;
+- links: every URL in the group's description, in each item's description,
+  snippet, license and credits, and in the dashboard answers 200 (redirects
+  followed, 3 tries, mailto: skipped); every link to home/item.html?id=...
+  goes to a public item in the group whose title holds the link's text;
+- web map: every layer and basemap URL answers ?f=json without an error, each
+  layer's item is in the group (another's must at least be public), and a
+  filtered layer (the AVA Map Explorer polygon) still returns its feature;
+- dashboard: its JSON parses; desktopView's layout, data sources and actions
+  name widgets and web map layers that exist, its map is the group's web map,
+  and it links every other item in the group; mobileView is checked the same
+  way once there is one (no phone layout yet is a note, #49), and every id in
+  elementMappings must be in a view;
+- figures, from the build's outputs in HSD_WORK or target/work (skipped when
+  they are not there): the AVA polygon's Area and area_sqmi equal
+  agreed-steps.json (0.01 sq mi); as many steps and points as the build's
+  GeoJSON; the differences' pieces and acres by cause and side equal
+  ttb-diff-stats.json, and each big difference's acres the build's rings (0.1
+  acre); the Grit areas' acres, granite and sandstone equal
+  grit-change-stats.json (0.01 acre);
+- files: every file the build packages (and the read-me) is an item of the
+  same size, downloaded and of the same SHA-256 up to 4 MB (the 26 quadrangles
+  by size only); the GeoPackages agol_layer.py makes match their recorded
+  SHA-256; the documents attached to the AVA polygon match the build's by name
+  and size (skipped without a package).
+
+Run last by ./build.sh publish, or by hand: ./build.sh check-live (or
+.venv/bin/python -E -s -B src/publish/agol_check.py). Right after a publish
+ArcGIS may take a minute to show a change to anonymous users: run it again
+before chasing a failure.
 """
 
 from concurrent.futures import ThreadPoolExecutor
@@ -61,9 +77,9 @@ EDIT = {
     "Editing",
     "Sync",
 }  # capabilities no public layer may have
-HASH_MAX = (
-    4 << 20
-)  # files up to 4 MB are downloaded and hashed; the larger ones (the quadrangles) are compared by size
+# Files up to 4 MB are downloaded and hashed; the larger ones (the quadrangles)
+# are compared by size.
+HASH_MAX = 4 << 20
 CODES = [
     "0 Read me first",
     "0 Dashboard",
@@ -87,9 +103,23 @@ SIDES = {
 ITEM_LINK = re.compile(r"/home/item\.html\?id=([0-9a-f]{32})")
 
 
-# ---------------------------------------------------------------- anonymous HTTP
+# ---- anonymous HTTP
 def get(url, params=None, limit=None, tries=3):
-    """GET with redirects followed and a few tries on a network error, 429 or 5xx: (status, body, error or None)"""
+    """GETs a URL anonymously, with redirects followed and a few tries.
+
+    A network error, a 429 or a 5xx is tried again (after 2 s, then 4 s); any
+    other HTTP error is not.
+
+    Args:
+        url: The URL.
+        params: Query parameters to add to it, if any.
+        limit: The most bytes of the body to read (None: all of it).
+        tries: How many times to try.
+
+    Returns:
+        (status, body, error): the HTTP status (None if there was no answer),
+        the body (b"" after a failure), and None or what went wrong.
+    """
     if params:
         url += ("&" if "?" in url else "?") + urllib.parse.urlencode(params)
     for i in range(tries):
@@ -116,7 +146,19 @@ def get(url, params=None, limit=None, tries=3):
 
 
 def rest(url, **params):
-    """an ArcGIS REST resource as JSON; raises on an HTTP error, or on the error ArcGIS reports inside a 200 reply"""
+    """Returns an ArcGIS REST resource as JSON, read anonymously.
+
+    Args:
+        url: The resource's URL.
+        **params: Query parameters (f=json is added).
+
+    Returns:
+        The parsed JSON.
+
+    Raises:
+        RuntimeError: An HTTP error, or the error ArcGIS reports inside a 200
+            reply.
+    """
     _, body, err = get(url, {"f": "json", **params})
     if err:
         raise RuntimeError(f"{url}: {err}")
@@ -128,7 +170,8 @@ def rest(url, **params):
     return d
 
 
-def problem(url, **params):  # what is wrong with a REST resource, or None
+def problem(url, **params):
+    """Returns what is wrong with a REST resource, or None if it answers."""
     try:
         rest(url, **params)
     # Whatever goes wrong is the answer: it is reported, not raised.
@@ -137,16 +180,27 @@ def problem(url, **params):  # what is wrong with a REST resource, or None
 
 
 def query(url, **params):
+    """Queries every feature of a layer, without geometry.
+
+    Args:
+        url: The layer's URL.
+        **params: More query parameters (outFields, returnCountOnly, ...).
+
+    Returns:
+        The query's JSON.
+    """
     return rest(url + "/query", where="1=1", returnGeometry="false", **params)
 
 
 def parallel(fn, xs, n=8):
+    """Returns {x: fn(x)} for every x, in n threads."""
     with ThreadPoolExecutor(n) as pool:
         return dict(zip(xs, pool.map(fn, xs), strict=True))
 
 
-# ---------------------------------------------------------------- JSON and HTML helpers
-def nodes(x):  # every dict in a JSON tree
+# ---- JSON and HTML helpers
+def nodes(x):
+    """Yields every dict in a JSON tree."""
     if isinstance(x, dict):
         yield x
         for v in x.values():
@@ -156,7 +210,8 @@ def nodes(x):  # every dict in a JSON tree
             yield from nodes(v)
 
 
-def strings(x):  # every string in a JSON tree
+def strings(x):
+    """Yields every string in a JSON tree."""
     if isinstance(x, str):
         yield x
     for v in (
@@ -171,7 +226,15 @@ ANCHOR = re.compile(
 
 
 def links(text):
-    """(url, link text or None) for every <a href> and every bare http(s) URL in a piece of HTML or text"""
+    """Returns every link in a piece of HTML or text.
+
+    Args:
+        text: The HTML or text.
+
+    Returns:
+        A list of (url, link text): one for every <a href>, with its text as a
+        reader sees it, then one for every bare http(s) URL, with None.
+    """
     out = [
         (
             html.unescape(u).strip(),
@@ -185,9 +248,19 @@ def links(text):
     ]
 
 
-def holds(
-    title, text
-):  # the link's words appear in the title, in order ("Read me first what is ..." in "0 Read me first - what is ...")
+def holds(title, text):
+    """Tells whether a link's words appear in a title, in order.
+
+    "Read me first what is ..." is held by "0 Read me first - what is ...".
+
+    Args:
+        title: The item's title.
+        text: The link's text.
+
+    Returns:
+        True if every word of text is in title, in the same order.
+    """
+
     def words(s):
         return re.findall(r"[\w']+", s.lower())
 
@@ -195,17 +268,23 @@ def holds(
     return all(w in rest for w in words(text))
 
 
-def layers(
-    tree,
-):  # every layer of a list of web map layers, group layers opened
+def layers(tree):
+    """Yields every layer of a list of web map layers, group layers opened."""
     for lyr in tree or []:
         yield lyr
         yield from layers(lyr.get("layers"))
 
 
-def code(
-    title,
-):  # an item's number in the group: "1a", "0 Dashboard", "5a Fly Gap"
+def code(title):
+    """Returns an item's number in the group: "1a", "0 Dashboard", "5a Fly Gap".
+
+    Args:
+        title: The item's title.
+
+    Returns:
+        A quadrangle's number with its name, a 0 item's title up to " - ",
+        else the title's first word.
+    """
     m = re.match(r"(5[ab]) .*\) - (.+?), TX\b", title)
     return (
         f"{m[1]} {m[2]}"
@@ -217,11 +296,21 @@ def code(
 
 
 def sha256(path):
+    """Returns a file's SHA-256, in hex."""
     with open(path, "rb") as f:
         return hashlib.sha256(f.read()).hexdigest()
 
 
-def num(v):  # a figure as people write it: 112.32, not 112.32000000000001
+def num(v):
+    """Returns a figure as people write it: 112.32, not 112.32000000000001.
+
+    Args:
+        v: The figure (anything else is shown as its repr).
+
+    Returns:
+        The figure with thousands separators and at most 3 decimals, trailing
+        zeros dropped.
+    """
     return (
         f"{v:,.3f}".rstrip("0").rstrip(".")
         if isinstance(v, (int, float))
@@ -230,20 +319,43 @@ def num(v):  # a figure as people write it: 112.32, not 112.32000000000001
 
 
 def excerpt(s, i):
+    """Returns where two texts part: s from 25 characters before index i.
+
+    Args:
+        s: One of the texts.
+        i: The index of their first difference.
+
+    Returns:
+        Up to 60 characters of s around i, with "..." if it starts later.
+    """
     return ("..." if i > 25 else "") + s[max(0, i - 25) : i + 35]
 
 
-def rel(
-    p,
-):  # a build file's path, short: in the package, in the work dir, or in the repository
+def rel(p):
+    """Returns a build file's path, short.
+
+    Args:
+        p: The file's path.
+
+    Returns:
+        The path relative to the package, the work dir or the repository,
+        whichever holds it first.
+    """
     return os.path.relpath(
         p, next(d for d in (PKG, HERE, ROOT, "/") if p.startswith(d))
     )
 
 
-# ---------------------------------------------------------------- what the site holds (read in main(), so the module
-# imports without touching the network: the unit tests use its helpers)
+# ---- what the site holds (read in main(), so the module imports without
+# touching the network: the unit tests use its helpers)
 def load():
+    """Reads the public group, its items, dashboard and web map, anonymously.
+
+    Sets the module's globals the checks use (group, items, by_id, dash, wm,
+    OPS, ...). The dashboard's or web map's error is kept for its check; if the
+    group cannot be read, nothing else can be checked: it prints FAIL and
+    exits 1.
+    """
     global \
         group, \
         items, \
@@ -289,7 +401,8 @@ def load():
         # Whatever the error, the dashboard check reports it.
         except Exception as e:  # noqa: BLE001, RUF100
             dash_err = f"its JSON cannot be read: {type(e).__name__}: {e}"
-    # the web map: the one the dashboard's map shows, else the group's only web map
+    # the web map: the one the dashboard's map shows, else the group's only web
+    # map
     maps = [
         d.get("itemId")
         for d in nodes((dash or {}).get("desktopView"))
@@ -329,7 +442,19 @@ _kinds = {}
 
 
 def op_url(op_id, geometry=None):
-    """the URL of a web map layer by its id (set by agol_layer.py), or of the boundary layer (hsd-<n>) of a geometry type"""
+    """Returns the URL of a layer of the web map.
+
+    Args:
+        op_id: The layer's id in the web map (set by agol_layer.py).
+        geometry: Instead, a geometry type: the URL of the boundary layer
+            (hsd-<n>) of that type.
+
+    Returns:
+        The layer's URL.
+
+    Raises:
+        RuntimeError: The web map has no such layer.
+    """
     if geometry:
         for i, lyr in OPS.items():
             if re.fullmatch(r"hsd-\d+", i) and lyr.get("url"):
@@ -344,8 +469,10 @@ def op_url(op_id, geometry=None):
     return OPS[op_id]["url"]
 
 
-# ---------------------------------------------------------------- the checks
+# ---- the checks: each check(bad, note) calls bad(problem) for every problem,
+# note(text) for what is only worth a note, and returns its summary line
 def security(bad, note):
+    """Security (#25): no layer allows editing or sync."""
     services, n = [it for it in items if it["type"] == "Feature Service"], 0
     if not services:
         bad("no hosted feature service in the group")
@@ -375,6 +502,7 @@ def security(bad, note):
 
 
 def sharing(bad, note):
+    """Sharing: everything public, one item for each number the scripts give."""
     if group.get("access") != "public":
         bad(f"the group is {group.get('access')!r}, not public")
     for it in items:
@@ -399,10 +527,12 @@ def sharing(bad, note):
 
 
 def dashboard_links():
+    """Returns every link in the dashboard's JSON, as links() gives them."""
     return [(u, t) for s in strings(dash) for u, t in links(s)] if dash else []
 
 
 def linkcheck(bad, note):
+    """Links: every URL answers; every item link goes where its text says."""
     found = [
         ("the group's description", u, t)
         for u, t in links(group.get("description") or "")
@@ -442,11 +572,9 @@ def linkcheck(bad, note):
         for w, u, t in found
         if ITEM_LINK.search(u)
     ]
-    for (
-        w,
-        i,
-        t,
-    ) in named:  # the group's and the dashboard's item links must stay in the group; an item's may go to any public item
+    # The group's and the dashboard's item links must stay in the group; an
+    # item's may go to any public item.
+    for w, i, t in named:
         if i in by_id:
             if t and not holds(by_id[i]["title"], t):
                 bad(f"{w}: the link {t!r} goes to {by_id[i]['title']!r}")
@@ -465,6 +593,11 @@ def linkcheck(bad, note):
 
 
 def webmap(bad, note):
+    """Web map: every layer's URL answers, and its item is in the group.
+
+    Another's item must at least be public; a filtered layer (the AVA Map
+    Explorer polygon) must still return its feature.
+    """
     if wm is None:
         bad(wm_err)
         return "not checked"
@@ -479,9 +612,9 @@ def webmap(bad, note):
             urls.setdefault(u, lyr.get("title") or lyr.get("id"))
         elif lyr.get("layerType") != "GroupLayer":
             bad(f"layer {lyr.get('title')!r} has no URL")
-        if (
-            lyr.get("itemId") and lyr["itemId"] not in by_id
-        ):  # the petitioner's layers are all in the group; another must at least be public
+        # The petitioner's layers are all in the group; another must at least
+        # be public.
+        if lyr.get("itemId") and lyr["itemId"] not in by_id:
             p = problem(REST + f"content/items/{lyr['itemId']}")
             (bad if p else note)(
                 f"layer {lyr.get('title')!r}: its item {lyr['itemId']} is not in the group"
@@ -512,6 +645,7 @@ def webmap(bad, note):
 
 
 def dashboard(bad, note):
+    """Dashboard: both views wired to what exists, and every item linked."""
     if len(dashboards) != 1:
         bad(f"{len(dashboards)} dashboards in the group, not 1")
     if dash is None:
@@ -600,6 +734,7 @@ def dashboard(bad, note):
 
 
 def figures(bad, note):
+    """Figures: the live layers' area, counts, attributes and acres as built."""
     if not os.path.exists(os.path.join(HERE, "agreed-steps.json")):
         return f"skipped: no build outputs in {HERE} (run ./build.sh first, or point HSD_WORK at them)"
     if wm is None:
@@ -647,7 +782,8 @@ def figures(bad, note):
         )
         if want != got:
             bad(f"{what}: {got} live, {want} in the build's {rel(files[0])}")
-        # every attribute as built (#71: a republish once left the live steps with their first-published text and quads)
+        # every attribute as built (#71: a republish once left the live steps
+        # with their first-published text and quads)
         key = "step" if pat == "line" else "point"
         live = {
             str(r["attributes"][key]): r["attributes"]
@@ -659,9 +795,8 @@ def figures(bad, note):
             if have is None:
                 continue  # counted above
             for a, v in f["properties"].items():
-                w = have.get(
-                    a, v
-                )  # a field the layer doesn't hold is not compared
+                # a field the layer doesn't hold is not compared
+                w = have.get(a, v)
                 same = (
                     abs(w - v) <= 1e-6 * max(1.0, abs(v))
                     if isinstance(v, float) and isinstance(w, (int, float))
@@ -670,10 +805,9 @@ def figures(bad, note):
                 if not same:
                     off += 1
                     if off <= 5:
-                        sw, sv = (
-                            str(w),
-                            str(v),
-                        )  # show where they part: 25 characters before the first difference
+                        # show where they part: 25 characters before the
+                        # first difference
+                        sw, sv = str(w), str(v)
                         i = next(
                             (
                                 j
@@ -798,6 +932,7 @@ def figures(bad, note):
 
 
 def files(bad, note):
+    """Files: each file the build makes is an item of the same size and hash."""
     if not os.path.isdir(PKG):
         return f"skipped: no package in {PKG} (run ./build.sh first, or point HSD_WORK at the build outputs)"
 
@@ -886,7 +1021,11 @@ def files(bad, note):
     )
 
 
-def main():  # importable for the tests (tests/test_agol_check.py)
+def main():
+    """Reads the site and runs every check, one line each; exit 1 if one fails.
+
+    Importable for the tests (tests/test_agol_check.py).
+    """
     load()
     results = []
     for name, fn in (

@@ -21,7 +21,8 @@ output follows the feature's ink centreline between the same pins:
      step) where the other casing's dash is missing -- this is what stops the
      line bouncing between the casings of a dashed road; for a filled highway
      or single line, the centre of symmetry (pooled +-8 m along), twice, the
-     offsets smoothed over 12 m -- this centres two-edge roads, filled
+     offsets Gaussian-smoothed with sigma 25 m (shift_sigma, longer than a
+     dash cycle) -- this centres two-edge roads, filled
      highways and single-line roads alike; creeks and contours: the ridge
      path, Gaussian-smoothed (2 m);
   5. simplified to 0.3 m; the pins are kept exactly.

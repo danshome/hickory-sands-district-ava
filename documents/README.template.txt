@@ -39,13 +39,14 @@ WHAT IS IN THIS PACKAGE
    GeoJSON embedded; in the GeoTIFF only the image tiles the line crosses are rewritten. The quads keep their NAD27 grids;
    the NAD83 line is carried onto them with the NADCON 5.0 CONUS grid.
 
-WHAT WE PROPOSE TO CHANGE IN TTB'S PUBLISHED TEXT (details in 3_changes-side-by-side; marked in 2_TTB-notice-243-...)
+WHAT WE PROPOSE TO CHANGE IN NOTICE NO. 243 (details in 3_changes-side-by-side; marked in 2_TTB-notice-243-...)
    Steps (10)-(11) and (90)-(100) near Grit use the petition's own wording (February 2, 2023), lane wording included,
    in place of TTB's steps (10)-(11) and (90)-(92). Within them:
    - steps (93)-(96) are new: they go around a lobe of granite northwest of the area near Grit by a windmill, a fence
      line and Topaz Lane, instead of the petition's straight line from the marked 1737 to the marked 1762;
-   - step (90) names the unnamed, intermittent tributary that the petition's line follows from Honey Creek to the
-     marked 1727 (the one correction to the petition's wording).
+   - two flagged changes to the petition's wording: step (90) names the unnamed, intermittent tributary that the
+     petition's line follows from Honey Creek to the marked 1727, and steps (90)-(91) name the roads as Notice No. 243
+     names them (below).
 
    TTB's steps (93)-(96) are unchanged, renumbered (101)-(104). Every other step is TTB's published text word for word.
 
@@ -54,8 +55,10 @@ WHAT WE PROPOSE TO CHANGE IN TTB'S PUBLISHED TEXT (details in 3_changes-side-by-
    ("1,727-foot"; petition "1727-foot") and "then" without a comma, in steps (10), (11), (90)-(92) and (99).
 
    Roads are named as TTB names them: State Highway 29 northwest of the junction near Grit, US Highway 377 on the
-   road the two share from the junction to Mason. The marked 1,727 is on the shared road, so steps (90)-(91) say
-   US Highway 377 where the petition said State Highway 29.
+   road the two share from the junction to Mason. The marked 1,727 is on the shared road, so step (90) says
+   US Highway 377 where the petition said State Highway 29, and in step (91) the two names change places: along
+   US Highway 377 to its intersection with State Highway 29 (the petition: along State Highway 29 to its
+   intersection with U.S. Highway 377). The line does not change.
 
 HOW THE LINE IS DRAWN
    Every point is a mark printed on the USGS maps, or a trace of the map's own linework (roads, streams, contours),

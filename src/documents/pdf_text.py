@@ -13,9 +13,14 @@ from those positions:
   capitalised word ("Mason-McCulloch") or another hyphen ("Farm-to-Market"), inside a URL, or when the hyphenated form
   is printed elsewhere in the PDF ("light-duty").
 Checks that every printed character is in the text, in order (spaces and line-end hyphens aside), or exits 1.
-Usage: pdf_text.py IN.pdf OUT.txt"""
+Usage: pdf_text.py IN.pdf OUT.txt
+"""
 
-import html, re, shutil, subprocess, sys
+import html
+import re
+import shutil
+import subprocess
+import sys
 
 HEAD, FOOT, LEFT = (
     50,

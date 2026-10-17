@@ -8,11 +8,20 @@ Sign-in: GIS(profile="hsd"), Dan's saved profile (the password stays in his macO
 The boundary is PROPOSED (changes discussed with TTB on October 15, 2026); never write "agreed".
 Run by ./build.sh publish (or .venv/bin/python src/publish/agol_publish.py) [text that titles must contain, to do only some items]
 What it sends is built without signing in (ITEMS, properties(): the publish dry run, src/publish/agol_dryrun.py, writes and checks
-it); main() signs in and sends it."""
+it); main() signs in and sends it.
+"""
 
-import json, math, os, re, sys
-from arcgis.gis import GIS, ItemProperties, ItemTypeEnum
-from osgeo import gdal, osr
+import json
+import math
+import os
+import re
+import sys
+
+from arcgis.gis import GIS
+from arcgis.gis import ItemProperties
+from arcgis.gis import ItemTypeEnum
+from osgeo import gdal
+from osgeo import osr
 
 gdal.UseExceptions()
 
@@ -101,7 +110,8 @@ NADCON = "us_noaa_nadcon5_nad27_nad83_1986_conus.tif"
 
 def neatline(tif, cell=0.125):
     """a 1:24,000 quadrangle's 7.5-minute neatline as an extent: the NAD27 cell that holds the sheet's centre, its corners
-    carried to NAD83 with the NADCON 5.0 CONUS grid"""
+    carried to NAD83 with the NADCON 5.0 CONUS grid
+    """
     ds = gdal.Open(tif)
     g = ds.GetGeoTransform()
     sheet = osr.SpatialReference(wkt=ds.GetProjection())

@@ -1,8 +1,12 @@
 """src/documents/make_readme.py: README.txt's ALL-CAPS headings become the read-me page's headings, in sentence case with
-the official names kept ("Notice No. 243", "TTB") and the note after them; and the page has every word of README.txt."""
+the official names kept ("Notice No. 243", "TTB") and the note after them; and the page has every word of README.txt.
+"""
 
-import json, re
+import json
+import re
+
 import pytest
+
 from src.documents import make_readme
 
 

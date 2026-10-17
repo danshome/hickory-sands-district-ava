@@ -4,7 +4,8 @@ references/ink-colors.md for the samples and how to recalibrate on a new set.
 
 The hard cases are ink printed OVER the green woodland tint: there blue, brown and black all read as dark greens.
 They separate (mostly) by blue/red ratio: blue over tint keeps b >= ~0.68 r; brown and black over tint fall to ~0.55.
-Even so, blue-over-tint and black-over-tint overlap a little; corridors and priors keep a trace on its own feature."""
+Even so, blue-over-tint and black-over-tint overlap a little; corridors and priors keep a trace on its own feature.
+"""
 
 import numpy as np
 
@@ -54,7 +55,8 @@ def classes(a, size=7, px_m=2.03):
       black/gray (roads, casings, lettering): all three channels darkened alike (warmth near 0)
       blue (creeks): red darkened more than blue (warmth below -0.22)
       brown (contours): blue darkened more than red (warmth above +0.22)
-      red (highway fill): green and blue darkened, red not"""
+      red (highway fill): green and blue darkened, red not
+    """
     A = a[:3].astype(np.float32)
     bg = np.maximum(background(a[:3], size), 1.0)
     k = A / bg
@@ -153,7 +155,8 @@ def lettering(
     (a) on the ink as is: extent between min and max m, and area / extent (mean thickness along the longest side)
         at least min_fill_m -- lines, dashes and dots are thinner than that;
     (b) on the ink with 2-pixel lines eroded away (letter strokes print heavier than contour and road lines), so a
-        label that touches a line is found on its own: extent 5-40 m there, then grown back 2 px within the ink."""
+        label that touches a line is found on its own: extent 5-40 m there, then grown back 2 px within the ink.
+    """
     from scipy import ndimage
 
     def pick(mask, lo, hi, fill, compact=False, px=0):
@@ -220,7 +223,8 @@ def digit_holes(
 ):
     """ink around the small enclosed holes of printed digits (0, 8, 6, 9): the holes of `ink` (filled minus ink) with
     an area of min_m2-max_m2 (a 0 of a 1:24,000 contour label: ~320 m2, 22 m; an 8's two holes 50-100 m2) and an extent
-    up to max_extent_m, grown grow_px pixels -- that is the digit's stroke"""
+    up to max_extent_m, grown grow_px pixels -- that is the digit's stroke
+    """
     from scipy import ndimage
 
     # NO morphological closing first: on a steep slope it welds contours 2-3 px apart into one mass and the pockets

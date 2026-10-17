@@ -7,11 +7,17 @@ each sheet's pixels, the way the sheet itself is drawn.
 - Each sheet knows its neatline cell (7.5' = 0.125 deg for 1:24,000; 15' for 1:62,500; 30' for 1:125,000), so a point
   is read from the sheet whose map face holds it, never from a neighbour's collar, and points within a few metres of
   a neatline can be flagged (neatline ink is not a feature).
-Requires GDAL/OSR Python bindings with PROJ able to find the NADCON grid (bundled with proj-data, or PROJ_NETWORK=ON)."""
+Requires GDAL/OSR Python bindings with PROJ able to find the NADCON grid (bundled with proj-data, or PROJ_NETWORK=ON).
+"""
 
-import glob, math, os, re
+import glob
+import math
+import os
+import re
+
 import numpy as np
-from osgeo import gdal, osr
+from osgeo import gdal
+from osgeo import osr
 
 gdal.UseExceptions()
 

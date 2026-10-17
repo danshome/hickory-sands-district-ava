@@ -1,8 +1,15 @@
 """src/checks/check_step_text.py (the commit hook and build check, PR #23): TTB's 96 steps are identical to the Federal
 Register's XML, and step text with a character the Federal Register does not use is refused with its fix. Run as the
-hook runs it (a script, in its own process); the edge cases in a copy of the repository's layout under a temporary folder."""
+hook runs it (a script, in its own process); the edge cases in a copy of the repository's layout under a temporary folder.
+"""
 
-import json, pathlib, re, shutil, subprocess, sys
+import json
+import pathlib
+import re
+import shutil
+import subprocess
+import sys
+
 import pytest
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]

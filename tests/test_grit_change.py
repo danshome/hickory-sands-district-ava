@@ -1,15 +1,18 @@
 """src/review/grit_change.py: line lengths geodesic on GRS 1980, as the boundary layer's (issue #35); the acres of each
-kind of piece summed unrounded and rounded once (issue #33); the pieces of a difference, largest first, slivers dropped."""
+kind of piece summed unrounded and rounded once (issue #33); the pieces of a difference, largest first, slivers dropped.
+"""
 
 import math
+
 import pytest
 
 pytest.importorskip(
     "osgeo",
     reason="GDAL's Python bindings are in the build's .venv (./build.sh env), not the lint tools",
 )
-from osgeo import ogr  # noqa: E402
-from src.review import grit_change  # noqa: E402
+from osgeo import ogr
+
+from src.review import grit_change
 
 pytestmark = pytest.mark.build
 A, F = 6378137.0, 1 / 298.257222101  # GRS 1980
@@ -43,7 +46,8 @@ def test_glen_along_a_meridian():
 
 def test_glen_is_geodesic_not_albers_at_the_ava():
     """0.1 degree east-west at 30.8 N: the parallel's arc (the geodesic is 0.3 mm shorter); NAD83 / Conus Albers says
-    9,545 m, 25 m short: the planar length issue #35 found in the Grit lines layer"""
+    9,545 m, 25 m short: the planar length issue #35 found in the Grit lines layer
+    """
     pts = [(-99.2, 30.8), (-99.1, 30.8)]
     phi = math.radians(30.8)
     arc = (

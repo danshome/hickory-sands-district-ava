@@ -13,9 +13,16 @@ update() sends; the dashboard's type keywords), item-list.json, services.json (e
 update, layer names, changed field aliases, visualization), webmap.json, dashboard.json, group.json, facts.json.
 Run: .venv/bin/python src/publish/agol_dryrun.py [out dir, default target/publish] [--items FILE]
      .venv/bin/python src/publish/agol_dryrun.py --fetch FILE [--real-ids]   (the item list, anonymously; --real-ids keeps
-     the live ids, to compare a dry run with the live site)"""
+     the live ids, to compare a dry run with the live site)
+"""
 
-import argparse, glob, json, os, sys, urllib.parse, urllib.request
+import argparse
+import glob
+import json
+import os
+import sys
+import urllib.parse
+import urllib.request
 
 ROOT = os.path.abspath(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
@@ -81,7 +88,11 @@ def dry_run(out, items_file=FIXTURE):
 
     arcgis.gis.GIS = no_sign_in  # before the scripts import it: a GIS() anywhere in them now fails the dry run
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-    import agol_publish, agol_layer, agol_dashboard, agol_share, agol_org_categories  # their module level: no sign-in
+    import agol_dashboard
+    import agol_layer
+    import agol_org_categories  # their module level: no sign-in
+    import agol_publish
+    import agol_share
 
     listed = json.load(open(items_file, encoding="utf-8"))
     stand = {d["title"]: Item(d) for d in listed["items"]}
@@ -330,7 +341,8 @@ def dry_run(out, items_file=FIXTURE):
 # ---------------------------------------------------------------- the item list, anonymously from the public site
 def fetch(path, real_ids=False):
     """the public group's items (title, type, service URL) and its hosted layers' definitions, read anonymously; ids
-    replaced by fake ones (00000000000000000000000000000001, ...) unless real_ids"""
+    replaced by fake ones (00000000000000000000000000000001, ...) unless real_ids
+    """
 
     def rest(url, **q):
         req = urllib.request.Request(

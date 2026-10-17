@@ -22,10 +22,22 @@ check fails.
   up to 4 MB (the 26 quadrangles by size only); the GeoPackages agol_layer.py makes match their recorded SHA-256; the
   documents attached to the AVA polygon match the build's by name and size (skipped without a package).
 Run last by ./build.sh publish, or by hand: ./build.sh check-live (or .venv/bin/python -E -s -B src/publish/agol_check.py).
-Right after a publish ArcGIS may take a minute to show a change to anonymous users: run it again before chasing a failure."""
+Right after a publish ArcGIS may take a minute to show a change to anonymous users: run it again before chasing a failure.
+"""
 
-import csv, glob, hashlib, html, json, os, re, sys, time, urllib.error, urllib.parse, urllib.request
 from concurrent.futures import ThreadPoolExecutor
+import csv
+import glob
+import hashlib
+import html
+import json
+import os
+import re
+import sys
+import time
+import urllib.error
+import urllib.parse
+import urllib.request
 
 ROOT = os.path.abspath(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
@@ -55,7 +67,7 @@ HASH_MAX = (
 CODES = [
     "0 Read me first",
     "0 Dashboard",
-    *"1a 1b 1c 1d 2a 2b 2c 2d 3a 3b".split(),
+    *["1a", "1b", "1c", "1d", "2a", "2b", "2c", "2d", "3a", "3b"],
     *(f"4{c}" for c in "abcdefghijklmno"),
 ]
 QUADS = [

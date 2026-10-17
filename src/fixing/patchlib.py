@@ -20,9 +20,16 @@ never from another boundary layer.
 Coordinates: lon/lat NAD83 (EPSG:4269) everywhere; metres in a local frame inside Grid.
 """
 
-import json, math, os, subprocess, sys, datetime
+import datetime
+import json
+import math
+import os
+import subprocess
+import sys
+
 import numpy as np
-from scipy import ndimage, sparse
+from scipy import ndimage
+from scipy import sparse
 from scipy.sparse import csgraph
 
 ROOT = os.path.abspath(
@@ -30,9 +37,9 @@ ROOT = os.path.abspath(
 )  # the repository root
 SKILL_TRACE = os.path.join(ROOT, "src", "tracing")
 sys.path.insert(0, SKILL_TRACE)
-import centerline as cl  # noqa: E402
-import ink as inklib  # noqa: E402,F401  (P.inklib, for agents writing patches)
-from quadsheets import open_sheets  # noqa: E402
+import centerline as cl
+import ink as inklib  # noqa: F401  (P.inklib, for agents writing patches)
+from quadsheets import open_sheets
 
 FILING = os.environ.get("HSD_WORK") or os.path.join(
     ROOT, "target", "work"
@@ -214,7 +221,8 @@ def cost_field(
     g, ink=None, off_cost=40.0, near_cost=4.0, avoid=None, prefer=None
 ):
     """cost per m: 1 + 4*(ridge - edt)^2 on ink (the centre of the printed line is cheapest), near_cost within 1.5 m
-    of ink, off_cost elsewhere; avoid / prefer: masks made dearer / cheaper"""
+    of ink, off_cost elsewhere; avoid / prefer: masks made dearer / cheaper
+    """
     m = g.ink if ink is None else ink
     edt = ndimage.distance_transform_edt(m)
     ridge = ndimage.maximum_filter(edt, size=5)
@@ -291,7 +299,8 @@ def follow(
     so it does not cut a V tip or a bend), passing through the `via` points in order. ink: the mask to follow
     (default the step's own class; at a V tip printed partly brown/black pass e.g. g.m["brown"] | g.ink).
     via: [(lon, lat)] -- points YOU read off the render (g.ll(x, y) converts the panel's metres) that the line must
-    pass, e.g. the apex of a V tip or the middle of a label. Smoothing keeps the ends exactly on the trace."""
+    pass, e.g. the apex of a V tip or the middle of a label. Smoothing keeps the ends exactly on the trace.
+    """
     cost = cost_field(g, ink, off_cost, near_cost, avoid, prefer)
     a = g.T.point_at(g.step, s0)
     b = g.T.point_at(g.step, s1)
@@ -304,7 +313,8 @@ def follow(
 
 def polyline(T, step, s0, s1, via):
     """a hand-placed line: the trace point at s0, then the `via` points [(lon, lat)] you read off the render, then the
-    trace point at s1 (for a stretch where no ink class is usable, e.g. a road edge you can see but ink.py misses)"""
+    trace point at s1 (for a stretch where no ink class is usable, e.g. a road edge you can see but ink.py misses)
+    """
     return [T.point_at(step, s0)] + list(via) + [T.point_at(step, s1)]
 
 
@@ -316,7 +326,8 @@ def straight(T, step, s0, s1):
 def road_centre(g, s0, s1, width=None, sigma=6.0):
     """the road's centre between its casings on the stretch, read on cross-sections every metre of the OLD trace
     (centerline.edge_offsets: both casings -> midpoint; one casing -> it + half the road width), smoothed, the ends
-    tapered to the trace points at s0 and s1. width: the road's casing separation (default: the step's road_width_m)."""
+    tapered to the trace points at s0 and s1. width: the road's casing separation (default: the step's road_width_m).
+    """
     width = width or g.T.F[g.step]["properties"].get("road_width_m")
     C = np.array([g.xy(*p) for p in g.T.stretch(g.step, s0, s1, 1.0)])
     faint = g.m.get("road_faint")
@@ -359,7 +370,8 @@ def sample_rgb(lons, lats):
 
 def render(g, patch, png, s0=None, s1=None, title="", res=0.5):
     """two panels: the scan (0.5 m cells) and the ink classes, with the old trace (purple), the prior (red, thin) and
-    the patch (orange, with its vertices). Read it with the Read tool before saving the patch."""
+    the patch (orange, with its vertices). Read it with the Read tool before saving the patch.
+    """
     import matplotlib
 
     matplotlib.use("Agg")
@@ -448,7 +460,8 @@ def save(
     who="Claude agent (usgs-quad-fix), for Dan McLaughlin",
 ):
     """append one patch (LineString, EPSG:4269) to the agent's GeoJSON; refuses an end within PIN_TIE of a pin unless it
-    sits ON the pin (T.point_at(step, 0) or T.point_at(step, T.length(step))): a patch run to the pin"""
+    sits ON the pin (T.point_at(step, 0) or T.point_at(step, T.length(step))): a patch run to the pin
+    """
     T = Trace()
     L = T.length(step)
     for p in (line[0], line[-1]):

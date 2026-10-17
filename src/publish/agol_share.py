@@ -3,7 +3,8 @@
 and every item without an ArcGIS account (Dan, 2026-10-16). Items stay shared to the group as well. The group gets the
 items' tags and a description that lists its categories. Re-running is safe.
 description() builds the group's description without signing in (the publish dry run, agol_dryrun.py, checks it).
-Sign-in: GIS(profile="hsd"). Run last by ./build.sh publish (or .venv/bin/python src/publish/agol_share.py)"""
+Sign-in: GIS(profile="hsd"). Run last by ./build.sh publish (or .venv/bin/python src/publish/agol_share.py)
+"""
 
 from arcgis.gis import GIS
 
@@ -22,7 +23,8 @@ ACCESS = "public"  # the group, and every item in the folder ("EVERYONE")
 
 def description(items, url):
     """the group's description: start with the two 0 items, then the numbered categories (QA, 2026-10-16); items: the
-    folder's items (.title, .id), url: the portal's"""
+    folder's items (.title, .id), url: the portal's
+    """
     first = {
         it.title.split(" - ")[0]: it
         for it in items

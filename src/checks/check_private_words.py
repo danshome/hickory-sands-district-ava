@@ -1,8 +1,11 @@
 """Pre-commit hook: refuse to commit a file that contains a word listed in .private-words (one word or phrase per line,
 case-insensitive; # starts a comment). .private-words is gitignored, so the list itself is never committed. Binary
-files are skipped. Exit 1 and name each file and line when a word is found."""
+files are skipped. Exit 1 and name each file and line when a word is found.
+"""
 
-import os, re, sys
+import os
+import re
+import sys
 
 ROOT = os.path.abspath(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")

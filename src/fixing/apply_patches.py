@@ -10,9 +10,14 @@ Rules: a patch's ends must lie within TOL m of the step's trace (fails loudly ot
 more than PIN_TIE m from both pins or sit ON a pin (a patch run to the pin; the step gets pin_patched), (build_agreed.py drops vertices that close and ties to the pin), never overlap
 another patch on the step; it may be digitized in either direction. Every edit is listed in the step's `hand_edits`.
 --patches may be the QGIS GeoPackage (layer hand_patches, EPSG:4269) or a GeoJSON; --out may never be the --traced file.
-Usage: apply_patches.py --patches hand-patches-EPSG4269.gpkg [--traced ...] [--out ...]   (exit 1 on any failed check)"""
+Usage: apply_patches.py --patches hand-patches-EPSG4269.gpkg [--traced ...] [--out ...]   (exit 1 on any failed check)
+"""
 
-import argparse, json, math, os, sys
+import argparse
+import json
+import math
+import os
+import sys
 
 FILING = os.environ.get("HSD_WORK") or os.path.join(
     os.path.dirname(
@@ -57,7 +62,8 @@ def smooth_join(c, j, lat0, D=8.0, max_dev=2.5):
     """round off the corner at a patch join c[j]: replace the line between the points D m before and after the join
     with a cubic Bezier that leaves A and arrives at B along the line's own directions there (G1-continuous).
     Returns (new c, j_lo, j_hi, angle_before, max deviation from the old line) or None if it would move the line
-    more than max_dev m (then the corner is left for a hand fix)."""
+    more than max_dev m (then the corner is left for a hand fix).
+    """
     P = [xy(q, lat0) for q in c]
 
     def walk(

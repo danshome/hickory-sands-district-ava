@@ -1,10 +1,16 @@
 # ruff: the Python formatter and linter for src/, tests/ and the skills, run by the pre-commit hooks and ./build.sh lint.
 # The code follows the Google Python Style Guide (https://google.github.io/styleguide/pyguide.html): 80-column lines,
-# 4-space indents, formatted by `ruff format` (Black's style, as the guide allows). .editorconfig matches these settings.
+# 4-space indents, formatted by `ruff format` (Black's style, as the guide allows); imports one per line, grouped
+# standard library / third party / local and sorted; Google-style docstrings; lower_with_under names. The lint rules
+# approximate Google's pylintrc (https://google.github.io/styleguide/pylintrc) and add stricter checks (bugbear,
+# bandit, simplifications). .editorconfig matches these settings.
 target-version = "py314"
 line-length = 80
 cache-dir = "target/ruff-cache"
 extend-exclude = ["tobedeleted", "target", "dist"]
+# Each script puts its own folder on sys.path and imports its neighbours by name (import centerline, ttb_record, ...):
+# those folders are first-party sources, so isort groups such imports as local ones.
+src = [".", "src/*"]
 
 [format]
 exclude = ["*.md"]   # Markdown is prose: its code examples (the skills' recipes) stay as written
@@ -15,4 +21,119 @@ skip-magic-trailing-comma = false
 docstring-code-format = true
 
 [lint]
-select = ["E9", "F", "E711", "E712", "E721", "E722", "PLE"]
+select = [
+  "E", "W",   # pycodestyle (E501: 80 columns; long URLs, and lines ending in a pragma comment, are allowed, as Google allows)
+  "F",        # pyflakes
+  "I",        # isort (settings below)
+  "N",        # pep8-naming
+  "D",        # pydocstyle, Google convention
+  "UP",       # pyupgrade
+  "B",        # flake8-bugbear
+  "A",        # flake8-builtins
+  "C4",       # flake8-comprehensions
+  "SIM",      # flake8-simplify
+  "RUF",      # ruff's own rules
+  "PL",       # pylint
+  "PIE",      # flake8-pie
+  "RET",      # flake8-return
+  "S",        # flake8-bandit (security)
+  "BLE",      # flake8-blind-except
+  "ISC",      # flake8-implicit-str-concat
+  "T10",      # flake8-debugger
+  "ERA",      # eradicate (commented-out code)
+]
+ignore = [
+  # --- permanent, each for a reason ------------------------------------------------------------------------------
+  "PLR2004",  # magic values: the thresholds are the data (metres, points, pixels, colours, step numbers), read where used
+  "PLR0911", "PLR0912", "PLR0913", "PLR0915", "PLR0917",
+              # size limits (returns, branches, arguments, statements): Google's pylintrc disables pylint's R family
+  "PLW0603",  # global statement: Google's pylintrc disables global-statement (the scripts keep a few module caches)
+  "RUF001",   # ambiguous characters in strings: the documents print real typography on purpose (curly apostrophes,
+              # en dashes, minus signs) and the PDF checks match it; step text is held to the Federal Register's
+              # characters by src/checks/check_step_text.py instead
+  "S101",     # assert: the build's invariant checks; Python always runs here without -O (build.sh, pytest)
+  "S310",     # urlopen: https URLs fixed in the code or in resources/quads/quads-manifest.csv (USGS, OSV, ArcGIS
+              # Online), never a file: URL or one a user types
+  "S311",     # random: picks review samples (seeded), never a secret
+  "S603",     # subprocess without a shell: fixed argument lists of known tools (sys.executable, pdftotext, gdal...)
+  "S607",     # tools by name, not path: the build installs them (Homebrew) and finds them on PATH, as build.sh does
+
+  # --- TEMPORARY: what is left after phase 1 (the formatter and ruff's safe fixes), with the count of each; to be ----
+  # --- fixed by hand in later PRs, one family per PR, each PR deleting its lines here ----------------------------------
+  # long lines (the formatter never wraps strings, docstrings or comments)
+  "E501",     # 1793 lines over 80 columns: 686 in strings, 653 in docstrings, 373 in comments, 81 in code
+  # names (Google: lower_with_under, CAPS only for module constants)
+  "N806",     # 276 CAPS local variables (arrays named D, S, P, ...)
+  "N803",     # 47 CAPS argument names
+  "N802",     # 1 function name not lower_with_under (G_d_at)
+  "N812",     # 2 modules imported under a capital letter (patchlib as P, agol_dryrun_checks as C)
+  "E741",     # 34 variables named l, O or I
+  "SIM300",   # 1 comparison taken for a "Yoda" one because the array is named D: goes with the N806 renames
+  # docstrings that are missing (Google: every module, class and function, unless short and obvious)
+  "D103",     # 175 functions
+  "D102",     # 19 methods
+  "D107",     # 7 __init__ methods
+  "D101",     # 2 classes
+  "D105",     # 1 magic method
+  # docstrings in Google's form (a summary line, a blank line, then Args/Returns/Raises)
+  "D415",     # 111 summary lines without a closing period
+  "D205",     # 85 summary lines without a blank line after them
+  "D403",     # 83 first words not capitalized (the safe fix is held back: it capitalizes parameter names too)
+  "D210",     # 1 docstring with spaces inside its quotes
+  "D301",     # 1 docstring with a backslash, not raw
+  "D402",     # 1 docstring that starts with the function's signature
+  # files
+  "SIM115",   # 137 open() outside a with block
+  # strings
+  "UP031",    # 79 % formatting (f-strings instead)
+  "ISC004",   # 25 implicit concatenations in a list or tuple (parenthesize them, or a comma is missing)
+  # lambdas
+  "E731",     # 52 lambdas assigned to names (def instead)
+  "PLW0108",  # 2 lambdas that only call a function
+  # bugbear
+  "B905",     # 38 zip() without strict=
+  "B007",     # 26 loop variables not used in the loop
+  "B023",     # 17 functions defined in a loop that use its variable
+  "B008",     # 1 call in an argument default
+  # imports
+  "PLC0415",  # 28 imports inside functions (some on purpose: lazy, or after the dry run's stub; those get a noqa)
+  "E402",     # 14 imports after code (after sys.path is set up)
+  # exceptions
+  "BLE001",   # 19 except Exception
+  "S112",     # 4 try/except/continue
+  "S110",     # 1 try/except/pass
+  # ruff's own
+  "RUF005",   # 24 list concatenations (unpacking instead)
+  "RUF046",   # 19 int() of what is already an int (round(), len(), ...)
+  "RUF059",   # 16 unpacked variables never used
+  "RUF007",   # 12 zip(a, a[1:]) (itertools.pairwise instead)
+  # the rest
+  "PLW2901",  # 5 loop variables overwritten in the loop
+  "PLW1510",  # 4 subprocess.run() without check=
+  "S324",     # 4 MD5: USGS's quad checksums, not security (hashlib.md5(usedforsecurity=False))
+  "C416",     # 2 comprehensions that only copy
+  "RET503",   # 2 functions that return a value on some paths and fall off the end on others
+  "RET504",   # 1 variable assigned only to be returned
+  "SIM105",   # 1 try/except/pass that contextlib.suppress says better
+  "SIM108",   # 1 if/else that a conditional expression says better
+  "ERA001",   # 1 comment that looks like code
+]
+
+[lint.per-file-ignores]
+# Google's pylintrc needs no docstring for test functions (no-docstring-rgx: test.*); each test module has one.
+"tests/**" = ["D1"]
+
+[lint.pydocstyle]
+convention = "google"   # also turns off the rules Google's layout contradicts (D203, D204, D213, D215, D400, D401, ...)
+
+[lint.flake8-comprehensions]
+allow-dict-calls-with-keyword-arguments = true   # dict(a=1) is fine, as the check-builtin-literals hook allows
+
+[lint.isort]
+# Google's isort profile: one import per line (typing and collections.abc may import several names), sorted by module
+# within each group whatever the import form, ignoring case.
+force-single-line = true
+single-line-exclusions = ["typing", "collections.abc", "typing_extensions"]
+force-sort-within-sections = true
+order-by-type = false
+case-sensitive = false

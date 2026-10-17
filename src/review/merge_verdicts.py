@@ -1,8 +1,12 @@
 """Merge triage verdicts (verdicts-*.json) into one QGIS layer: the FIX + UNSURE items, numbered in boundary order.
 Usage: merge_verdicts.py TRIAGE_DIR   -> TRIAGE_DIR/../FIX-LIST-EPSG4269.geojson (points; step, item, verdict, problem,
-offset_m, note, batch, status, n). The fix list is the input of the usgs-quad-fix skill."""
+offset_m, note, batch, status, n). The fix list is the input of the usgs-quad-fix skill.
+"""
 
-import json, glob, os, sys
+import glob
+import json
+import os
+import sys
 
 T = (
     os.path.abspath(sys.argv[1])

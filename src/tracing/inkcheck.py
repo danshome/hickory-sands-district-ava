@@ -2,15 +2,20 @@
 magenta, highway red orange, contour green, creek blue). Use it to check or recalibrate the classes on a new sheet set -- look at
 creeks over paper and over the woodland tint, light and heavy contours, dashed and solid roads, and highways.
 
-CLI: inkcheck.py --quads "GLOB" --at LON,LAT [--at LON,LAT ...] --out check.png [--half 60] [--scale 4]"""
+CLI: inkcheck.py --quads "GLOB" --at LON,LAT [--at LON,LAT ...] --out check.png [--half 60] [--scale 4]
+"""
 
-import argparse, os, sys
+import argparse
+import os
+import sys
+
 import numpy as np
 from PIL import Image
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from quadsheets import open_sheets, sheet_of
 import ink
+from quadsheets import open_sheets
+from quadsheets import sheet_of
 
 # drawn in this order: lettering (gray) first, then the FINAL per-kind masks the tracer uses
 COL = {

@@ -4,20 +4,20 @@
   headless, with a fresh temporary profile, so the dashboard is seen as TTB sees it, signed in to nothing;
 - open_dashboard: a page on the dashboard at one viewport, loaded (the indicators hold their numbers), as a View;
 - every test's screenshot: after each test, target/browser-tests/<viewport>-<test>.png (-FAILED.png when it failed, and
-  named in the failure's report); target/browser-tests/<viewport>-loaded.png right after each load."""
+  named in the failure's report); target/browser-tests/<viewport>-loaded.png right after each load.
+"""
 
-import os, time
+import os
 from pathlib import Path
+import time
 from types import SimpleNamespace
 
 import pytest
 
 try:
-    from playwright.sync_api import (
-        Error as PlaywrightError,
-        TimeoutError as PlaywrightTimeout,
-        sync_playwright,
-    )
+    from playwright.sync_api import Error as PlaywrightError
+    from playwright.sync_api import sync_playwright
+    from playwright.sync_api import TimeoutError as PlaywrightTimeout
 except ImportError:  # requirements-dev.txt has it; an older .venv may not: the tests then skip, they do not error
     sync_playwright = None
 
@@ -65,7 +65,11 @@ def site():
     """the group's items by id and the dashboard's URL (HSD_DASHBOARD_URL, or the group's one Dashboard item)"""
     from src.publish.agol_check import (
         GROUP_ID,
+    )  # anonymous GETs with retries; importing it reads nothing online
+    from src.publish.agol_check import (
         REST,
+    )  # anonymous GETs with retries; importing it reads nothing online
+    from src.publish.agol_check import (
         rest,
     )  # anonymous GETs with retries; importing it reads nothing online
 
@@ -125,7 +129,8 @@ def chrome():
 @pytest.fixture(scope="session")
 def open_dashboard(chrome, site):
     """open_dashboard(name, phone, **context options) -> a View of the dashboard, loaded: every indicator ready and holding
-    a number. A load that fails is tried once more; then the fixture fails, naming the viewport and its screenshot."""
+    a number. A load that fails is tried once more; then the fixture fails, naming the viewport and its screenshot.
+    """
     _, browser = chrome
 
     def load(name, phone, **context):

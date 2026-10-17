@@ -4,9 +4,14 @@ Marking compares the proposed text with TTB's text only:
   red strikethrough  TTB's words the proposed text drops
   yellow             words the proposed text adds to TTB's text
 ("Proposed", never "final": the text is a proposal until TTB adopts it.)
-Every other step is TTB's published text word for word and is not shown."""
+Every other step is TTB's published text word for word and is not shown.
+"""
 
-import difflib, html, json, os, re
+import difflib
+import html
+import json
+import os
+import re
 
 ROOT = os.path.abspath(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")

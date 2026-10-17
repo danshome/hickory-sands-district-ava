@@ -4,15 +4,24 @@ header. Below: six close-ups about 120 m across -- the worst stretches off the m
 the prior, and the longest gaps bridged -- each labelled with what it shows and the sheet it is on.
 
 CLI: review.py --quads "GLOB" --traced traced.geojson [--prior lines.geojson] [--title-field narrative]
-               --out-dir DIR [--ids ...]"""
+               --out-dir DIR [--ids ...]
+"""
 
-import argparse, json, math, os, sys
+import argparse
+import json
+import math
+import os
+import sys
+
 import numpy as np
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image
+from PIL import ImageDraw
+from PIL import ImageFont
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from quadsheets import open_sheets, sheet_of
 from centerline import densify
+from quadsheets import open_sheets
+from quadsheets import sheet_of
 
 
 def _font(size):

@@ -23,11 +23,20 @@ Items are found by title in the folder at run time (their ids change if they are
 dashboard in place. Sign-in: GIS(profile="hsd"). Never write "agreed".
 build() makes the dashboard without signing in (from the build, the items and the layers it is given), so the publish dry
 run (agol_dryrun.py) writes and checks it; main() signs in, reads the live items and layers, and sends it.
-Run by ./build.sh publish after agol_layer.py (or .venv/bin/python src/publish/agol_dashboard.py)"""
+Run by ./build.sh publish after agol_layer.py (or .venv/bin/python src/publish/agol_dashboard.py)
+"""
 
-import html, json, os, re, uuid
-from arcgis.gis import GIS, ItemProperties, ItemTypeEnum
+import html
+import json
+import os
+import re
+import uuid
+
 from arcgis.features import FeatureLayerCollection
+from arcgis.gis import GIS
+from arcgis.gis import ItemProperties
+from arcgis.gis import ItemTypeEnum
+
 from agol_dryrun_checks import check_views  # src/publish/, next to this script
 
 ROOT = os.path.abspath(
@@ -152,7 +161,8 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
     and: the items in the folder (title -> item, with .id and .title), the web map 4a (.id) and the ids of its operational
     layers (ops), the boundary layer 4b's line and area layers (.properties.id, .objectIdField), the big differences
     layer's object id field, the steps' records (step, quad, change) and the portal's URL. main() passes the live ones;
-    the publish dry run (agol_dryrun.py) passes stand-ins. Returns (dashboard, props)."""
+    the publish dry run (agol_dryrun.py) passes stand-ins. Returns (dashboard, props).
+    """
     LINE_OP, AREA_OP, RINGS_OP, ALL_OP = (
         f"hsd-{line.properties.id}",
         f"hsd-{area.properties.id}",
@@ -694,7 +704,8 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
 
     def map_widget(id_, phone=False, layers=()):
         """the web map 4a. The phone's: no measure tool, a locate button (is this place in the AVA?), and no selection by
-        tapping (nothing on the phone listens to it); pop-ups stay on, to tell what a tapped line or area is."""
+        tapping (nothing on the phone listens to it); pop-ups stay on, to tell what a tapped line or area is.
+        """
         return widget(
             id_,
             "Map",

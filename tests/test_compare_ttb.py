@@ -1,5 +1,6 @@
 """src/review/compare_ttb.py: a big difference's acres are those of the whole pieces of land its ring touches, even where
-the ring's outline has a hole (issue #26); and the small helpers that find the stretches farther apart than the noise."""
+the ring's outline has a hole (issue #26); and the small helpers that find the stretches farther apart than the noise.
+"""
 
 import pytest
 
@@ -11,9 +12,10 @@ pytest.importorskip(
     "scipy",
     reason="SciPy is in the build's .venv (./build.sh env), not the lint tools",
 )
-import numpy as np  # noqa: E402
-from osgeo import ogr  # noqa: E402
-from src.review import compare_ttb  # noqa: E402
+import numpy as np
+from osgeo import ogr
+
+from src.review import compare_ttb
 
 pytestmark = pytest.mark.build
 REV, MAPX = "in the proposed revision only", "in the Map Explorer polygon only"

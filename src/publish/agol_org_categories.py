@@ -1,9 +1,11 @@
 """Organization content categories for every item in Dan's folder "Hickory Sands District - Final Proposed Boundary and
 Narrative" (the group has its own categories, set by agol_publish.py / agol_layer.py). Matched by the item title's number.
 Sets each item's full list, so re-running is safe. categories() needs no sign-in (the publish dry run, agol_dryrun.py,
-checks them). Sign-in: GIS(profile="hsd"). Run by ./build.sh publish (or .venv/bin/python src/publish/agol_org_categories.py)"""
+checks them). Sign-in: GIS(profile="hsd"). Run by ./build.sh publish (or .venv/bin/python src/publish/agol_org_categories.py)
+"""
 
 import json
+
 from arcgis.gis import GIS
 
 FOLDER = "Hickory Sands District - Final Proposed Boundary and Narrative"

@@ -1,9 +1,13 @@
 """Split featurecheck.py queues into review batches for triage agents.
 Usage: split_queue.py --out-dir DIR [--per 60] QUEUE.geojson [QUEUE.geojson ...]
 Writes DIR/batch-<K>.json (items with item, step, kind, lon, lat, types, why, crop as an ABSOLUTE path) and prints the
-batches. Contours, creeks and roads go to separate batches (each kind has its own rubric)."""
+batches. Contours, creeks and roads go to separate batches (each kind has its own rubric).
+"""
 
-import argparse, json, os, string
+import argparse
+import json
+import os
+import string
 
 ap = argparse.ArgumentParser()
 ap.add_argument("queues", nargs="+")

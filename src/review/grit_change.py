@@ -14,10 +14,15 @@ from the USGS SGMC units shifted to the outcrops (resources/geology), and the st
 Usage (the project .venv, -E -s): grit_change.py --line LINE.geojson --oct14 STEP-LINES.geojson --geology GPKG --out-dir DIR
 Outputs: grit-change-lines-EPSG4269.geojson, grit-change-areas-EPSG4269.geojson, grit-change-stats.json (NAD83, EPSG:4269;
 areas in NAD83 / Conus Albers, EPSG:5070, an equal-area projection; line lengths geodesic on GRS 1980, as in the
-boundary layer)."""
+boundary layer).
+"""
 
-import argparse, json, os
-from osgeo import ogr, osr
+import argparse
+import json
+import os
+
+from osgeo import ogr
+from osgeo import osr
 
 ogr.UseExceptions()
 SQM_PER_ACRE = 4046.8564224

@@ -23,11 +23,18 @@ The copy is altered, so it must not pass for GPO's signed file (QA issue #39):
   shows only the changed steps;
 - the yellow highlights are filled shapes drawn in the page content under the text, not annotations (the same outline
   and colour the highlight annotations had, so they look the same, and they print).
-Usage: python make_notice_copy.py"""
+Usage: python make_notice_copy.py
+"""
 
-import io, json, os, re
+import io
+import json
+import os
+import re
+
+from PIL import Image
+from PIL import ImageDraw
+from PIL import ImageFont
 import pymupdf
-from PIL import Image, ImageDraw, ImageFont
 
 ROOT = os.path.abspath(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
@@ -116,7 +123,8 @@ def pieces_of(text, at_hyphens=True):
 
 def set_lines(text, breaks=None, mark=None):
     """GPO style: ragged right, fixed word space, first line indented; breaks = TTB's pieces per line, to keep them.
-    mark: True (all), or one flag per piece; flagged glyphs carry a 5th element True and are highlighted."""
+    mark: True (all), or one flag per piece; flagged glyphs carry a 5th element True and are highlighted.
+    """
     P = pieces_of(text, at_hyphens=bool(breaks))
     lines, i = (
         [],

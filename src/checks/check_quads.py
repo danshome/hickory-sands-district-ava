@@ -1,7 +1,12 @@
 """The 13 USGS quads the build reads, checked against quads-manifest.csv (MD5 of each GeoTIFF inside its zip, and of
-each GeoPDF). Exit 1 if any is missing or altered; build.sh then fetches them (src/quads/fetch_quads.py)"""
+each GeoPDF). Exit 1 if any is missing or altered; build.sh then fetches them (src/quads/fetch_quads.py)
+"""
 
-import csv, hashlib, os, sys, zipfile
+import csv
+import hashlib
+import os
+import sys
+import zipfile
 
 ROOT = os.path.abspath(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")

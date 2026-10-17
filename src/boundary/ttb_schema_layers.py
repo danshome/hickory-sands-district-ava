@@ -7,11 +7,15 @@ resources/boundary/proposed/; the TTB package build uses only its shapefile writ
   {version}-points   the AVA record, then the point's own fields
 """
 
-import json, os, sys
+import json
+import os
+import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from osgeo import ogr
+from osgeo import osr
+
 import ttb_record
-from osgeo import ogr, osr
 
 OUT = os.path.join(ttb_record.ROOT, "target", "ttb-schema-layers")
 
@@ -101,7 +105,8 @@ def split254(text):
 
 
 def write_shapefile(fc, stem):
-    import shutil, zipfile
+    import shutil
+    import zipfile
 
     feats = fc["features"]
     keys = list(feats[0]["properties"])

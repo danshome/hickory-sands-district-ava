@@ -18,12 +18,30 @@
   shapefiles' .prj (read from the zips that ship); the steps CSV agrees with the line layer;
 - package: a WARNING when a path in the zip, extracted by Windows Explorer under C:\\Users\\<20 characters>\\Downloads\\
   <zip name>\\, passes Windows' MAX_PATH (260 with the terminating null: 259 characters). Dan, Oct. 17 2026: leave the names.
-Usage: check_outputs.py [<work dir> [<dist dir>]]   (defaults: $HSD_WORK or target/work; dist/)"""
+Usage: check_outputs.py [<work dir> [<dist dir>]]   (defaults: $HSD_WORK or target/work; dist/)
+"""
 
-import csv, difflib, filecmp, glob, html, json, math, os, re, shutil, subprocess, sys, zipfile
-from decimal import Decimal, ROUND_HALF_UP
-import pymupdf, pypdf
-from osgeo import gdal, ogr, osr
+import csv
+from decimal import Decimal
+from decimal import ROUND_HALF_UP
+import difflib
+import filecmp
+import glob
+import html
+import json
+import math
+import os
+import re
+import shutil
+import subprocess
+import sys
+import zipfile
+
+from osgeo import gdal
+from osgeo import ogr
+from osgeo import osr
+import pymupdf
+import pypdf
 
 gdal.UseExceptions()
 ogr.UseExceptions()

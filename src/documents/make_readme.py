@@ -2,9 +2,13 @@
 (agreed-steps.json, written by build_agreed.py). Writes <work>/README.txt and <work>/documents/...read-me-first...html.
 The page is typeset from README.txt itself (one source): its ALL-CAPS headings become headings, the package listing
 becomes a table per folder (file | what it is), blank-line-separated paragraphs and "- " items become paragraphs and
-lists. A check stops the build if any word of README.txt or LICENSE.txt is missing from the page."""
+lists. A check stops the build if any word of README.txt or LICENSE.txt is missing from the page.
+"""
 
-import html, json, os, re
+import html
+import json
+import os
+import re
 
 ROOT = os.path.abspath(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
@@ -77,7 +81,8 @@ def prose(lines):
 
 def package(lines):
     """folder lines at column 0; under each, 'name   description' rows (or a name alone with its description indented
-    below it, or several names sharing one), description continuations indented further, or plain prose"""
+    below it, or several names sharing one), description continuations indented further, or plain prose
+    """
     out, folder, rows, names, desc, para = [], None, [], [], [], []
 
     def end_row():
@@ -192,9 +197,7 @@ def main():
     )
     readme_html = (
         f"<h1>{html.escape(title)}</h1>"
-        + '<p class="meta">'
-        + "<br>".join(text(m) for m in meta)
-        + "</p>"
+        '<p class="meta">' + "<br>".join(text(m) for m in meta) + "</p>"
     )
 
     want = words(html.escape(page_readme)) + words(html.escape(lic))

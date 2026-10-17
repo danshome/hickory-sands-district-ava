@@ -7,9 +7,13 @@ blockquote, ul/ol/li, table/tr/th/td (colspan), img (width in inches via data-w)
 Usage: python3 html2docx.py in.html out.docx
 """
 
-import sys, os, re, zipfile, struct
 from html.parser import HTMLParser
+import os
+import re
+import struct
+import sys
 from xml.sax.saxutils import escape
+import zipfile
 
 EMU = 914400
 

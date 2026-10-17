@@ -17,7 +17,11 @@ steps that follow a road, creek or contour replaced by traces onto the centre of
 Attributes: TTB's AVAs_Production fields filled as TTB fills them for an established AVA where the value is known.
 """
 
-import json, math, os, re, sys
+import json
+import math
+import os
+import re
+import sys
 
 ROOT = os.path.abspath(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
@@ -26,10 +30,12 @@ HERE = os.environ.get("HSD_WORK") or os.path.join(
     ROOT, "target", "work"
 )  # build work dir (build.sh stages resources/ here)
 sys.path.insert(0, os.path.join(ROOT, "src", "boundary"))
-from osgeo import ogr, osr
+from osgeo import ogr
+from osgeo import osr
 
 ogr.UseExceptions()
-import ttb_record, ttb_schema_layers as tsl
+import ttb_record
+import ttb_schema_layers as tsl
 
 B = os.path.join(
     ROOT, "resources", "boundary"

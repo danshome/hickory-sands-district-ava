@@ -28,23 +28,32 @@ the older NADCON. Same shift the QGIS projects pin for display. Every feature th
 Runs in the project's .venv (./build.sh makes it from requirements.txt).
 """
 
-import codecs, glob, json, os, re, shutil, subprocess, sys, zipfile
+import codecs
+import glob
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+import zipfile
+
 import numpy as np
-from osgeo import gdal, osr
+from osgeo import gdal
+from osgeo import osr
+from PIL import Image
+from PIL import ImageDraw
+from pypdf import PdfWriter
+from pypdf.generic import ArrayObject
+from pypdf.generic import BooleanObject
+from pypdf.generic import DecodedStreamObject
+from pypdf.generic import DictionaryObject
+from pypdf.generic import FloatObject
+from pypdf.generic import NameObject
+from pypdf.generic import NumberObject
+from pypdf.generic import TextStringObject
 
 import ttb_record
-from PIL import Image, ImageDraw
-from pypdf import PdfWriter
-from pypdf.generic import (
-    ArrayObject,
-    BooleanObject,
-    DecodedStreamObject,
-    DictionaryObject,
-    FloatObject,
-    NameObject,
-    NumberObject,
-    TextStringObject,
-)
 
 gdal.UseExceptions()
 gdal.SetConfigOption(
@@ -135,7 +144,8 @@ def touching(feats, x0, y0, x1, y1):
 
 class RealObject(FloatObject):
     """A PDF real that always keeps its decimal point, so 2485.0 reads back as a real, not an integer
-    (a column mixing integers and reals is read as text)."""
+    (a column mixing integers and reals is read as text).
+    """
 
     def write_to_stream(self, stream, encryption_key=None):
         txt = repr(float(self))
@@ -162,7 +172,8 @@ def pdf_value(v):
 
 def text(v):
     """A PDF text string; anything beyond ASCII goes out as UTF-16BE with a BOM. PDFDocEncoding would be valid
-    too, but GDAL decodes it as Latin-1, turning the narratives' curly quotes into control characters."""
+    too, but GDAL decodes it as Latin-1, turning the narratives' curly quotes into control characters.
+    """
     t = TextStringObject(v)
     if not v.isascii():
         t.autodetect_utf16 = True

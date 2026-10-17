@@ -17,12 +17,20 @@ Usage (the project .venv, -E -s):
                  [--steps agreed-steps.json] [--out-dir DIR] [--k 4] [--min-threshold 15] [--threshold M]
 Outputs in --out-dir: ttb-diff-rings-EPSG4269.geojson (circles, one per place), ttb-diff-areas-EPSG4269.geojson (every
 piece between the two boundaries), ttb-diff-report.md, ttb-diff-stats.json.
-All inputs and outputs are NAD83 (EPSG:4269); distances are measured in NAD83 / Conus Albers (EPSG:5070) metres."""
+All inputs and outputs are NAD83 (EPSG:4269); distances are measured in NAD83 / Conus Albers (EPSG:5070) metres.
+"""
 
-import argparse, json, os, sys, urllib.parse, urllib.request
+import argparse
+import json
+import os
+import sys
+import urllib.parse
+import urllib.request
+
 import numpy as np
+from osgeo import ogr
+from osgeo import osr
 from scipy.spatial import cKDTree
-from osgeo import ogr, osr
 
 ogr.UseExceptions()
 SQM_PER_ACRE = 4046.8564224

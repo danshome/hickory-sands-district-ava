@@ -11,16 +11,26 @@ Spot types:
   control      random places, so a reviewer also sees what right looks like
 CLI: problems.py --quads "GLOB" --traced traced.geojson [--prior lines.geojson] --out-dir DIR [--ids ...]
      [--controls 1] [--half 32] [--scale 6] [--spots regression.json]   (at most 3 off_center, 2 moved, 2 gap, 1 sheet_edge, 1 control per line)
-Review with agents: references/review-rubric.md."""
+Review with agents: references/review-rubric.md.
+"""
 
-import argparse, json, math, os, random, sys
+import argparse
+import json
+import math
+import os
+import random
+import sys
+
 import numpy as np
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image
+from PIL import ImageDraw
+from PIL import ImageFont
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from quadsheets import open_sheets, sheet_of
 from centerline import densify
 import ink
+from quadsheets import open_sheets
+from quadsheets import sheet_of
 
 COL = {
     "black": (255, 0, 255),

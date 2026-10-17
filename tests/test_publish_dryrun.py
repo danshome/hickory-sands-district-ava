@@ -6,10 +6,18 @@ legend and raw pop-up (#46), a stray web map layer, metadata gaps (#31), credits
 quadrangle editions (#44), the wording rules, a private group, a new or retitled item.
 The dry run's files are tests/fixtures/publish/dry-run/ (target/publish/ from ./build.sh publish-dry-run: copy them
 there again after changing what the publish sends) and the group's item list tests/fixtures/publish/agol-items.json.
-Standard library only, so the lint workflow runs these; the last test, marked build, runs the whole dry run on a build."""
+Standard library only, so the lint workflow runs these; the last test, marked build, runs the whole dry run on a build.
+"""
 
-import copy, json, os, re, subprocess, sys
+import copy
+import json
+import os
+import re
+import subprocess
+import sys
+
 import pytest
+
 from src.publish import agol_dryrun_checks as C
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

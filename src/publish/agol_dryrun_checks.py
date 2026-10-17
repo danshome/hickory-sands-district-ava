@@ -25,9 +25,14 @@ per check; every failure names the item and what is wrong:
 - wording: no "agreed", "ours", "our boundary", "TTB's published polygon", "final text" or bare "Hickory Sandstone" in
   anything sent (check_outputs.py's rule);
 - group: public, its tags, and its description links the dashboard and the read-me in the list.
-Run by agol_dryrun.py, or on a dry run's files: .venv/bin/python src/publish/agol_dryrun_checks.py [target/publish]"""
+Run by agol_dryrun.py, or on a dry run's files: .venv/bin/python src/publish/agol_dryrun_checks.py [target/publish]
+"""
 
-import html, json, os, re, sys
+import html
+import json
+import os
+import re
+import sys
 
 EDIT = {
     "Create",
@@ -201,7 +206,8 @@ def check_views(d, ops):
     action, filter and map link points at an element of that same view (a phone action aimed at a desktop element
     would silently do nothing); the two views share no id; elementMappings pairs every phone element with a desktop
     element of the same type, one to one. ops: the ids of the web map's operational layers.
-    agol_dashboard.py runs it before sending the dashboard; the dry run's dashboard check too."""
+    agol_dashboard.py runs it before sending the dashboard; the dry run's dashboard check too.
+    """
     seen = {}
     for name in ("desktopView", "mobileView"):
         v = d[name]

@@ -1,8 +1,13 @@
 """The 13 USGS quads (GeoPDF + GeoTIFF, USGS files unaltered except the added line) with the proposed boundary line,
 using src/boundary/build_quad_sheets.py as is. Each line feature already carries its full record (TTB's AVAs_Production
-fields + step fields), so it is passed through unchanged. Output: quads/<USGS stem>.pdf / .tif."""
+fields + step fields), so it is passed through unchanged. Output: quads/<USGS stem>.pdf / .tif.
+"""
 
-import glob, json, os, re, sys
+import glob
+import json
+import os
+import re
+import sys
 
 ROOT = os.path.abspath(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
@@ -11,8 +16,11 @@ HERE = os.environ.get("HSD_WORK") or os.path.join(
     ROOT, "target", "work"
 )  # build work dir (build.sh stages resources/ here)
 sys.path.insert(0, os.path.join(ROOT, "src", "boundary"))
-from osgeo import gdal, osr
-import ttb_record, build_quad_sheets as q
+from osgeo import gdal
+from osgeo import osr
+
+import build_quad_sheets as q
+import ttb_record
 
 gdal.UseExceptions()
 gdal.SetConfigOption("GDAL_PAM_ENABLED", "NO")

@@ -1,5 +1,6 @@
 """agol_check.holds(): a dashboard link's text matches its item's title word by word, in order (#59; the phone layout's
-buttons put a caption under the title, so the text runs on: "Read me first what is in this group, and the license")."""
+buttons put a caption under the title, so the text runs on: "Read me first what is in this group, and the license").
+"""
 
 from src.publish.agol_check import holds
 

@@ -23,7 +23,11 @@ pin whose move is >= MIN_MOVE m; build_agreed.py applies them to END[n] and the 
 Usage (GDAL venv): fix_pins.py [--min-move 0.5] [--apply]   (without --apply: report only)
 """
 
-import json, math, os, sys
+import json
+import math
+import os
+import sys
+
 import numpy as np
 
 ROOT = os.path.abspath(
@@ -100,7 +104,8 @@ CLIP, EXT = 300.0, 40.0
 def free_line(sheets, kind, prior, at_start, lon0, lat0):
     """the feature's centreline THROUGH the pin, free of it: the step's prior clipped to its last CLIP m at the pin end and
     extended EXT m straight beyond the pin (so the pin is an interior point, not a held endpoint), traced with the
-    skill's tracer; returns the traced line in metres about the pin"""
+    skill's tracer; returns the traced line in metres about the pin
+    """
     mx, my = frame(lat0)
     P = np.array([[(c[0] - lon0) * mx, (c[1] - lat0) * my] for c in prior])
     if not at_start:

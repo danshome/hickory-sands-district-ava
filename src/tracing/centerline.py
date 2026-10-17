@@ -22,11 +22,19 @@ how far the line moved from the prior.
 CLI: centerline.py --quads "GLOB" [--quads ...] --lines lines.geojson --out traced.geojson
                    [--id-field id] [--kind-field kind] [--kind road] [--ids 7 8 ...]
      lines.geojson: LineStrings in NAD83 lon/lat (EPSG:4269); kind per feature: road | creek | contour.
-     traced.geojson: the traced LineStrings with the check's figures as properties (merged by id if it exists)."""
+     traced.geojson: the traced LineStrings with the check's figures as properties (merged by id if it exists).
+"""
 
-import argparse, datetime, json, math, os, sys
+import argparse
+import datetime
+import json
+import math
+import os
+import sys
+
 import numpy as np
-from scipy import ndimage, sparse
+from scipy import ndimage
+from scipy import sparse
 from scipy.sparse import csgraph
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -195,7 +203,8 @@ def runs(flags):
 # ---------------------------------------------------------------- ink on the grid
 def sample_ink(sheets, kind, lons, lats, extra=()):
     """the kind's ink flag per NAD83 point (and any `extra` ink.classes masks), each read from the sheet whose
-    neatline holds the point; points within NEAT_M of a neatline count as no ink"""
+    neatline holds the point; points within NEAT_M of a neatline count as no ink
+    """
     n = len(lons)
     ink = np.zeros(n, bool)
     edge = np.zeros(n, bool)
@@ -235,7 +244,8 @@ def sample_ink(sheets, kind, lons, lats, extra=()):
 def sym_offsets(B, ink, xmin, ymin, half, pool, search):
     """per point of B (1 m spacing): (offset of the ink's centre of symmetry along the normal, strength 0-1, normals).
     Cross-sections are pooled over +-pool m along the feature, so dash gaps don't matter. Two edges, a filled band and
-    a single line are all symmetric about their centre."""
+    a single line are all symmetric about their centre.
+    """
     o = np.arange(-(half + search), half + search + 1e-9, 0.5)
     N = normals(B)
     PX = B[:, 0, None] + o[None, :] * N[:, 0, None]
@@ -324,7 +334,8 @@ def chain_dots(
     so they are taken from any non-brown ink ("dotlike"), by shape and position rather than colour.
     Measured on these scans: dots 4-49 m2 (1-12 px), 2-10 m across, 12-41 m apart; dashes up to ~25 m long, <= 4 m
     wide. Dots overlap house symbols in size, so a chain counts only if it has >= 2 pieces or ends in the cone of
-    another solid stretch of creek. Returns the accepted pieces as a mask (creek ink)."""
+    another solid stretch of creek. Returns the accepted pieces as a mask (creek ink).
+    """
     lab, n = ndimage.label(dotlike & ~solid, structure=np.ones((3, 3)))
     if n == 0:
         return np.zeros_like(solid)
@@ -445,7 +456,8 @@ def drop_crossing(ink, theta, max_extent_m=400.0, min_elong=3.0, min_deg=30.0):
     Connected pieces of road ink that are elongated (principal axes >= min_elong) and CROSS the prior's local bearing
     by more than min_deg are not road ink. Pieces longer than max_extent_m are kept whatever their axis (a fence
     crossing the 100 m corridor at 35 deg is 175 m of ink, so 150 m was too short): a solid
-    casing spans bends, and its principal axis means nothing against one local bearing."""
+    casing spans bends, and its principal axis means nothing against one local bearing.
+    """
     lab, n = ndimage.label(ink, structure=np.ones((3, 3)))
     if n == 0:
         return ink
@@ -510,7 +522,8 @@ def grade(C, ink_raw, xmin, ymin, kind, half=10.0, pool=2, dash_pool=None):
         (roads 12, creeks 15: a dash cycle), as the eye lines the dashes up.
     Anything else (a junction, lettering, a third line, a missing edge) is UNMEASURED. Dan's rule (Oct. 16, 2026):
     an unmeasured metre is a FAILED metre in the headline figure -- report within-2 m of the WHOLE line.
-    Returns the offset of the centre from the line (m; NaN = unmeasured) and the road symbol found."""
+    Returns the offset of the centre from the line (m; NaN = unmeasured) and the road symbol found.
+    """
     if dash_pool is None:
         dash_pool = {"road": 12, "creek": 15, "contour": 4}[kind]
     o = np.arange(-half, half + 1e-9, 0.5)
@@ -559,9 +572,7 @@ def grade(C, ink_raw, xmin, ymin, kind, half=10.0, pool=2, dash_pool=None):
             [q for q in R if abs(q[0]) <= 6 and q[1] <= 8],
             key=lambda q: abs(q[0]),
         )
-        if len(near) == 1:
-            single[i] = near[0][0]
-        elif (
+        if len(near) == 1 or (
             len(near) > 1
             and abs(near[0][0]) <= 2.5
             and abs(near[1][0]) - abs(near[0][0]) >= 3.5
@@ -598,7 +609,8 @@ def edge_offsets(B, ink, xmin, ymin, half=14.0, pool=6, width=None, faint=None):
       - one casing only, at about half the road's width              -> that casing +- half the width,
         the width measured once per step (median casing separation) unless given -- so the line does not jump to
         whichever casing happens to be printed on a dashed road.
-    Returns (offsets, NaN where nothing usable; width or None when no casing pairs were seen)."""
+    Returns (offsets, NaN where nothing usable; width or None when no casing pairs were seen).
+    """
     o = np.arange(-half, half + 1e-9, 0.5)
     N = normals(B)
     PX = B[:, 0, None] + o[None, :] * N[:, 0, None]
@@ -688,7 +700,8 @@ def robust_offsets(m, sigma, med_size=41, tol=2.5):
     """clean and smooth the per-metre centre offsets: readings are compared with a LOCAL TREND (a Gaussian-smoothed
     interpolation over sigma), not a flat median -- on a bend the true correction changes smoothly by several
     metres along the road, and a flat median rejected exactly those readings, leaving the line on the inside casing
-    of every curve. Readings more than tol m from the trend (junctions, lettering) are dropped, the rest smoothed."""
+    of every curve. Readings more than tol m from the trend (junctions, lettering) are dropped, the rest smoothed.
+    """
     m = m.copy()
     idx = np.arange(len(m))
     good = ~np.isnan(m)

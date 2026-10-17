@@ -1,9 +1,13 @@
 """Boundary description documents for the proposed boundary: the regulatory text in TTB's style (HTML for PDF/DOCX,
 plain text), a CSV of the steps, and the changes from TTB's published text. Paragraphs (a)-(c) and steps are TTB's words
 (Notice No. 243, 91 FR 52576, 52585-86) except where agreed-steps.json says otherwise: near Grit, and the two corrections
-to TTB's own wording in steps (49) and (85)."""
+to TTB's own wording in steps (49) and (85).
+"""
 
-import csv, html, json, os
+import csv
+import html
+import json
+import os
 
 ROOT = os.path.abspath(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")

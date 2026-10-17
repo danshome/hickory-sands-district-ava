@@ -7,7 +7,10 @@ only, so it runs before anything is installed:
   packages.py pick LOCK NAME [...]    print the entries (pin + hashes) for NAME... from LOCK, for a first-stage install
 """
 
-import json, re, sys, urllib.request
+import json
+import re
+import sys
+import urllib.request
 
 PIN = re.compile(r"^([A-Za-z0-9][A-Za-z0-9._-]*)==([^\s;\\]+)")
 OSV = "https://api.osv.dev/v1"

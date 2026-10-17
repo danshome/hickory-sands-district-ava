@@ -8,9 +8,16 @@
    uses only the characters the Federal Register uses in step text: printable ASCII and curly double quotes. No en or
    em dashes (the printed notice's dashes are GPO's typesetting; the Federal Register's text has hyphens), no curly
    apostrophes, no non-breaking, thin or zero-width spaces, soft hyphens or tabs.
-Exit 1 naming each step, character and its fix. Usage: check_step_text.py [agreed-steps.json]"""
+Exit 1 naming each step, character and its fix. Usage: check_step_text.py [agreed-steps.json]
+"""
 
-import ast, html, json, os, re, sys, unicodedata
+import ast
+import html
+import json
+import os
+import re
+import sys
+import unicodedata
 
 ROOT = os.path.abspath(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")

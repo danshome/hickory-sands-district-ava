@@ -9,7 +9,13 @@ QGIS projects and the cropped VRTs expect:
 Already-present files that pass the MD5 check are skipped.
 """
 
-import csv, hashlib, os, sys, tempfile, urllib.request, zipfile
+import csv
+import hashlib
+import os
+import sys
+import tempfile
+import urllib.request
+import zipfile
 
 ROOT = os.path.dirname(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

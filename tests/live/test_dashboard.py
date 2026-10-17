@@ -11,10 +11,16 @@ workflow leave them out; ./build.sh check-live runs them after agol_check.py, or
   captions (#45); every left tab reachable, the USGS quadrangles tab's GeoPDF and GeoTIFF links each on one line (#47);
   the right tabs; no sideways scrolling.
 The figures come from the build's outputs (HSD_WORK, else target/work) when they are there, else from the publish of
-Oct. 17, 2026 (FALLBACK). Screenshots: target/browser-tests/ (conftest.py)."""
+Oct. 17, 2026 (FALLBACK). Screenshots: target/browser-tests/ (conftest.py).
+"""
 
-import csv, json, math, os, re, warnings
+import csv
+import json
+import math
+import os
 from pathlib import Path
+import re
+import warnings
 
 import pytest
 
@@ -22,7 +28,12 @@ pytest.importorskip(
     "playwright.sync_api",
     reason="playwright is in requirements-dev.txt: run ./build.sh env",
 )
-from src.publish.agol_check import ITEM_LINK, holds  # noqa: E402  (after the skip: the same rules as the live checks)
+from src.publish.agol_check import (  # after the skip: the same rules as the live checks
+    holds,
+)
+from src.publish.agol_check import (  # after the skip: the same rules as the live checks
+    ITEM_LINK,
+)
 
 pytestmark = pytest.mark.live
 ROOT = Path(__file__).resolve().parents[2]
@@ -162,7 +173,8 @@ MAP_STATE = "(m) => ({ready: !!m.ready, scale: m.scale || null, extent: m.extent
 
 def caption_problems(view, expected):
     """each indicator found by its top caption: its number, and every caption inside the indicator's box, not cut at the
-    side, and not printed over its neighbour (#45). (numbers, problems)"""
+    side, and not printed over its neighbour (#45). (numbers, problems)
+    """
     numbers, problems = {}, []
     for ind in view.page.evaluate(INDICATORS):
         slots = {
@@ -246,7 +258,8 @@ def titles(strip):
 
 def open_tab(view, strip, title):
     """select a tab (tap on a phone, click elsewhere; Playwright scrolls a title hidden behind the strip's arrows into
-    view) and return its content's widget once it is ready, visible and holds something"""
+    view) and return its content's widget once it is ready, visible and holds something
+    """
     t = strip.locator("calcite-tab-title", has_text=exactly(title))
     view.wait(lambda: t.tap() if view.phone else t.click(), timeout=20)
     view.wait(

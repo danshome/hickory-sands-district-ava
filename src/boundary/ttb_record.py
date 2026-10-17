@@ -18,8 +18,11 @@ renamed in the layers that carry them: name -> point_name / line_name, note -> p
 point_description / line_description.
 """
 
-import json, os
-from osgeo import ogr, osr
+import json
+import os
+
+from osgeo import ogr
+from osgeo import osr
 
 ogr.UseExceptions()
 ROOT = os.path.dirname(
@@ -33,7 +36,8 @@ CORRECTED = os.path.join(ROOT, "resources", "boundary", "proposed")
 
 def source(name):
     """The corrected copy of a filed Attachment 2 layer where one exists (made Oct. 14 by a script now in tobedeleted/),
-    otherwise the layer as filed."""
+    otherwise the layer as filed.
+    """
     c = os.path.join(CORRECTED, name)
     return c if os.path.exists(c) else os.path.join(GIS, name)
 
@@ -112,7 +116,8 @@ def ava_record(version):
 
 def feature_record(ava, kind, props, oid):
     """The record for one feature: the AVA record (OBJECTID = oid), then the layer's own fields, renamed where they
-    would collide with a TTB field. For the area layer the AVA record is the whole record."""
+    would collide with a TTB field. For the area layer the AVA record is the whole record.
+    """
     rec = dict(ava, OBJECTID=oid)
     if kind != "area":
         ren = RENAME[kind]

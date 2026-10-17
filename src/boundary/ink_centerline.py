@@ -7,9 +7,13 @@ the pins, kept exactly. The doubled road near Grit (steps 10, 11, 91, 92) keeps 
 Output: ink-centerline-steps.geojson (one traced line per step, with the check's figures), which build_agreed.py
 splices into the ring.  Usage (the project .venv, via ./build.sh): ink_centerline.py [STEP ...]   default: all 28 follow steps
 Review sheets: ink_centerline.py --review [STEP ...]  -> review-ink/review-NNN.png
-Problem close-ups for the critic pass: ink_centerline.py --problems [STEP ...]  -> review-ink/problems/"""
+Problem close-ups for the critic pass: ink_centerline.py --problems [STEP ...]  -> review-ink/problems/
+"""
 
-import json, os, subprocess, sys
+import json
+import os
+import subprocess
+import sys
 
 ROOT = os.path.abspath(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
@@ -25,11 +29,10 @@ PRIORS = os.path.join(
 INPUT = os.path.join(HERE, "ink-trace-input.geojson")
 OUT = os.path.join(HERE, "ink-centerline-steps.geojson")
 KIND = {
-    **{s: "contour" for s in (3, 6, 59, 65, 82)},
-    **{s: "creek" for s in (9, 30, 90)},
-    **{
-        s: "road"
-        for s in (
+    **dict.fromkeys((3, 6, 59, 65, 82), "contour"),
+    **dict.fromkeys((9, 30, 90), "creek"),
+    **dict.fromkeys(
+        (
             7,
             8,
             13,
@@ -49,8 +52,9 @@ KIND = {
             80,
             95,
             98,
-        )
-    },
+        ),
+        "road",
+    ),
 }
 # Not traced, current line kept, listed for Dan: the feature the text follows is not printed on the sheet.
 NOT_ON_SHEET = {

@@ -13,11 +13,19 @@ What it sends is built without signing in (the item properties at module level; 
 grit_plan(), webmap_plan(): pop-ups, field aliases, the layers' visualizations and the web map, from the layers given; plan()
 all of them at once), so the publish dry run (agol_dryrun.py) writes and checks it; main() signs in, publishes the layers,
 and sends each piece where it always has.
-Run by ./build.sh publish (or .venv/bin/python src/publish/agol_layer.py)"""
+Run by ./build.sh publish (or .venv/bin/python src/publish/agol_layer.py)
+"""
 
-import hashlib, json, math, os, time
-from arcgis.gis import GIS, ItemProperties, ItemTypeEnum
+import hashlib
+import json
+import math
+import os
+import time
+
 from arcgis.features import FeatureLayerCollection
+from arcgis.gis import GIS
+from arcgis.gis import ItemProperties
+from arcgis.gis import ItemTypeEnum
 from osgeo import gdal
 
 gdal.UseExceptions()
@@ -417,7 +425,8 @@ def alias_fields(lyr, wanted=(), ttb=False):
     """readable field aliases for the attribute table, the dashboard and exports (QA #31): for TTB's AVAs_Production fields
     (ttb=True) TTB's own alias, else the name in words (CFR_Section: CFR Section); for the others the pop-up's label, else a
     plain name. The service's own fields (object id, global id, shape area and length) keep theirs. Returns the fields whose
-    alias changes, each whole (as update_definition takes them); set_aliases() sends them."""
+    alias changes, each whole (as update_definition takes them); set_aliases() sends them.
+    """
     labels = {k.lower(): v for k, v in wanted}
     geom = lyr.properties.get("geometryProperties") or {}
     own = {
@@ -575,7 +584,8 @@ def hosted_props(gpkg, props):
 
 def hosted(gpkg, src_title, title, service, props, was=((), ())):
     """the GeoPackage item and the hosted layer published from it, in the folder, read-only; a re-run replaces the file
-    and overwrites the layer"""
+    and overwrites the layer
+    """
     find = lambda kind, *titles: next(
         (typed[(x, kind)] for x in titles if (x, kind) in typed), None
     )
@@ -1532,7 +1542,8 @@ def plan(
     fl, area, line, pts, dl, bigl, every_l, gl, geo, grl, grit_lines, grit_areas
 ):
     """all of the above at once, for the publish dry run (main() calls each where it sends it): {"aliases": {item title:
-    [(layer, fields)]}, "data": {item title: its data}, "webmap": the web map}"""
+    [(layer, fields)]}, "data": {item title: its data}, "webmap": the web map}
+    """
     B, D, G, R = (
         boundary_plan(area, line, pts),
         diff_plan(bigl, every_l),

@@ -1,9 +1,16 @@
 """Re-run THE CHECK (centerline.grade) on already-traced lines without re-tracing: raw ink sampled around each line,
 the grader's figures rewritten into the GeoJSON properties, plus the STRICT figure (within 2 m of the whole line,
 unmeasured metres counted as failed -- Dan's rule) and the unmeasured stretches as a review list.
-CLI: regrade.py --quads "GLOB" --traced traced.geojson [--ids 3 6 ...] [--kind-field kind]"""
+CLI: regrade.py --quads "GLOB" --traced traced.geojson [--ids 3 6 ...] [--kind-field kind]
+"""
 
-import argparse, datetime, json, math, os, sys
+import argparse
+import datetime
+import json
+import math
+import os
+import sys
+
 import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))

@@ -7,9 +7,15 @@ more than --tol m, the line stops short of the tip: flagged with how far. (Dan, 
 the end of that lip, and our line didn't even touch it".) Read-only.
 
 Usage (the project .venv, -E -s): tipcheck.py --line FINAL-line.geojson --kinds 6=contour,9=creek,... [--out tips.geojson]
-       (kinds default: the steps' "kind" from the traced file --traced)"""
+       (kinds default: the steps' "kind" from the traced file --traced)
+"""
 
-import argparse, json, math, sys, os
+import argparse
+import json
+import math
+import os
+import sys
+
 import numpy as np
 
 sys.path.insert(

@@ -1,8 +1,13 @@
 """Hard checks on the built boundary (exit 1 on any failure): every pin lies exactly on the end of its step and the
 start of the next (Dan, Oct. 16 2026: no line may miss our points); no step line crosses itself; the AVA polygon is
-valid; 104 steps and 105 points. Usage: check_build.py <gis dir>"""
+valid; 104 steps and 105 points. Usage: check_build.py <gis dir>
+"""
 
-import glob, json, math, sys
+import glob
+import json
+import math
+import sys
+
 from osgeo import ogr
 
 ogr.UseExceptions()

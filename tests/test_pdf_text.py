@@ -1,9 +1,16 @@
 """src/documents/pdf_text.py: paragraphs rebuilt from poppler's -bbox-layout positions, and the line-end hyphen rules.
 Small synthetic pages (a line is (xMin, xMax, y, "its words"); points, as poppler gives them), and one run of the real
-pdftotext on TTB's Notice No. 243 when poppler is installed."""
+pdftotext on TTB's Notice No. 243 when poppler is installed.
+"""
 
-import html, json, pathlib, re, shutil
+import html
+import json
+import pathlib
+import re
+import shutil
+
 import pytest
+
 from src.documents import pdf_text
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]

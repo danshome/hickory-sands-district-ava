@@ -38,14 +38,22 @@ wrong line), DIR/queue.geojson (one point per review item: events and unmeasured
 60 m along the line, plus the known blind spots; step, types, lon/lat, size, crop path, validated, status, priority
 0 blind spot / 1 identity / 2 shape / 3 unmeasured) and DIR/crops/*.png (one close-up per item). Read only on its inputs.
 Acceptance (per step): no open queue items (each fixed and re-run, or signed off by Dan on its crop), VERIFIED plus
-signed-off metres >= 95%, no owner/critic "off" spot VERIFIED, no selfx/stepx, pins within 2 m or listed."""
+signed-off metres >= 95%, no owner/critic "off" spot VERIFIED, no selfx/stepx, pins within 2 m or listed.
+"""
 
-import argparse, csv, json, math, os, sys, time
+import argparse
+import csv
+import json
+import math
+import os
+import sys
+import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import numpy as np
 from scipy import ndimage
 from scipy.spatial import cKDTree
+
 import centerline as cl
 import ink as inklib
 from quadsheets import open_sheets
@@ -230,7 +238,8 @@ def track_lanes(S, o, wide=None):
     A run of ink continues a lane when it lies within GATE of the lane's last offset (or of its extrapolation), or
     contains the last offset; ties go to the OLDER lane. A lane whose last offset lies inside the (ordinary-width) run
     taken by an older lane is the same line seen twice and is absorbed into it. A run wider than `wide` (1.6 x the
-    line's typical width) holds lines welded together: lanes inside it coast, marked merged (identity ambiguous)."""
+    line's typical width) holds lines welded together: lanes inside it coast, marked merged (identity ambiguous).
+    """
     if wide is None:
         wide = max(8.0, 1.6 * typical_width(S, o))
     lanes, active = [], []
@@ -339,7 +348,8 @@ def track_lanes(S, o, wide=None):
 
 def ridden_sequence(lanes, n):
     """per row: the id of the long lane under the line (-1 none), and an 'ambiguous' flag (merged run under the line,
-    or two long lanes within +-RIDE)"""
+    or two long lanes within +-RIDE)
+    """
     rid = np.full(n, -1)
     best = np.full(n, np.inf)
     amb = np.zeros(n, bool)
@@ -363,7 +373,8 @@ def lane_beside(L, lo, hi, S=None, o=None, elsewhere=None):
     """metres of lane L seen BESIDE the line in rows [lo, hi), and the largest |off| there. Beside means: |off| >= BESIDE,
     white paper (>= 1 m with no ink) between it and the line -- so a heavy line's halo or a split run is not a second
     line -- and not on the line itself somewhere else (the other arm of a V or a hairpin is the same contour: elsewhere
-    is a per-observation flag computed from the whole line)"""
+    is a per-observation flag computed from the whole line)
+    """
     sel = (
         (L["rows"] >= lo)
         & (L["rows"] < hi)
@@ -544,7 +555,8 @@ def headings(C, h=2):
 def wiggle_events(C, d_long=None):
     """loops through label digits: total |turn| - |net turn| over WIGGLE_WIN m > WIGGLE_DEG, AND inside that window the
     line spends >= 5 m off long-line ink (it is riding digit strokes or nothing). A real hairpin or S-bend of the
-    contour turns as much, but the line stays on the contour's own long ink the whole way."""
+    contour turns as much, but the line stays on the contour's own long ink the whole way.
+    """
     th = headings(C)
     d = np.diff(th)
     n = len(C)
@@ -582,7 +594,8 @@ def bridge_events(C, G):
     """where the line is off long-line ink for 8-400 m it must bridge the gap smoothly: compared with the cubic Hermite
     curve between the ink either side, with the line's own direction over the 10 m of ink before and after the gap
     (straight across a label on a straight contour, along the bend for a gap on a bend). Max distance > max(3 m, 5% of
-    the chord) is flagged."""
+    the chord) is flagged.
+    """
     d = G_d_at(G, C)
     off = d > RIDE + 0.5
     ev = []
@@ -1012,8 +1025,11 @@ def render_crop(
     sheets, lon, lat, traced, prior, stretches, lines, out, half_px=60, scale=3
 ):
     """left: the scan with the traced line (purple), the prior (thin red) and the item's stretches (yellow, ends circled);
-    right: the ink classes (black/grey magenta, red fill orange, brown green, blue/teal blue) with the traced line"""
-    from PIL import Image, ImageDraw
+    right: the ink classes (black/grey magenta, red fill orange, brown green, blue/teal blue) with the traced line
+    """
+    from PIL import Image
+    from PIL import ImageDraw
+
     from quadsheets import sheet_of
 
     sh = sheet_of(sheets, lon, lat)

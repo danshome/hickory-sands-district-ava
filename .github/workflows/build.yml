@@ -51,6 +51,7 @@ jobs:
           echo "HSD_CHROME=$(command -v google-chrome)" >> "$GITHUB_ENV"
           # headless Chrome prints only the build's own local HTML here; Ubuntu 24.04 blocks its sandbox, /dev/shm is small
           echo "HSD_CHROME_FLAGS=--no-sandbox --disable-dev-shm-usage" >> "$GITHUB_ENV"
+          echo "HSD_CHROME_TMPDIR=$RUNNER_TEMP" >> "$GITHUB_ENV"   # target/tmp's path is too long for Chrome's socket here
       - name: Keep Homebrew's tools for the next run (saved even if the build fails later)
         if: steps.brew-cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0

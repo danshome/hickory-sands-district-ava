@@ -1492,8 +1492,11 @@ def main():
                 ),
             )
             km = (worst["r0"] + worst["r1"]) // 2
+            # by severity, then by name: a set's order follows string hashing,
+            # which changes from run to run
             types = sorted(
-                {e["type"] for e in cc["ent"]}, key=lambda t: SEVERITY.get(t, 2)
+                {e["type"] for e in cc["ent"]},
+                key=lambda t: (SEVERITY.get(t, 2), t),
             )
             items.append(
                 dict(

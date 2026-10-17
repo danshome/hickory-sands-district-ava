@@ -10,9 +10,11 @@ WHAT IS IN THIS PACKAGE
    ...as-proposed-2026-10-15-steps.csv            The same steps, one row each, with source, change, quad, endpoint, length.
 2_TTB-notice-243-with-changes-highlighted/
    TTB-Notice-243-with-proposed-Hickory-Sands-District-changes-highlighted-2026-10-15-UNOFFICIAL.pdf
-      TTB's own Notice No. 243 (the docket PDF) with only the changed steps set into its pages 52586 and 52588, in the
-      notice's own typeface, and the changed wording highlighted in yellow. Every other page and line is TTB's. Because
-      the new steps are longer, the start of the next document in that issue of the Federal Register (Kaw Valley, which
+      TTB's own Notice No. 243 (the docket PDF) with only the changed steps set into its pages 52586, 52587 and 52588,
+      in the notice's own typeface, and the changed wording highlighted in yellow. Every other page and line is TTB's,
+      except that GPO's digital signature and its authentication seal on the first page are removed (the copy is
+      altered, so it must not pass for GPO's signed file) and the changed pages carry a red "UNOFFICIAL COPY" line in
+      the top margin. Because the new steps near Grit are longer, the start of the next document in that issue of the Federal Register (Kaw Valley, which
       began in the third column of page 52588) is moved, unchanged, to an added last page. Unofficial: prepared by the
       petitioner for TTB's convenience; it is not the official Federal Register text.
    TTB-Notice-243-as-published-docket-TTB-2026-0005-0001.pdf
@@ -20,7 +22,7 @@ WHAT IS IN THIS PACKAGE
    text-for-comparing-1_TTB-Notice-243-as-published.txt
    text-for-comparing-2_TTB-Notice-243-with-proposed-changes.txt
       The text of the two PDFs, one paragraph per line in reading order (poppler pdftotext), for a text compare (for
-      example Beyond Compare): the only differences are the changed steps, (10)-(11) and (90)-(104).
+      example Beyond Compare): the only differences are the changed steps, (10)-(11), (49), (85) and (90)-(104).
 3_changes-side-by-side/
    ...changes-side-by-side-2026-10-15.pdf / .docx   TTB's published text | the original petition (for reference) |
                                                  proposed text | why, for every step that changes. Marking
@@ -47,6 +49,13 @@ WHAT WE PROPOSE TO CHANGE IN NOTICE NO. 243 (details in 3_changes-side-by-side; 
    - two flagged changes to the petition's wording: step (90) names the unnamed, intermittent tributary that the
      petition's line follows from Honey Creek to the marked 1727, and steps (90)-(91) name the roads as Notice No. 243
      names them (below).
+
+   Away from the area near Grit, two flagged corrections to Notice No. 243's own wording, one word each; the line
+   does not change:
+   - step (85) says "the marked 1,802-foot summit", as the Turtle Creek map prints the summit (x1802), where Notice
+     No. 243 says "the marked 1,801-foot summit" (a substantive correction);
+   - step (49) says "the marked 1,586-foot elevation point", where Notice No. 243 says "the marked 1,586-elevation
+     point", the only elevation in its steps written without "-foot" (an editorial correction).
 
    TTB's steps (93)-(96) are unchanged, renumbered (101)-(104). Every other step is TTB's published text word for word.
 

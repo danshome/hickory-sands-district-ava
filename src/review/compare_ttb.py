@@ -7,9 +7,10 @@ each boundary to the other boundary), sets the noise threshold from it (median +
 and rings every stretch that is farther apart than that, from either side (ours away from TTB, or TTB away from ours).
 Each ring says which of our steps it touches, how far apart the lines are, the acres of the pieces of land between the
 two lines that it touches (whole pieces, as in the all-differences layer, so the figures add up), and whether the
-step's change register (agreed-steps.json "change") says the difference is intended or not; rings at least --big m apart
-(default 100: TTB's line takes another path, or slips) are flagged big. It also writes every piece of land inside one
-polygon and not the other (the sum of all the differences), each with its side, acres, length, widths, steps and cause.
+step's change register (agreed-steps.json "change"; a "text correction" does not move the line, so it counts as unchanged)
+says the difference is intended or not; rings at least --big m apart (default 100: TTB's line takes another path, or
+slips) are flagged big. It also writes every piece of land inside one polygon and not the other (the sum of all the
+differences), each with its side, acres, length, widths, steps and cause.
 
 Usage (the project .venv, -E -s):
   compare_ttb.py --ours-line LINE.geojson --ours-area AREA.geojson (--ttb TTB.geojson | --ttb-url URL --ttb-name NAME)
@@ -163,7 +164,8 @@ def main():
     if a.steps:
         for st_ in json.load(open(a.steps))["steps"]:
             reg[st_["step"]] = st_.get("change", ""); kind[st_["step"]] = "straight line" if "straight line" in st_.get("text", "") else "follows a feature"
-    changed = lambda st_: bool(reg.get(st_, "")) and not reg.get(st_, "").startswith("unchanged")
+    # a "text correction" (steps (49) and (85): one word of TTB's step corrected) leaves the line TTB's, so it counts as unchanged
+    changed = lambda st_: bool(reg.get(st_, "")) and not reg.get(st_, "").startswith(("unchanged", "text correction"))
     def status(steps):
         why = sorted({reg[st_][:70] for st_ in steps if changed(st_)})
         if not why: return "CHECK"

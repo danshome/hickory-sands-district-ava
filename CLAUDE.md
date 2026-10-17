@@ -15,7 +15,7 @@ mark or junction, a straight line between pins, or a trace of the centre of the 
 
 ## Build: `./build.sh` -> `dist/` (see BUILD.md)
 
-One command from the root, no manual steps: it installs missing tools with Homebrew (GDAL, poppler, python@3.14, Chrome; no desktop app such as Beyond Compare is used), audits
+One command from the root, no manual steps, on macOS or Linux: it installs missing tools with Homebrew (GDAL, poppler, python@3.14, Chrome on macOS; no desktop app such as Beyond Compare is used), audits
 every pinned Python package against OSV before installing anything (`src/setup/packages.py`), makes the project's `.venv`
 from the hash-pinned lock `requirements.txt` (compiled from `requirements.in` by `./build.sh upgrade`; never edit the
 `.txt` by hand; all Python runs in `.venv`, `-E -s -B`; nothing global), downloads/verifies the
@@ -36,7 +36,9 @@ zips the package into `dist/` with `SHA256SUMS.txt` and `build-report.txt`. `./b
 - `tobedeleted/` (gitignored) is where things no build uses go for Dan to review and delete. Nothing may depend on it.
 
 Change the boundary only through `resources/boundary/` and rebuild; never edit outputs. Hard checks stop the build:
-quads vs manifest, every pin exactly on its two steps, no step line crossing itself, valid polygon. Current build:
+quads vs manifest, every pin exactly on its two steps, no step line crossing itself, valid polygon; and, after the
+package, `src/checks/check_outputs.py` on what reaches TTB (PDF fonts, the notice copy, compare text, figures vs
+the stats, wording, quads/lengths/NAD83; zip path lengths only warn). Current build:
 104 steps, 105 pins, 193.83 sq mi (GRS 1980); the figures in the README and ArcGIS descriptions come from the build.
 
 Commits run the pre-commit hooks (`.pre-commit-config.yaml`, tools from `requirements-dev.txt` in `.venv`, via
@@ -67,11 +69,11 @@ files per agent so they never edit the same file at once. A subagent commits, pu
 merges, never pushes to `main`, never publishes to ArcGIS Online and never comments on or closes issues. Only the main
 session reviews each PR's diff, checks the result, and merges it to `main` (or sends it back).
 
-GitHub Actions (`.github/workflows/`, see BUILD.md): `lint` on Linux for every PR; `build` (the whole `./build.sh`) on
-GitHub's Mac runners for PRs that change the build's inputs, a Mac so the tools and the PDF fonts match Dan's; `release`
-on a pushed `v...` tag attaches `dist/` to a GitHub release. Mac minutes count 10x while the repo is private: don't
-re-run the build without a reason. Tag a release only on Dan's say-so. ArcGIS publishing stays local (`./build.sh
-publish`).
+GitHub Actions (`.github/workflows/`, see BUILD.md), all on GitHub's Linux runners (Dan, 2026-10-17: never Mac runners,
+they cost 10x): `lint` for every PR; `build` (the whole `./build.sh`, Homebrew on Linux) for PRs that change the build's
+inputs; `release` on a pushed `v...` tag attaches `dist/` to a GitHub release. Tag a release only on Dan's say-so.
+ArcGIS publishing stays local (`./build.sh publish`). Fonts: the PDFs ask for Times New Roman / Arial / Courier New
+(Liberation Serif / Sans / Mono on Linux, same widths); never a Mac-only font (Helvetica Neue, Menlo).
 
 ## Wording and the public site
 

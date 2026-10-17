@@ -61,6 +61,12 @@ Every change from here on:
 
 Never force-push `main` again without Dan saying so.
 
+GitHub Actions (`.github/workflows/`, see BUILD.md): `lint` on Linux for every PR; `build` (the whole `./build.sh`) on
+GitHub's Mac runners for PRs that change the build's inputs, a Mac so the tools and the PDF fonts match Dan's; `release`
+on a pushed `v...` tag attaches `dist/` to a GitHub release. Mac minutes count 10x while the repo is private: don't
+re-run the build without a reason. Tag a release only on Dan's say-so. ArcGIS publishing stays local (`./build.sh
+publish`).
+
 ## Wording and the public site
 
 - Say "proposed", never "agreed". Use the official names, never "ours" against "TTB's": **Notice No. 243** (TTB's

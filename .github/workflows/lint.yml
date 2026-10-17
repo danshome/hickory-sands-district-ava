@@ -1,0 +1,33 @@
+# Every pre-commit hook on every file (the same hooks as `./build.sh lint` and every commit; .pre-commit-config.yaml).
+# Runs on GitHub's Linux machines: the hooks need only the lint tools, not GDAL or the quads.
+name: lint
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+concurrency:
+  group: lint-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  hooks:
+    name: pre-commit hooks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: "3.14"
+      - name: The lint tools, audited first, then installed from the hash-pinned lock
+        run: |
+          python -I -B src/setup/packages.py audit requirements.txt requirements-dev.txt
+          python -m venv .venv
+          .venv/bin/python -m pip install -q --disable-pip-version-check --require-hashes -r requirements-dev.txt
+      - name: Every hook on every file
+        env:
+          PRE_COMMIT_HOME: ${{ runner.temp }}/pre-commit
+        run: .venv/bin/pre-commit run --all-files --show-diff-on-failure

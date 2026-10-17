@@ -1,0 +1,62 @@
+# A release: push a tag such as v2026.10.20 (git tag v2026.10.20 && git push origin v2026.10.20) and this builds that
+# commit on one of GitHub's Mac machines with `./build.sh` and attaches dist/ to a GitHub release of the same name: the
+# package zip, its README, SHA256SUMS.txt and build-report.txt. Run it by hand (Actions > release > Run workflow) to
+# rebuild a tag; the release's files are then replaced. Publishing to ArcGIS Online stays `./build.sh publish`, by Dan.
+name: release
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "The tag to build and release (it must already exist), for example v2026.10.20"
+        required: true
+permissions:
+  contents: write
+concurrency:
+  group: release-${{ inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+jobs:
+  release:
+    name: build and release ${{ inputs.tag || github.ref_name }}
+    runs-on: macos-15
+    timeout-minutes: 120
+    env:
+      HOMEBREW_NO_INSTALL_CLEANUP: "1"
+      TAG: ${{ inputs.tag || github.ref_name }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          ref: refs/tags/${{ inputs.tag || github.ref_name }}
+          persist-credentials: false
+      - name: The 13 USGS quads (kept between runs; the build checks each against its MD5 and downloads any missing)
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        with:
+          path: |
+            resources/quads/geotiff
+            resources/quads/geopdf
+          key: usgs-quads-${{ hashFiles('resources/quads/quads-manifest.csv') }}
+      - name: ./build.sh
+        run: ./build.sh
+      - name: GitHub release with the package
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          notes="$RUNNER_TEMP/notes.md"
+          {
+            echo "The Hickory Sands District AVA boundary as proposed to TTB (Notice No. 243, Docket No. TTB-2026-0005), built from tag \`$TAG\`."
+            echo
+            echo "**Proposed, not adopted.** The boundary of an AVA is the written description TTB adopts in 27 CFR part 9."
+            echo
+            echo "Dashboard: https://robertclayvines.maps.arcgis.com/apps/dashboards/c5de8bb3fc1348d99f8afd99c11220b2"
+            echo
+            echo "Unzip to a short folder (for example C:\\HSD) on Windows: some paths in the package are long."
+            echo
+            echo '```'; cat dist/build-report.txt; echo '```'
+          } > "$notes"
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$TAG" dist/* --clobber --repo "$GITHUB_REPOSITORY"
+            gh release edit "$TAG" --notes-file "$notes" --repo "$GITHUB_REPOSITORY"
+          else
+            gh release create "$TAG" dist/* --title "Hickory Sands District AVA, boundary as proposed: $TAG" --notes-file "$notes" --repo "$GITHUB_REPOSITORY"
+          fi

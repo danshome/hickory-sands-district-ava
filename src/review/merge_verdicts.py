@@ -1,6 +1,11 @@
-"""Merge triage verdicts (verdicts-*.json) into one QGIS layer: the FIX + UNSURE items, numbered in boundary order.
-Usage: merge_verdicts.py TRIAGE_DIR   -> TRIAGE_DIR/../FIX-LIST-EPSG4269.geojson (points; step, item, verdict, problem,
-offset_m, note, batch, status, n). The fix list is the input of the usgs-quad-fix skill.
+"""Merge triage verdicts (verdicts-*.json) into one QGIS layer.
+
+The FIX + UNSURE items, numbered in boundary order.
+
+Usage: merge_verdicts.py TRIAGE_DIR
+    -> TRIAGE_DIR/../FIX-LIST-EPSG4269.geojson (points; step, item, verdict,
+    problem, offset_m, note, batch, status, n).
+The fix list is the input of the usgs-quad-fix skill.
 """
 
 import glob
@@ -18,8 +23,9 @@ counts = {}
 for fn in sorted(glob.glob(T + "/verdicts-*.json")):
     b = os.path.basename(fn)[9:-5]
     try:
-        V = json.load(open(fn))
-    except Exception as e:
+        with open(fn) as fh:
+            V = json.load(fh)
+    except (OSError, ValueError) as e:  # unreadable, or not JSON: skip it
         print("skip", fn, e)
         continue
     for v in V:
@@ -48,17 +54,18 @@ for fn in sorted(glob.glob(T + "/verdicts-*.json")):
 feats.sort(key=lambda f: (f["properties"]["step"], f["properties"]["item"]))
 for i, f in enumerate(feats, 1):
     f["properties"]["n"] = i
-json.dump(
-    {
-        "type": "FeatureCollection",
-        "crs": {
-            "type": "name",
-            "properties": {"name": "urn:ogc:def:crs:EPSG::4269"},
+with open(os.path.dirname(T) + "/FIX-LIST-EPSG4269.geojson", "w") as fh:
+    json.dump(
+        {
+            "type": "FeatureCollection",
+            "crs": {
+                "type": "name",
+                "properties": {"name": "urn:ogc:def:crs:EPSG::4269"},
+            },
+            "features": feats,
         },
-        "features": feats,
-    },
-    open(os.path.dirname(T) + "/FIX-LIST-EPSG4269.geojson", "w"),
-    indent=1,
-)
+        fh,
+        indent=1,
+    )
 print(counts)
 print(len(feats), "fix/unsure items")

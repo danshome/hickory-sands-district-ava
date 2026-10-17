@@ -1,20 +1,28 @@
-"""grit_change.py: what the proposed change near Grit swaps, line by line and acre by acre, with the granite in each piece.
+"""grit_change.py: the lines and acres the proposed change near Grit swaps.
 
-Three versions of the AVA, all from our own lines (none from TTB's polygon):
-  TTB's published text: our final lines, with TTB's steps (10)-(11) and (90)-(92) as drawn from TTB's text on Oct. 14
-      (resources/boundary/proposed/step-lines-2026-10-14), and TTB's (93)-(96) as our (101)-(104);
-  the petition: our final lines, with the petition's straight line from the marked 1,737 to the marked 1,762 in place
-      of the new steps (93)-(96);
+Line by line and acre by acre, with the granite in each piece. Three versions
+of the AVA, all from our own lines (none from TTB's polygon):
+  TTB's published text: our final lines, with TTB's steps (10)-(11) and
+      (90)-(92) as drawn from TTB's text on Oct. 14
+      (resources/boundary/proposed/step-lines-2026-10-14), and TTB's (93)-(96)
+      as our (101)-(104);
+  the petition: our final lines, with the petition's straight line from the
+      marked 1,737 to the marked 1,762 in place of the new steps (93)-(96);
   ours: the final boundary.
-Both of the petition's routes start and end where TTB's do (Honey Creek at point 89, the end of Lange Road), so the
-differences between the versions are exactly the pieces the change moves. Each piece gets its acres, the acres of
-granite (Town Mountain Granite and younger granitic intrusions) and of the Hickory Sandstone Member formation in it,
-from the USGS SGMC units shifted to the outcrops (resources/geology), and the steps along it.
+Both of the petition's routes start and end where TTB's do (Honey Creek at
+point 89, the end of Lange Road), so the differences between the versions are
+exactly the pieces the change moves. Each piece gets its acres, the acres of
+granite (Town Mountain Granite and younger granitic intrusions) and of the
+Hickory Sandstone Member formation in it, from the USGS SGMC units shifted to
+the outcrops (resources/geology), and the steps along it.
 
-Usage (the project .venv, -E -s): grit_change.py --line LINE.geojson --oct14 STEP-LINES.geojson --geology GPKG --out-dir DIR
-Outputs: grit-change-lines-EPSG4269.geojson, grit-change-areas-EPSG4269.geojson, grit-change-stats.json (NAD83, EPSG:4269;
-areas in NAD83 / Conus Albers, EPSG:5070, an equal-area projection; line lengths geodesic on GRS 1980, as in the
-boundary layer).
+Usage (the project .venv, -E -s):
+  grit_change.py --line LINE.geojson --oct14 STEP-LINES.geojson --geology GPKG
+                 --out-dir DIR
+Outputs: grit-change-lines-EPSG4269.geojson,
+grit-change-areas-EPSG4269.geojson, grit-change-stats.json (NAD83, EPSG:4269;
+areas in NAD83 / Conus Albers, EPSG:5070, an equal-area projection; line
+lengths geodesic on GRS 1980, as in the boundary layer).
 """
 
 import argparse
@@ -31,6 +39,7 @@ PETITION_STEPS = (10, 11, 90, 91, 92, 97, 98, 99, 100)
 
 
 def tr(src, dst):
+    """Returns the transformation between two EPSG codes, in lon/lat order."""
     a = osr.SpatialReference()
     a.ImportFromEPSG(src)
     b = osr.SpatialReference()
@@ -44,12 +53,15 @@ TO_M, TO_LL = tr(4269, 5070), tr(5070, 4269)
 
 
 def flat(c):
+    """Returns the points of a line's or a multiline's coordinates, in order."""
     return [p for part in c for p in part] if isinstance(c[0][0], list) else c
 
 
-def glen(
-    coords,
-):  # geodesic length on GRS 1980 (NAD83), metres, as the boundary layer's step lengths (issue #35)
+def glen(coords):
+    """Returns the geodesic length of a lon/lat line on GRS 1980 (NAD83), in m.
+
+    As the boundary layer's step lengths are measured (issue #35).
+    """
     g = ogr.Geometry(ogr.wkbLineString)
     for x, y in coords:
         g.AddPoint_2D(x, y)
@@ -61,6 +73,7 @@ def glen(
 
 
 def line(coords):
+    """Returns a lon/lat line as a line in EPSG:5070 metres."""
     g = ogr.Geometry(ogr.wkbLineString)
     for x, y in coords:
         g.AddPoint_2D(x, y)
@@ -68,10 +81,15 @@ def line(coords):
     return g
 
 
-def polygon(steps):  # the ring through these step lines, in order
+def polygon(steps):
+    """Returns the polygon (EPSG:5070) whose ring runs through these steps.
+
+    Args:
+        steps: the step lines' lon/lat coordinates, in order round the ring.
+    """
     pts = [p for c in steps for p in flat(c)]
     r = ogr.Geometry(ogr.wkbLinearRing)
-    for x, y in pts + [pts[0]]:
+    for x, y in [*pts, pts[0]]:
         r.AddPoint_2D(x, y)
     g = ogr.Geometry(ogr.wkbPolygon)
     g.AddGeometry(r)
@@ -79,9 +97,13 @@ def polygon(steps):  # the ring through these step lines, in order
     return g if g.IsValid() else g.MakeValid()
 
 
-def pieces(
-    g, min_acres
-):  # the polygons of a difference, largest first, slivers from pin rounding dropped
+def pieces(g, min_acres):
+    """Returns the polygons of a difference, largest first.
+
+    Args:
+        g: the difference between two versions (EPSG:5070).
+        min_acres: smaller polygons, slivers from pin rounding, are dropped.
+    """
     t = ogr.GT_Flatten(g.GetGeometryType())
     ps = (
         [g]
@@ -98,19 +120,31 @@ def pieces(
 
 
 def geojson_ll(g):
+    """Returns an EPSG:5070 geometry as NAD83 lon/lat GeoJSON, 8 decimals."""
     g = g.Clone()
     g.Transform(TO_LL)
-    r = lambda c: (
-        [round(c[0], 8), round(c[1], 8)]
-        if isinstance(c[0], float)
-        else [r(x) for x in c]
-    )
+
+    def round_coords(c):
+        if isinstance(c[0], float):
+            return [round(c[0], 8), round(c[1], 8)]
+        return [round_coords(x) for x in c]
+
     j = json.loads(g.ExportToJson())
-    j["coordinates"] = r(j["coordinates"])
+    j["coordinates"] = round_coords(j["coordinates"])
     return j
 
 
-def tally(stats, what, exact):  # a piece's exact acres into its kind's totals
+def tally(stats, what, exact):
+    """Adds a piece's exact acres to its kind's totals.
+
+    The totals are summed unrounded; rounded() rounds them once (issue #33: no
+    double rounding).
+
+    Args:
+        stats: the totals by kind, updated in place.
+        what: the piece's kind.
+        exact: the piece's acres, granite acres and sandstone acres.
+    """
     s = stats.setdefault(
         what,
         {
@@ -122,12 +156,11 @@ def tally(stats, what, exact):  # a piece's exact acres into its kind's totals
     )
     s["pieces"] += 1
     for k, v in exact.items():
-        s[k] += (
-            v  # summed unrounded, rounded once by rounded() (issue #33: no double rounding)
-        )
+        s[k] += v
 
 
-def rounded(stats):  # the totals, rounded once, from the unrounded sums
+def rounded(stats):
+    """Rounds the totals once, from the unrounded sums, and returns them."""
     for s in stats.values():
         for k in ("acres", "granite_acres", "sandstone_acres"):
             s[k] = round(s[k], 2)
@@ -135,6 +168,7 @@ def rounded(stats):  # the totals, rounded once, from the unrounded sums
 
 
 def main():
+    """Writes the change's lines, pieces and totals (see the module's text)."""
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--line", required=True)
     ap.add_argument("--oct14", required=True)
@@ -142,20 +176,21 @@ def main():
     ap.add_argument("--out-dir", default=".")
     ap.add_argument("--min-acres", type=float, default=0.5)
     a = ap.parse_args()
-    feats = {
-        int(f["properties"]["step"]): f
-        for f in json.load(open(a.line))["features"]
-    }
+    with open(a.line) as fh:
+        feats = {
+            int(f["properties"]["step"]): f for f in json.load(fh)["features"]
+        }
     fin = {s: f["geometry"]["coordinates"] for s, f in feats.items()}
-    o14 = {
-        int(f["properties"]["step"]): f
-        for f in json.load(open(a.oct14))["features"]
-    }
-    last = lambda s: flat(fin[s])[-1]
-    straight = [
-        last(92),
-        last(96),
-    ]  # the petition's straight line from the marked 1,737 to the marked 1,762
+    with open(a.oct14) as fh:
+        o14 = {
+            int(f["properties"]["step"]): f for f in json.load(fh)["features"]
+        }
+
+    def last(s):
+        return flat(fin[s])[-1]
+
+    # the petition's straight line from the marked 1,737 to the marked 1,762
+    straight = [last(92), last(96)]
     ours = polygon([fin[s] for s in sorted(fin)])
     petition = polygon(
         [fin[s] for s in range(1, 93)]
@@ -197,9 +232,9 @@ def main():
         s: line(flat(o14[s]["geometry"]["coordinates"])) for s in TTB_STEPS
     }
 
-    def along(
-        p, lines
-    ):  # the steps that run along a piece (at least 100 m of the step within 2 m of it)
+    def along(p, lines):
+        # the steps that run along a piece (at least 100 m of the step within
+        # 2 m of it)
         edge = p.Buffer(2.0)
         return [
             s
@@ -231,9 +266,10 @@ def main():
                 "notice_steps": ",".join(map(str, ttb_along)),
             }
             if what == "petition, not Notice No. 243" and ttb_along == [10, 11]:
-                props["what"], props["why"] = (
-                    "lane wording",
-                    "the petition's westbound lane of the highway, 30 m from the center line Notice No. 243 follows",
+                props["what"] = "lane wording"
+                props["why"] = (
+                    "the petition's westbound lane of the highway, 30 m from "
+                    "the center line Notice No. 243 follows"
                 )
             areas.append(
                 {
@@ -260,14 +296,16 @@ def main():
     )
     add(
         "granite lobe",
-        "also left out now: new steps (93)-(96) go around it instead of the petition's straight line",
+        "also left out now: new steps (93)-(96) go around it instead of the "
+        "petition's straight line",
         petition.Difference(ours),
         "left out",
         ours_lines,
     )
     add(
         "put back",
-        "put back: between the marked 1,737 and the windmill, inside the petition's straight line",
+        "put back: between the marked 1,737 and the windmill, inside the "
+        "petition's straight line",
         ours.Difference(petition),
         "put in",
         ours_lines,
@@ -299,7 +337,8 @@ def main():
             f"Notice ({s})",
             str(s),
             o14[s]["geometry"]["coordinates"],
-            "Notice No. 243's text, as drawn by the petitioner on the USGS maps",
+            "Notice No. 243's text, as drawn by the petitioner on the USGS "
+            "maps",
         )
     for s in PETITION_STEPS:
         add_line(
@@ -327,31 +366,35 @@ def main():
 
     crs = {"type": "name", "properties": {"name": "urn:ogc:def:crs:EPSG::4269"}}
     os.makedirs(a.out_dir, exist_ok=True)
-    json.dump(
-        {"type": "FeatureCollection", "crs": crs, "features": lines},
-        open(
-            os.path.join(a.out_dir, "grit-change-lines-EPSG4269.geojson"), "w"
-        ),
-    )
-    json.dump(
-        {"type": "FeatureCollection", "crs": crs, "features": areas},
-        open(
-            os.path.join(a.out_dir, "grit-change-areas-EPSG4269.geojson"), "w"
-        ),
-    )
-    sqmi = lambda g: round(g.GetArea() / (SQM_PER_ACRE * 640), 2)
-    json.dump(
-        {
-            "areas": stats,
-            "sqmi": {
-                "notice_243": sqmi(ttb),
-                "petition": sqmi(petition),
-                "revision": sqmi(ours),
+    with open(
+        os.path.join(a.out_dir, "grit-change-lines-EPSG4269.geojson"), "w"
+    ) as fh:
+        json.dump(
+            {"type": "FeatureCollection", "crs": crs, "features": lines}, fh
+        )
+    with open(
+        os.path.join(a.out_dir, "grit-change-areas-EPSG4269.geojson"), "w"
+    ) as fh:
+        json.dump(
+            {"type": "FeatureCollection", "crs": crs, "features": areas}, fh
+        )
+
+    def sqmi(g):
+        return round(g.GetArea() / (SQM_PER_ACRE * 640), 2)
+
+    with open(os.path.join(a.out_dir, "grit-change-stats.json"), "w") as fh:
+        json.dump(
+            {
+                "areas": stats,
+                "sqmi": {
+                    "notice_243": sqmi(ttb),
+                    "petition": sqmi(petition),
+                    "revision": sqmi(ours),
+                },
             },
-        },
-        open(os.path.join(a.out_dir, "grit-change-stats.json"), "w"),
-        indent=1,
-    )
+            fh,
+            indent=1,
+        )
     print(
         "the change near Grit:",
         ", ".join(

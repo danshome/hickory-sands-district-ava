@@ -8,50 +8,151 @@ Output: ink-centerline-steps.geojson (one traced line per step, with the check's
 splices into the ring.  Usage (the project .venv, via ./build.sh): ink_centerline.py [STEP ...]   default: all 28 follow steps
 Review sheets: ink_centerline.py --review [STEP ...]  -> review-ink/review-NNN.png
 Problem close-ups for the critic pass: ink_centerline.py --problems [STEP ...]  -> review-ink/problems/"""
+
 import json, os, subprocess, sys
 
-ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))   # the repository root
-HERE = os.environ.get("HSD_WORK") or os.path.join(ROOT, "target", "work")   # build work dir (build.sh stages resources/ here)
+ROOT = os.path.abspath(
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
+)  # the repository root
+HERE = os.environ.get("HSD_WORK") or os.path.join(
+    ROOT, "target", "work"
+)  # build work dir (build.sh stages resources/ here)
 SKILL = os.path.join(ROOT, "src", "tracing")
 QUADS = ROOT + "/resources/quads/geotiff/*.tif.zip"
-PRIORS = os.path.join(ROOT, "resources", "boundary", "tracing", "trace-priors-EPSG4269.geojson")
+PRIORS = os.path.join(
+    ROOT, "resources", "boundary", "tracing", "trace-priors-EPSG4269.geojson"
+)
 INPUT = os.path.join(HERE, "ink-trace-input.geojson")
 OUT = os.path.join(HERE, "ink-centerline-steps.geojson")
-KIND = {**{s: "contour" for s in (3, 6, 59, 65, 82)}, **{s: "creek" for s in (9, 30, 90)},
-        **{s: "road" for s in (7, 8, 13, 21, 27, 28, 31, 43, 53, 60, 67, 68, 71, 72, 73, 79, 80, 95, 98)}}
+KIND = {
+    **{s: "contour" for s in (3, 6, 59, 65, 82)},
+    **{s: "creek" for s in (9, 30, 90)},
+    **{
+        s: "road"
+        for s in (
+            7,
+            8,
+            13,
+            21,
+            27,
+            28,
+            31,
+            43,
+            53,
+            60,
+            67,
+            68,
+            71,
+            72,
+            73,
+            79,
+            80,
+            95,
+            98,
+        )
+    },
+}
 # Not traced, current line kept, listed for Dan: the feature the text follows is not printed on the sheet.
-NOT_ON_SHEET = {81: "Copperhead Road is not shown on the Mason sheet (1960s): no road symbol south of the junction at the 1,526"}
+NOT_ON_SHEET = {
+    81: "Copperhead Road is not shown on the Mason sheet (1960s): no road symbol south of the junction at the 1,526"
+}
 
-OVERRIDES = os.path.join(ROOT, "resources", "boundary", "tracing", "route-overrides-EPSG4269.geojson")
-MOVES = os.path.join(ROOT, "resources", "boundary", "tracing", "pin-moves.json")   # fix_pins.py: pins moved onto the ink centre (end of step n == start of n+1)
+OVERRIDES = os.path.join(
+    ROOT, "resources", "boundary", "tracing", "route-overrides-EPSG4269.geojson"
+)
+MOVES = os.path.join(
+    ROOT, "resources", "boundary", "tracing", "pin-moves.json"
+)  # fix_pins.py: pins moved onto the ink centre (end of step n == start of n+1)
+
 
 def write_input():
     feats = []
     PM = json.load(open(MOVES)) if os.path.exists(MOVES) else {}
-    OV = {}      # route hints that replace a step's prior (resources/boundary/tracing/route-overrides-EPSG4269.geojson; e.g. steps 72-73 on the light-duty road)
-    if os.path.exists(OVERRIDES): OV = {f["properties"]["step"]: f["geometry"]["coordinates"] for f in json.load(open(OVERRIDES))["features"]}
+    OV = {}  # route hints that replace a step's prior (resources/boundary/tracing/route-overrides-EPSG4269.geojson; e.g. steps 72-73 on the light-duty road)
+    if os.path.exists(OVERRIDES):
+        OV = {
+            f["properties"]["step"]: f["geometry"]["coordinates"]
+            for f in json.load(open(OVERRIDES))["features"]
+        }
     for f in json.load(open(PRIORS))["features"]:
         s = f["properties"]["step"]
         if s in KIND:
             c = [list(p) for p in (OV.get(s) or f["geometry"]["coordinates"])]
-            if str(s) in PM: c[-1] = list(PM[str(s)]["new"])
-            if str(s - 1) in PM: c[0] = list(PM[str(s - 1)]["new"])
+            if str(s) in PM:
+                c[-1] = list(PM[str(s)]["new"])
+            if str(s - 1) in PM:
+                c[0] = list(PM[str(s - 1)]["new"])
             f = {**f, "geometry": {"type": "LineString", "coordinates": c}}
-            feats.append({"type": "Feature", "geometry": f["geometry"],
-                          "properties": {"id": str(s), "kind": KIND[s], "narrative": f["properties"]["narrative"]}})
-    json.dump({"type": "FeatureCollection", "features": feats}, open(INPUT, "w"))
+            feats.append(
+                {
+                    "type": "Feature",
+                    "geometry": f["geometry"],
+                    "properties": {
+                        "id": str(s),
+                        "kind": KIND[s],
+                        "narrative": f["properties"]["narrative"],
+                    },
+                }
+            )
+    json.dump(
+        {"type": "FeatureCollection", "features": feats}, open(INPUT, "w")
+    )
+
 
 if __name__ == "__main__":
-    args = sys.argv[1:]; review = "--review" in args; problems = "--problems" in args
+    args = sys.argv[1:]
+    review = "--review" in args
+    problems = "--problems" in args
     ids = [a for a in args if a not in ("--review", "--problems")]
     write_input()
     if problems:
-        cmd = [sys.executable, "-E", "-s", "-B", os.path.join(SKILL, "problems.py"), "--quads", QUADS, "--traced", OUT,
-               "--prior", INPUT, "--out-dir", os.path.join(HERE, "review-ink", "problems")]
+        cmd = [
+            sys.executable,
+            "-E",
+            "-s",
+            "-B",
+            os.path.join(SKILL, "problems.py"),
+            "--quads",
+            QUADS,
+            "--traced",
+            OUT,
+            "--prior",
+            INPUT,
+            "--out-dir",
+            os.path.join(HERE, "review-ink", "problems"),
+        ]
     elif review:
-        cmd = [sys.executable, "-E", "-s", "-B", os.path.join(SKILL, "review.py"), "--quads", QUADS, "--traced", OUT,
-               "--prior", INPUT, "--title-field", "narrative", "--out-dir", os.path.join(HERE, "review-ink")]
+        cmd = [
+            sys.executable,
+            "-E",
+            "-s",
+            "-B",
+            os.path.join(SKILL, "review.py"),
+            "--quads",
+            QUADS,
+            "--traced",
+            OUT,
+            "--prior",
+            INPUT,
+            "--title-field",
+            "narrative",
+            "--out-dir",
+            os.path.join(HERE, "review-ink"),
+        ]
     else:
-        cmd = [sys.executable, "-E", "-s", "-B", os.path.join(SKILL, "centerline.py"), "--quads", QUADS, "--lines", INPUT, "--out", OUT]
-    if ids: cmd += ["--ids"] + ids
+        cmd = [
+            sys.executable,
+            "-E",
+            "-s",
+            "-B",
+            os.path.join(SKILL, "centerline.py"),
+            "--quads",
+            QUADS,
+            "--lines",
+            INPUT,
+            "--out",
+            OUT,
+        ]
+    if ids:
+        cmd += ["--ids"] + ids
     sys.exit(subprocess.call(cmd))

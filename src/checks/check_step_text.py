@@ -9,49 +9,104 @@
    em dashes (the printed notice's dashes are GPO's typesetting; the Federal Register's text has hyphens), no curly
    apostrophes, no non-breaking, thin or zero-width spaces, soft hyphens or tabs.
 Exit 1 naming each step, character and its fix. Usage: check_step_text.py [agreed-steps.json]"""
+
 import ast, html, json, os, re, sys, unicodedata
-ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
-XML = os.path.join(ROOT, "resources", "ttb", "federal-register-2026-16670-full-text.xml")
-TTB = os.path.join(ROOT, "resources", "boundary", "description", "ttb-notice-243-steps.json")
-PET = os.path.join(ROOT, "resources", "boundary", "description", "petition-steps.json")
+
+ROOT = os.path.abspath(
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
+)
+XML = os.path.join(
+    ROOT, "resources", "ttb", "federal-register-2026-16670-full-text.xml"
+)
+TTB = os.path.join(
+    ROOT, "resources", "boundary", "description", "ttb-notice-243-steps.json"
+)
+PET = os.path.join(
+    ROOT, "resources", "boundary", "description", "petition-steps.json"
+)
 AGREED = os.path.join(ROOT, "src", "boundary", "build_agreed.py")
 OK = {chr(c) for c in range(32, 127)} | {"\u201c", "\u201d"}
-FIX = {"\u2013": "-", "\u2014": "-", "\u2010": "-", "\u2011": "-", "\u2212": "-", "\u2018": "'", "\u2019": "'",
-       "\u00a0": "a space", "\u2009": "a space", "\u202f": "a space", "\t": "a space", "\u00ad": "nothing",
-       "\u200b": "nothing", "\u200c": "nothing", "\u200d": "nothing", "\ufeff": "nothing"}
+FIX = {
+    "\u2013": "-",
+    "\u2014": "-",
+    "\u2010": "-",
+    "\u2011": "-",
+    "\u2212": "-",
+    "\u2018": "'",
+    "\u2019": "'",
+    "\u00a0": "a space",
+    "\u2009": "a space",
+    "\u202f": "a space",
+    "\t": "a space",
+    "\u00ad": "nothing",
+    "\u200b": "nothing",
+    "\u200c": "nothing",
+    "\u200d": "nothing",
+    "\ufeff": "nothing",
+}
 bad = []
+
 
 def chars(where, text):
     for i, c in enumerate(text):
         if c not in OK:
             name = unicodedata.name(c, f"U+{ord(c):04X}")
-            bad.append(f"{where}: {name} (U+{ord(c):04X}) at '{text[max(0, i - 20):i + 20]}'; use {FIX.get(c, 'a character the Federal Register uses')}")
+            bad.append(
+                f"{where}: {name} (U+{ord(c):04X}) at '{text[max(0, i - 20) : i + 20]}'; use {FIX.get(c, 'a character the Federal Register uses')}"
+            )
+
 
 # 1. TTB's steps = the Federal Register's text (the Hickory Sands District's "(c) Boundary." and the numbered steps after it)
 xml = open(XML, encoding="utf-8").read()
-paras = [re.sub(r"\s+", " ", html.unescape(re.sub(r"<[^>]+>", "", p))).strip() for p in re.findall(r"<P>(.*?)</P>", xml, re.S)]
-start = max(i for i, p in enumerate(paras) if p.startswith("(c) Boundary.") and "Hickory Sands" in p)
+paras = [
+    re.sub(r"\s+", " ", html.unescape(re.sub(r"<[^>]+>", "", p))).strip()
+    for p in re.findall(r"<P>(.*?)</P>", xml, re.S)
+]
+start = max(
+    i
+    for i, p in enumerate(paras)
+    if p.startswith("(c) Boundary.") and "Hickory Sands" in p
+)
 fr = {}
-for p in paras[start + 1:]:
-    if not (m := re.match(r"\((\d+)\) ", p)): break
+for p in paras[start + 1 :]:
+    if not (m := re.match(r"\((\d+)\) ", p)):
+        break
     fr[m.group(1)] = p
 ttb = json.load(open(TTB, encoding="utf-8"))
-if sorted(ttb, key=int) != sorted(fr, key=int): bad.append(f"TTB's steps: {len(ttb)} in {TTB}, {len(fr)} in the Federal Register")
+if sorted(ttb, key=int) != sorted(fr, key=int):
+    bad.append(
+        f"TTB's steps: {len(ttb)} in {TTB}, {len(fr)} in the Federal Register"
+    )
 for k in ttb:
     if k in fr and re.sub(r"\s+", " ", ttb[k]).strip() != fr[k]:
         a, b = re.sub(r"\s+", " ", ttb[k]).strip(), fr[k]
-        i = next((j for j, (x, y) in enumerate(zip(a, b)) if x != y), min(len(a), len(b)))
-        bad.append(f"TTB's step ({k}) differs from the Federal Register at '{a[max(0, i - 20):i + 20]}' / '{b[max(0, i - 20):i + 20]}'")
+        i = next(
+            (j for j, (x, y) in enumerate(zip(a, b)) if x != y),
+            min(len(a), len(b)),
+        )
+        bad.append(
+            f"TTB's step ({k}) differs from the Federal Register at '{a[max(0, i - 20) : i + 20]}' / '{b[max(0, i - 20) : i + 20]}'"
+        )
     chars(f"TTB's step ({k})", ttb[k])
 
 # 2. the proposal's own wording: the petition's steps, the steps written in build_agreed.py, and the built description
-for k, v in json.load(open(PET, encoding="utf-8")).items(): chars(f"petition step ({k}) in {os.path.basename(PET)}", v)
+for k, v in json.load(open(PET, encoding="utf-8")).items():
+    chars(f"petition step ({k}) in {os.path.basename(PET)}", v)
 for node in ast.walk(ast.parse(open(AGREED, encoding="utf-8").read())):
-    if isinstance(node, ast.Constant) and isinstance(node.value, str) and node.value.startswith("Proceed "):
+    if (
+        isinstance(node, ast.Constant)
+        and isinstance(node.value, str)
+        and node.value.startswith("Proceed ")
+    ):
         chars(f"step text in build_agreed.py line {node.lineno}", node.value)
 if len(sys.argv) > 1:
-    for s in json.load(open(sys.argv[1], encoding="utf-8"))["steps"]: chars(f"proposed step ({s['step']})", s["text"])
+    for s in json.load(open(sys.argv[1], encoding="utf-8"))["steps"]:
+        chars(f"proposed step ({s['step']})", s["text"])
 
-for b in bad: print(b)
-if bad: sys.exit(1)
-print(f"step text: TTB's {len(ttb)} steps identical to the Federal Register; only its characters in the proposal's steps")
+for b in bad:
+    print(b)
+if bad:
+    sys.exit(1)
+print(
+    f"step text: TTB's {len(ttb)} steps identical to the Federal Register; only its characters in the proposal's steps"
+)

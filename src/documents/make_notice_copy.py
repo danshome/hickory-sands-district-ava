@@ -1,6 +1,5 @@
 """TTB's Notice No. 243 PDF (docket copy TTB-2026-0005-0001) with only the Hickory Sands District steps that change
-set into TTB's own pages, so a text compare against TTB's PDF shows only those changes (and the line marking each
-changed page as an unofficial copy).
+set into TTB's own pages, so a text compare against TTB's PDF shows only those changes.
 
 - Pages 52577-52585 and 52587 are TTB's pages untouched; on page 52576 only GPO's seal goes (see below) and a note is added.
 - Page 52586, column 3: steps (10)-(11) are set anew; they take one line more than TTB's, so the column's lines are
@@ -11,13 +10,14 @@ changed page as an unofficial copy).
   to an added last page, so the text reads in TTB's order.
 New lines are set the way GPO set this notice: Melior 9 pt, 9.5 pt leading, ragged right, one fixed word space,
 breaking only at spaces (not after hyphens, so text extraction never joins "north-easterly" into one word). The first page carries a small red "unofficial copy" note as an image
-(so it does not show in a text compare).
+(so it does not show in a text compare, and adds no font: every font in the copy is embedded).
 The copy is altered, so it must not pass for GPO's signed file (QA issue #39):
 - GPO's digital signature is removed (the field USGPOSignature, the AcroForm that held only it, and the DocMDP /Perms),
   and with it GPO's "Authenticated U.S. Government Information" seal, which is that signature field's appearance;
 - the metadata says it is the petitioner's unofficial copy (GPO's XMP packet, with govinfo's creator and dates, is dropped);
-- pages 52586 and 52588 and the added last page carry a red running line in the top margin, in the page content, so it
-  prints and survives annotation stripping (in the compare text it is one added line per page, before the running head);
+- pages 52586 and 52588 and the added last page carry a red running line in the top margin, drawn in the page content
+  as an image like the first-page note, so it prints and survives annotation stripping, and the compare text still
+  shows only the changed steps;
 - the yellow highlights are filled shapes drawn in the page content under the text, not annotations (the same outline
   and colour the highlight annotations had, so they look the same, and they print).
 Usage: python make_notice_copy.py"""
@@ -232,14 +232,35 @@ def write(page, col, placed, per_line=False):
 write(p86, 2, place86)
 write(p88, 1, place88[1]); write(p88, 2, place88[2], per_line=True)
 
+# The red notes (the running line here, the first-page note below) are images: red bold sans rendered to a PNG at 8 px per
+# point, so they print crisply, add no font (every font in the copy stays embedded) and stay out of the compare text.
+BOLD = next((f for f in ("/System/Library/Fonts/Supplemental/Arial Bold.ttf", "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+                         "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf") if os.path.exists(f)), None)
+assert BOLD, "no bold sans font for the red notes (Arial Bold, Liberation Sans Bold or DejaVu Sans Bold)"
+PX, NOTE_X0, NOTE_X1 = 8, 45, 567              # pixels per point; the page's text width (GPO's seal, removed below, stood at x 42-82)
+def red_note(text, size):
+    """text in red bold sans, size pt, wrapped at spaces to the page's text width: PNG bytes, rows, height (pt), pixel size"""
+    fnt = ImageFont.truetype(BOLD, round(size * PX)); W = (NOTE_X1 - NOTE_X0) * PX; rows, cur = [], ""
+    dr = ImageDraw.Draw(Image.new("RGB", (10, 10)))
+    for w in text.split(" "):
+        t = (cur + " " + w).strip()
+        if dr.textlength(t, font=fnt) > W and cur: rows.append(cur); cur = w
+        else: cur = t
+    rows.append(cur)
+    lead, pad = round(1.3 * size * PX), round(0.1 * size * PX)       # 52 px lines and 4 px margins for the 5 pt note
+    im = Image.new("RGBA", (W, lead * len(rows) + 2 * pad), (255, 255, 255, 0)); dr = ImageDraw.Draw(im)
+    for k, t in enumerate(rows): dr.text((0, pad + lead * k), t, font=fnt, fill=(190, 0, 0, 255))
+    buf = io.BytesIO(); im.save(buf, "PNG")
+    return buf.getvalue(), len(rows), im.height / PX, im.size
+
 # a running line in the top margin of every page this script changes, in the page content (not an annotation), set after
-# the redactions above (the added page's top was cleared). It stands above GPO's running head (y 33.8), so pdf_text.py
-# reads it as page furniture (a block ending above y 50): one added line per page in the compare text.
+# the redactions above (the added page's top was cleared): 7 pt, its baseline at about y 24, above GPO's running head (y 33.8)
 RUNNING = "UNOFFICIAL COPY - petitioner's copy with the proposed changes set in and highlighted; not the official Federal Register text"
-RUN_X, RUN_Y, RUN_SIZE, RED = 45.0, 24.0, 7.0, (190 / 255, 0.0, 0.0)
-assert RUN_X + pymupdf.get_text_length(RUNNING, fontname="hebo", fontsize=RUN_SIZE) <= 567, "running line wider than the page's text"
-for page in (p86, p88, added):
-    page.insert_text(pymupdf.Point(RUN_X, RUN_Y), RUNNING, fontname="hebo", fontsize=RUN_SIZE, color=RED)
+png, n, h, RUN_PX = red_note(RUNNING, 7.0)
+assert n == 1, "running line wider than the page's text"
+run_rect = pymupdf.Rect(NOTE_X0, 27.5 - h, NOTE_X1, 27.5)
+run_xref = p86.insert_image(run_rect, stream=png)
+for page in (p88, added): page.insert_image(run_rect, xref=run_xref)      # the same image object on all three pages
 
 # yellow highlights over the changed wording: filled shapes drawn in the page content beneath everything on the page (so
 # they print and survive annotation stripping; they add no text, so a text compare is unaffected)
@@ -289,21 +310,9 @@ NOTE = ("UNOFFICIAL COPY prepared by the petitioner (Dan McLaughlin): TTB's Noti
         "changes proposed to TTB (discussed with TTB on October 15, 2026) set into TTB's pages 52586 and 52588 and highlighted in yellow (the start of the next document, Kaw Valley, "
         "is moved to an added last page). Not the official Federal Register text; the official notice is FR Doc. 2026-16670 on govinfo.gov. "
         "GPO's digital signature and authentication seal are removed, as this copy is altered.")
-fnt = ImageFont.truetype("/System/Library/Fonts/Supplemental/Arial Bold.ttf", 40)
-NOTE_X0, NOTE_X1 = 45, 567                     # the page's text width (GPO's seal, removed above, stood at x 42-82)
-Wpx = int((NOTE_X1 - NOTE_X0) * 8); rows, cur = [], ""
-dr = ImageDraw.Draw(Image.new("RGB", (10, 10)))
-for w in NOTE.split(" "):
-    t = (cur + " " + w).strip()
-    if dr.textlength(t, font=fnt) > Wpx: rows.append(cur); cur = w
-    else: cur = t
-rows.append(cur)
-im = Image.new("RGBA", (Wpx, 52 * len(rows) + 8), (255, 255, 255, 0)); dr = ImageDraw.Draw(im)
-for k, t in enumerate(rows): dr.text((0, 4 + 52 * k), t, font=fnt, fill=(190, 0, 0, 255))
-buf = io.BytesIO(); im.save(buf, "PNG")
-h = (NOTE_X1 - NOTE_X0) * im.height / Wpx
-assert len(rows) <= 3 and 33 - h >= 12, (len(rows), h)    # three lines, above GPO's running head as before
-doc[0].insert_image(pymupdf.Rect(NOTE_X0, 33 - h, NOTE_X1, 33), stream=buf.getvalue())
+png, n, h, NOTE_PX = red_note(NOTE, 5.0)
+assert n <= 3 and 33 - h >= 12, (n, h)          # three lines, above GPO's running head as before
+p1.insert_image(pymupdf.Rect(NOTE_X0, 33 - h, NOTE_X1, 33), stream=png)
 
 # the metadata names the petitioner's copy, not GPO's file: the Info dictionary only (GPO's XMP packet, which viewers
 # prefer, still carried govinfo's creator, producer and dates)
@@ -352,11 +361,14 @@ for xref in range(1, d2.xref_length()):
 d2.save(OUT, garbage=3, deflate=True); d2.close(); os.remove(OUT + ".tmp")
 print(f"fixed hyphen mapping in {n} font(s); wrote {OUT}")
 
-# the saved copy: no signature, form or XMP left; no annotations but the links; the running line on each changed page
+# the saved copy: no signature, form or XMP left; no annotations but the links; the running-line image on each changed
+# page and the note on page 1 (images, not text)
 chk = pymupdf.open(OUT); cat = chk.pdf_catalog()
 assert not re.search(r"/(AcroForm|Perms|Metadata)\b", chk.xref_object(cat, compressed=True)), "GPO's signature, form or XMP left in the copy"
 assert chk.get_sigflags() == -1 and not chk.is_form_pdf
 assert not [a.type for pg in chk for a in pg.annots()] and not any(pg.first_widget for pg in chk), "annotations other than links left"
-squeeze = lambda s: " ".join(s.split())
-assert [i for i, pg in enumerate(chk) if squeeze(RUNNING) in squeeze(pg.get_text())] == [P86, P88, len(chk) - 1], "running line missing"
+has = lambda size: [i for i, pg in enumerate(chk) if any(tuple(im[2:4]) == tuple(size) for im in pg.get_images(full=True))]
+assert has(RUN_PX) == [P86, P88, len(chk) - 1], ("running line on pages", has(RUN_PX))
+assert has(NOTE_PX) == [0], ("first-page note on pages", has(NOTE_PX))
+assert not any("UNOFFICIAL" in pg.get_text() for pg in chk), "a red note became text"
 chk.close()

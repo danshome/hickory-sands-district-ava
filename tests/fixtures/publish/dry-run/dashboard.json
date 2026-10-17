@@ -6,8 +6,8 @@
  "maxChartRecords": 10000,
  "timeZone": "system",
  "theme": {
-  "id": "light",
-  "type": "defined"
+  "id": "user",
+  "type": "resource"
  },
  "numberPrefixOverrides": [
   {
@@ -158,28 +158,28 @@
           "id": "01fa690f-52e5-50ca-b200-7d6dd5378508",
           "width": 1,
           "height": 1,
-          "tabName": "Documents"
+          "tabName": "▤ Files"
          },
          {
           "type": "itemLayoutElement",
           "id": "1ead89a0-163a-5e01-97f7-dbe4889ff064",
           "width": 1,
           "height": 1,
-          "tabName": "The change near Grit"
+          "tabName": "◆ Grit"
          },
          {
           "type": "itemLayoutElement",
           "id": "96772228-f366-5693-8ca9-00de8d228030",
           "width": 1,
           "height": 1,
-          "tabName": "What changes"
+          "tabName": "⇄ Changes"
          },
          {
           "type": "itemLayoutElement",
           "id": "b0055c33-ca99-5ba5-bcff-45a51cb2635f",
           "width": 1,
           "height": 1,
-          "tabName": "USGS quadrangles"
+          "tabName": "▦ USGS maps"
          }
         ]
        }
@@ -188,14 +188,14 @@
      {
       "type": "itemLayoutElement",
       "id": "ea476add-4264-554d-bc3b-142c6bb77f0a",
-      "width": 0.41,
+      "width": 0.39,
       "height": 1
      },
      {
       "type": "stackLayoutElement",
       "orientation": "row",
       "id": "b33e3776-f90d-5f38-bca3-766f46d18068",
-      "width": 0.26,
+      "width": 0.28,
       "height": 1,
       "elements": [
        {
@@ -209,21 +209,21 @@
           "id": "2d63289e-8652-5363-8433-d4210d64a415",
           "width": 1,
           "height": 1,
-          "tabName": "Steps"
+          "tabName": "☰ Steps"
          },
          {
           "type": "itemLayoutElement",
           "id": "0cf7d198-4dea-5590-a4fd-3365ceabff63",
           "width": 1,
           "height": 1,
-          "tabName": "Big differences"
+          "tabName": "≠ Big differences"
          },
          {
           "type": "itemLayoutElement",
           "id": "045ac856-0bd2-52eb-af23-6bb542367636",
           "width": 1,
           "height": 1,
-          "tabName": "All differences"
+          "tabName": "≠ All differences"
          }
         ]
        },
@@ -1255,28 +1255,28 @@
         "id": "0b9203ad-5d64-5958-972a-10d679e91c90",
         "width": 1,
         "height": 1,
-        "tabName": "Steps"
+        "tabName": "☰ Steps"
        },
        {
         "type": "itemLayoutElement",
         "id": "ba9f1658-f96d-5d75-9602-bc9c61ae4ba0",
         "width": 1,
         "height": 1,
-        "tabName": "What changes"
+        "tabName": "⇄ Changes"
        },
        {
         "type": "itemLayoutElement",
         "id": "8c59902e-1239-5f88-b15b-7877d94b1335",
         "width": 1,
         "height": 1,
-        "tabName": "Grit"
+        "tabName": "◆ Grit"
        },
        {
         "type": "itemLayoutElement",
         "id": "dbc1fa2f-3a08-52bf-9d73-81025a41a1a5",
         "width": 1,
         "height": 1,
-        "tabName": "Documents"
+        "tabName": "▤ Files"
        }
       ]
      }

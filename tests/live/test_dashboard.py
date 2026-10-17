@@ -120,14 +120,14 @@ DESKTOP_INDICATORS = {
     "Big differences": str(FIG["places"]),
     "Acres between the boundaries": FIG["acres"],
 }
-PHONE_TABS = ["Steps", "What changes", "Grit", "Documents"]
-LEFT_TABS = [
-    "Documents",
-    "The change near Grit",
-    "What changes",
-    "USGS quadrangles",
-]
-RIGHT_TABS = ["Steps", "Big differences", "All differences"]
+# the tabs (agol_dashboard.TAB, #94): a symbol, then a short name
+STEPS, CHANGES = "\u2630 Steps", "\u21c4 Changes"
+GRIT, FILES = "\u25c6 Grit", "\u25a4 Files"
+QUADS_TAB = "\u25a6 USGS maps"
+BIG, ALL = "\u2260 Big differences", "\u2260 All differences"
+PHONE_TABS = [STEPS, CHANGES, GRIT, FILES]
+LEFT_TABS = [FILES, GRIT, CHANGES, QUADS_TAB]
+RIGHT_TABS = [STEPS, BIG, ALL]
 
 # ---------------------------------------------------------------- in the page
 # (ArcGIS Dashboards is web components: most of it sits in shadow roots, which
@@ -308,6 +308,24 @@ def titles(strip):
     return [
         t.strip() for t in strip.locator("calcite-tab-title").all_inner_texts()
     ]
+
+
+def hidden_tabs(view):
+    """Returns the tabs that do not fit their strip (behind its arrows, #94)."""
+    out = []
+    for strip in view.page.locator("dashboards-tabs-element").all():
+        nav = strip.locator("calcite-tab-nav").bounding_box()
+        if nav is None:
+            continue
+        for t in strip.locator("calcite-tab-title").all():
+            b = t.bounding_box()
+            if (
+                b is None
+                or b["x"] < nav["x"] - 1
+                or b["x"] + b["width"] > nav["x"] + nav["width"] + 1
+            ):
+                out.append(t.inner_text().strip())
+    return out
 
 
 def open_tab(view, strip, title):
@@ -516,7 +534,7 @@ def _ready(view, m):
 
 def test_phone_tabs(phone):
     phone_layout(phone)
-    strip = tabs(phone, "Steps")
+    strip = tabs(phone, STEPS)
     assert titles(strip) == PHONE_TABS, (
         f"{phone.name}: phone tabs {titles(strip)}, expected {PHONE_TABS}"
     )
@@ -524,9 +542,16 @@ def test_phone_tabs(phone):
         open_tab(phone, strip, title)
 
 
+def test_phone_tabs_all_shown(phone):
+    """#94: every phone tab in view, none behind the strip's arrows."""
+    phone_layout(phone)
+    hidden = hidden_tabs(phone)
+    assert not hidden, f"{phone.name}: tabs that do not fit: {hidden}"
+
+
 def test_phone_steps_list_has_every_step(phone):
     phone_layout(phone)
-    widget = open_tab(phone, tabs(phone, "Steps"), "Steps")
+    widget = open_tab(phone, tabs(phone, STEPS), STEPS)
     got = widget.locator(".tabulator-tableholder").evaluate(LIST_ROWS)
     n = FIG["steps"]
     assert got["rows"] == list(range(1, n + 1)), (
@@ -541,7 +566,7 @@ def test_phone_steps_list_has_every_step(phone):
 
 def test_phone_tapping_a_step_moves_the_map(phone):
     phone_layout(phone)
-    widget = open_tab(phone, tabs(phone, "Steps"), "Steps")
+    widget = open_tab(phone, tabs(phone, STEPS), STEPS)
     m = phone.page.locator("dashboards-map-widget arcgis-map")
     before = phone.wait(lambda: _ready(phone, m), timeout=60)
     row = widget.locator('.tabulator-row[data-row-index="2"]')
@@ -560,7 +585,7 @@ def test_phone_tapping_a_step_moves_the_map(phone):
 
 def test_phone_documents_link_to_the_group(phone, site):
     phone_layout(phone)
-    widget = open_tab(phone, tabs(phone, "Documents"), "Documents")
+    widget = open_tab(phone, tabs(phone, FILES), FILES)
     links = widget.locator("a").evaluate_all(
         "els => els.map(a => [a.href, "
         "a.innerText.replace(/\\s+/g, ' ').trim()])"
@@ -637,7 +662,7 @@ def test_phone_drawer_corrections(phone):
         )
 
     phone.wait(close, timeout=20)
-    holder = open_tab(phone, tabs(phone, "Steps"), "Steps").locator(
+    holder = open_tab(phone, tabs(phone, STEPS), STEPS).locator(
         ".tabulator-tableholder"
     )
     want = FIG["corrections"]
@@ -718,20 +743,25 @@ def test_desktop_indicator_captions_fit(desktop):
 
 def test_desktop_left_tabs(desktop):
     desktop_layout(desktop)
-    strip = tabs(desktop, "Documents")
+    strip = tabs(desktop, FILES)
     assert titles(strip) == LEFT_TABS, (
         f"{desktop.name}: left tabs {titles(strip)}, expected {LEFT_TABS}"
     )
-    for title in LEFT_TABS[1:] + LEFT_TABS[:1]:  # end on Documents
+    for title in LEFT_TABS[1:] + LEFT_TABS[:1]:  # end on Files
         open_tab(desktop, strip, title)
+
+
+def test_desktop_tabs_all_shown(desktop):
+    """#94: every desktop tab in view, none behind the strips' arrows."""
+    desktop_layout(desktop)
+    hidden = hidden_tabs(desktop)
+    assert not hidden, f"{desktop.name}: tabs that do not fit: {hidden}"
 
 
 def test_desktop_quad_links_on_one_line(desktop):
     """#47: never "GeoPD / F"."""
     desktop_layout(desktop)
-    widget = open_tab(
-        desktop, tabs(desktop, "USGS quadrangles"), "USGS quadrangles"
-    )
+    widget = open_tab(desktop, tabs(desktop, QUADS_TAB), QUADS_TAB)
     links = widget.locator("a").evaluate_all(
         "els => els.map(a => [a.textContent.trim(), a.getClientRects().length])"
     )
@@ -748,7 +778,7 @@ def test_desktop_quad_links_on_one_line(desktop):
 
 def test_desktop_right_tabs(desktop):
     desktop_layout(desktop)
-    strip = tabs(desktop, "Big differences")
+    strip = tabs(desktop, BIG)
     assert titles(strip) == RIGHT_TABS, (
         f"{desktop.name}: right tabs {titles(strip)}, expected {RIGHT_TABS}"
     )

@@ -24,7 +24,8 @@ Written: items.json (each item: title, type, stand-in id, file, group and
 organization categories, the properties update() sends; the dashboard's type
 keywords), item-list.json, services.json (each hosted layer: its definition
 update, layer names, changed field aliases, visualization), webmap.json,
-dashboard.json, group.json, facts.json.
+dashboard.json, theme.json (the dashboard's theme resource, #94), group.json,
+facts.json.
 
 Run:
     .venv/bin/python src/publish/agol_dryrun.py [out dir, default
@@ -138,7 +139,7 @@ def dry_run(out, items_file=FIXTURE):
 
     Returns:
         The bundle: {name: JSON} for items, item-list, services, webmap,
-        dashboard, group and facts, as written to out/<name>.json.
+        dashboard, theme, group and facts, as written to out/<name>.json.
     """
     # These imports stay here, in this order: GIS is replaced before the
     # publish scripts import it, and their folder is put on sys.path first.
@@ -416,6 +417,7 @@ def dry_run(out, items_file=FIXTURE):
         "services": services,
         "webmap": webmap,
         "dashboard": dashboard,
+        "theme": agol_dashboard.THEME,
         "group": group,
         "facts": facts,
     }

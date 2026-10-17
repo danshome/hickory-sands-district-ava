@@ -1,5 +1,6 @@
-# Every pre-commit hook on every file (the same hooks as `./build.sh lint` and every commit; .pre-commit-config.yaml).
-# Runs on GitHub's Linux machines: the hooks need only the lint tools, not GDAL or the quads.
+# Every pre-commit hook on every file (the same hooks as `./build.sh lint` and every commit; .pre-commit-config.yaml),
+# then the unit tests that need nothing more (tests/; ./build.sh test runs them all).
+# Runs on GitHub's Linux machines: the hooks and those tests need only the lint tools, not GDAL or the quads.
 name: lint
 on:
   pull_request:
@@ -31,3 +32,5 @@ jobs:
         env:
           PRE_COMMIT_HOME: ${{ runner.temp }}/pre-commit
         run: .venv/bin/pre-commit run --all-files --show-diff-on-failure
+      - name: The unit tests that need only the lint tools (those marked build, with GDAL and poppler, run in ./build.sh test)
+        run: .venv/bin/python -E -s -B -m pytest -q -m "not build" tests

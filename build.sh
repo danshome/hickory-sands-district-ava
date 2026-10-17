@@ -4,11 +4,13 @@
 #   ./build.sh            set up what is missing, then build the package for TTB into dist/ (same as ./build.sh all)
 #   ./build.sh env        only set up the tools, the project's Python environment (.venv) and the git hooks
 #   ./build.sh lint       run every pre-commit hook on every file (.pre-commit-config.yaml)
+#   ./build.sh test       run the unit tests (tests/, pytest.ini)
 #   ./build.sh audit      security audit of the Python lock files and the installed .venv
 #   ./build.sh upgrade    every Python package to its latest compatible version (requirements*.in), audited, reinstalled
 #   ./build.sh clean      remove target/ and dist/ (keeps .venv and the downloaded quads)
 #   ./build.sh distclean  also remove .venv
-#   ./build.sh publish    push the built package to ArcGIS Online (Dan's account; run only when you mean it)
+#   ./build.sh publish    push the built package to ArcGIS Online (Dan's account; run only when you mean it), then check-live
+#   ./build.sh check-live check the public ArcGIS Online site anonymously, as TTB sees it, against the build (read-only)
 #
 # No manual steps, on macOS or Linux: missing tools are installed with Homebrew (GDAL, poppler, Python 3.14; on macOS
 # also Google Chrome, which Linux needs installed); every Python package in the lock files is checked against the OSV
@@ -167,12 +169,14 @@ package() {
     cp "$WORK/$NAME.zip" "$DIST"/
     cp "$WORK/README.txt" "$DIST/$NAME-README.txt"
     ( cd "$DIST" && sha256 "$NAME.zip" "$NAME-README.txt" > SHA256SUMS.txt )
+    run src/checks/check_outputs.py "$WORK" "$DIST" | tee "$WORK/review/output-checks.txt"   # hard: what reaches TTB (warnings do not stop)
     {
         echo "Hickory Sands District AVA - boundary as proposed to TTB: build report"
         echo "built      $(date '+%Y-%m-%d %H:%M %Z') on $(hostname -s) ($(uname -s), GDAL $(gdal-config --version), $(pdftotext -v 2>&1 | head -n 1))"
         echo "source     git $(git rev-parse --short HEAD 2>/dev/null || echo '?')$(git diff --quiet 2>/dev/null || echo ' (with uncommitted changes)')"
         run -c "import json; d = json.load(open('$WORK/agreed-steps.json')); print('area       %.3f sq mi (GRS 1980), %d steps' % (d['sqmi'], len(d['steps'])))"
         run src/checks/check_build.py "$WORK/gis" | sed 's/^/check      /'
+        grep -E '^(output checks|WARNING)' "$WORK/review/output-checks.txt" | sed 's/^/check      /'
         [ -f "$WORK/review/tips-short-EPSG4269.geojson" ] && run -c "import json; print('tips       %d tips of contours/creeks the line stops short of (report)' % len(json.load(open('$WORK/review/tips-short-EPSG4269.geojson'))['features']))"
         [ -f "$WORK/review/ttb-diff-stats.json" ] && run -c "import json; s = json.load(open('$WORK/review/ttb-diff-stats.json')); a = s['areas']; print('comparison %d big differences from the AVA Map Explorer polygon (lines %.0f m or more apart); %d pieces of land between the two lines, from the same text drawn differently %.0f acres in the proposed revision only and %.0f in the Map Explorer polygon only (reports: target/work/review/)' % (s['big'], s['big_m'], sum(v['pieces'] for v in a.values()), a['drawing']['revision_only_acres'], a['drawing']['map_explorer_only_acres']))"
         echo "package    $NAME.zip  $(fsize "$DIST/$NAME.zip") bytes, $(unzip -Z1 "$DIST/$NAME.zip" | grep -v '/$' | wc -l | tr -d ' ') files"
@@ -186,7 +190,13 @@ publish() {
     run src/publish/agol_layer.py
     run src/publish/agol_dashboard.py        # after the layers: it finds the map and layers by title
     run src/publish/agol_org_categories.py   # it categorizes the items the three above put in the folder
-    run src/publish/agol_share.py            # last: everything in the folder, and the group, public (Dan, 2026-10-16)
+    run src/publish/agol_share.py            # everything in the folder, and the group, public (Dan, 2026-10-16)
+    check_live                               # last: the public site as TTB sees it, against this build
+}
+
+check_live() {
+    step "the public site, checked anonymously against the build (security, sharing, links, figures, files)"
+    run src/publish/agol_check.py
 }
 
 case "${1:-all}" in
@@ -195,8 +205,10 @@ case "${1:-all}" in
     clean)     rm -rf "$TARGET" "$DIST"; echo "removed target/ and dist/" ;;
     distclean) rm -rf "$TARGET" "$DIST" "$VENV"; echo "removed target/, dist/ and .venv/" ;;
     publish)   env_setup; publish ;;
+    check-live) env_setup; check_live ;;
     audit)     env_setup; audit ;;
     upgrade)   upgrade ;;
     lint)      env_setup; step "pre-commit hooks on every file"; PRE_COMMIT_HOME="$TARGET/pre-commit" "$VENV/bin/pre-commit" run --all-files ;;
-    *)         echo "usage: ./build.sh [all|env|lint|audit|upgrade|clean|distclean|publish]"; exit 2 ;;
+    test)      env_setup; step "unit tests (tests/, pytest)"; run -m pytest -q tests ;;
+    *)         echo "usage: ./build.sh [all|env|lint|test|audit|upgrade|clean|distclean|publish|check-live]"; exit 2 ;;
 esac

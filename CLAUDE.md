@@ -20,7 +20,7 @@ every pinned Python package against OSV before installing anything (`src/setup/p
 from the hash-pinned lock `requirements.txt` (compiled from `requirements.in` by `./build.sh upgrade`; never edit the
 `.txt` by hand; all Python runs in `.venv`, `-E -s -B`; nothing global), downloads/verifies the
 13 quads, then stages, traces, splices patches, builds the boundary, checks, makes the documents and quad sheets, and
-zips the package into `dist/` with `SHA256SUMS.txt` and `build-report.txt`. `./build.sh clean | distclean | env | lint | audit | upgrade | publish`.
+zips the package into `dist/` with `SHA256SUMS.txt` and `build-report.txt`. `./build.sh clean | distclean | env | lint | audit | upgrade | publish | check-live`.
 
 - `src/` all code: `quads/`, `tracing/` (the ink tracer), `fixing/` (patchlib, apply_patches), `review/` (tipcheck,
   compare_ttb), `boundary/` (ink_centerline, build_agreed, quad sheets, TTB record), `documents/`, `checks/`,
@@ -36,7 +36,9 @@ zips the package into `dist/` with `SHA256SUMS.txt` and `build-report.txt`. `./b
 - `tobedeleted/` (gitignored) is where things no build uses go for Dan to review and delete. Nothing may depend on it.
 
 Change the boundary only through `resources/boundary/` and rebuild; never edit outputs. Hard checks stop the build:
-quads vs manifest, every pin exactly on its two steps, no step line crossing itself, valid polygon. Current build:
+quads vs manifest, every pin exactly on its two steps, no step line crossing itself, valid polygon; and, after the
+package, `src/checks/check_outputs.py` on what reaches TTB (PDF fonts, the notice copy, compare text, figures vs
+the stats, wording, quads/lengths/NAD83; zip path lengths only warn). Current build:
 104 steps, 105 pins, 193.83 sq mi (GRS 1980); the figures in the README and ArcGIS descriptions come from the build.
 
 Commits run the pre-commit hooks (`.pre-commit-config.yaml`, tools from `requirements-dev.txt` in `.venv`, via
@@ -44,7 +46,8 @@ Commits run the pre-commit hooks (`.pre-commit-config.yaml`, tools from `require
 private-words check against the gitignored `.private-words`, ruff (`ruff.toml`), shellcheck, codespell.
 
 Rules: `./build.sh publish` (ArcGIS Online) is outward-facing, only on Dan's explicit say-so. Never commit `tobedeleted/`
-or private material.
+or private material. `./build.sh check-live` (`src/publish/agol_check.py`, publish's last step) checks the public site
+anonymously against the build (locked layers, public items, links, dashboard, figures, file sizes); read-only, run it any time.
 
 ## Git workflow (Dan, 2026-10-16)
 

@@ -1,5 +1,6 @@
-# Development tools: the pre-commit hooks (.pre-commit-config.yaml), the audit and the lock compiler. Compiled by
-# `./build.sh upgrade` into requirements-dev.txt (hash-pinned, same versions as requirements.txt where they overlap).
+# Development tools: the pre-commit hooks (.pre-commit-config.yaml), the audit, the lock compiler and the unit tests
+# (tests/, pytest). Compiled by `./build.sh upgrade` into requirements-dev.txt (hash-pinned, same versions as
+# requirements.txt where they overlap).
 -c requirements.txt
 codespell
 detect-secrets
@@ -7,5 +8,6 @@ pip-audit
 pip-tools
 pre-commit
 pre-commit-hooks
+pytest
 ruff
 shellcheck-py

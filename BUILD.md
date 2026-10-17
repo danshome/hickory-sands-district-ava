@@ -21,6 +21,7 @@ Other commands:
 
 - `./build.sh env` sets up the tools, `.venv` and the git pre-commit hooks only.
 - `./build.sh lint` runs every pre-commit hook on every file.
+- `./build.sh test` runs the unit tests (see Tests below).
 - `./build.sh audit` re-checks the lock files (OSV) and the installed `.venv` (pip-audit, PyPI and OSV databases).
 - `./build.sh upgrade` moves every Python package to its latest compatible version, audits, and rebuilds `.venv`.
 - `./build.sh clean` removes `target/` and `dist/`.
@@ -29,7 +30,29 @@ Other commands:
   layers (the boundary, the differences from the AVA Map Explorer polygon, the change near Grit, the shifted geology),
   the web map over the 13 quads with TTB's live AVA Map Explorer polygon, and the dashboard that links everything; it
   makes the folder if it is missing and shares everything publicly. It signs in with Dan's saved `arcgis` profile `hsd`.
-  Publishing is never part of a normal build; run it only when you mean to update ArcGIS Online.
+  Publishing is never part of a normal build; run it only when you mean to update ArcGIS Online. Its last step is
+  `check-live`, so a publish ends with the live site's pass/fail report.
+- `./build.sh check-live` checks the public site the way TTB sees it, without signing in (`src/publish/agol_check.py`,
+  anonymous read-only requests; it changes nothing, so it is safe to run any time). One line per check, and every failure
+  names the item and what is wrong; it exits 1 on any failure:
+  - security: no hosted feature service in the group, nor any of its layers, allows Create, Update, Delete, Editing or
+    Sync, and sync is off;
+  - sharing: the group and every item in it are public, one item for each number (0 Read me first, 0 Dashboard,
+    1a-1d, 2a-2d, 3a-3b, 4a-4o, a 5a and a 5b for each of the 13 quadrangles; `CODES` in the script);
+  - links: every URL in the group's description, the items' descriptions, snippets, licenses and credits, and the
+    dashboard answers 200, and every link to an item goes to a public item in the group with the title it names;
+  - web map: every layer and basemap URL answers without an error and each layer's item is in the group;
+  - dashboard: its JSON parses, its layout, data sources and actions name widgets and web map layers that exist, its
+    map is the group's web map and it links every other item; no phone layout (`mobileView`) yet is only a note (#49);
+  - figures, against the build's outputs in `target/work` (run by hand, `HSD_WORK` can point at another copy of them;
+    `./build.sh` always sets it to `target/work`): the AVA polygon's area (0.01 sq mi), the 104
+    steps and 105 points, the differences from the AVA Map Explorer polygon (pieces and acres by cause and side, each
+    big difference's acres, 0.1 acre), the change near Grit (acres, granite, sandstone, 0.01 acre);
+  - files: each uploaded file is the size of the one just built (and, up to 4 MB, downloaded and the same SHA-256),
+    and the documents attached to the AVA polygon match the build's.
+
+  Without build outputs the figures and files are skipped with a note. Right after a publish ArcGIS can take a minute to
+  show a change to anonymous users: run `./build.sh check-live` again before chasing a failure.
 
 The only prerequisites are Homebrew (https://brew.sh, on macOS or Linux), Google Chrome on Linux, and network access the
 first time (packages and quads).
@@ -40,8 +63,9 @@ first time (packages and quads).
 build.sh                 the build
 requirements.in          the Python packages the build uses (edit this)
 requirements.txt         compiled from it: every package and indirect dependency pinned, with SHA-256 hashes
-requirements-dev.in/.txt the same for the lint, audit and lock tools
+requirements-dev.in/.txt the same for the lint, audit and lock tools and pytest
 .pre-commit-config.yaml  the hooks; .githooks/pre-commit runs them; ruff.toml, .codespellrc, .secrets.baseline
+pytest.ini, tests/       the unit tests (./build.sh test)
 README.md, BUILD.md      this documentation; CLAUDE.md: notes for Claude Code; LICENSE.txt
 src/
   setup/                 packages.py: the security audit of the lock files (standard library only), lock helper
@@ -52,7 +76,8 @@ src/
                          grit_change (the change near Grit, acre by acre, with its granite), triage tools
   boundary/              ink_centerline (runs the tracer), build_agreed (pins, polygon, GIS), quad sheets, TTB record
   documents/             description, side-by-side, notice copy, DOCX, README / read-me-first, PDF text
-  checks/                hard checks: quads vs manifest, every pin on its line, no self-crossing, valid polygon
+  checks/                hard checks: quads vs manifest, every pin on its line, no self-crossing, valid polygon;
+                         check_outputs: what reaches TTB (PDF fonts, compare text, figures, wording, GIS, zip paths)
   package/               make_package.sh (the zip)
   publish/               ArcGIS Online
 resources/
@@ -89,7 +114,17 @@ tobedeleted/             set aside for review and deletion, used by nothing (not
    proposed revision and the AVA Map Explorer polygon differ (rings beyond hand-drawing noise, the big differences 100 m
    or more apart, and every piece of land between the two lines); the change near Grit, line by line and acre by acre,
    with the granite in each piece (`src/review/grit_change.py`).
-8. **documents**, 9. **quad sheets**, 10. **package** into `dist/`, with `build-report.txt`.
+8. **documents**, 9. **quad sheets**, 10. **package** into `dist/`, with `build-report.txt`. Then hard checks on what
+   reaches TTB (`src/checks/check_outputs.py`, output in `target/work/review/output-checks.txt` and the build report):
+   every font embedded in the PDFs the build makes and none Mac-only (Helvetica Neue, Menlo); the notice copy (2a)
+   with no AcroForm, /Perms, document XMP, signature or annotation but links; the two compare-text files differing in
+   exactly the steps whose `change` in `agreed-steps.json` is not "unchanged", as the proposed text, and README.txt
+   naming those steps; the area and README.md's figures equal to the build's statistics, rounded once, half up;
+   no "agreed", "ours", "our boundary", "TTB's published polygon", "final text" or bare "Hickory Sandstone" in a
+   generated document; every point's and step end's `quad` the quadrangle whose neatline holds it (the 7.5-minute
+   NAD27 cell, through NADCON 5.0 CONUS), every `length_m` geodesic, every layer and `.prj` NAD83. A warning, not a
+   failure: zip paths longer than Windows' 260-character limit when Explorer extracts the zip under
+   `C:\Users\<name>\Downloads\` (Dan: leave the names for now).
 
 ## Python packages and security
 
@@ -126,12 +161,35 @@ other package. `GDAL` must equal Homebrew's GDAL library (`gdal-config --version
 Hooks that fix files (whitespace, newlines, line endings) stop the commit after fixing; `git add` the fixes and
 commit again. Run them all with `./build.sh lint`.
 
+## Tests
+
+`./build.sh test` runs the unit tests in `tests/` with pytest (from `requirements-dev.txt`, in `.venv`; settings in
+`pytest.ini`). They are small and fast: no network, no quads, no Chrome. They cover the logic that has bitten before:
+
+- `test_pdf_text.py`: the compare-text paragraphs rebuilt from poppler's positions (an indent starts a paragraph; a flush
+  block carries on a paragraph cut by a column or page break only after a full line that did not end a sentence; the
+  page furniture placed at the page break; GPO's stars on one line; "ACTION :"), the line-end hyphen rules, and
+  pdftotext on TTB's Notice No. 243 itself (471 paragraphs; steps (1)-(96) each one line, TTB's text);
+- `test_check_step_text.py`: TTB's 96 steps identical to the Federal Register's XML, and every blocked character
+  refused with its fix, the check run as the commit hook runs it (skipped while `src/checks/check_step_text.py` and
+  the Federal Register's XML are not in the repository);
+- `test_grit_change.py`: geodesic line lengths on GRS 1980 (#35), totals summed unrounded and rounded once (#33);
+- `test_compare_ttb.py`: a big difference's acres are the whole pieces its ring touches, even inside a hole in the
+  ring (#26), and the helpers that find the stretches;
+- `test_make_readme.py`: README.txt's headings ("WHAT WE PROPOSE TO CHANGE IN NOTICE NO. 243 (...)") on the read-me page.
+
+The scripts keep their work under `if __name__ == "__main__":`, so the tests import them (`src.documents.pdf_text`)
+without running them. Tests marked `build` need the build's own tools (GDAL, NumPy and SciPy, poppler's pdftotext); the
+lint workflow, which installs only the lint tools, runs the rest (`pytest -m "not build"`), and a test whose tool is
+missing is skipped, not failed. One file: `.venv/bin/python -m pytest -q tests/test_pdf_text.py`.
+
 ## GitHub Actions and releases
 
 Three workflows in `.github/workflows/`, every action pinned to a commit:
 
-- **lint** (`lint.yml`, GitHub's Linux machines): every pre-commit hook on every file, on every pull request and every
-  push to `main`. The lint tools come from `requirements-dev.txt`, audited first, as on the Mac.
+- **lint** (`lint.yml`, GitHub's Linux machines): every pre-commit hook on every file, then the unit tests that need
+  only the lint tools, on every pull request and every push to `main`. The lint tools come from `requirements-dev.txt`,
+  audited first, as on the Mac.
 - **build** (`build.yml`, GitHub's Linux machines): the whole `./build.sh` on pull requests that change what the build
   reads (`build.sh`, `src/`, `resources/`, `documents/`, the lock files) and by hand (Actions > build > Run workflow).
   Linux, not GitHub's Mac machines, whose minutes cost ten times as much (Dan, 2026-10-17). Homebrew on Linux installs

@@ -7,13 +7,6 @@ import html, json, os, re
 ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
 HERE = os.environ.get("HSD_WORK") or os.path.join(ROOT, "target", "work")
 DOC = os.path.join(ROOT, "documents")
-built = json.load(open(os.path.join(HERE, "agreed-steps.json")))
-fill = {"AREA_SQMI": "%.2f" % built["sqmi"], "STEPS": str(len(built["steps"]))}
-readme = open(os.path.join(DOC, "README.template.txt"), encoding="utf-8").read()
-for k, v in fill.items(): readme = readme.replace("{" + k + "}", v)
-assert not re.search(r"\{[A-Z_]+\}", readme), "unfilled placeholder in README.template.txt: %s" % re.findall(r"\{[A-Z_]+\}", readme)
-open(os.path.join(HERE, "README.txt"), "w", encoding="utf-8").write(readme)
-lic = open(os.path.join(ROOT, "LICENSE.txt"), encoding="utf-8").read()
 
 def text(s):   # escaped, with web addresses as links
     return re.sub(r"(https?://[^\s<]+[^\s<.,;)])", r'<a href="\1">\1</a>', html.escape(s))
@@ -22,6 +15,9 @@ def heading(s):   # "WHAT WE PROPOSE TO CHANGE IN NOTICE NO. 243 (details ...)" 
     m = re.match(r"([A-Z0-9 ',.]+?)\s*(\(.*\))?$", s)
     title = re.sub(r"\bnotice no\.", "Notice No.", re.sub(r"\bttb\b", "TTB", m.group(1).capitalize()))
     return f"<h2>{html.escape(title)}{' <small>' + text(m.group(2)) + '</small>' if m.group(2) else ''}</h2>"
+
+def is_heading(s):   # an ALL-CAPS line at column 0, with an optional "(note)": "... NOTICE NO. 243" too
+    return s and not s.startswith(" ") and re.match(r"[A-Z][A-Z0-9 ',.]+[A-Z0-9](\s*\(.*\))?$", s)
 
 def prose(lines):
     """paragraphs (blank-line separated) and '- ' list items (continuation lines indented past the dash)"""
@@ -81,30 +77,43 @@ def package(lines):
     end_folder()
     return "".join(out)
 
-page_readme = readme.replace("(see LICENSE.txt)", "(full text at the end of this page)")   # the page has no LICENSE.txt beside it
-lines = page_readme.splitlines()
-title, meta = lines[0], lines[1:3]
-sections, cur = [], None
-for s in lines[3:]:
-    if s and not s.startswith(" ") and re.match(r"[A-Z][A-Z0-9 ',.]+[A-Z0-9](\s*\(.*\))?$", s):   # "... NOTICE NO. 243" too
-        cur = [s, []]; sections.append(cur)
-    elif cur:
-        cur[1].append(s)
-body = "".join(heading(h) + (package(b) if h.startswith("WHAT IS IN THIS PACKAGE") else prose(b)) for h, b in sections)
-lic_lines = lic.splitlines()
-license_html = "<h2>" + html.escape(lic_lines[0]) + "</h2>" + prose(["   " + s if s else s for s in lic_lines[1:]])
-readme_html = (f"<h1>{html.escape(title)}</h1>" + '<p class="meta">' + "<br>".join(text(m) for m in meta) + "</p>")
-
 def words(s):   # the README's list dashes become list bullets, so a lone "-" is not a word
     s = re.sub(r"<[^>]+>", " ", s.replace("<wbr>", ""))   # <wbr> is only a place a long name may break
     return [w for w in re.findall(r"[\w.'/:()-]+", html.unescape(s).lower()) if w != "-"]
-want = words(html.escape(page_readme)) + words(html.escape(lic))
-got = words(readme_html + "<!--intro-->" + body + license_html)
-assert got == want, next(f"read-me page differs from README.txt/LICENSE.txt at word {i}: {got[i:i+8]} vs {want[i:i+8]}"
-                         for i in range(max(len(got), len(want))) if got[i:i + 1] != want[i:i + 1])
 
-page = open(os.path.join(DOC, "read-me-first.template.html"), encoding="utf-8").read()
-page = page.replace("{HEADER}", readme_html).replace("{README}", body).replace("{LICENSE}", license_html)
-os.makedirs(os.path.join(HERE, "documents"), exist_ok=True)
-open(os.path.join(HERE, "documents", "Hickory-Sands-District-read-me-first-2026-10-15.html"), "w", encoding="utf-8").write(page)
-print("README.txt and read-me-first page: AVA %s sq mi, %s steps" % (fill["AREA_SQMI"], fill["STEPS"]))
+def main():
+    built = json.load(open(os.path.join(HERE, "agreed-steps.json")))
+    fill = {"AREA_SQMI": "%.2f" % built["sqmi"], "STEPS": str(len(built["steps"]))}
+    readme = open(os.path.join(DOC, "README.template.txt"), encoding="utf-8").read()
+    for k, v in fill.items(): readme = readme.replace("{" + k + "}", v)
+    assert not re.search(r"\{[A-Z_]+\}", readme), "unfilled placeholder in README.template.txt: %s" % re.findall(r"\{[A-Z_]+\}", readme)
+    open(os.path.join(HERE, "README.txt"), "w", encoding="utf-8").write(readme)
+    lic = open(os.path.join(ROOT, "LICENSE.txt"), encoding="utf-8").read()
+
+    page_readme = readme.replace("(see LICENSE.txt)", "(full text at the end of this page)")   # the page has no LICENSE.txt beside it
+    lines = page_readme.splitlines()
+    title, meta = lines[0], lines[1:3]
+    sections, cur = [], None
+    for s in lines[3:]:
+        if is_heading(s):
+            cur = [s, []]; sections.append(cur)
+        elif cur:
+            cur[1].append(s)
+    body = "".join(heading(h) + (package(b) if h.startswith("WHAT IS IN THIS PACKAGE") else prose(b)) for h, b in sections)
+    lic_lines = lic.splitlines()
+    license_html = "<h2>" + html.escape(lic_lines[0]) + "</h2>" + prose(["   " + s if s else s for s in lic_lines[1:]])
+    readme_html = (f"<h1>{html.escape(title)}</h1>" + '<p class="meta">' + "<br>".join(text(m) for m in meta) + "</p>")
+
+    want = words(html.escape(page_readme)) + words(html.escape(lic))
+    got = words(readme_html + "<!--intro-->" + body + license_html)
+    assert got == want, next(f"read-me page differs from README.txt/LICENSE.txt at word {i}: {got[i:i+8]} vs {want[i:i+8]}"
+                             for i in range(max(len(got), len(want))) if got[i:i + 1] != want[i:i + 1])
+
+    page = open(os.path.join(DOC, "read-me-first.template.html"), encoding="utf-8").read()
+    page = page.replace("{HEADER}", readme_html).replace("{README}", body).replace("{LICENSE}", license_html)
+    os.makedirs(os.path.join(HERE, "documents"), exist_ok=True)
+    open(os.path.join(HERE, "documents", "Hickory-Sands-District-read-me-first-2026-10-15.html"), "w", encoding="utf-8").write(page)
+    print("README.txt and read-me-first page: AVA %s sq mi, %s steps" % (fill["AREA_SQMI"], fill["STEPS"]))
+
+if __name__ == "__main__":
+    main()

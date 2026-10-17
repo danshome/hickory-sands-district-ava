@@ -46,7 +46,7 @@ def figures():
 FIG = figures()
 QUADS = sum(1 for _ in csv.DictReader(open(ROOT / "resources" / "quads" / "quads-manifest.csv")))
 # each indicator by the start of its top caption, and the number it shows (the desktop's has the big differences' distance)
-PHONE_INDICATORS = {"AVA area": FIG["sqmi"], "Steps reworded": str(FIG["changed"]), "Big differences": str(FIG["places"])}
+PHONE_INDICATORS = {"AVA area": FIG["sqmi"], "Reworded from": str(FIG["changed"]), "Big differences": str(FIG["places"])}   # the phone's short captions
 DESKTOP_INDICATORS = {"AVA as proposed": FIG["sqmi"], "Steps shown": str(FIG["steps"]), "Steps reworded": str(FIG["changed"]),
                       "Big differences": str(FIG["places"]), "Acres between the boundaries": FIG["acres"]}
 PHONE_TABS = ["Steps", "What changes", "Grit", "Documents"]
@@ -355,7 +355,7 @@ def test_phone_drawer_corrections(phone):
             f"{phone.name}: with 'Corrections to Notice No. 243's wording' the Steps list shows steps {got['steps']} ({len(got['rows'])} rows), expected {want}"
     phone.wait(filtered, timeout=30)
     numbers, _ = caption_problems(phone, PHONE_INDICATORS)
-    assert numbers.get("Steps reworded") == str(len(want)), f"{phone.name}: 'Steps reworded' shows {numbers.get('Steps reworded')} with the corrections only"
+    assert numbers.get("Reworded from") == str(len(want)), f"{phone.name}: 'Reworded from' shows {numbers.get('Reworded from')} with the corrections only"
 
 
 # ---------------------------------------------------------------- laptops and desktops

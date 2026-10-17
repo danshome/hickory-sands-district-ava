@@ -139,8 +139,10 @@ documents() {
     run src/documents/make_docs.py >/dev/null
     run src/documents/make_compare.py >/dev/null
     for S in $S1 $S2 Hickory-Sands-District-read-me-first-2026-10-15; do
-        "$CHROME" --headless=new --disable-gpu --no-pdf-header-footer --print-to-pdf="$D/$S.pdf" "file://$D/$S.html" 2>/dev/null
-        [ -s "$D/$S.pdf" ] || { echo "Chrome did not write $S.pdf"; exit 1; }
+        # shellcheck disable=SC2086   # HSD_CHROME_FLAGS: extra options, split on purpose (GitHub's Linux runners set them)
+        "$CHROME" --headless=new --disable-gpu --no-pdf-header-footer ${HSD_CHROME_FLAGS:-} --print-to-pdf="$D/$S.pdf" "file://$D/$S.html" \
+            2>"$WORK/chrome.log" || true
+        [ -s "$D/$S.pdf" ] || { echo "Chrome did not write $S.pdf:"; tail -n 20 "$WORK/chrome.log"; exit 1; }
     done
     run src/documents/html2docx.py "$D/$S1.html" "$D/$S1.docx" "Hickory Sands District AVA: regulatory text as proposed to TTB" "Dan McLaughlin" "Hickory Sands District AVA - boundary description as proposed to TTB (Oct. 15, 2026)"
     run src/documents/html2docx.py "$D/$S2.html" "$D/$S2.docx" "Hickory Sands District AVA: changes to TTB's published boundary description" "Dan McLaughlin" "Hickory Sands District AVA - changes to TTB's published boundary description (Oct. 15, 2026)"

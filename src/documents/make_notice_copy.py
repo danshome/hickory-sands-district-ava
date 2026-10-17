@@ -1,7 +1,8 @@
 """TTB's Notice No. 243 PDF (docket copy TTB-2026-0005-0001) with only the Hickory Sands District steps that change
-set into TTB's own pages, so a text compare against TTB's PDF shows only those changes.
+set into TTB's own pages, so a text compare against TTB's PDF shows only those changes (and the line marking each
+changed page as an unofficial copy).
 
-- Pages 52576-52585 and 52587 are TTB's pages untouched.
+- Pages 52577-52585 and 52587 are TTB's pages untouched; on page 52576 only GPO's seal goes (see below) and a note is added.
 - Page 52586, column 3: steps (10)-(11) are set anew; they take one line more than TTB's, so the column's lines are
   re-spaced evenly (9.74 pt; GPO's own spacing there varies from 9.5 to 10) to end level with columns 1 and 2.
 - Page 52588: column 1 and column 2 down to step (89) are untouched. From step (90), the new steps and TTB's steps
@@ -10,7 +11,16 @@ set into TTB's own pages, so a text compare against TTB's PDF shows only those c
   to an added last page, so the text reads in TTB's order.
 New lines are set the way GPO set this notice: Melior 9 pt, 9.5 pt leading, ragged right, one fixed word space,
 breaking only at spaces (not after hyphens, so text extraction never joins "north-easterly" into one word). The first page carries a small red "unofficial copy" note as an image
-(so it does not show in a text compare). Usage: python make_notice_copy.py"""
+(so it does not show in a text compare).
+The copy is altered, so it must not pass for GPO's signed file (QA issue #39):
+- GPO's digital signature is removed (the field USGPOSignature, the AcroForm that held only it, and the DocMDP /Perms),
+  and with it GPO's "Authenticated U.S. Government Information" seal, which is that signature field's appearance;
+- the metadata says it is the petitioner's unofficial copy (GPO's XMP packet, with govinfo's creator and dates, is dropped);
+- pages 52586 and 52588 and the added last page carry a red running line in the top margin, in the page content, so it
+  prints and survives annotation stripping (in the compare text it is one added line per page, before the running head);
+- the yellow highlights are filled shapes drawn in the page content under the text, not annotations (the same outline
+  and colour the highlight annotations had, so they look the same, and they print).
+Usage: python make_notice_copy.py"""
 import io, json, os, re
 import pymupdf
 from PIL import Image, ImageDraw, ImageFont
@@ -222,7 +232,18 @@ def write(page, col, placed, per_line=False):
 write(p86, 2, place86)
 write(p88, 1, place88[1]); write(p88, 2, place88[2], per_line=True)
 
-# yellow highlights over the changed wording (annotations: they add no text, so a text compare is unaffected)
+# a running line in the top margin of every page this script changes, in the page content (not an annotation), set after
+# the redactions above (the added page's top was cleared). It stands above GPO's running head (y 33.8), so pdf_text.py
+# reads it as page furniture (a block ending above y 50): one added line per page in the compare text.
+RUNNING = "UNOFFICIAL COPY - petitioner's copy with the proposed changes set in and highlighted; not the official Federal Register text"
+RUN_X, RUN_Y, RUN_SIZE, RED = 45.0, 24.0, 7.0, (190 / 255, 0.0, 0.0)
+assert RUN_X + pymupdf.get_text_length(RUNNING, fontname="hebo", fontsize=RUN_SIZE) <= 567, "running line wider than the page's text"
+for page in (p86, p88, added):
+    page.insert_text(pymupdf.Point(RUN_X, RUN_Y), RUNNING, fontname="hebo", fontsize=RUN_SIZE, color=RED)
+
+# yellow highlights over the changed wording: filled shapes drawn in the page content beneath everything on the page (so
+# they print and survive annotation stripping; they add no text, so a text compare is unaffected)
+YELLOW = (1.0, 0.93, 0.3)
 def highlight(page, cols_placed):
     rects = []
     for col, placed in cols_placed:
@@ -235,18 +256,41 @@ def highlight(page, cols_placed):
                     x0, x1 = COLX[col] + run[0][1], COLX[col] + run[-1][1] + adv(run[-1][0])
                     rects.append(pymupdf.Rect(x0 - 0.4, y - 6.9, x1 + 0.4, y + 2.3))
                 run = []
-    if rects:
-        a = page.add_highlight_annot(rects); a.set_colors(stroke=(1.0, 0.93, 0.3)); a.set_info(title="Changes proposed to TTB, Oct. 15, 2026"); a.update()
+    if rects:      # the outline MuPDF draws for a highlight annotation: the box with rounded ends bulging out h/(3 sqrt 2)
+        sh = page.new_shape(); P = pymupdf.Point
+        for r in rects:
+            k = r.height / (3 * 2 ** 0.5)
+            sh.draw_bezier(P(r.x0, r.y1), P(r.x0 - k, r.y1 - k), P(r.x0 - k, r.y0 + k), P(r.x0, r.y0))
+            sh.draw_line(P(r.x0, r.y0), P(r.x1, r.y0))
+            sh.draw_bezier(P(r.x1, r.y0), P(r.x1 + k, r.y0 + k), P(r.x1 + k, r.y1 - k), P(r.x1, r.y1))
+        sh.finish(color=None, fill=YELLOW, width=0, closePath=True); sh.commit(overlay=False)   # overlay=False: under all the page's content
     return len(rects)
 nh = highlight(p86, [(2, place86)]) + highlight(p88, [(1, place88[1]), (2, place88[2])])
 print(f"highlighted {nh} runs of changed wording")
 
+# ------------------------------------------------------------------ GPO's digital signature and seal
+# GPO signs its file (the field USGPOSignature, locked by DocMDP /Perms); its signed byte range cannot hold for this altered
+# copy, so a viewer that checks it would report GPO's signature broken. The field's widget also draws GPO's "Authenticated
+# U.S. Government Information" seal at the top left of page 1. Remove the widget (and so the seal), the AcroForm that held
+# only this field, and /Perms; garbage collection on save drops the signature itself. The links on page 1 stay.
+cat = doc.pdf_catalog()
+acro = int(doc.xref_get_key(cat, "AcroForm")[1].split()[0])
+fields = [int(x) for x in re.findall(r"(\d+) 0 R", doc.xref_get_key(acro, "Fields")[1])]
+assert [doc.xref_get_key(f, "FT")[1] for f in fields] == ["/Sig"], "the docket PDF's AcroForm holds more than GPO's signature"
+p1 = doc[0]
+sig = [w for w in p1.widgets() if w.xref in fields]
+assert [w.field_name for w in sig] == ["USGPOSignature"], [w.field_name for w in sig]
+p1.delete_widget(sig[0])
+cat_src = doc.xref_object(cat, compressed=True)
+doc.update_object(cat, re.sub(r"/(AcroForm|Perms)\s*\d+\s+0\s+R", "", cat_src))   # the keys go, not just set to null
+
 # ------------------------------------------------------------------ first-page note (an image, so it is not text)
 NOTE = ("UNOFFICIAL COPY prepared by the petitioner (Dan McLaughlin): TTB's Notice No. 243 with the Hickory Sands District boundary "
         "changes proposed to TTB (discussed with TTB on October 15, 2026) set into TTB's pages 52586 and 52588 and highlighted in yellow (the start of the next document, Kaw Valley, "
-        "is moved to an added last page). Not the official Federal Register text; the official notice is FR Doc. 2026-16670 on govinfo.gov.")
+        "is moved to an added last page). Not the official Federal Register text; the official notice is FR Doc. 2026-16670 on govinfo.gov. "
+        "GPO's digital signature and authentication seal are removed, as this copy is altered.")
 fnt = ImageFont.truetype("/System/Library/Fonts/Supplemental/Arial Bold.ttf", 40)
-NOTE_X0, NOTE_X1 = 88, 567                     # right of GPO's authentication seal (x 42-82)
+NOTE_X0, NOTE_X1 = 45, 567                     # the page's text width (GPO's seal, removed above, stood at x 42-82)
 Wpx = int((NOTE_X1 - NOTE_X0) * 8); rows, cur = [], ""
 dr = ImageDraw.Draw(Image.new("RGB", (10, 10)))
 for w in NOTE.split(" "):
@@ -258,10 +302,19 @@ im = Image.new("RGBA", (Wpx, 52 * len(rows) + 8), (255, 255, 255, 0)); dr = Imag
 for k, t in enumerate(rows): dr.text((0, 4 + 52 * k), t, font=fnt, fill=(190, 0, 0, 255))
 buf = io.BytesIO(); im.save(buf, "PNG")
 h = (NOTE_X1 - NOTE_X0) * im.height / Wpx
+assert len(rows) <= 3 and 33 - h >= 12, (len(rows), h)    # three lines, above GPO's running head as before
 doc[0].insert_image(pymupdf.Rect(NOTE_X0, 33 - h, NOTE_X1, 33), stream=buf.getvalue())
 
-doc.set_metadata({**doc.metadata, "title": "Notice No. 243 (91 FR 52576) - UNOFFICIAL copy with the proposed Hickory Sands District changes (Oct. 15, 2026)",
-                  "author": "Dan McLaughlin (petitioner), from TTB's docket copy TTB-2026-0005-0001", "subject": "Not the official Federal Register text"})
+# the metadata names the petitioner's copy, not GPO's file: the Info dictionary only (GPO's XMP packet, which viewers
+# prefer, still carried govinfo's creator, producer and dates)
+doc.del_xml_metadata()
+now = pymupdf.get_pdf_now()
+doc.set_metadata({"title": "Notice No. 243 (91 FR 52576) - UNOFFICIAL copy with the proposed Hickory Sands District changes (Oct. 15, 2026)",
+                  "author": "Dan McLaughlin (petitioner), from TTB's docket copy TTB-2026-0005-0001",
+                  "subject": "The petitioner's unofficial copy, modified from FR Doc. 2026-16670; not the official Federal Register text",
+                  "keywords": "", "creator": "The petitioner's unofficial copy, modified from FR Doc. 2026-16670 (src/documents/make_notice_copy.py)",
+                  "producer": f"PyMuPDF {pymupdf.VersionBind}; GPO's digital signature removed (altered copy)",
+                  "creationDate": now, "modDate": now, "trapped": ""})
 doc.save(OUT + ".tmp", garbage=3, deflate=True)
 
 # MuPDF maps the hyphen glyph to U+00AD (soft hyphen) in the ToUnicode maps of the fonts it adds; make it U+002D
@@ -298,3 +351,12 @@ for xref in range(1, d2.xref_length()):
             if t != s: d2.update_stream(tx, t); n += 1
 d2.save(OUT, garbage=3, deflate=True); d2.close(); os.remove(OUT + ".tmp")
 print(f"fixed hyphen mapping in {n} font(s); wrote {OUT}")
+
+# the saved copy: no signature, form or XMP left; no annotations but the links; the running line on each changed page
+chk = pymupdf.open(OUT); cat = chk.pdf_catalog()
+assert not re.search(r"/(AcroForm|Perms|Metadata)\b", chk.xref_object(cat, compressed=True)), "GPO's signature, form or XMP left in the copy"
+assert chk.get_sigflags() == -1 and not chk.is_form_pdf
+assert not [a.type for pg in chk for a in pg.annots()] and not any(pg.first_widget for pg in chk), "annotations other than links left"
+squeeze = lambda s: " ".join(s.split())
+assert [i for i, pg in enumerate(chk) if squeeze(RUNNING) in squeeze(pg.get_text())] == [P86, P88, len(chk) - 1], "running line missing"
+chk.close()

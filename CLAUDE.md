@@ -61,6 +61,11 @@ Every change from here on:
 
 Never force-push `main` again without Dan saying so.
 
+Subagents (Dan, 2026-10-17): fixes may be delegated to subagents, each in its own git worktree and branch, one area of
+files per agent so they never edit the same file at once. A subagent commits, pushes its branch and opens a PR; it never
+merges, never pushes to `main`, never publishes to ArcGIS Online and never comments on or closes issues. Only the main
+session reviews each PR's diff, checks the result, and merges it to `main` (or sends it back).
+
 GitHub Actions (`.github/workflows/`, see BUILD.md), all on GitHub's Linux runners (Dan, 2026-10-17: never Mac runners,
 they cost 10x): `lint` for every PR; `build` (the whole `./build.sh`, Homebrew on Linux) for PRs that change the build's
 inputs; `release` on a pushed `v...` tag attaches `dist/` to a GitHub release. Tag a release only on Dan's say-so.

@@ -2,7 +2,7 @@
 in category 4 > Map and layer:
 - publishes the GeoPackage item (4c) as a hosted feature layer (4b), with exports allowed (Query, Extract);
 - attaches the key PDFs (read-me, description, TTB notice with the changes highlighted, side-by-side) to the AVA polygon;
-- sets symbology and pop-ups on the layer item;
+- sets symbology and pop-ups on the layer item, and readable field aliases on every hosted layer;
 - publishes the build's comparison with the AVA Map Explorer polygon (target/work/review) as a GeoPackage (4j) and hosted layer
   (4k): the big differences (the lines 100 m or more apart) and every piece of land between the two boundaries;
 - builds a web map (4a) over the 13 USGS quadrangle scans cited in paragraph (b), from Esri's USA Historical Topo Maps
@@ -10,7 +10,7 @@ in category 4 > Map and layer:
   revision, the land between them shaded, and the big differences ringed.
 Re-running reuses the layer, overwrites the comparison layer and updates the map. Sign-in: GIS(profile="hsd"). Never write "agreed".
 Run by ./build.sh publish (or .venv/bin/python src/publish/agol_layer.py)"""
-import hashlib, json, os, time
+import hashlib, json, math, os, time
 from arcgis.gis import GIS, ItemProperties, ItemTypeEnum
 from arcgis.features import FeatureLayerCollection
 from osgeo import gdal
@@ -53,11 +53,48 @@ TTB_BASEMAPS = [("Topographic (TTB's default)", [("World Hillshade", "ArcGISTile
                 ("Imagery", [("World Imagery", "ArcGISTiledMapServiceLayer", ESRI + "World_Imagery/MapServer")]),
                 ("USA Topo Maps", [("USA Topo Maps (USGS topographic maps)", "ArcGISTiledMapServiceLayer", ESRI + "USA_Topo_Maps/MapServer")])]
 RASTERS = [145300, 145405, 145725, 146412, 147043, 147287, 148287, 148500, 148654, 149400, 149688, 150198, 150346]  # the 13 editions
-EXTENT = [[-99.4171, 30.7113], [-98.8796, 31.0427]]
+def year(field, label):   # a year from the quadrangle catalog, printed 1970, not 1,970
+    return {"fieldName": field, "label": label, "visible": True, "format": {"places": 0, "digitSeparator": False}}
+QUADS = {"id": "usgs-quads", "title": "USGS 1:24,000 quadrangles cited in paragraph (b) (Esri USA Historical Topo Maps)", "url": TOPO,
+         "layerType": "ArcGISImageServiceLayer", "visibility": True, "opacity": 1,
+         "timeAnimation": False,          # the service is time-enabled; without this Map Viewer filters to 1878-1891 and hides the 1955-1970 sheets
+         "mosaicRule": {"mosaicMethod": "esriMosaicLockRaster", "lockRasterIds": RASTERS, "ascending": True, "mosaicOperation": "MT_FIRST"},
+         "showLegend": False,             # scanned maps: no "Red: Band_1, Green: Band_2, Blue: Band_3" legend (QA #46)
+         "popupInfo": {"title": "{Map_Name}, {Primary_State} ({Date_On_Map})",   # the sheet, not the catalog's 20 raw fields (QA #46)
+                       "fieldInfos": [{"fieldName": "Map_Name", "label": "Map name", "visible": True},
+                                      {"fieldName": "Primary_State", "label": "State", "visible": True},
+                                      year("Date_On_Map", "Date on map"), year("Photo_Revision", "Photorevised"),
+                                      year("Photo_Inspection", "Photoinspected")],
+                       "popupElements": [{"type": "text", "text": "USGS 1:24,000 quadrangle cited in paragraph (b), from Esri's USA "
+                                                                  "Historical Topo Maps."}, {"type": "fields"}]}}
 CREDIT = "Dan McLaughlin, Robert Clay Vineyards (petitioner)"
 CC0 = ("CC0 1.0 Universal (public domain dedication): no rights reserved. TTB, its contractors and anyone else may copy, "
        "change and use this for any purpose without permission or attribution. https://creativecommons.org/publicdomain/zero/1.0/")
+# the web map shows more than the petitioner's work, so its license and credits name each part (QA #30)
+LIC_MAP = ("The map and the petitioner's layers (the proposed revision, the differences, the change near Grit, the shift of the "
+           "geology): " + CC0 + " The AVA Map Explorer polygon (TTB's AVAs_Production layer) and the step text from Notice No. 243: "
+           "U.S. Government work (public domain). USGS quadrangles and USGS SGMC geology: public domain. Basemaps: Esri, under "
+           "Esri's terms of use.")
+# the boundary layer (4b) holds TTB's text and data too (the step text, the AVAs_Production values): the same split as
+# the downloads 4c-4i (agol_publish.py)
+LIC_GIS = ("TTB's text and data, the step text from Notice No. 243 (boundary line layer) and the values copied from TTB's "
+           "AVAs_Production record (Name, Status, Counties and the like): U.S. Government work (public domain). The petitioner's "
+           "work, the boundary as drawn, its other attributes and the proposed changes to the text: " + CC0)
+CREDIT_GIS = CREDIT + "; TTB (Notice No. 243 step text, AVAs_Production record values)"
+CREDIT_MAP = (CREDIT + "; TTB (AVAs_Production layer, Notice No. 243); USGS (quadrangles, via Esri USA Historical Topo Maps; "
+              "SGMC geology); basemaps: Esri")
 TAGS = ["Hickory Sands District", "AVA", "TTB", "Notice No. 243", "TTB-2026-0005", "proposed boundary"]
+CULTURE = "en-us"
+# TTB's own aliases for its AVAs_Production fields (Level_ is "Level", Contains_ is "Contains"), from the layer's definition
+TTB_ALIAS = {f["name"]: f["alias"] for f in json.load(open(os.path.join(ROOT, "resources", "ttb", "AVAs_Production-layer0-definition-2026-10-14.json")))["fields"]}
+
+def bbox(path):
+    """[[xmin, ymin], [xmax, ymax]] of every layer in a vector file (NAD83 lon/lat), rounded outward to 4 decimals: an item's extent"""
+    ds = gdal.OpenEx(path, gdal.OF_VECTOR)
+    e = [ds.GetLayer(i).GetExtent() for i in range(ds.GetLayerCount())]   # (xmin, xmax, ymin, ymax)
+    return [[math.floor(min(x[0] for x in e) * 1e4) / 1e4, math.floor(min(x[2] for x in e) * 1e4) / 1e4],
+            [math.ceil(max(x[1] for x in e) * 1e4) / 1e4, math.ceil(max(x[3] for x in e) * 1e4) / 1e4]]
+EXTENT = bbox(os.path.join(PKG, "4_GIS", "hickory-sands-district-boundary-proposed-2026-10-15-area-EPSG4269.geojson"))   # the AVA
 ABOUT = ("<p>Hickory Sands District AVA (Docket No. TTB-2026-0005, Notice No. 243, 91 FR 52576): the boundary the petitioners "
          "propose, with the changes discussed with TTB on October 15, 2026. Prepared by Dan McLaughlin, Robert Clay Vineyards "
          "(petitioner).</p>")
@@ -89,8 +126,11 @@ props = {"snippet": "The proposed boundary as a hosted feature layer: the AVA po
          "description": ABOUT + "<p>Add it to ArcGIS Pro from the portal, or open it in Map Viewer. Click the AVA polygon for the documents "
                         "(attached): read-me, boundary description, TTB's notice with the proposed changes highlighted, and the side-by-side. "
                         "Click a step for its text and what changed. Export to shapefile, file geodatabase, GeoPackage, GeoJSON and others "
-                        "from the item page. NAD83 source data (EPSG:4269) with TTB's AVAs_Production fields.</p>",
-         "tags": ",".join(TAGS), "licenseInfo": CC0, "accessInformation": CREDIT}
+                        "from the item page.</p><p>ArcGIS Online stores this hosted layer in Web Mercator (EPSG:3857), and exports "
+                        "from the item page are made from that copy. For the data in NAD83 (EPSG:4269), the datum of TTB's "
+                        "AVAs_Production layer, download items 4c-4i: the GeoPackage this layer is published from (4c), the "
+                        "shapefiles (4d-4f) and the GeoJSON (4g-4i), all with TTB's AVAs_Production fields.</p>",
+         "tags": ",".join(TAGS), "licenseInfo": LIC_GIS, "accessInformation": CREDIT_GIS, "culture": CULTURE, "extent": EXTENT}
 
 # ---------------------------------------------------------------- hosted feature layer
 fl = items.get(LAYER_TITLE)
@@ -129,10 +169,36 @@ for p in ATTACH:
         area.attachments.add(oid, p)
 print("attachments on the AVA polygon:", sorted(a["name"] for a in area.attachments.get_list(oid)))
 
-# ---------------------------------------------------------------- symbology and pop-ups
+# ---------------------------------------------------------------- symbology, pop-ups and field aliases
 def fields(lyr, wanted):
     have = {f["name"].lower(): f["name"] for f in lyr.properties.fields}
     return [{"fieldName": have[k.lower()], "label": label, "visible": True} for k, label in wanted if k.lower() in have]
+WORDS = {"n": "Number", "label": "Label", "what": "Which area", "why": "Why", "side": "Side", "area_sqmi": "Area (sq mi, GRS 1980)",
+         "source": "Source", "version_note": "Version", "point": "Point number", "kind": "Kind", "step": "Step"}   # fields no pop-up shows
+def aliases(lyr, wanted=(), ttb=False):
+    """readable field aliases for the attribute table, the dashboard and exports (QA #31): for TTB's AVAs_Production fields
+    (ttb=True) TTB's own alias, else the name in words (CFR_Section: CFR Section); for the others the pop-up's label, else a
+    plain name. The service's own fields (object id, global id, shape area and length) keep theirs."""
+    labels = {k.lower(): v for k, v in wanted}
+    geom = lyr.properties.get("geometryProperties") or {}
+    own = {lyr.properties.get("objectIdField"), lyr.properties.get("globalIdField"), geom.get("shapeAreaFieldName"), geom.get("shapeLengthFieldName")}
+    words = lambda n: " ".join(n.replace("_", " ").split())
+    out = []
+    for f in lyr.properties.fields:
+        n = f["name"]
+        if n in own:
+            continue
+        if ttb and n in TTB_ALIAS:
+            a = TTB_ALIAS[n] if TTB_ALIAS[n] != n else words(n)
+        else:
+            a = labels.get(n.lower()) or WORDS.get(n.lower()) or words(n)
+        if f.get("alias") != a:
+            out.append({**json.loads(json.dumps(f, default=dict)), "alias": a})   # the whole field, as a plain dict
+    if out:
+        try:
+            lyr.manager.update_definition({"fields": out})
+        except Exception as e:
+            print("could not set the field aliases of", lyr.properties.name, type(e).__name__)
 NOTE = "The boundary as proposed to TTB; the changes near Grit were discussed with TTB on October 15, 2026."
 def popup(title, lyr, wanted, attachments=False, text=None):
     p = {"title": title, "fieldInfos": fields(lyr, wanted), "showAttachments": attachments, "popupElements": []}
@@ -150,12 +216,17 @@ pts_def = {"drawingInfo": {"renderer": {"type": "simple", "symbol": {"type": "es
                              "symbol": {"type": "esriTS", "color": [0, 0, 0, 255], "haloColor": [255, 255, 255, 255], "haloSize": 1.5,
                                         "font": {"family": "Arial", "size": 9, "weight": "bold"}}, "minScale": 150000}]},
            "showLabels": True}
-area_pop = popup("Hickory Sands District AVA (proposed)", area, [("Name", "Name"), ("Status", "Status"), ("Area", "Area (sq mi)"), ("Counties", "Counties"),
-                 ("Within", "Within"), ("CFR_Section", "CFR section"), ("version_note", "Version")], True,
+AREA_F = [("Name", "Name"), ("Status", "Status"), ("Area", "Area (sq mi)"), ("Counties", "Counties"), ("Within", "Within"),
+          ("CFR_Section", "CFR section"), ("version_note", "Version")]
+LINE_F = [("narrative", "Text"), ("change", "Change from Notice No. 243's text"), ("txt_source", "Text source"),
+          ("endpoint", "Ends at"), ("quad", "USGS quadrangle"), ("length_m", "Length (m)")]
+PTS_F = [("step", "Step"), ("point_name", "Point"), ("kind", "Kind"), ("quad", "USGS quadrangle")]
+area_pop = popup("Hickory Sands District AVA (proposed)", area, AREA_F, True,
                  NOTE + " The documents are attached below: read-me, boundary description, TTB's notice with the proposed changes highlighted, and the side-by-side.")
-line_pop = popup("Step ({step})", line, [("narrative", "Text"), ("change", "Change from Notice No. 243's text"), ("txt_source", "Text source"),
-                 ("endpoint", "Ends at"), ("quad", "USGS quadrangle"), ("length_m", "Length (m)")], text=NOTE)
-pts_pop = popup("{point_name}", pts, [("step", "Step"), ("point_name", "Point"), ("kind", "Kind"), ("quad", "USGS quadrangle")])
+line_pop = popup("Step ({step})", line, LINE_F, text=NOTE)
+pts_pop = popup("{point_name}", pts, PTS_F)
+for lyr, wanted in ((area, AREA_F), (line, LINE_F), (pts, PTS_F)):
+    aliases(lyr, wanted, ttb=True)
 fl.update(data=json.dumps({"layers": [{"id": area.properties.id, "layerDefinition": area_def, "popupInfo": area_pop},
                                       {"id": line.properties.id, "layerDefinition": line_def, "popupInfo": line_pop},
                                       {"id": pts.properties.id, "layerDefinition": pts_def, "popupInfo": pts_pop}]}))
@@ -169,6 +240,7 @@ def hosted(gpkg, src_title, title, service, props, was=((), ())):
     lyr = find("Feature Service", title, *was[1], src_title, *was[0])
     if lyr is None and src is not None:   # the service published from this file, whatever its title (an overwrite retitles it)
         lyr = next(iter(src.related_items("Service2Data", "reverse")), None)
+    props = {**props, "culture": CULTURE, "extent": bbox(gpkg)}   # the GeoPackage's extent, for location search (QA #31)
     sha = hashlib.sha256(open(gpkg, "rb").read()).hexdigest()
     if src is not None and lyr is not None and (src.properties or {}).get("sha256", "") in (sha, "") \
             and ((src.properties or {}).get("sha256") or src.size == os.path.getsize(gpkg)):   # the same file: no republish
@@ -179,7 +251,8 @@ def hosted(gpkg, src_title, title, service, props, was=((), ())):
     if src is None:
         src = folder.add(ItemProperties(title=src_title, item_type=ItemTypeEnum.GEOPACKAGE, tags=TAGS, snippet=props["snippet"],
                                         description=props["description"], license_info=props["licenseInfo"],
-                                        access_information=props["accessInformation"], properties={"sha256": sha}), file=gpkg).result()
+                                        access_information=props["accessInformation"], culture=CULTURE, extent=props["extent"],
+                                        properties={"sha256": sha}), file=gpkg).result()
     else:
         src.update(item_properties={"title": src_title, **props, "properties": {**(src.properties or {}), "sha256": sha}}, data=gpkg)
     pp = gis.content.analyze(item=src, file_type="geoPackage")["publishParameters"]
@@ -246,7 +319,8 @@ DIFF_ABOUT = (ABOUT + f"<p>Two layers comparing {REV} (red, drawn from the propo
               f"{change['map_explorer_only_acres']:,.0f} acres ({change['pieces']} pieces).</p>")
 dprops = {"snippet": f"The {NBIG} big differences ({BIG_M:.0f} m or more apart) between {REV} and {MAPX}, and all {NPIECES} "
                      "pieces of land between the two lines.",
-          "description": DIFF_ABOUT, "tags": ",".join(TAGS), "licenseInfo": CC0, "accessInformation": CREDIT}
+          "description": DIFF_ABOUT, "tags": ",".join(TAGS), "licenseInfo": CC0,
+          "accessInformation": CREDIT + "; compared with TTB's AVAs_Production polygon (the AVA Map Explorer polygon, Notice No. 243)"}
 dsrc, dl = hosted(DIFF_GPKG, DIFF_SRC_TITLE, DIFF_TITLE, "Hickory_Sands_District_differences_from_TTB_2026_10_15", dprops, DIFF_WAS)
 dlayers = FeatureLayerCollection.fromitem(dl).layers
 bigl = next(x for x in dlayers if "big" in x.properties.name.lower())
@@ -269,14 +343,16 @@ gsrc, gl = hosted(GEO_GPKG, GEO_SRC_TITLE, GEO_TITLE, "Hickory_Sands_District_ge
 GEO = [("town", "Town Mountain Granite (USGS SGMC, shifted)", [232, 96, 140]),
        ("younger", "Younger granitic intrusions (USGS SGMC, shifted)", [150, 90, 200]),
        ("hickory", "Hickory Sandstone Member formation (USGS SGMC, shifted)", [214, 168, 50])]
+GEO_F = [("name", "SGMC unit"), ("unit_link", "Unit code"), ("generalize", "Rock type"), ("area_acres", "Area (acres)"),
+         ("source", "Source"), ("alignment", "Shift"), ("unit_url", "USGS unit page")]
 geo = []
 for key, nm, rgb in GEO:
     lyr = next(x for x in FeatureLayerCollection.fromitem(gl).layers if key in x.properties.name.lower())
     rename(lyr, nm)
     gdef = {"drawingInfo": {"renderer": {"type": "simple", "symbol": {"type": "esriSFS", "style": "esriSFSSolid", "color": rgb + [60],
             "outline": {"type": "esriSLS", "style": "esriSLSSolid", "color": rgb + [255], "width": 0.8}}}}}
-    gpop = popup(nm.split(" (")[0], lyr, [("name", "SGMC unit"), ("unit_link", "Unit code"), ("generalize", "Rock type"),
-                 ("area_acres", "Area (acres)"), ("source", "Source"), ("alignment", "Shift"), ("unit_url", "USGS unit page")])
+    gpop = popup(nm.split(" (")[0], lyr, GEO_F)
+    aliases(lyr, GEO_F)
     geo.append((lyr, nm, gdef, gpop))
 
 # ---------------------------------------------------------------- the change near Grit, line by line and acre by acre
@@ -285,21 +361,24 @@ if os.path.exists(GRIT_GPKG):
     os.remove(GRIT_GPKG)
 for f, name in (("grit-change-lines-EPSG4269.geojson", "lines_swapped"), ("grit-change-areas-EPSG4269.geojson", "areas_moved")):
     gdal.VectorTranslate(GRIT_GPKG, os.path.join(REVIEW, f), format="GPKG", layerName=name, accessMode="append" if os.path.exists(GRIT_GPKG) else None)
-def gs(k, f="acres"): return f"{int(GSTATS[k][f] + 0.5):,}"   # half up, as the map's labels round
+def gs(k, f="acres"):   # whole acres, rounded once, half up, from the build's unrounded stats (issue #33; as the map's labels)
+    return f"{math.floor(GSTATS[k][f] + 0.5):,}"
+def ga(k):   # an area's acres and its granite, for every area, put in or left out (QA #43)
+    g = gs(k, "granite_acres")
+    return f"{gs(k)} acres ({'no' if g == '0' else g} granite)"
 GRIT_ABOUT = (ABOUT + "<p>What the proposed text swaps near Grit, all drawn on the printed linework of the USGS maps (none taken from "
               "the AVA Map Explorer polygon). Lines: Notice No. 243's steps (10)-(11) and (90)-(92), as drawn by the petitioner, which "
               "the proposed text replaces; the "
               "petition's wording put back in their place, steps (10)-(11), (90)-(92) and (97)-(100); the new steps (93)-(96) around "
               "the granite lobe; and the petition's straight line from the marked 1,737 to the marked 1,762, which they replace.</p>"
               f"<p>Areas, with the granite (Town Mountain Granite and younger granitic intrusions, USGS SGMC shifted to the outcrops) in each: "
-              f"in Notice No. 243's text and left out by the petition, {gs('Notice No. 243, not the petition')} acres "
-              f"({gs('Notice No. 243, not the petition', 'granite_acres')} granite); added by the petition's lane wording along steps "
-              f"(10)-(11), {gs('lane wording')} acres; in the petition and not Notice No. 243's text along steps (99)-(100), "
-              f"{gs('petition, not Notice No. 243')} acres; the granite lobe now also left out by (93)-(96), "
-              f"{gs('granite lobe')} acres ({gs('granite lobe', 'granite_acres')} granite); put back between the marked 1,737 and the "
-              f"windmill, {gs('put back')} acres.</p>")
+              f"in Notice No. 243's text and left out by the petition, {ga('Notice No. 243, not the petition')}; added by the "
+              f"petition's lane wording along steps (10)-(11), {ga('lane wording')}; in the petition and not Notice No. 243's text "
+              f"along steps (99)-(100), {ga('petition, not Notice No. 243')}; the granite lobe now also left out by (93)-(96), "
+              f"{ga('granite lobe')}; put back between the marked 1,737 and the windmill, {ga('put back')}.</p>")
 rprops = {"snippet": "The change near Grit: the lines the proposed text swaps, and the acres (and granite) it leaves out and puts in.",
-          "description": GRIT_ABOUT, "tags": ",".join(TAGS + ["granite", "Grit"]), "licenseInfo": CC0, "accessInformation": CREDIT}
+          "description": GRIT_ABOUT, "tags": ",".join(TAGS + ["granite", "Grit"]), "licenseInfo": CC0,
+          "accessInformation": CREDIT + "; granite: USGS State Geologic Map Compilation (SGMC), shifted to the outcrops"}
 grsrc, grl = hosted(GRIT_GPKG, GRIT_SRC_TITLE, GRIT_TITLE, "Hickory_Sands_District_change_near_Grit_2026_10_15", rprops)
 glayers = {x.properties.geometryType: x for x in FeatureLayerCollection.fromitem(grl).layers}
 grit_lines, grit_areas = glayers["esriGeometryPolyline"], glayers["esriGeometryPolygon"]
@@ -332,14 +411,18 @@ ttb_def = {"definitionExpression": TTB_WHERE, "drawingInfo": {"renderer": {"type
 DIFF_NOTE = (f"Red: the proposed revision. Blue: the AVA Map Explorer polygon (AVAs_Production, Notice No. 243). Ringed where they are "
              f"{BIG_M:.0f} m or more apart; elsewhere they differ as a hand-digitized line and a traced one do (median {MED:.0f} m, "
              "measured every 2 m along each line).")
-big_pop = popup("Big difference #{n}: step(s) {steps}", bigl, [("why", "Why"), ("steps", "Steps"), ("kind", "Kind of step"),
-                ("max_apart_m", "Farthest apart (m)"), ("length_m", "Length of the stretch (m)"), ("revision_only_acres", "In the proposed revision only (acres)"),
-                ("map_explorer_only_acres", "In the Map Explorer polygon only (acres)"),
-                ("endpoints", "Step endpoints vs the Map Explorer polygon's nearest vertex")], text=DIFF_NOTE)
-all_pop = popup("{acres} acres {side}", every_l, [("cause", "Cause"), ("side", "Side"), ("acres", "Acres"), ("length_m", "Length (m)"),
-                ("mean_width_m", "Average width (m)"), ("widest_m", "Farthest apart (m)"), ("steps", "Proposed revision steps along it")],
+BIG_F = [("why", "Why"), ("steps", "Steps"), ("kind", "Kind of step"), ("max_apart_m", "Farthest apart (m)"),
+         ("length_m", "Length of the stretch (m)"), ("revision_only_acres", "In the proposed revision only (acres)"),
+         ("map_explorer_only_acres", "In the Map Explorer polygon only (acres)"),
+         ("endpoints", "Step endpoints vs the Map Explorer polygon's nearest vertex")]
+ALL_F = [("cause", "Cause"), ("side", "Side"), ("acres", "Acres"), ("length_m", "Length (m)"), ("mean_width_m", "Average width (m)"),
+         ("widest_m", "Farthest apart (m)"), ("steps", "Proposed revision steps along it")]
+big_pop = popup("Big difference #{n}: step(s) {steps}", bigl, BIG_F, text=DIFF_NOTE)
+all_pop = popup("{acres} acres {side}", every_l, ALL_F,
                 text="One piece of land in one line and not the other. Red: in the proposed revision only; blue: in the AVA Map "
                      "Explorer polygon only; grey: the proposed text change near Grit.")
+aliases(bigl, BIG_F + [("n", "Big difference number")])
+aliases(every_l, ALL_F)
 ttb_pop = {"title": "AVA Map Explorer polygon: {Name}", "fieldInfos": [{"fieldName": f, "label": f, "visible": True} for f in ("Name", "Status", "Counties", "Within")],
            "popupElements": [{"type": "text", "text": "TTB's AVAs_Production layer (live), shown on TTB's AVA Map Explorer for Notice No. 243."}, {"type": "fields"}]}
 dl.update(data=json.dumps({"layers": [{"id": bigl.properties.id, "layerDefinition": big_def, "popupInfo": big_pop},
@@ -367,11 +450,14 @@ grit_areas_def = {"drawingInfo": {"renderer": {"type": "uniqueValue", "field1": 
                       "labelPlacement": "esriServerPolygonPlacementAlwaysHorizontal",
                       "symbol": {"type": "esriTS", "color": [60, 40, 20, 255], "haloColor": [255, 255, 255, 255], "haloSize": 1.5, "font": {"family": "Arial", "size": 10, "weight": "bold"}}}]},
     "showLabels": True}
-grit_lines_pop = popup("{label}", grit_lines, [("role", "What it is"), ("steps", "Steps"), ("length_m", "Length (m)"), ("source", "Drawn from")])
-grit_areas_pop = popup("{acres} acres: {why}", grit_areas, [("acres", "Acres"), ("granite_acres", "Granite (acres)"),
-                       ("sandstone_acres", "Hickory Sandstone Member formation (acres)"), ("revision_steps", "Proposed revision (or petition) steps along it"),
-                       ("notice_steps", "Notice No. 243 steps along it")],
+GRIT_LINES_F = [("role", "What it is"), ("steps", "Steps"), ("length_m", "Length (m)"), ("source", "Drawn from")]
+GRIT_AREAS_F = [("acres", "Acres"), ("granite_acres", "Granite (acres)"), ("sandstone_acres", "Hickory Sandstone Member formation (acres)"),
+                ("revision_steps", "Proposed revision (or petition) steps along it"), ("notice_steps", "Notice No. 243 steps along it")]
+grit_lines_pop = popup("{label}", grit_lines, GRIT_LINES_F)
+grit_areas_pop = popup("{acres} acres: {why}", grit_areas, GRIT_AREAS_F,
                        text="Granite: Town Mountain Granite and younger granitic intrusions, USGS SGMC shifted about 400 m to the outcrops.")
+aliases(grit_lines, GRIT_LINES_F)
+aliases(grit_areas, GRIT_AREAS_F + [("side", "Left out or put in")])
 grl.update(data=json.dumps({"layers": [{"id": grit_lines.properties.id, "layerDefinition": grit_lines_def, "popupInfo": grit_lines_pop},
                                        {"id": grit_areas.properties.id, "layerDefinition": grit_areas_def, "popupInfo": grit_areas_pop}]}))
 
@@ -382,10 +468,7 @@ def op(lyr, title, ldef, pop, visible=True, item=None, lid=None):
             "visibility": visible, "opacity": 1, "layerDefinition": ldef, "popupInfo": pop, **({"showLabels": True} if "labelingInfo" in ldef else {})}
 webmap = {
     "operationalLayers": [
-        {"id": "usgs-quads", "title": "USGS 1:24,000 quadrangles cited in paragraph (b) (Esri USA Historical Topo Maps)", "url": TOPO,
-         "layerType": "ArcGISImageServiceLayer", "visibility": True, "opacity": 1,
-         "timeAnimation": False,          # the service is time-enabled; without this Map Viewer filters to 1878-1891 and hides the 1955-1970 sheets
-         "mosaicRule": {"mosaicMethod": "esriMosaicLockRaster", "lockRasterIds": RASTERS, "ascending": True, "mosaicOperation": "MT_FIRST"}},
+        QUADS,
         {"id": "ttb-basemaps", "title": "TTB's AVA Map Explorer basemaps (turn on, pick one)", "layerType": "GroupLayer",
          "visibility": False, "visibilityMode": "exclusive", "opacity": 1, "layers": [
              {"id": f"ttb-basemap-{i}", "title": title, "layerType": "GroupLayer", "visibility": i == 0, "opacity": 1, "layers": [
@@ -417,12 +500,12 @@ mprops = {"snippet": "The proposed boundary over the 13 USGS 1:24,000 quadrangle
                          "text swaps and the areas (with their granite) it leaves out and puts in (layer 4o). The group \"TTB's AVA Map Explorer basemaps\" holds "
                          "the four basemaps of TTB's AVA Map Explorer (Topographic, Streets, Imagery, USA Topo Maps); turn it on "
                          "and pick one to see the lines over what the Map Explorer shows.</p>",
-          "tags": ",".join(TAGS), "licenseInfo": CC0, "accessInformation": CREDIT + "; USGS quadrangles via Esri USA Historical Topo Maps"}
+          "tags": ",".join(TAGS), "licenseInfo": LIC_MAP, "accessInformation": CREDIT_MAP, "culture": CULTURE}
 wm = items.get(MAP_TITLE)
 if wm is None:
     wm = folder.add(ItemProperties(title=MAP_TITLE, item_type=ItemTypeEnum.WEB_MAP, tags=TAGS, snippet=mprops["snippet"],
-                                   description=mprops["description"], license_info=CC0, access_information=mprops["accessInformation"],
-                                   extent=EXTENT), text=json.dumps(webmap)).result()
+                                   description=mprops["description"], license_info=LIC_MAP, access_information=CREDIT_MAP,
+                                   culture=CULTURE, extent=EXTENT), text=json.dumps(webmap)).result()
 else:
     wm.update(item_properties={**mprops, "extent": EXTENT}, data=json.dumps(webmap))
 print("web map", wm.id)

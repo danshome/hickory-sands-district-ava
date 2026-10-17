@@ -12,6 +12,7 @@ import os
 import sys
 
 import numpy as np
+from scipy import ndimage
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import centerline as cl
@@ -36,14 +37,12 @@ def regrade(sheets, coords, kind):
     rr = np.clip(((C[:, 1] - ymin) / cl.RES).astype(int), 0, ny - 1)
     cc = np.clip(((C[:, 0] - xmin) / cl.RES).astype(int), 0, nx - 1)
     near[rr, cc] = True
-    from scipy import ndimage
-
     near = ndimage.binary_dilation(near, structure=cl.disk(14 / cl.RES))
     iy, ix = np.nonzero(near)
     lons = lon0 + (xmin + (ix + 0.5) * cl.RES) / mx
     lats = lat0 + (ymin + (iy + 0.5) * cl.RES) / my
     if kind == "creek":
-        ink_c, have, ext = cl.sample_ink(
+        ink_c, _have, ext = cl.sample_ink(
             sheets, kind, lons, lats, extra=("dotlike",)
         )
         ink = np.zeros((ny, nx), bool)
@@ -54,7 +53,7 @@ def regrade(sheets, coords, kind):
             ink, dl, cl.RES
         )  # as trace() does: the dots of a dotted creek are creek ink
     else:
-        ink_c, have = cl.sample_ink(sheets, kind, lons, lats)
+        ink_c, _have = cl.sample_ink(sheets, kind, lons, lats)
         ink = np.zeros((ny, nx), bool)
         ink[iy, ix] = ink_c
     meas, symbol = cl.grade(C, ink, xmin, ymin, kind)
@@ -118,7 +117,8 @@ def main():
     ap.add_argument("--kind-field", default="kind")
     a = ap.parse_args()
     sheets = open_sheets(a.quads)
-    out = json.load(open(a.traced))
+    with open(a.traced) as fh:
+        out = json.load(fh)
     for f in out["features"]:
         fid = str(f["properties"]["id"])
         kind = f["properties"][a.kind_field]
@@ -131,7 +131,8 @@ def main():
             f"gaps>=8 m {len(st['gaps'])}  off-centre runs {len(st['off_center_runs'])}",
             flush=True,
         )
-    json.dump(out, open(a.traced, "w"))
+    with open(a.traced, "w") as fh:
+        json.dump(out, fh)
 
 
 if __name__ == "__main__":

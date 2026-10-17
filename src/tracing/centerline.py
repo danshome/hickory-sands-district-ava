@@ -27,6 +27,7 @@ CLI: centerline.py --quads "GLOB" [--quads ...] --lines lines.geojson --out trac
 
 import argparse
 import datetime
+import itertools
 import json
 import math
 import os
@@ -96,7 +97,7 @@ DEBUG = None  # set to {} to keep the last trace's grids (ink, band, ridge, cost
 # ---------------------------------------------------------------- geometry helpers
 def densify(c, step_m):
     out = []
-    for (x0, y0), (x1, y1) in zip(c, c[1:]):
+    for (x0, y0), (x1, y1) in itertools.pairwise(c):
         d = math.hypot(
             (x1 - x0) * 111320 * math.cos(math.radians(y0)), (y1 - y0) * 110574
         )
@@ -104,11 +105,11 @@ def densify(c, step_m):
         out += [
             (x0 + (x1 - x0) * i / k, y0 + (y1 - y0) * i / k) for i in range(k)
         ]
-    return out + [tuple(c[-1])]
+    return [*out, tuple(c[-1])]
 
 
 def disk(rad):
-    r = int(math.ceil(rad))
+    r = math.ceil(rad)
     y, x = np.ogrid[-r : r + 1, -r : r + 1]
     return x * x + y * y <= rad * rad + 1e-9
 
@@ -118,8 +119,8 @@ def line_se(length, theta):
     se = np.zeros((2 * h + 1, 2 * h + 1), bool)
     for t in np.linspace(-h, h, 4 * length + 1):
         se[
-            int(round(h - t * math.sin(theta))),
-            int(round(h + t * math.cos(theta))),
+            round(h - t * math.sin(theta)),
+            round(h + t * math.cos(theta)),
         ] = True
     return se
 
@@ -156,7 +157,7 @@ def smooth(XY, sigma):
 
 def resample(XY, step=1.0):
     s = np.concatenate([[0], np.cumsum(np.hypot(*np.diff(XY, axis=0).T))])
-    t = np.linspace(0, s[-1], max(2, int(round(s[-1] / step)) + 1))
+    t = np.linspace(0, s[-1], max(2, round(s[-1] / step) + 1))
     return np.column_stack(
         [np.interp(t, s, XY[:, 0]), np.interp(t, s, XY[:, 1])]
     )
@@ -197,7 +198,9 @@ def rdp(P, eps):
 def runs(flags):
     """(start, end) index pairs of True runs"""
     d = np.diff(np.concatenate([[0], flags.astype(np.int8), [0]]))
-    return list(zip(np.flatnonzero(d == 1), np.flatnonzero(d == -1)))
+    return list(
+        zip(np.flatnonzero(d == 1), np.flatnonzero(d == -1), strict=True)
+    )
 
 
 # ---------------------------------------------------------------- ink on the grid
@@ -349,7 +352,7 @@ def chain_dots(
         P = np.column_stack([ys + o[0].start, xs + o[1].start]).astype(float)
         c = P.mean(0)
         if len(P) >= 3:
-            _, sv, vt = np.linalg.svd(P - c, full_matrices=False)
+            _, _sv, vt = np.linalg.svd(P - c, full_matrices=False)
             u = vt[0]
             t = (P - c) @ u
             w_ = (P - c) @ vt[1]
@@ -370,7 +373,7 @@ def chain_dots(
     ax = np.array([q[2] for q in pieces])
     half = np.array([q[3] for q in pieces])
     dash = np.array([q[4] for q in pieces])
-    slab, sn = ndimage.label(solid, structure=np.ones((3, 3)))
+    slab, _sn = ndimage.label(solid, structure=np.ones((3, 3)))
     sy, sx = np.nonzero(solid)
     slabv = slab[sy, sx]
 
@@ -479,7 +482,7 @@ def drop_crossing(ink, theta, max_extent_m=400.0, min_elong=3.0, min_deg=30.0):
         if ev[0] <= 0 or math.sqrt(ev[1] / max(ev[0], 1e-9)) < min_elong:
             continue
         axis = math.atan2(vec[1, 1], vec[0, 1])
-        th = float(theta[int(round(y.mean())), int(round(x.mean()))])
+        th = float(theta[round(y.mean()), round(x.mean())])
         diff = abs((axis - th + math.pi / 2) % math.pi - math.pi / 2)
         if diff > math.radians(min_deg):
             out[y, x] = False
@@ -506,7 +509,7 @@ def ink_runs(row, o):
             o[i] - step / 2,
             o[j] + step / 2,
         )
-        for i, j in zip(st, en)
+        for i, j in zip(st, en, strict=True)
     ]
 
 
@@ -736,16 +739,19 @@ def trace(sheets, prior, kind, label=""):
         int((X.max() + pad - xmin) / RES) + 1,
         int((Y.max() + pad - ymin) / RES) + 1,
     )
-    to_cell = lambda lon, lat: (
-        int(((lat - lat0) * my - ymin) / RES),
-        int(((lon - lon0) * mx - xmin) / RES),
-    )
+
+    def to_cell(lon, lat):
+        return (
+            int(((lat - lat0) * my - ymin) / RES),
+            int(((lon - lon0) * mx - xmin) / RES),
+        )
+
     near = np.zeros((ny, nx), bool)
     bearing = np.zeros((ny, nx), np.float32)
     arc = np.zeros((ny, nx), np.float32)
     D = densify(old, RES / 2)
     s_along = 0.0
-    for (lon, lat), (lon2, lat2) in zip(D, D[1:] + [D[-1]]):
+    for (lon, lat), (lon2, lat2) in zip(D, [*D[1:], D[-1]], strict=True):
         rc = to_cell(lon, lat)
         near[rc] = True
         arc[rc] = s_along
@@ -920,7 +926,7 @@ def trace(sheets, prior, kind, label=""):
             hold = {"68": (True, False)}.get(
                 str(label), (False, False)
             )  # pin 67, start of step 68 (highway)
-            for it in range(3):
+            for _ in range(3):
                 # the pins sit at junctions: within END_BLANK m of each end the cross-sections also see the crossing
                 # road's casings and the centre reading drifts (Dan saw a 4 m bulge below point 94); those readings are
                 # dropped and the road's interior trend carries straight to the pin
@@ -1051,12 +1057,13 @@ def main():
     ap.add_argument("--ids", nargs="*", help="only these ids")
     a = ap.parse_args()
     sheets = open_sheets(a.quads)
-    feats = json.load(open(a.lines))["features"]
-    out = (
-        json.load(open(a.out))
-        if os.path.exists(a.out)
-        else {"type": "FeatureCollection", "features": []}
-    )
+    with open(a.lines) as fh:
+        feats = json.load(fh)["features"]
+    if os.path.exists(a.out):
+        with open(a.out) as fh:
+            out = json.load(fh)
+    else:
+        out = {"type": "FeatureCollection", "features": []}
     have = {
         str(f["properties"]["id"]): i for i, f in enumerate(out["features"])
     }
@@ -1082,7 +1089,8 @@ def main():
         else:
             have[fid] = len(out["features"])
             out["features"].append(feat)
-        json.dump(out, open(a.out, "w"))
+        with open(a.out, "w") as fh:
+            json.dump(out, fh)
         print(summary(fid, st), flush=True)
 
 

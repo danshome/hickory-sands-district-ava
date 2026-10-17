@@ -8,6 +8,7 @@ Even so, blue-over-tint and black-over-tint overlap a little; corridors and prio
 """
 
 import numpy as np
+from scipy import ndimage
 
 
 def classes_absolute(a):
@@ -42,8 +43,6 @@ KINDS = ("creek", "contour", "road")
 
 def background(a, size=7):
     """paper or tint under the ink: per-channel grey closing removes dark marks narrower than `size` pixels (~14 m)"""
-    from scipy import ndimage
-
     return np.stack(
         [ndimage.grey_closing(a[i], size=(size, size)) for i in range(3)]
     ).astype(np.float32)
@@ -86,8 +85,6 @@ def classes(a, size=7, px_m=2.03):
     black = dark & ~red & ~brown & ((np.abs(w) < 0.22) | (tinted & (w > -0.22)))
     # lettering and other black ink printed over a creek or contour hides it: black (grown 1 px, to take the letters'
     # anti-aliased edges) is never creek or contour ink, so a trace bridges straight across a label
-    from scipy import ndimage
-
     black_grown = ndimage.binary_dilation(
         black & (kmean < 0.5), iterations=1
     )  # heavy black only: lettering
@@ -157,7 +154,6 @@ def lettering(
     (b) on the ink with 2-pixel lines eroded away (letter strokes print heavier than contour and road lines), so a
         label that touches a line is found on its own: extent 5-40 m there, then grown back 2 px within the ink.
     """
-    from scipy import ndimage
 
     def pick(mask, lo, hi, fill, compact=False, px=0):
         lab, n = ndimage.label(mask, structure=np.ones((3, 3)))
@@ -225,8 +221,6 @@ def digit_holes(
     an area of min_m2-max_m2 (a 0 of a 1:24,000 contour label: ~320 m2, 22 m; an 8's two holes 50-100 m2) and an extent
     up to max_extent_m, grown grow_px pixels -- that is the digit's stroke
     """
-    from scipy import ndimage
-
     # NO morphological closing first: on a steep slope it welds contours 2-3 px apart into one mass and the pockets
     # between them become "holes" (step 59 jumped onto the next contour, Oct. 16, 2026); a 0 whose ring is broken
     # at this scan is simply not caught
@@ -292,7 +286,7 @@ def digit_holes(
         c = np.array([[cx[i], cy[i]] for i in mem])
         ctr = c.mean(0)
         if len(mem) >= 2:
-            u, sv, vt = np.linalg.svd(c - ctr, full_matrices=False)
+            _u, _sv, vt = np.linalg.svd(c - ctr, full_matrices=False)
             ax = vt[0]
         else:
             ax = np.array([1.0, 0.0])
@@ -320,8 +314,6 @@ def digit_holes(
 
 def dashes(ink, px_m=2.03, min_m=8.0, max_m=35.0, min_elong=3.0):
     """connected pieces of ink shaped like road dashes: min_m-max_m long, elongated (principal axes ratio >= min_elong)"""
-    from scipy import ndimage
-
     lab, n = ndimage.label(ink, structure=np.ones((3, 3)))
     if n == 0:
         return np.zeros_like(ink)

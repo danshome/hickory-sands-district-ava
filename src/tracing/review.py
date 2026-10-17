@@ -52,7 +52,7 @@ def crop(sh, c0, r0, c1, r1, out_w, lines):
             continue
         c, r, _, _ = sh.pixels([p[0] for p in pts], [p[1] for p in pts])
         d.line(
-            [((u - cc0) * S, (v - rr0) * S) for u, v in zip(c, r)],
+            [((u - cc0) * S, (v - rr0) * S) for u, v in zip(c, r, strict=True)],
             fill=col,
             width=w,
         )
@@ -102,9 +102,7 @@ def sheet_png(sheets, feat, prior, title, out_path, width=1500):
         [(old, OLD, 3), (new, NEW, 3)],
     )
     # where the line runs onto another sheet, show that sheet's own map face there (not this sheet's collar)
-    others = [
-        s2 for s2 in {id(o): o for o in owners if o and o is not sh}.values()
-    ]
+    others = list({id(o): o for o in owners if o and o is not sh}.values())
     if others:
         S = width / side
         H = over.height
@@ -145,7 +143,7 @@ def sheet_png(sheets, feat, prior, title, out_path, width=1500):
             d.line(
                 [
                     ((u - (cx - side / 2)) * S, (v - (cy - side / 2)) * S)
-                    for u, v in zip(c, r)
+                    for u, v in zip(c, r, strict=True)
                 ],
                 fill=col,
                 width=3,
@@ -249,9 +247,13 @@ def main():
     os.makedirs(a.out_dir, exist_ok=True)
     pri = {}
     if a.prior:
-        for f in json.load(open(a.prior))["features"]:
+        with open(a.prior) as fh:
+            prior_fc = json.load(fh)
+        for f in prior_fc["features"]:
             pri[str(f["properties"].get(a.id_field))] = f
-    for f in json.load(open(a.traced))["features"]:
+    with open(a.traced) as fh:
+        traced_fc = json.load(fh)
+    for f in traced_fc["features"]:
         fid = str(f["properties"]["id"])
         if a.ids and fid not in a.ids:
             continue

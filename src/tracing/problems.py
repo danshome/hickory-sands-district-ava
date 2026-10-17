@@ -15,6 +15,7 @@ Review with agents: references/review-rubric.md.
 """
 
 import argparse
+from collections import Counter
 import json
 import math
 import os
@@ -100,7 +101,10 @@ def closeup(sh, lon, lat, old, new, half, scale, label):
                 continue
             cc, rr, _, _ = sh.pixels([p[0] for p in pts], [p[1] for p in pts])
             d.line(
-                [((u - c0) * scale, (v - r0) * scale) for u, v in zip(cc, rr)],
+                [
+                    ((u - c0) * scale, (v - r0) * scale)
+                    for u, v in zip(cc, rr, strict=True)
+                ],
                 fill=col,
                 width=2,
             )
@@ -202,17 +206,19 @@ def main():
     rng = random.Random(1)
     pri = {}
     if a.prior:
-        for f in json.load(open(a.prior))["features"]:
+        with open(a.prior) as fh:
+            prior_fc = json.load(fh)
+        for f in prior_fc["features"]:
             pri[str(f["properties"].get(a.id_field))] = [
                 tuple(p[:2]) for p in f["geometry"]["coordinates"]
             ]
     records = []
     if a.spots:
-        T = {
-            str(f["properties"]["id"]): f
-            for f in json.load(open(a.traced))["features"]
-        }
-        S = json.load(open(a.spots))
+        with open(a.traced) as fh:
+            traced_fc = json.load(fh)
+        T = {str(f["properties"]["id"]): f for f in traced_fc["features"]}
+        with open(a.spots) as fh:
+            S = json.load(fh)
         S = S["spots"] if isinstance(S, dict) else S
         for r in S:
             f = T.get(str(r["id"]))
@@ -232,14 +238,13 @@ def main():
                 label,
             ).save(os.path.join(a.out_dir, r["pid"] + ".png"))
             records.append(dict(r, png=r["pid"] + ".png"))
-        json.dump(
-            records,
-            open(os.path.join(a.out_dir, "problems.json"), "w"),
-            indent=1,
-        )
+        with open(os.path.join(a.out_dir, "problems.json"), "w") as fh:
+            json.dump(records, fh, indent=1)
         print(len(records), "spots re-rendered")
         return
-    for f in json.load(open(a.traced))["features"]:
+    with open(a.traced) as fh:
+        traced_fc = json.load(fh)
+    for f in traced_fc["features"]:
         fid = str(f["properties"]["id"])
         if a.ids and fid not in a.ids:
             continue
@@ -273,11 +278,8 @@ def main():
             f"{fid}: {sum(1 for r in records if r['id'] == fid)} spots",
             flush=True,
         )
-    json.dump(
-        records, open(os.path.join(a.out_dir, "problems.json"), "w"), indent=1
-    )
-    from collections import Counter
-
+    with open(os.path.join(a.out_dir, "problems.json"), "w") as fh:
+        json.dump(records, fh, indent=1)
     print(len(records), "spots:", dict(Counter(r["type"] for r in records)))
 
 

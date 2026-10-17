@@ -43,6 +43,7 @@ signed-off metres >= 95%, no owner/critic "off" spot VERIFIED, no selfx/stepx, p
 
 import argparse
 import csv
+import itertools
 import json
 import math
 import os
@@ -51,12 +52,16 @@ import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import numpy as np
+from PIL import Image
+from PIL import ImageDraw
+from PIL import ImageFont
 from scipy import ndimage
 from scipy.spatial import cKDTree
 
 import centerline as cl
 import ink as inklib
 from quadsheets import open_sheets
+from quadsheets import sheet_of
 
 HALF, DO = 15.0, 0.5  # cross-section half-width and step (m)
 RIDE = 1.5  # |offset| of the lane under the line
@@ -135,9 +140,9 @@ class StepGrid:
             "dotlike",
             "text",
         )
-        kink, have, ext = cl.sample_ink(sheets, kind, lons, lats, extra=extra)
+        kink, _have, ext = cl.sample_ink(sheets, kind, lons, lats, extra=extra)
         self.g = {}
-        for k in ("kind",) + extra:
+        for k in ("kind", *extra):
             m = np.zeros((ny, nx), bool)
             m[iy, ix] = kink if k == "kind" else ext[k]
             self.g[k] = m
@@ -274,7 +279,7 @@ def track_lanes(S, o, wide=None):
                     cand.append((round(d * 2) / 2, L["rows"][0], li, j, pred))
                 elif q[1] > wide and q[2] - 0.5 <= pred <= q[3] + 0.5:
                     cand.append((gate + 0.5, L["rows"][0], li, j, pred))
-        for d, _, li, j, pred in sorted(cand):
+        for _d, _, li, j, pred in sorted(cand):
             if li in upd:
                 continue
             q = R[j]
@@ -358,7 +363,9 @@ def ridden_sequence(lanes, n):
         if L["life"] < LANE_MIN:
             continue
         sel = np.abs(L["offs"]) <= RIDE
-        for i, off, mg in zip(L["rows"][sel], L["offs"][sel], L["merged"][sel]):
+        for i, off, mg in zip(
+            L["rows"][sel], L["offs"][sel], L["merged"][sel], strict=True
+        ):
             cnt[i] += 1
             if mg:
                 amb[i] = True
@@ -385,7 +392,7 @@ def lane_beside(L, lo, hi, S=None, o=None, elsewhere=None):
         k0 = len(o) // 2
         for x in np.flatnonzero(sel):
             r, f = L["rows"][x], L["offs"][x]
-            j = int(round((f + HALF) / DO))
+            j = round((f + HALF) / DO)
             between = S[r, k0:j] if j > k0 else S[r, j + 1 : k0 + 1][::-1]
             # the lane's own run is at the far end; require a white stretch of >= 2 cells somewhere between
             w = ~between
@@ -439,13 +446,13 @@ def hop_events(lanes, rid, n, S=None, o=None, C=None, N=None):
     for li, L in enumerate(lanes):
         if L["life"] < LANE_MIN:
             continue
-        for r, f in zip(L["rows"], L["offs"]):
+        for r, f in zip(L["rows"], L["offs"], strict=True):
             if abs(f) <= 3.5:
                 at.setdefault(int(r), set()).add(li)
             elif (
                 abs(f) <= 8.0 and S is not None
             ):  # or its ink joins the ink under the line (a fork)
-                j = int(round((f + HALF) / DO))
+                j = round((f + HALF) / DO)
                 seg = S[r, min(j, k0) : max(j, k0) + 1]
                 if (~seg).sum() <= 1:
                     at.setdefault(int(r), set()).add(li)
@@ -456,7 +463,7 @@ def hop_events(lanes, rid, n, S=None, o=None, C=None, N=None):
             out |= at.get(r, set())
         return out
 
-    for x, (A, a0, a1) in enumerate(segs):
+    for x, (A, _a0, a1) in enumerate(segs):
         if x + 1 < len(segs) and segs[x + 1][0] == A:
             continue
         nxt = segs[x + 1][0] if x + 1 < len(segs) else None
@@ -477,7 +484,7 @@ def hop_events(lanes, rid, n, S=None, o=None, C=None, N=None):
                     why=f"left a line that carries on beside it ({outm} m, up to {outx:.1f} m off)",
                 )
             )
-    for x, (B, b0, b1) in enumerate(segs):
+    for x, (B, b0, _b1) in enumerate(segs):
         if x > 0 and segs[x - 1][0] == B:
             continue
         prv = segs[x - 1][0] if x > 0 else None
@@ -514,7 +521,7 @@ def crossing_events(lanes, n, rid=None):
         # a transition: last row on one side, first row on the other within 20 m
         side = np.where(f >= 2.0, 1, np.where(f <= -2.0, -1, 0))
         k = np.flatnonzero(side != 0)
-        for a, b in zip(k, k[1:]):
+        for a, b in itertools.pairwise(k):
             if side[a] != side[b] and r[b] - r[a] <= 20:
                 before = int(
                     ((r <= r[a]) & (r >= r[a] - 40) & (side == side[a])).sum()
@@ -673,11 +680,9 @@ def seg_intersections(P, Q=None, cell=5.0, min_sep=4):
         for i in range(len(A) - 1):
             x0, x1 = sorted((A[i, 0], A[i + 1, 0]))
             y0, y1 = sorted((A[i, 1], A[i + 1, 1]))
-            for gx in range(
-                int(math.floor(x0 / cell)), int(math.floor(x1 / cell)) + 1
-            ):
+            for gx in range(math.floor(x0 / cell), math.floor(x1 / cell) + 1):
                 for gy in range(
-                    int(math.floor(y0 / cell)), int(math.floor(y1 / cell)) + 1
+                    math.floor(y0 / cell), math.floor(y1 / cell) + 1
                 ):
                     B.setdefault((gx, gy), []).append(i)
         return B
@@ -691,7 +696,7 @@ def seg_intersections(P, Q=None, cell=5.0, min_sep=4):
     BP = buckets(P)
     out = set()
     if Q is None:
-        for k, L in BP.items():
+        for L in BP.values():
             for x in range(len(L)):
                 for y in range(x + 1, len(L)):
                     i, j = L[x], L[y]
@@ -715,7 +720,7 @@ def check_line(G, coords, others=(), sheet_rows=None):
     C = cl.resample(P, 1.0)
     C[0], C[-1] = P[0], P[-1]
     n = len(C)
-    meas, symbol = cl.grade(C, G.g["kind"], G.xmin, G.ymin, G.kind)
+    meas, _symbol = cl.grade(C, G.g["kind"], G.xmin, G.ymin, G.kind)
     o = np.arange(-HALF, HALF + 1e-9, DO)
     N = cl.normals(C)
     PX = C[:, 0, None] + o * N[:, 0, None]
@@ -734,7 +739,7 @@ def check_line(G, coords, others=(), sheet_rows=None):
     if G.kind != "road":
         be, d_long = bridge_events(C, G)
         ev += be
-    we, wscore = wiggle_events(C, d_long)
+    we, _wscore = wiggle_events(C, d_long)
     ev += we
     ev += wrongclass_events(C, G)
     for i, j in seg_intersections(C):
@@ -748,7 +753,7 @@ def check_line(G, coords, others=(), sheet_rows=None):
             )
         )
     for name, Q in others:
-        for i, j in seg_intersections(C, G.xy(Q) if len(Q) else None):
+        for i, _j in seg_intersections(C, G.xy(Q) if len(Q) else None):
             if i < END_SKIP or i > n - END_SKIP:
                 continue  # steps meet at their shared pins
             ev.append(
@@ -775,7 +780,7 @@ def check_line(G, coords, others=(), sheet_rows=None):
     tx = ndimage.binary_dilation(G.g["text"], structure=cl.disk(12 / cl.RES))
     for e in ev:
         a0, a1 = max(0, e["r0"] - 10), min(n - 1, e["r1"] + 10)
-        e["turn_deg"] = int(round(abs(math.degrees(th[a1] - th[a0]))))
+        e["turn_deg"] = round(abs(math.degrees(th[a1] - th[a0])))
         seg = C[e["r0"] : e["r1"] + 1]
         rr = np.clip(
             ((seg[:, 1] - G.ymin) / cl.RES).astype(int), 0, G.shape[0] - 1
@@ -804,7 +809,7 @@ def check_line(G, coords, others=(), sheet_rows=None):
         ] = True
     hops = sorted([e for e in ev if e["type"] == "hop"], key=lambda e: e["r0"])
     exc = []
-    for x, y in zip(hops, hops[1:]):
+    for x, y in itertools.pairwise(hops):
         if (
             "left a line" in x["why"]
             and "joined a line" in y["why"]
@@ -818,10 +823,7 @@ def check_line(G, coords, others=(), sheet_rows=None):
         if b - a >= 3:
             flagged[a:b] = True
     graded_ok = ~np.isnan(meas) & (np.nan_to_num(resid, nan=99) <= 2)
-    if G.kind == "road":
-        lane_ok = road_ok(lanes, n)
-    else:
-        lane_ok = (rid >= 0) & ~amb
+    lane_ok = road_ok(lanes, n) if G.kind == "road" else (rid >= 0) & ~amb
     verified = graded_ok & lane_ok & ~flagged & core
     flagged &= core
     unmeasured = core & ~verified & ~flagged
@@ -928,7 +930,7 @@ def road_events(lanes, n):
         r, f = L["rows"], L["offs"]
         side = np.where(f >= 1.0, 1, np.where(f <= -1.0, -1, 0))
         k = np.flatnonzero(side != 0)
-        for a, b in zip(k, k[1:]):
+        for a, b in itertools.pairwise(k):
             if side[a] != side[b] and r[b] - r[a] <= 15:
                 before = int(
                     ((r <= r[a]) & (r >= r[a] - 40) & (side == side[a])).sum()
@@ -956,8 +958,10 @@ BLIND_SPOTS = [
         "59",
         -99.0094,
         30.9285,
-        "grey contour over the tint: the abandoned contour prints grey (classes black) over the halftone "
-        "tint, so a hop here is invisible to the lane test; every version and the prior step onto the next contour here",
+        (
+            "grey contour over the tint: the abandoned contour prints grey (classes black) over the halftone "
+            "tint, so a hop here is invisible to the lane test; every version and the prior step onto the next contour here"
+        ),
     ),
     (
         "59",
@@ -1010,8 +1014,6 @@ COL = {
 
 
 def _font(size):
-    from PIL import ImageFont
-
     for f in (
         "/System/Library/Fonts/Supplemental/Arial.ttf",
         "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
@@ -1027,11 +1029,6 @@ def render_crop(
     """left: the scan with the traced line (purple), the prior (thin red) and the item's stretches (yellow, ends circled);
     right: the ink classes (black/grey magenta, red fill orange, brown green, blue/teal blue) with the traced line
     """
-    from PIL import Image
-    from PIL import ImageDraw
-
-    from quadsheets import sheet_of
-
     sh = sheet_of(sheets, lon, lat)
     if sh is None:
         return False
@@ -1053,7 +1050,10 @@ def render_crop(
 
     def pts(co):
         cc, rr, _, _ = sh.pixels([p[0] for p in co], [p[1] for p in co])
-        return [((u - c0) * scale, (v - r0) * scale) for u, v in zip(cc, rr)]
+        return [
+            ((u - c0) * scale, (v - r0) * scale)
+            for u, v in zip(cc, rr, strict=True)
+        ]
 
     for im, items in (
         (L, ((prior, (230, 0, 0), 1), (traced, (120, 0, 230), 2))),
@@ -1098,7 +1098,7 @@ def wrap(t, n=150):
         k = k if k > 0 else n
         out.append(t[:k])
         t = t[k:].lstrip()
-    return out + [t]
+    return [*out, t]
 
 
 # ---------------------------------------------------------------- driver
@@ -1129,14 +1129,18 @@ def main():
     t0 = time.time()
     os.makedirs(os.path.join(a.out_dir, "crops"), exist_ok=True)
     feats = {}
-    for f in json.load(open(a.traced))["features"]:
+    with open(a.traced) as fh:
+        traced_fc = json.load(fh)
+    for f in traced_fc["features"]:
         feats[str(f["properties"].get(a.id_field))] = (
             f["properties"].get(a.kind_field),
             f["geometry"]["coordinates"],
         )
     prior = {}
     if a.prior:
-        for f in json.load(open(a.prior))["features"]:
+        with open(a.prior) as fh:
+            prior_fc = json.load(fh)
+        for f in prior_fc["features"]:
             prior[str(f["properties"].get(a.id_field))] = f["geometry"][
                 "coordinates"
             ]
@@ -1225,6 +1229,7 @@ def main():
                             zip(
                                 lo[e["r0"] : e["r1"] + 1],
                                 la[e["r0"] : e["r1"] + 1],
+                                strict=True,
                             )
                         )
                         for e in cc["ent"]
@@ -1235,6 +1240,7 @@ def main():
                             zip(
                                 lo[cc["r0"] : cc["r1"] + 1],
                                 la[cc["r0"] : cc["r1"] + 1],
+                                strict=True,
                             )
                         )
                     ],
@@ -1330,13 +1336,17 @@ def main():
             else "fixed item: a place the checks are known to be blind to"
         )
         head = [
-            f"item {it['item']}  step {it['step']} ({it['kind']}{', UNVALIDATED detector' if not it['validated'] else ''})  {it['types']}  "
-            f"at {it['lon']}, {it['lat']}  {where}"
+            (
+                f"item {it['item']}  step {it['step']} ({it['kind']}{', UNVALIDATED detector' if not it['validated'] else ''})  {it['types']}  "
+                f"at {it['lon']}, {it['lat']}  {where}"
+            )
         ]
         head += [it["why"]]
         head += [
-            "left: scan, traced line purple, prior thin red, the item's stretch yellow; right: ink classes (grey/black magenta, red orange, "
-            "brown green, blue blue). Is the purple line on the CENTRE of the RIGHT feature here?"
+            (
+                "left: scan, traced line purple, prior thin red, the item's stretch yellow; right: ink classes (grey/black magenta, red orange, "
+                "brown green, blue blue). Is the purple line on the CENTRE of the RIGHT feature here?"
+            )
         ]
         render_crop(
             sheets,
@@ -1378,7 +1388,8 @@ def main():
             )
         ],
     }
-    json.dump(fc, open(os.path.join(a.out_dir, "queue.geojson"), "w"), indent=1)
+    with open(os.path.join(a.out_dir, "queue.geojson"), "w") as fh:
+        json.dump(fc, fh, indent=1)
     nv = [r for r in rows if r["validated"]]
     print(
         f"\n{len(rows)} steps, {len(items)} queue items ({sum(1 for i in items if i['validated'])} validated, "

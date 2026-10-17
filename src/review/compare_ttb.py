@@ -5,7 +5,8 @@ TTB's polygon (AVAs_Production) was digitized by hand; ours follows the centre o
 differ a little everywhere. This measures that everyday difference from the data itself (distance from every 2 m of
 each boundary to the other boundary), sets the noise threshold from it (median + K x MAD, never below --min-threshold),
 and rings every stretch that is farther apart than that, from either side (ours away from TTB, or TTB away from ours).
-Each ring says which of our steps it touches, how far apart the lines are, how much area is in or out, and whether the
+Each ring says which of our steps it touches, how far apart the lines are, the acres of the pieces of land between the
+two lines that it touches (whole pieces, as in the all-differences layer, so the figures add up), and whether the
 step's change register (agreed-steps.json "change") says the difference is intended or not; rings at least --big m apart
 (default 100: TTB's line takes another path, or slips) are flagged big. It also writes every piece of land inside one
 polygon and not the other (the sum of all the differences), each with its side, acres, length, widths, steps and cause.
@@ -172,6 +173,9 @@ def main():
     PINS = {f["properties"]["step"]: to_m([f["geometry"]["coordinates"][-1]])[0] for f in L}
     TV = np.vstack([to_m(r) for rings in tpolys for r in rings]); TVt = cKDTree(TV)
     sym = ours_poly.SymDifference(ttb_poly)
+    REV_ONLY = "in the proposed revision only"
+    pieces = [(g, REV_ONLY if ours_poly.Contains(g.PointOnSurface()) else "in the Map Explorer polygon only")
+              for g in polygons(sym) if g.GetArea() > 0]
     out, rows = [], []
     order = sorted(places, key=lambda p: (min(p["steps"]) if p["steps"] else 999, -p["dmax"]))
     for n, p in enumerate(order, 1):
@@ -184,9 +188,10 @@ def main():
                 q = ogr.Geometry(ogr.wkbPoint); q.AddPoint_2D(float(x), float(y)); mp.AddGeometry(q)
             circ = mp.Buffer(40.0, 8).ConvexHull() if rad <= 600 else mp.Buffer(40.0, 8).Buffer(20.0, 8).Buffer(-20.0, 8)
             if circ.GetGeometryType() == ogr.wkbMultiPolygon: circ = circ.ConvexHull()
-        piece = sym.Intersection(circ)
-        add = poly_area(piece.Intersection(ours_poly)) if piece and not piece.IsEmpty() else 0.0
-        rem = poly_area(piece.Intersection(ttb_poly)) if piece and not piece.IsEmpty() else 0.0
+        filled = ogr.Geometry(ogr.wkbPolygon); filled.AddGeometry(circ.GetGeometryRef(0))   # the ring as published: its outline
+        touched = [(g, side) for g, side in pieces if g.Intersects(filled) and poly_area(g.Intersection(filled)) > 1.0]
+        add = sum(g.GetArea() for g, side in touched if side == REV_ONLY)        # whole pieces (issue #26: a long stretch's
+        rem = sum(g.GetArea() for g, side in touched if side != REV_ONLY)        # outline can have a hole; only its outline shows)
         stt = status(p["steps"]); ok = stt.startswith("intended")
         kinds = sorted({kind.get(st_, "?") for st_ in p["steps"]})
         pins = [st_ for st_ in sorted(set(p["steps"]) | {st_ - 1 for st_ in p["steps"]}) if st_ in PINS]
@@ -208,7 +213,7 @@ def main():
         ext = g.GetGeometryRef(0); B = np.array([ext.GetPoint_2D(i) for i in range(ext.GetPointCount())])
         oi = sorted({i for l in our_tree.query_ball_point(B, 3.0) for i in l}); ti = sorted({i for l in ttb_tree.query_ball_point(B, 3.0) for i in l})
         cause = "proposed text change" if oi and np.mean([changed(int(s_)) for s_ in OST[oi]]) >= 0.5 else "drawing"
-        side = "in the proposed revision only" if ours_poly.Contains(g.PointOnSurface()) else "in the Map Explorer polygon only"
+        side = REV_ONLY if ours_poly.Contains(g.PointOnSurface()) else "in the Map Explorer polygon only"
         acres, length = g.GetArea() / SQM_PER_ACRE, ext.Length() / 2.0
         widest = max(float(d_o[oi].max()) if oi else 0.0, float(d_t[ti].max()) if ti else 0.0)   # farthest apart along it
         tot = totals.setdefault(cause, {"pieces": 0, "revision_only_acres": 0.0, "map_explorer_only_acres": 0.0})

@@ -14,7 +14,7 @@ every marked spot. Input: the FIX-LIST from usgs-quad-review.
 
 ## The rule
 A patch replaces one stretch of one step. Its two ends lie ON the frozen trace (within 0.5 m; `apply_patches.py`
-checks) and more than 12 m from the step's ends (the pins; build_agreed.py ties the last 12 m straight). Its interior
+checks) and more than 12 m from the step's ends (the pins; build_proposed.py ties the last 12 m straight). Its interior
 follows the CENTRE of the printed ink, or crosses a label / dot gap straight. No geometry from any boundary layer (TTB,
 petition, prior, TNM): the prior may be LOOKED AT, never copied.
 
@@ -26,7 +26,7 @@ petition, prior, TNM): the prior may be LOOKED AT, never copied.
    a render folder, a deadline. Brief below.
 4. Merge: append the agents' features to `resources/boundary/tracing/hand-patches-EPSG4269.geojson` (the one patch
    file the build reads) and run `./build.sh`; apply_patches.py writes `target/work/ink-centerline-steps-patched.geojson`,
-   which build_agreed.py reads.
+   which build_proposed.py reads.
 5. Check: featurecheck.py on a copy of the patched file; a reviewer agent (or the owner) looks at a sample of the
    agents' renders. Rebuild.
 

@@ -16,7 +16,7 @@ everyday difference from the data and rings only what is beyond it.
 ```
 compare_ttb.py --ours-line gis/<...>-line-EPSG4269.geojson --ours-area gis/<...>-area-EPSG4269.geojson \
    --ttb-url https://services7.arcgis.com/ykuAbKu9MbV93nAe/ArcGIS/rest/services/AVAs_Production/FeatureServer/0 \
-   --ttb-name "Hickory Sands District" --steps agreed-steps.json --out-dir review-ttb
+   --ttb-name "Hickory Sands District" --steps proposed-steps.json --out-dir review-ttb
 ```
 (or `--ttb resources/ttb/ttb-avas-production-hickory-sands-district-EPSG4269-NAD83.geojson` for the snapshot, offline).
 Script: `src/review/compare_ttb.py`. The live query is read-only (`/query?where=Name=...&outSR=4269&f=geojson`).
@@ -33,7 +33,7 @@ Script: `src/review/compare_ttb.py`. The live query is read-only (`/query?where=
 5. Each place: a circle (short) or an outline 40 m round both lines (long stretches); our steps involved; max distance
    apart; length; acres ours adds / drops (symmetric difference inside the ring); kind (straight line / follows a feature,
    from the step text); each pin's distance to TTB's nearest vertex (a straight-line step moves whole when its pin
-   differs); status = "intended: <change>" only when EVERY step in it is changed in the register (agreed-steps.json
+   differs); status = "intended: <change>" only when EVERY step in it is changed in the register (proposed-steps.json
    `change` not starting "unchanged"), "CHECK (steps .. unchanged; partly intended: ..)" when mixed, else **CHECK**.
 
 ## Outputs (`--out-dir`)
@@ -52,4 +52,4 @@ missing an entry (then add it), a pin or route differs from TTB's reading (raise
   Oct. 16); let the canvas draw them.
 - "intended" only means the step's TEXT was changed on purpose; still look at its geometry if the acres are surprising.
 - Straight-line steps magnify pin differences: a pin 100 m from TTB's vertex shifts the whole chord.
-- Areas here are Albers planar (within ~0.1% of GRS80 for this size); the headline figures stay GRS80 (build_agreed.py, in build-report.txt).
+- Areas here are Albers planar (within ~0.1% of GRS80 for this size); the headline figures stay GRS80 (build_proposed.py, in build-report.txt).

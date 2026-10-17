@@ -23,7 +23,7 @@ from the hash-pinned lock `requirements.txt` (compiled from `requirements.in` by
 zips the package into `dist/` with `SHA256SUMS.txt` and `build-report.txt`. `./build.sh clean | distclean | env | lint | audit | upgrade | publish | publish-dry-run | check-live`.
 
 - `src/` all code: `quads/`, `tracing/` (the ink tracer), `fixing/` (patchlib, apply_patches), `review/` (tipcheck,
-  compare_ttb), `boundary/` (ink_centerline, build_agreed, quad sheets, TTB record), `documents/`, `checks/`,
+  compare_ttb), `boundary/` (ink_centerline, build_proposed, quad sheets, TTB record), `documents/`, `checks/`,
   `package/`, `publish/` (ArcGIS Online).
 - `resources/` the inputs: `boundary/` (`description/` step texts, `proposed/` ring and Oct. 14 step lines/points and
   Grit detour pins, `tracing/` pin-moves, trace priors, route overrides, hand patches; see its README.md),

@@ -149,7 +149,7 @@ highways dropped 30-50 points. Gate on the background; the paper rules were alre
 - **Creeks moved because of an ink edit made after their last run:** the tint-gated brown rule (kg - kb >= 0.06)
   turned the anti-aliased edges of contours over the tint into "dotlike", and chain_dots took them for creek dots.
   dotlike now uses the warmth-only brown (brown_dots). Last night's creek lines are reproduced exactly.
-- **Road end hooks** are mostly pin positions, not code (measure them in the SPLICED ring: build_agreed ties the last
+- **Road end hooks** are mostly pin positions, not code (measure them in the SPLICED ring: build_proposed ties the last
   12 m straight). One real kink fixed by name (start of step 68 at pin 67); an automatic on-centre test at a junction
   pin is not reliable.
 - **The check.** grade() cannot see a hop: it asks "is ink of the class within 6 m". featurecheck.py (new) tracks

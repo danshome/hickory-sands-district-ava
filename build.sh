@@ -4,6 +4,7 @@
 #   ./build.sh            set up what is missing, then build the package for TTB into dist/ (same as ./build.sh all)
 #   ./build.sh env        only set up the tools, the project's Python environment (.venv) and the git hooks
 #   ./build.sh lint       run every pre-commit hook on every file (.pre-commit-config.yaml)
+#   ./build.sh test       run the unit tests (tests/, pytest.ini)
 #   ./build.sh audit      security audit of the Python lock files and the installed .venv
 #   ./build.sh upgrade    every Python package to its latest compatible version (requirements*.in), audited, reinstalled
 #   ./build.sh clean      remove target/ and dist/ (keeps .venv and the downloaded quads)
@@ -186,5 +187,6 @@ case "${1:-all}" in
     audit)     env_setup; audit ;;
     upgrade)   upgrade ;;
     lint)      env_setup; step "pre-commit hooks on every file"; PRE_COMMIT_HOME="$TARGET/pre-commit" "$VENV/bin/pre-commit" run --all-files ;;
-    *)         echo "usage: ./build.sh [all|env|lint|audit|upgrade|clean|distclean|publish]"; exit 2 ;;
+    test)      env_setup; step "unit tests (tests/, pytest)"; run -m pytest -q tests ;;
+    *)         echo "usage: ./build.sh [all|env|lint|test|audit|upgrade|clean|distclean|publish]"; exit 2 ;;
 esac

@@ -21,6 +21,7 @@ Other commands:
 
 - `./build.sh env` sets up the tools, `.venv` and the git pre-commit hooks only.
 - `./build.sh lint` runs every pre-commit hook on every file.
+- `./build.sh test` runs the unit tests (see Tests below).
 - `./build.sh audit` re-checks the lock files (OSV) and the installed `.venv` (pip-audit, PyPI and OSV databases).
 - `./build.sh upgrade` moves every Python package to its latest compatible version, audits, and rebuilds `.venv`.
 - `./build.sh clean` removes `target/` and `dist/`.
@@ -39,8 +40,9 @@ The only prerequisite is Homebrew (https://brew.sh) on macOS, and network access
 build.sh                 the build
 requirements.in          the Python packages the build uses (edit this)
 requirements.txt         compiled from it: every package and indirect dependency pinned, with SHA-256 hashes
-requirements-dev.in/.txt the same for the lint, audit and lock tools
+requirements-dev.in/.txt the same for the lint, audit and lock tools and pytest
 .pre-commit-config.yaml  the hooks; .githooks/pre-commit runs them; ruff.toml, .codespellrc, .secrets.baseline
+pytest.ini, tests/       the unit tests (./build.sh test)
 README.md, BUILD.md      this documentation; CLAUDE.md: notes for Claude Code; LICENSE.txt
 src/
   setup/                 packages.py: the security audit of the lock files (standard library only), lock helper
@@ -121,12 +123,35 @@ other package. `GDAL` must equal Homebrew's GDAL library (`gdal-config --version
 Hooks that fix files (whitespace, newlines, line endings) stop the commit after fixing; `git add` the fixes and
 commit again. Run them all with `./build.sh lint`.
 
+## Tests
+
+`./build.sh test` runs the unit tests in `tests/` with pytest (from `requirements-dev.txt`, in `.venv`; settings in
+`pytest.ini`). They are small and fast: no network, no quads, no Chrome. They cover the logic that has bitten before:
+
+- `test_pdf_text.py`: the compare-text paragraphs rebuilt from poppler's positions (an indent starts a paragraph; a flush
+  block carries on a paragraph cut by a column or page break only after a full line that did not end a sentence; the
+  page furniture placed at the page break; GPO's stars on one line; "ACTION :"), the line-end hyphen rules, and
+  pdftotext on TTB's Notice No. 243 itself (471 paragraphs; steps (1)-(96) each one line, TTB's text);
+- `test_check_step_text.py`: TTB's 96 steps identical to the Federal Register's XML, and every blocked character
+  refused with its fix, the check run as the commit hook runs it (skipped while `src/checks/check_step_text.py` and
+  the Federal Register's XML are not in the repository);
+- `test_grit_change.py`: geodesic line lengths on GRS 1980 (#35), totals summed unrounded and rounded once (#33);
+- `test_compare_ttb.py`: a big difference's acres are the whole pieces its ring touches, even inside a hole in the
+  ring (#26), and the helpers that find the stretches;
+- `test_make_readme.py`: README.txt's headings ("WHAT WE PROPOSE TO CHANGE IN NOTICE NO. 243 (...)") on the read-me page.
+
+The scripts keep their work under `if __name__ == "__main__":`, so the tests import them (`src.documents.pdf_text`)
+without running them. Tests marked `build` need the build's own tools (GDAL, NumPy and SciPy, poppler's pdftotext); the
+lint workflow, which installs only the lint tools, runs the rest (`pytest -m "not build"`), and a test whose tool is
+missing is skipped, not failed. One file: `.venv/bin/python -m pytest -q tests/test_pdf_text.py`.
+
 ## GitHub Actions and releases
 
 Three workflows in `.github/workflows/`, every action pinned to a commit:
 
-- **lint** (`lint.yml`, GitHub's Linux machines): every pre-commit hook on every file, on every pull request and every
-  push to `main`. The lint tools come from `requirements-dev.txt`, audited first, as on the Mac.
+- **lint** (`lint.yml`, GitHub's Linux machines): every pre-commit hook on every file, then the unit tests that need
+  only the lint tools, on every pull request and every push to `main`. The lint tools come from `requirements-dev.txt`,
+  audited first, as on the Mac.
 - **build** (`build.yml`, GitHub's Mac machines): the whole `./build.sh` on pull requests that change what the build
   reads (`build.sh`, `src/`, `resources/`, `documents/`, the lock files) and by hand (Actions > build > Run workflow).
   A Mac, not Linux, so the tools (Homebrew's GDAL, PROJ with the NADCON5 grid, poppler, Python 3.14) and the system

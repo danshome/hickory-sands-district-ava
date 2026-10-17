@@ -26,6 +26,11 @@ ROOT="$(cd "$(dirname "$0")" && pwd)"; cd "$ROOT"
 NAME=Hickory-Sands-District-AVA_boundary-as-proposed-2026-10-15
 STEM=hickory-sands-district-boundary-proposed-2026-10-15
 TARGET="$ROOT/target"; WORK="$TARGET/work"; DIST="$ROOT/dist"; export HSD_WORK="$WORK"
+# One date for every date and time the build writes into what it makes (the PDFs' and Word files' dates, zip members'
+# times, the GeoPackage's and the .dbf headers' dates): the package's date, as in the file names, Oct. 15, 2026, 00:00
+# UTC, so two builds of the same commit give the same bytes. SOURCE_DATE_EPOCH is the reproducible-builds.org convention
+# (https://reproducible-builds.org/specs/source-date-epoch/); the scripts read it, and a date set in the environment wins.
+export SOURCE_DATE_EPOCH="${SOURCE_DATE_EPOCH:-1792022400}"
 mkdir -p "$TARGET/tmp"; export TMPDIR="$TARGET/tmp" PIP_CACHE_DIR="$TARGET/pip-cache"   # temp files and downloads stay in target/
 VENV="$ROOT/.venv"; PY="$VENV/bin/python"
 OS="$(uname -s)"                        # Darwin (Dan's Mac) or Linux (GitHub Actions); the tools come from Homebrew on both
@@ -150,6 +155,7 @@ documents() {
         TMPDIR="${HSD_CHROME_TMPDIR:-$TMPDIR}" "$CHROME" --headless=new --disable-gpu --no-pdf-header-footer ${HSD_CHROME_FLAGS:-} \
             --print-to-pdf="$D/$S.pdf" "file://$D/$S.html" 2>"$WORK/chrome.log" || true
         [ -s "$D/$S.pdf" ] || { echo "Chrome did not write $S.pdf:"; tail -n 20 "$WORK/chrome.log"; exit 1; }
+        run src/documents/pdf_dates.py "$D/$S.pdf"   # Chrome dates it when it printed it: SOURCE_DATE_EPOCH instead
     done
     run src/documents/html2docx.py "$D/$S1.html" "$D/$S1.docx" "Hickory Sands District AVA: regulatory text as proposed to TTB" "Dan McLaughlin" "Hickory Sands District AVA - boundary description as proposed to TTB (Oct. 15, 2026)"
     run src/documents/html2docx.py "$D/$S2.html" "$D/$S2.docx" "Hickory Sands District AVA: changes to TTB's published boundary description" "Dan McLaughlin" "Hickory Sands District AVA - changes to TTB's published boundary description (Oct. 15, 2026)"

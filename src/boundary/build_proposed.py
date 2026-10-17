@@ -36,7 +36,9 @@ import math
 import os
 import re
 import sys
+import time
 
+from osgeo import gdal
 from osgeo import ogr
 from osgeo import osr
 
@@ -778,6 +780,12 @@ if os.path.exists(gp):
 # GeoPackage written with explicit field types (TTB's AVAs_Production types, as
 # the shapefiles), not inferred from the GeoJSON: an all-null field such as
 # Established would otherwise come out as String instead of Date.
+# gpkg_contents' last_change is tsl.DATE (SOURCE_DATE_EPOCH, the package's
+# date), not the time of writing, so the same features give the same bytes, as
+# with src/publish/agol_layer.py's GeoPackages (issue #74).
+gdal.SetConfigOption(
+    "OGR_CURRENT_DATE", time.strftime("%Y-%m-%dT%H:%M:%S.000Z", tsl.DATE)
+)
 gds = ogr.GetDriverByName("GPKG").CreateDataSource(gp)
 for kind in ("area", "line", "points"):
     fc = read_json(os.path.join(OUT, STEM % kind + ".geojson"))

@@ -19,10 +19,15 @@ import os
 import re
 import struct
 import sys
+import time
 from xml.sax.saxutils import escape
 import zipfile
 
 EMU = 914400
+# The date of every part in the DOCX (a zip): SOURCE_DATE_EPOCH, which
+# build.sh sets to the package's date, not the time of writing, so the same
+# document gives the same bytes; the present time when it is not set.
+DATE = time.gmtime(int(os.environ.get("SOURCE_DATE_EPOCH", time.time())))[:6]
 
 
 def png_size(p):
@@ -505,6 +510,29 @@ def footer_xml(text):
     )
 
 
+def part(name, src=None):
+    """The zip entry of a DOCX part, dated DATE.
+
+    Args:
+        name: The part's name in the DOCX.
+        src: The file the part is copied from, or None for a part written
+            from a string.
+
+    Returns:
+        The entry zipfile itself makes for the part (deflated; the file's
+        mode, or 600 for a string), but dated DATE, not the time of writing
+        or the file's.
+    """
+    if src:
+        info = zipfile.ZipInfo.from_file(src, name)
+    else:
+        info = zipfile.ZipInfo(name)
+        info.external_attr = 0o600 << 16
+    info.date_time = DATE
+    info.compress_type = zipfile.ZIP_DEFLATED
+    return info
+
+
 def convert(src, dst, footer, title="", author=""):
     """Converts the HTML file SRC to the DOCX file DST.
 
@@ -600,9 +628,9 @@ def convert(src, dst, footer, title="", author=""):
         f"<dc:creator>{escape(author)}</dc:creator></cp:coreProperties>"
     )
     with zipfile.ZipFile(dst, "w", zipfile.ZIP_DEFLATED) as z:
-        z.writestr("[Content_Types].xml", ct)
+        z.writestr(part("[Content_Types].xml"), ct)
         z.writestr(
-            "_rels/.rels",
+            part("_rels/.rels"),
             '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
             "<Relationships"
             ' xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
@@ -613,21 +641,22 @@ def convert(src, dst, footer, title="", author=""):
             ' Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties"'
             ' Target="docProps/core.xml"/></Relationships>',
         )
-        z.writestr("word/document.xml", doc)
-        z.writestr("word/styles.xml", STYLES)
-        z.writestr("word/numbering.xml", NUMBERING)
-        z.writestr("word/footer1.xml", footer_xml(footer))
+        z.writestr(part("word/document.xml"), doc)
+        z.writestr(part("word/styles.xml"), STYLES)
+        z.writestr(part("word/numbering.xml"), NUMBERING)
+        z.writestr(part("word/footer1.xml"), footer_xml(footer))
         z.writestr(
-            "word/_rels/document.xml.rels",
+            part("word/_rels/document.xml.rels"),
             '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
             "<Relationships"
             ' xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
             + "".join(rels)
             + "</Relationships>",
         )
-        z.writestr("docProps/core.xml", core)
+        z.writestr(part("docProps/core.xml"), core)
         for _rid, name, p in c.media:
-            z.write(p, f"word/media/{name}")
+            with open(p, "rb") as f:
+                z.writestr(part(f"word/media/{name}", p), f.read())
 
 
 if __name__ == "__main__":

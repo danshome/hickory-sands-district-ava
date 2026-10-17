@@ -17,6 +17,16 @@ install against the OSV vulnerability database, creates the project's Python env
 | `SHA256SUMS.txt` | checksums of the above |
 | `build-report.txt` | area, step count, check results, source commit |
 
+Two builds of the same commit on the same machine give the same bytes (issue #65). Every date and time the build writes
+into what it makes (the PDFs' CreationDate and ModDate, the times of the members of every zip, the Word files included,
+the GeoPackage's `last_change`, the shapefiles' `.dbf` headers) is the package's date, as in the file names, Oct. 15,
+2026, 00:00 UTC: `build.sh` exports it as `SOURCE_DATE_EPOCH=1792022400`, the
+[reproducible-builds.org](https://reproducible-builds.org/specs/source-date-epoch/) convention, unless the environment
+already sets it, and the scripts read it from there (a script run alone without it uses the present time). Chrome cannot
+be told a date, so `src/documents/pdf_dates.py` dates its PDFs after printing; the notice copy keeps the first part of
+GPO's file identifier (`/ID`), and its second part is the MD5 of the copy's bytes. Only the build report's `built` line,
+which is not in the zip, says when the build ran.
+
 Other commands:
 
 - `./build.sh env` sets up the tools, `.venv` and the git pre-commit hooks only.
@@ -109,7 +119,7 @@ src/
   review/                tipcheck (tips the line stops short of), compare_ttb (vs the AVA Map Explorer polygon),
                          grit_change (the change near Grit, acre by acre, with its granite), triage tools
   boundary/              ink_centerline (runs the tracer), build_proposed (pins, polygon, GIS), quad sheets, TTB record
-  documents/             description, side-by-side, notice copy, DOCX, README / read-me-first, PDF text
+  documents/             description, side-by-side, notice copy, DOCX, README / read-me-first, PDF text, PDF dates
   checks/                hard checks: quads vs manifest, every pin on its line, no self-crossing, valid polygon;
                          check_outputs: what reaches TTB (PDF fonts, compare text, figures, wording, GIS, zip paths)
   package/               make_package.sh (the zip)

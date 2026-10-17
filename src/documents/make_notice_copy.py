@@ -35,7 +35,10 @@ The copy is altered, so it must not pass for GPO's signed file (QA issue #39):
   U.S. Government Information" seal, which is that signature field's
   appearance;
 - the metadata says it is the petitioner's unofficial copy (GPO's XMP packet,
-  with govinfo's creator and dates, is dropped);
+  with govinfo's creator and dates, is dropped), dated SOURCE_DATE_EPOCH (the
+  package's date, from build.sh); the file identifier keeps GPO's first part,
+  and its second, which marks a changed file, is the MD5 of the copy's bytes,
+  so every build of the same commit makes the same file;
 - pages 52586, 52587 and 52588 and the added last page carry a red running
   line in the top margin, drawn in the page content as an image like the
   first-page note, so it prints and survives annotation stripping, and the
@@ -49,15 +52,20 @@ Usage: python make_notice_copy.py
 
 import contextlib
 import difflib
+import hashlib
 import io
 import json
 import os
 import re
+import sys
 
 from PIL import Image
 from PIL import ImageDraw
 from PIL import ImageFont
 import pymupdf
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # src/documents
+import pdf_dates
 
 ROOT = os.path.abspath(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
@@ -797,9 +805,10 @@ p1.insert_image(pymupdf.Rect(NOTE_X0, 33 - h, NOTE_X1, 33), stream=png)
 
 # the metadata names the petitioner's copy, not GPO's file: the Info dictionary
 # only (GPO's XMP packet, which viewers prefer, still carried govinfo's
-# creator, producer and dates)
+# creator, producer and dates); dated SOURCE_DATE_EPOCH, the package's date
+# (build.sh), not the time of writing, so the same copy gives the same bytes
 doc.del_xml_metadata()
-now = pymupdf.get_pdf_now()
+date = pdf_dates.pdf_date()
 doc.set_metadata(
     {
         "title": (
@@ -823,12 +832,13 @@ doc.set_metadata(
             f"PyMuPDF {pymupdf.VersionBind}; GPO's digital signature "
             "removed (altered copy)"
         ),
-        "creationDate": now,
-        "modDate": now,
+        "creationDate": date,
+        "modDate": date,
         "trapped": "",
     }
 )
-doc.save(OUT + ".tmp", garbage=3, deflate=True)
+# GPO's file identifier (/ID) kept for now: it is replaced below
+doc.save(OUT + ".tmp", garbage=3, deflate=True, no_new_id=True)
 
 # MuPDF maps the hyphen glyph to U+00AD (soft hyphen) in the ToUnicode maps of
 # the fonts it adds; make it U+002D
@@ -898,7 +908,17 @@ for xref in range(1, d2.xref_length()):
             if t != s:
                 d2.update_stream(tx, t)
                 n += 1
-d2.save(OUT, garbage=3, deflate=True)
+# The file identifier (/ID): the first part, the document's, stays GPO's; the
+# second, which changes with the file, becomes the MD5 of the copy's bytes
+# (MuPDF would draw a random one), so the same copy gives the same bytes.
+ids = re.findall(r"<([0-9A-Fa-f]+)>", d2.xref_get_key(-1, "ID")[1])
+assert len(ids) == 2, "the docket PDF has no file identifier (/ID)"
+digest = hashlib.md5(
+    d2.tobytes(garbage=3, deflate=True, no_new_id=True),
+    usedforsecurity=False,
+).hexdigest()
+d2.xref_set_key(-1, "ID", f"[<{ids[0]}><{digest.upper()}>]")
+d2.save(OUT, garbage=3, deflate=True, no_new_id=True)
 d2.close()
 os.remove(OUT + ".tmp")
 print(f"fixed hyphen mapping in {n} font(s); wrote {OUT}")

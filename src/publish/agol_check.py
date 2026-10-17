@@ -67,6 +67,7 @@ PKG = os.path.join(
 REVIEW = os.path.join(HERE, "review")
 GROUP_ID = "65720ee9c5a743f88659ae39228704ec"
 REST = "https://www.arcgis.com/sharing/rest/"
+WINE = "#5a1e2e"  # the dashboard theme's accent, the header's wine (#94)
 UA = {
     "User-Agent": "Mozilla/5.0 (Macintosh) hickory-sands-district-ava "
     "agol_check.py"
@@ -758,10 +759,29 @@ def dashboard(bad, note):
     for it in items:
         if it["id"] not in linked and it["type"] != "Dashboard":
             bad(f"the dashboard does not link {it['title']}")
+    # its theme (#94): its own resource, public, with wine as the accent
+    theme = dash.get("theme") or {}
+    brand = None
+    if theme.get("type") != "resource":
+        bad(f"its theme is {theme}, not its own resource with the wine accent")
+    else:
+        url = (
+            REST + f"content/items/{dashboards[0]['id']}/resources/themes/"
+            f"{theme.get('id')}.json"
+        )
+        try:
+            scheme = rest(url).get("colorScheme") or {}
+        # Whatever the error, the check reports it.
+        except Exception as e:  # noqa: BLE001
+            bad(f"its theme cannot be read: {type(e).__name__}: {e}")
+        else:
+            brand = scheme.get("brandColor")
+            if str(brand).lower() != WINE:
+                bad(f"its theme's accent is {brand!r}, not the wine {WINE}")
     return (
         f"{dashboards[0]['title'].split(' - ')[0]}: the JSON parses; "
         f"{'; '.join(said)}, all wired to what exists; links all "
-        f"{len(linked)} other items"
+        f"{len(linked)} other items; theme accent {brand}"
     )
 
 

@@ -22,7 +22,8 @@ One line per check; every failure names the item and what is wrong:
   wired (check_views); every map and data source is the web map's; every link
   to an item names an item in the list and its text is in that item's title;
   every other item is linked; indicator captions within CAPTION_BUDGET
-  characters per width; link cells in tables do not wrap;
+  characters per width; link cells in tables do not wrap; its theme its own
+  resource, the light theme with the header's wine as the accent (#94);
 - metadata (#31): culture en-us; tags with "Notice No. 243" and
   "TTB-2026-0005"; credits; a sane extent on every spatial item (numbers 4 and
   5); a group category under the item's own number;
@@ -152,6 +153,10 @@ BAD = re.compile(
     re.I,
 )
 ITEM_LINK = re.compile(r"/home/item\.html\?id=([0-9a-f]{32})")
+# the dashboard's own theme (#94): the resource its data names, and its accent,
+# the header's wine (agol_dashboard.THEME_REF, WINE)
+THEME_REF = {"id": "user", "type": "resource"}
+WINE = "#5a1e2e"
 ANCHOR = re.compile(
     r"""<a\s[^>]*?href\s*=\s*(["'])(.*?)\1[^>]*>(.*?)</a>""", re.S | re.I
 )
@@ -161,6 +166,7 @@ FILES = (
     "services",
     "webmap",
     "dashboard",
+    "theme",
     "group",
     "facts",
 )
@@ -584,6 +590,15 @@ def check_dashboard(b, bad):
     for it in b["item-list"]["items"]:
         if it["type"] != "Dashboard" and it["id"] not in linked:
             bad(f"the dashboard does not link {it['title']}")
+    # its theme (#94): its own resource, sent with it, wine as the accent
+    if d.get("theme") != THEME_REF:
+        bad(f"the dashboard's theme is {d.get('theme')}, not {THEME_REF}")
+    scheme = (b.get("theme") or {}).get("colorScheme") or {}
+    if scheme.get("brandColor") != WINE or scheme.get("mode") != "light":
+        bad(
+            f"the theme's accent is {scheme.get('brandColor')!r} "
+            f"({scheme.get('mode')!r} mode), not the header's wine {WINE}"
+        )
     # indicator captions fit their width (#45)
     worst = {}
     for name, v in views.items():

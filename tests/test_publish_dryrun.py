@@ -206,6 +206,20 @@ FAULTS = {
         ),
         r"check_views",
     ),
+    "the built-in theme again, not the dashboard's own (#94)": (
+        "dashboard",
+        lambda b: b["dashboard"].__setitem__(
+            "theme", {"id": "light", "type": "defined"}
+        ),
+        r"the dashboard's theme is",
+    ),
+    "Esri blue as the theme's accent, not the wine (#94)": (
+        "dashboard",
+        lambda b: b["theme"]["colorScheme"].__setitem__(
+            "brandColor", "#007ac2"
+        ),
+        r"the theme's accent is '#007ac2'",
+    ),
     "a link to an item not in the group": (
         "dashboard",
         lambda b: first_item_link(b, "f" * 32),

@@ -142,6 +142,71 @@ SECTIONS = {
     "5": "5 USGS quadrangles with the boundary",
 }
 WINE, INK = "#5a1e2e", "#8a1c1c"
+# The theme (issue #94): ArcGIS Dashboards' light theme with the header's wine
+# as its accent, so the selected tab and the buttons are wine, not Esri blue.
+# Every other value is the light theme's own, read from the published
+# dashboard (Oct. 17, 2026), so nothing else changes. A dashboard's own theme
+# is a resource of its item, themes/user.json, which its data names as below.
+THEME_REF = {"id": "user", "type": "resource"}
+THEME_FOLDER, THEME_FILE = "themes", "user.json"
+THEME = {
+    "colorScheme": {
+        "type": "custom",
+        "mode": "light",
+        "brandColor": WINE,
+        "brandHoverColor": "#481825",
+        "brandPressColor": "#36121c",
+        "backgroundColor": "#f7f7f7",
+        "foregroundColor1": "#ffffff",
+        "foregroundColor2": "#f2f2f2",
+        "foregroundColor3": "#ebebeb",
+        "textColor1": "#141414",
+        "textColor2": "#4a4a4a",
+        "textColor3": "#6b6b6b",
+        "textInverseColor": "#ffffff",
+        "textLinkColor": "#00619b",
+        "borderColor1": "#d4d4d4",
+        "borderColor2": "#dedede",
+        "borderColor3": "#ebebeb",
+        "borderInputColor": "#949494",
+        "statusInfoColor": "#00619b",
+        "statusInfoHoverColor": "#004874",
+        "statusInfoPressColor": "#00304d",
+        "statusSuccessColor": "#288835",
+        "statusSuccessHoverColor": "#1a6324",
+        "statusSuccessPressColor": "#0d3f14",
+        "statusWarningColor": "#da7c0b",
+        "statusWarningHoverColor": "#c26b00",
+        "statusWarningPressColor": "#9a5b10",
+        "statusDangerColor": "#d83020",
+        "statusDangerHoverColor": "#a82b1e",
+        "statusDangerPressColor": "#7c1d13",
+        "panelHeaderBackgroundColor": "#ffffff",
+        "panelHeadingTextColor": "#141414",
+        "panelHeaderActionTextColor": "#6b6b6b",
+        "panelHeaderActionTextColorPress": "#141414",
+        "panelHeaderActionBackgroundColor": "#ffffff",
+        "panelHeaderActionBackgroundColorHover": "#f2f2f2",
+        "panelHeaderActionBackgroundColorPress": "#ebebeb",
+    },
+    "corners": "square",
+    "spacing": "default",
+    "fontFamily": "Avenir Next",
+    "headingFontFamily": "Avenir Next",
+    "headingScaleFactor": 1,
+}
+# The tabs (issue #94), each with a symbol so they read as buttons, and short
+# enough that every tab strip shows all its tabs on a phone and on a 1280-pixel
+# screen (measured in Chrome): the same names on both.
+TAB = {
+    "steps": "\u2630 Steps",
+    "changes": "\u21c4 Changes",
+    "grit": "\u25c6 Grit",
+    "files": "\u25a4 Files",
+    "quads": "\u25a6 USGS maps",
+    "big": "\u2260 Big differences",
+    "all": "\u2260 All differences",
+}
 
 
 def wid(name):
@@ -1160,8 +1225,9 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
     )
 
     # left, map, right: shares of the width (QA #45: 0.27/0.45/0.28, then
-    # 0.3/0.42/0.28)
-    col_shares = (0.33, 0.41, 0.26)
+    # 0.3/0.42/0.28, then 0.33/0.41/0.26; #94: the right column 0.28, so its
+    # three tabs, with their symbols, fit at 1280 pixels)
+    col_shares = (0.33, 0.39, 0.28)
     # left column: indicators, indicators, tabs: shares of the height (QA #45:
     # room for two-line captions at 1280x720)
     row_shares = (0.25, 0.23, 0.52)
@@ -1212,10 +1278,10 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
                     "width": 1,
                     "height": phone_row_shares[2],
                     "elements": [
-                        item(M_LIST, tabName="Steps"),
-                        item(M_TXT["about"], tabName="What changes"),
-                        item(M_TXT["grit"], tabName="Grit"),
-                        item(M_TXT["documents"], tabName="Documents"),
+                        item(M_LIST, tabName=TAB["steps"]),
+                        item(M_TXT["about"], tabName=TAB["changes"]),
+                        item(M_TXT["grit"], tabName=TAB["grit"]),
+                        item(M_TXT["documents"], tabName=TAB["files"]),
                     ],
                 },
             ],
@@ -1252,12 +1318,10 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
                             "width": 1,
                             "height": row_shares[2],
                             "elements": [
-                                item(TXT["documents"], tabName="Documents"),
-                                item(
-                                    TXT["grit"], tabName="The change near Grit"
-                                ),
-                                item(TXT["about"], tabName="What changes"),
-                                item(TXT["quads"], tabName="USGS quadrangles"),
+                                item(TXT["documents"], tabName=TAB["files"]),
+                                item(TXT["grit"], tabName=TAB["grit"]),
+                                item(TXT["about"], tabName=TAB["changes"]),
+                                item(TXT["quads"], tabName=TAB["quads"]),
                             ],
                         },
                     ],
@@ -1274,9 +1338,9 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
                             "width": 1,
                             "height": 0.6,
                             "elements": [
-                                item(LIST, tabName="Steps"),
-                                item(DIFFS, tabName="Big differences"),
-                                item(ALLD, tabName="All differences"),
+                                item(LIST, tabName=TAB["steps"]),
+                                item(DIFFS, tabName=TAB["big"]),
+                                item(ALLD, tabName=TAB["all"]),
                             ],
                         },
                         item(DETAILS, h=0.4),
@@ -1355,7 +1419,7 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
         "maxPaginationRecords": 50000,
         "maxChartRecords": 10000,
         "timeZone": "system",
-        "theme": {"id": "light", "type": "defined"},
+        "theme": THEME_REF,
         "numberPrefixOverrides": [
             {"key": k, "symbol": s, "enabled": e}
             for k, s, e in (
@@ -1397,6 +1461,23 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
     return dashboard, props
 
 
+def send_theme(db):
+    """Adds or replaces the dashboard item's theme resource (THEME, #94).
+
+    Args:
+        db: The dashboard item.
+    """
+    name = f"{THEME_FOLDER}/{THEME_FILE}"
+    have = {r.get("resource") for r in db.resources.list()}
+    send = db.resources.update if name in have else db.resources.add
+    send(
+        folder_name=THEME_FOLDER,
+        file_name=THEME_FILE,
+        text=json.dumps(THEME),
+    )
+    print("theme", name, "brand", THEME["colorScheme"]["brandColor"])
+
+
 def main():
     """Signs in, builds the dashboard from the live items and layers, sends it.
 
@@ -1433,6 +1514,8 @@ def main():
     assert "agree" not in text.lower()
     assert "agree" not in json.dumps(props).lower()
     db = items.get(TITLE)
+    if db is not None:  # the theme first: the data names it (#94)
+        send_theme(db)
     if db is None:
         db = folder.add(
             ItemProperties(
@@ -1448,6 +1531,7 @@ def main():
             ),
             text=text,
         ).result()
+        send_theme(db)
         how = "added"
     else:
         db.update(item_properties=props, data=text)

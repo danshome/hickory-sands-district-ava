@@ -247,7 +247,7 @@ GRIT_AREAS = (("Notice No. 243, not the petition", "In Notice No. 243's text, le
               ("petition, not Notice No. 243", "In the petition, not Notice No. 243's text, (99)-(100)"))
 reworded = [s["step"] for s in steps if "unchanged" not in (s["change"] or "")]   # as the indicator counts them
 FIX = "text correction"   # how build_agreed.py's change notes for (49) and (85) start: Notice No. 243's wording corrected
-fixes = [n for n in reworded if FIX in next(s["change"] for s in steps if s["step"] == n)]
+fixes = [s["step"] for s in steps if FIX in (s["change"] or "")]
 near_grit = [n for n in reworded if n not in fixes]
 def and_list(nums):   # 49, 85 -> (49) and (85)
     s = [f"({n})" for n in sorted(nums)]

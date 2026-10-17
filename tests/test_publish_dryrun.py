@@ -1,12 +1,19 @@
-"""src/publish/agol_dryrun_checks.py (issue #58): the checks on everything the publish would send to ArcGIS Online pass on
-a dry run of the current build, and each fails on a fault planted in it: a hosted layer left editable (#25), plain CC0 on
-TTB's text (#11), a phone element without its desktop twin and no phone view (#49), a link to an item not in the group
-or titled otherwise, a caption too long for its indicator (#45), a link cell that wraps (#47), the quadrangles' band
-legend and raw pop-up (#46), a stray web map layer, metadata gaps (#31), credits (#30), descriptions (#29, #34), the
-quadrangle editions (#44), the wording rules, a private group, a new or retitled item.
-The dry run's files are tests/fixtures/publish/dry-run/ (target/publish/ from ./build.sh publish-dry-run: copy them
-there again after changing what the publish sends) and the group's item list tests/fixtures/publish/agol-items.json.
-Standard library only, so the lint workflow runs these; the last test, marked build, runs the whole dry run on a build.
+"""src/publish/agol_dryrun_checks.py (issue #58): the publish's checks.
+
+The checks on everything the publish would send to ArcGIS Online pass on a dry
+run of the current build, and each fails on a fault planted in it: a hosted
+layer left editable (#25), plain CC0 on TTB's text (#11), a phone element
+without its desktop twin and no phone view (#49), a link to an item not in the
+group or titled otherwise, a caption too long for its indicator (#45), a link
+cell that wraps (#47), the quadrangles' band legend and raw pop-up (#46), a
+stray web map layer, metadata gaps (#31), credits (#30), descriptions (#29,
+#34), the quadrangle editions (#44), the wording rules, a private group, a new
+or retitled item.
+The dry run's files are tests/fixtures/publish/dry-run/ (target/publish/ from
+./build.sh publish-dry-run: copy them there again after changing what the
+publish sends) and the group's item list tests/fixtures/publish/agol-items.json.
+Standard library only, so the lint workflow runs these; the last test, marked
+build, runs the whole dry run on a build.
 """
 
 import copy
@@ -18,7 +25,7 @@ import sys
 
 import pytest
 
-from src.publish import agol_dryrun_checks as C
+from src.publish import agol_dryrun_checks
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FIX = os.path.join(ROOT, "tests", "fixtures", "publish")
@@ -26,34 +33,34 @@ FIX = os.path.join(ROOT, "tests", "fixtures", "publish")
 
 @pytest.fixture(scope="module")
 def bundle():
+    def load(*parts):
+        with open(os.path.join(FIX, *parts), encoding="utf-8") as fh:
+            return json.load(fh)
+
     b = {
-        k: json.load(
-            open(os.path.join(FIX, "dry-run", k + ".json"), encoding="utf-8")
-        )
-        for k in C.FILES
+        k: load("dry-run", k + ".json")
+        for k in agol_dryrun_checks.FILES
         if k != "item-list"
     }
-    b["item-list"] = json.load(
-        open(os.path.join(FIX, "agol-items.json"), encoding="utf-8")
-    )
+    b["item-list"] = load("agol-items.json")
     return b
 
 
 def problems(b, name):
     bad = []
-    dict(C.CHECKS)[name](b, bad.append)
+    dict(agol_dryrun_checks.CHECKS)[name](b, bad.append)
     return bad
 
 
 def test_every_check_passes_on_the_current_build(bundle):
     lines = []
-    assert C.run(bundle, lines.append) == [], "\n".join(lines)
+    assert agol_dryrun_checks.run(bundle, lines.append) == [], "\n".join(lines)
 
 
-# ---------------------------------------------------------------- where to plant
-def item(
-    b, number
-):  # "1a", or the start of a title up to a space or comma ("5a ... - Fly Gap")
+# --------------------------------------------------------------- where to plant
+def item(b, number):
+    # number: "1a", or the start of a title up to a space or comma ("5a ... -
+    # Fly Gap")
     return next(
         it
         for it in b["items"]
@@ -72,7 +79,7 @@ def widget(b, view, kind, name):
 def op(b, lid):
     return next(
         lyr
-        for lyr in C.layers(b["webmap"]["operationalLayers"])
+        for lyr in agol_dryrun_checks.layers(b["webmap"]["operationalLayers"])
         if lyr.get("id") == lid
     )
 
@@ -119,8 +126,12 @@ def retitle(b, number, old, new):
     it["properties"]["snippet"] = it["properties"]["snippet"].replace(old, new)
 
 
-ABOUT = lambda b: b["facts"]["about"][0]
-FAULTS = {  # fault: (the check that must fail, the plant, what its problem says)
+def about(b):
+    return b["facts"]["about"][0]
+
+
+# fault: (the check that must fail, the plant, what its problem says)
+FAULTS = {
     "a hosted layer with Create (#25)": (
         "security",
         lambda b: b["services"][item(b, "4k")["title"]]["definition"].update(
@@ -145,7 +156,7 @@ FAULTS = {  # fault: (the check that must fail, the plant, what its problem says
         lambda b: props(
             b,
             "1a",
-            licenseInfo=C.CC0
+            licenseInfo=agol_dryrun_checks.CC0
             + " (public domain dedication): no rights reserved.",
         ),
         r"does not name 'U\.S\. Government work",
@@ -153,7 +164,9 @@ FAULTS = {  # fault: (the check that must fail, the plant, what its problem says
     "plain CC0 on the web map (#30)": (
         "licences",
         lambda b: props(
-            b, "4a", licenseInfo=C.CC0 + " (public domain dedication)."
+            b,
+            "4a",
+            licenseInfo=agol_dryrun_checks.CC0 + " (public domain dedication).",
         ),
         r"does not name",
     ),
@@ -162,7 +175,8 @@ FAULTS = {  # fault: (the check that must fail, the plant, what its problem says
         lambda b: props(
             b,
             "2b",
-            licenseInfo="U.S. Government work (public domain). " + C.CC0,
+            licenseInfo="U.S. Government work (public domain). "
+            + agol_dryrun_checks.CC0,
         ),
         r"TTB's own work licensed CC0",
     ),
@@ -327,7 +341,7 @@ FAULTS = {  # fault: (the check that must fail, the plant, what its problem says
     ),
     "a boilerplate description (#34)": (
         "descriptions",
-        lambda b: props(b, "4e", description=ABOUT(b)),
+        lambda b: props(b, "4e", description=about(b)),
         r"beyond the shared opening",
     ),
     "the CSV described as the PDF (#29)": (
@@ -342,7 +356,7 @@ FAULTS = {  # fault: (the check that must fail, the plant, what its problem says
         lambda b: props(
             b,
             "2b",
-            description=ABOUT(b) + item(b, "2b")["properties"]["description"],
+            description=about(b) + item(b, "2b")["properties"]["description"],
         ),
         r"prepared by the petitioner",
     ),
@@ -445,38 +459,49 @@ def test_a_planted_fault_fails_its_check(bundle, fault):
         ),
         ("1a Boundary description as proposed (PDF)", "1a"),
         (
-            "5a USGS quadrangle with the boundary (GeoPDF) - Fly Gap, TX (1962, photorevised 1982)",
+            (
+                "5a USGS quadrangle with the boundary (GeoPDF) - Fly Gap, TX "
+                "(1962, photorevised 1982)"
+            ),
             "5a Fly Gap",
         ),
     ],
 )
 def test_item_numbers(title, number):
-    assert C.code(title) == number
+    assert agol_dryrun_checks.code(title) == number
 
 
 def test_link_text_runs():
-    """a phone button's title and note are two pieces of text, each in the item's title; not run together (#49)"""
-    assert C.runs(
-        '<strong>Read me first</strong><br><span style="x">what is in this group, and the license</span>'
+    """A phone button's title and note are two pieces of text.
+
+    Each is in the item's title; not run together (#49).
+    """
+    assert agol_dryrun_checks.runs(
+        "<strong>Read me first</strong><br>"
+        '<span style="x">what is in this group, and the license</span>'
     ) == ["Read me first", "what is in this group, and the license"]
-    assert C.runs("TTB&#x27;s text") == ["TTB's text"]
+    assert agol_dryrun_checks.runs("TTB&#x27;s text") == ["TTB's text"]
 
 
 def test_width_shares():
-    stack = lambda o, els: {
-        "type": "stackLayoutElement",
-        "orientation": o,
-        "id": "s",
-        "width": 1,
-        "height": 1,
-        "elements": els,
-    }
-    leaf = lambda i, w=1, h=1: {
-        "type": "itemLayoutElement",
-        "id": i,
-        "width": w,
-        "height": h,
-    }
+    def stack(o, els):
+        return {
+            "type": "stackLayoutElement",
+            "orientation": o,
+            "id": "s",
+            "width": 1,
+            "height": 1,
+            "elements": els,
+        }
+
+    def leaf(i, w=1, h=1):
+        return {
+            "type": "itemLayoutElement",
+            "id": i,
+            "width": w,
+            "height": h,
+        }
+
     v = {
         "layout": {
             "rootElement": stack(
@@ -499,20 +524,24 @@ def test_width_shares():
             )
         }
     }
-    assert C.width_shares(v) == pytest.approx(
+    assert agol_dryrun_checks.width_shares(v) == pytest.approx(
         {"a": 0.1, "b": 0.2, "c": 0.3, "map": 0.7}
     )
 
 
 @pytest.mark.build
 def test_the_dry_run_of_the_build(tmp_path):
-    """the whole dry run on the build's outputs (HSD_WORK or target/work), as ./build.sh publish-dry-run runs it"""
+    """The whole dry run on the build's outputs (HSD_WORK or target/work).
+
+    As ./build.sh publish-dry-run runs it.
+    """
     work = os.environ.get("HSD_WORK") or os.path.join(ROOT, "target", "work")
     if not os.path.exists(os.path.join(work, "agreed-steps.json")):
         pytest.skip(f"no build outputs in {work}: run ./build.sh first")
     pytest.importorskip(
         "arcgis",
-        reason="the publish scripts import Esri's arcgis package (requirements.txt)",
+        reason="the publish scripts import Esri's arcgis package "
+        "(requirements.txt)",
     )
     r = subprocess.run(
         [
@@ -526,6 +555,7 @@ def test_the_dry_run_of_the_build(tmp_path):
         capture_output=True,
         text=True,
         env={**os.environ, "HSD_WORK": work},
+        check=False,
     )
     assert r.returncode == 0, r.stdout[-3000:] + r.stderr[-3000:]
     assert "dry-run checks: 10 of 10 passed" in r.stdout

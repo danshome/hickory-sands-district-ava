@@ -1,12 +1,16 @@
-"""src/review/compare_ttb.py: a big difference's acres are those of the whole pieces of land its ring touches, even where
-the ring's outline has a hole (issue #26); and the small helpers that find the stretches farther apart than the noise.
+"""src/review/compare_ttb.py: big differences' acres, and the small helpers.
+
+A big difference's acres are those of the whole pieces of land its ring
+touches, even where the ring's outline has a hole (issue #26); and the small
+helpers that find the stretches farther apart than the noise.
 """
 
 import pytest
 
 pytest.importorskip(
     "osgeo",
-    reason="GDAL's Python bindings are in the build's .venv (./build.sh env), not the lint tools",
+    reason="GDAL's Python bindings are in the build's .venv (./build.sh env), "
+    "not the lint tools",
 )
 pytest.importorskip(
     "scipy",
@@ -23,9 +27,11 @@ wkt = ogr.CreateGeometryFromWkt
 
 
 def test_a_ring_counts_the_whole_pieces_it_touches_even_inside_its_hole():
-    # a long stretch's ring: an outline 1 km square with a hole (EPSG:5070 metres)
+    # a long stretch's ring: an outline 1 km square with a hole (EPSG:5070
+    # metres)
     ring = wkt(
-        "POLYGON ((0 0, 1000 0, 1000 1000, 0 1000, 0 0), (200 200, 800 200, 800 800, 200 800, 200 200))"
+        "POLYGON ((0 0, 1000 0, 1000 1000, 0 1000, 0 0), "
+        "(200 200, 800 200, 800 800, 200 800, 200 200))"
     )
     in_hole = wkt(
         "POLYGON ((300 300, 700 300, 700 700, 300 700, 300 300))"
@@ -72,7 +78,8 @@ def test_densify_every_2_m():
 
 def test_polygons_and_poly_area_of_a_collection():
     g = wkt(
-        "GEOMETRYCOLLECTION (POLYGON ((0 0, 10 0, 10 10, 0 10, 0 0)), LINESTRING (0 0, 5 5), "
+        "GEOMETRYCOLLECTION (POLYGON ((0 0, 10 0, 10 10, 0 10, 0 0)), "
+        "LINESTRING (0 0, 5 5), "
         "MULTIPOLYGON (((20 0, 22 0, 22 2, 20 2, 20 0))))"
     )
     assert [p.GetArea() for p in compare_ttb.polygons(g)] == [100.0, 4.0]

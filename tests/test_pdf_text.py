@@ -1,6 +1,9 @@
-"""src/documents/pdf_text.py: paragraphs rebuilt from poppler's -bbox-layout positions, and the line-end hyphen rules.
-Small synthetic pages (a line is (xMin, xMax, y, "its words"); points, as poppler gives them), and one run of the real
-pdftotext on TTB's Notice No. 243 when poppler is installed.
+"""src/documents/pdf_text.py: paragraphs from poppler's positions, and hyphens.
+
+Paragraphs rebuilt from poppler's -bbox-layout positions, and the line-end
+hyphen rules. Small synthetic pages (a line is (xMin, xMax, y, "its words");
+points, as poppler gives them), and one run of the real pdftotext on TTB's
+Notice No. 243 when poppler is installed.
 """
 
 import html
@@ -30,7 +33,7 @@ TTB_STEPS = (
 
 
 def xhtml(*pages):
-    """poppler's -bbox-layout XHTML: pages of blocks of lines"""
+    """Returns poppler's -bbox-layout XHTML: pages of blocks of lines."""
     out = ["<doc>"]
     for blocks in pages:
         out.append('  <page width="612.000000" height="792.000000">')
@@ -41,20 +44,23 @@ def xhtml(*pages):
                 max(ln[2] for ln in lines) + 10,
             )
             out.append(
-                f'    <flow>\n      <block xMin="{bx0:f}" yMin="{by0:f}" xMax="{bx1:f}" yMax="{by1:f}">'
+                f'    <flow>\n      <block xMin="{bx0:f}" yMin="{by0:f}" '
+                f'xMax="{bx1:f}" yMax="{by1:f}">'
             )
             for x0, x1, y, words in lines:
                 out.append(
-                    f'        <line xMin="{x0:f}" yMin="{y:f}" xMax="{x1:f}" yMax="{y + 10:f}">'
+                    f'        <line xMin="{x0:f}" yMin="{y:f}" '
+                    f'xMax="{x1:f}" yMax="{y + 10:f}">'
                 )
                 out += [
-                    f'          <word xMin="{x0:f}" yMin="{y:f}" xMax="{x1:f}" yMax="{y + 10:f}">{html.escape(w)}</word>'
+                    f'          <word xMin="{x0:f}" yMin="{y:f}" '
+                    f'xMax="{x1:f}" yMax="{y + 10:f}">{html.escape(w)}</word>'
                     for w in words.split()
                 ]
                 out.append("        </line>")
             out.append("      </block>\n    </flow>")
         out.append("  </page>")
-    return "\n".join(out + ["</doc>"])
+    return "\n".join([*out, "</doc>"])
 
 
 def text(*pages):
@@ -62,7 +68,8 @@ def text(*pages):
     return pdf_text.text_of(paras, printed, "test.txt")
 
 
-# ---- paragraphs: a left column x 50-300 and a right column x 320-570; a line ending at x >= 275 is full
+# ---- paragraphs: a left column x 50-300 and a right column x 320-570; a line
+# ending at x >= 275 is full
 
 
 def test_an_indented_line_starts_a_paragraph():
@@ -74,7 +81,10 @@ def test_an_indented_line_starts_a_paragraph():
         (50, 120, 140, "indent."),
     ]
     assert text([block]) == [
-        "The boundary of the viticultural area is as described as follows. It ends here.",
+        (
+            "The boundary of the viticultural area is as described as follows. "
+            "It ends here."
+        ),
         "A second paragraph starts with an indent.",
     ]
 
@@ -106,7 +116,10 @@ def test_a_flush_block_carries_on_a_paragraph_cut_by_a_column_break():
         (330, 570, 110, "(2) Proceed north to the end."),
     ]
     assert text([left, right]) == [
-        "Proceed east along the road for 2.9 miles to its intersection with Honey Creek; then",
+        (
+            "Proceed east along the road for 2.9 miles to its intersection "
+            "with Honey Creek; then"
+        ),
         "(2) Proceed north to the end.",
     ]
 
@@ -178,7 +191,10 @@ def test_page_furniture_waits_for_a_paragraph_carried_over_the_page_break():
     ]
     assert text(page1, page2) == [
         "Federal Register / Vol. 91, No. 156",
-        "Proceed east along the road for 2.9 miles to its intersection with Honey Creek; then",
+        (
+            "Proceed east along the road for 2.9 miles to its intersection "
+            "with Honey Creek; then"
+        ),
         "margin note",
         "VerDate Sep<11>2014 Jkt 268001",
         "52588",
@@ -355,14 +371,18 @@ def test_line_end_hyphens(lines, flat, joined):
     assert pdf_text.join(lines, flat) == joined
 
 
-# ---- the real thing: TTB's Notice No. 243, as the build makes its compare-text file
+# ---- the real thing: TTB's Notice No. 243, as the build makes its compare-text
+# file
 
-GPO = lambda s: (
-    s.replace("\u2018\u2018", "\u201c")
-    .replace("\u2019\u2019", "\u201d")
-    .replace("\u2019", "'")
-    .replace("\u2013", "-")
-)
+
+def gpo(s):
+    """Returns s with GPO's quotes and dashes as TTB's text has them."""
+    return (
+        s.replace("\u2018\u2018", "\u201c")
+        .replace("\u2019\u2019", "\u201d")
+        .replace("\u2019", "'")
+        .replace("\u2013", "-")
+    )
 
 
 @pytest.mark.build
@@ -391,8 +411,7 @@ def test_notice_243(tmp_path, capsys):
     ][:96]
     assert [n for n, _ in steps] == list(range(1, 97))
     ttb = json.loads(TTB_STEPS.read_text(encoding="utf-8"))
-    for (
-        n,
-        s,
-    ) in steps:  # each step one whole line: the printed text, GPO's quotes and dashes aside, is TTB's step
-        assert GPO(s) == " ".join(ttb[str(n)].split()), f"step ({n})"
+    # each step one whole line: the printed text, GPO's quotes and dashes
+    # aside, is TTB's step
+    for n, s in steps:
+        assert gpo(s) == " ".join(ttb[str(n)].split()), f"step ({n})"

@@ -1,7 +1,12 @@
-"""Re-run THE CHECK (centerline.grade) on already-traced lines without re-tracing: raw ink sampled around each line,
-the grader's figures rewritten into the GeoJSON properties, plus the STRICT figure (within 2 m of the whole line,
-unmeasured metres counted as failed -- Dan's rule) and the unmeasured stretches as a review list.
-CLI: regrade.py --quads "GLOB" --traced traced.geojson [--ids 3 6 ...] [--kind-field kind]
+"""Re-run THE CHECK (centerline.grade) on already-traced lines.
+
+No re-tracing: the raw ink is sampled around each line and the grader's figures
+are rewritten into the GeoJSON properties (the file is rewritten in place), plus
+the STRICT figure (within 2 m of the whole line, unmeasured metres counted as
+failed -- Dan's rule) and the unmeasured stretches as a review list.
+
+CLI: regrade.py --quads "GLOB" --traced traced.geojson [--ids 3 6 ...]
+                [--kind-field kind]
 """
 
 import argparse
@@ -20,6 +25,24 @@ from quadsheets import open_sheets
 
 
 def regrade(sheets, coords, kind):
+    """Grades one traced line on the raw ink of the sheets.
+
+    The line is resampled at 1 m (its ends kept), the kind's ink is sampled
+    within 14 m of it (a creek's dots chained as trace() does) and
+    centerline.grade() is run over it; the 10 m at each end (the pins) are
+    left out of the figures, as in trace().
+
+    Args:
+        sheets: The open sheets (quadsheets.open_sheets).
+        coords: The line's NAD83 lon/lat coordinates.
+        kind: "road", "creek" or "contour".
+
+    Returns:
+        The properties to update: symbol, graded (a timestamp), measured_pct,
+        off_center_median_m, off_center_p95_m, within_2m_pct,
+        strict_within_2m_pct, off_center_runs, gaps, pin_start_off_center_m
+        and pin_end_off_center_m.
+    """
     lon0 = float(np.mean([c[0] for c in coords]))
     lat0 = float(np.mean([c[1] for c in coords]))
     mx, my = 111320.0 * math.cos(math.radians(lat0)), 110574.0
@@ -32,7 +55,8 @@ def regrade(sheets, coords, kind):
         int((line[:, 0].max() + pad - xmin) / cl.RES) + 1,
         int((line[:, 1].max() + pad - ymin) / cl.RES) + 1,
     )
-    # ink only within 14 m of the line (what grade() reads), sampled on the sheets
+    # ink only within 14 m of the line (what grade() reads), sampled on the
+    # sheets
     near = np.zeros((ny, nx), bool)
     rr = np.clip(((line[:, 1] - ymin) / cl.RES).astype(int), 0, ny - 1)
     cc = np.clip(((line[:, 0] - xmin) / cl.RES).astype(int), 0, nx - 1)
@@ -110,6 +134,7 @@ def regrade(sheets, coords, kind):
 
 
 def main():
+    """Regrades the --traced lines (all, or --ids) and rewrites the file."""
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--quads", action="append", required=True)
     ap.add_argument("--traced", required=True)
@@ -127,8 +152,11 @@ def main():
         st = regrade(sheets, f["geometry"]["coordinates"], kind)
         f["properties"].update(st)
         print(
-            f"{fid:>4} {kind:8} measured {st['measured_pct']:5.1f}%  within 2 m {st['within_2m_pct']}%  STRICT {st['strict_within_2m_pct']:5.1f}%  "
-            f"gaps>=8 m {len(st['gaps'])}  off-centre runs {len(st['off_center_runs'])}",
+            f"{fid:>4} {kind:8} measured {st['measured_pct']:5.1f}%  "
+            f"within 2 m {st['within_2m_pct']}%  "
+            f"STRICT {st['strict_within_2m_pct']:5.1f}%  "
+            f"gaps>=8 m {len(st['gaps'])}  "
+            f"off-centre runs {len(st['off_center_runs'])}",
             flush=True,
         )
     with open(a.traced, "w") as fh:

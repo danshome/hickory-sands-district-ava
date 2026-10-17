@@ -1,44 +1,68 @@
-"""featurecheck.py -- THE ACCEPTANCE CHECK for traced lines: is each line on the RIGHT feature, not just near ink?
+"""Acceptance check: is a traced line on the RIGHT feature, not just near ink?
 
-Why: grade() (centerline.py) asks every metre "is there ink of this class within 6 m, and how far is its centre?". It
-never asks whether that ink is the SAME line the trace was on a few metres before, so a contour trace that hops onto
-the neighbouring contour on a steep slope is graded "centred" on the wrong contour (Oct. 16, 2026: last night's step 65
-spent 343 m on the next contour and grade() gave that stretch 91% measured, 100% within 2 m, median 0.25 m). The checks
-here look at IDENTITY and SHAPE, on the raw ink (no gap closing, no lettering/digit removal), independent of the tracer
-and of the prior (the prior is only drawn on the crops):
+Why: grade() (centerline.py) asks every metre "is there ink of this class
+within 6 m, and how far is its centre?". It never asks whether that ink is the
+SAME line the trace was on a few metres before, so a contour trace that hops
+onto the neighbouring contour on a steep slope is graded "centred" on the wrong
+contour (Oct. 16, 2026: last night's step 65 spent 343 m on the next contour
+and grade() gave that stretch 91% measured, 100% within 2 m, median 0.25 m).
+The checks here look at IDENTITY and SHAPE, on the raw ink (no gap closing, no
+lettering/digit removal), independent of the tracer and of the prior (the
+prior is only drawn on the crops):
 
-  hop        lane continuity in a straightened frame: cross-sections every 1 m (+-15 m, 0.5 m steps) of the feature's raw
-             ink (contours: brown), runs tracked row to row into lanes; the lane under the line (|off| <= 1.5 m) is the
-             one it rides. Where it stops riding a lane and some long line seen at the leaving point carries on BESIDE
-             it (>= 20 m at >= 3 m off, or >= 10 m reaching >= 6 m; white paper between; not the line itself elsewhere,
-             e.g. the other arm of a V) -- or where it starts riding a lane that already ran beside it -- that is a hop.
-             A label/gap bridged correctly (line ends, line resumes) gives neither. A hop-out followed within 600 m by a
-             hop-in is an excursion: every metre between is flagged ("metres on the wrong line").
-  crossing   (contours) a long line passes from one side of the trace to the other: contours never cross.
-  wiggle     total |turn| - |net turn| over 40 m > 150 deg while >= 5 m of the window is off long-line ink (digits).
-  bridge     off long-line ink (pieces >= 40 m) for 8-400 m: max distance from the Hermite bridge continuing the ink's
-             direction either side > max(3 m, 5% of the chord).
-  wrongclass the line rides another class's long ink for >= 10 m (contours: blue; creeks: brown/black).
-  road_leave (roads) the line crosses a long casing lane.          selfx / stepx  crosses itself / another step.
-Per metre (the 10 m at each pin excluded, as in grade()): VERIFIED = grade() within 2 m AND riding one continuous,
-unambiguous lane (roads: a casing each side) AND no event within 20 m; FLAGGED = inside an event +-20 m, an excursion,
-or graded > 2 m off over >= 3 m; UNMEASURED = the rest. Dan's rule: unmeasured is not verified.
+  hop        lane continuity in a straightened frame: cross-sections every 1 m
+             (+-15 m, 0.5 m steps) of the feature's raw ink (contours:
+             brown), runs tracked row to row into lanes; the lane under the
+             line (|off| <= 1.5 m) is the one it rides. Where it stops riding a
+             lane and some long line seen at the leaving point carries on
+             BESIDE it (>= 20 m at >= 3 m off, or >= 10 m reaching >= 6 m;
+             white paper between; not the line itself elsewhere, e.g. the
+             other arm of a V) -- or where it starts riding a lane that already
+             ran beside it -- that is a hop. A label/gap bridged correctly
+             (line ends, line resumes) gives neither. A hop-out followed within
+             600 m by a hop-in is an excursion: every metre between is flagged
+             ("metres on the wrong line").
+  crossing   (contours) a long line passes from one side of the trace to the
+             other: contours never cross.
+  wiggle     total |turn| - |net turn| over 40 m > 150 deg while >= 5 m of the
+             window is off long-line ink (digits).
+  bridge     off long-line ink (pieces >= 40 m) for 8-400 m: max distance from
+             the Hermite bridge continuing the ink's direction either side >
+             max(3 m, 5% of the chord).
+  wrongclass the line rides another class's long ink for >= 10 m (contours:
+             blue; creeks: brown/black).
+  road_leave (roads) the line crosses a long casing lane.
+  selfx / stepx  crosses itself / another step.
+Per metre (the 10 m at each pin excluded, as in grade()): VERIFIED = grade()
+within 2 m AND riding one continuous, unambiguous lane (roads: a casing each
+side) AND no event within 20 m; FLAGGED = inside an event +-20 m, an excursion,
+or graded > 2 m off over >= 3 m; UNMEASURED = the rest. Dan's rule: unmeasured
+is not verified.
 
-Validated Oct. 16, 2026 on the 5 contours (3 6 59 65 82) of three traced versions: fires at all 4 owner-reported spots
-and at 19-20 of the 23 critic "off" contour spots; quiet at 35 of 44 critic "centred" spots, and 6-7 of the other 9 were
-real defects the critics passed (the 885 hop, loops through 1800/1500 labels); on the 3.5 km where last night's contours
-and today's disagree by > 3 m, grade() passes 71% of last night's metres and this check verifies 22.5%. Precision on
-non-label identity events about 8 in 13. Creek and road modes RUN but are NOT validated (dotted creeks give short lanes):
-their queue items say so. Known blind spots (BLIND_SPOTS below) are always queued for a person.
+Validated Oct. 16, 2026 on the 5 contours (3 6 59 65 82) of three traced
+versions: fires at all 4 owner-reported spots and at 19-20 of the 23 critic
+"off" contour spots; quiet at 35 of 44 critic "centred" spots, and 6-7 of the
+other 9 were real defects the critics passed (the 885 hop, loops through
+1800/1500 labels); on the 3.5 km where last night's contours and today's
+disagree by > 3 m, grade() passes 71% of last night's metres and this check
+verifies 22.5%. Precision on non-label identity events about 8 in 13. Creek and
+road modes RUN but are NOT validated (dotted creeks give short lanes): their
+queue items say so. Known blind spots (BLIND_SPOTS below) are always queued for
+a person.
 
 CLI (the project .venv, -E -s):
-  featurecheck.py --quads "GLOB" --traced traced.geojson --out-dir DIR [--ids 3 6 ...] [--prior lines.geojson] [--no-crops]
-Writes DIR/per_step.csv (current-check figures, VERIFIED/FLAGGED/UNMEASURED %, metres, events by type, metres on the
-wrong line), DIR/queue.geojson (one point per review item: events and unmeasured stretches >= 15 m clustered within
-60 m along the line, plus the known blind spots; step, types, lon/lat, size, crop path, validated, status, priority
-0 blind spot / 1 identity / 2 shape / 3 unmeasured) and DIR/crops/*.png (one close-up per item). Read only on its inputs.
-Acceptance (per step): no open queue items (each fixed and re-run, or signed off by Dan on its crop), VERIFIED plus
-signed-off metres >= 95%, no owner/critic "off" spot VERIFIED, no selfx/stepx, pins within 2 m or listed.
+  featurecheck.py --quads "GLOB" --traced traced.geojson --out-dir DIR
+                  [--ids 3 6 ...] [--prior lines.geojson] [--no-crops]
+Writes DIR/per_step.csv (current-check figures, VERIFIED/FLAGGED/UNMEASURED %,
+metres, events by type, metres on the wrong line), DIR/queue.geojson (one point
+per review item: events and unmeasured stretches >= 15 m clustered within 60 m
+along the line, plus the known blind spots; step, types, lon/lat, size, crop
+path, validated, status, priority 0 blind spot / 1 identity / 2 shape / 3
+unmeasured) and DIR/crops/*.png (one close-up per item). Read only on its
+inputs.
+Acceptance (per step): no open queue items (each fixed and re-run, or signed
+off by Dan on its crop), VERIFIED plus signed-off metres >= 95%, no
+owner/critic "off" spot VERIFIED, no selfx/stepx, pins within 2 m or listed.
 """
 
 import argparse
@@ -66,7 +90,8 @@ from quadsheets import sheet_of
 HALF, DO = 15.0, 0.5  # cross-section half-width and step (m)
 RIDE = 1.5  # |offset| of the lane under the line
 BESIDE = 3.0  # a lane this far off is "beside" the line, not under it
-LOOK = 60  # m before/after a switch where an abandoned / pre-existing lane is looked for
+# m before/after a switch where an abandoned / pre-existing lane is looked for
+LOOK = 60
 BESIDE_MIN = 10  # m of the lane seen beside the line in that window
 LANE_MIN = (
     15  # lanes shorter than this (digit strokes, ticks, noise) are not lines
@@ -82,6 +107,7 @@ END_SKIP = 10  # m at each end (the pins, reported separately as in grade())
 
 # ---------------------------------------------------------------- sampling
 def sheet_index(sheets, lons, lats):
+    """Returns the index of the sheet holding each NAD83 point (-1: none)."""
     idx = np.full(len(lons), -1)
     for k, sh in enumerate(sheets):
         todo = np.flatnonzero(idx < 0)
@@ -93,9 +119,38 @@ def sheet_index(sheets, lons, lats):
 
 
 class StepGrid:
-    """one 1 m grid per step, covering every version's line +-(HALF+3) m; ink classes sampled once"""
+    """One 1 m grid per step, covering every version's line +-(HALF+3) m.
+
+    The ink classes are sampled once, on the cells near the lines.
+
+    Attributes:
+        lon0: The grid frame's origin longitude (NAD83; the lines' mean).
+        lat0: The grid frame's origin latitude.
+        mx: Metres per degree of longitude at lat0.
+        my: Metres per degree of latitude.
+        xmin: The grid's x origin (m east of lon0).
+        ymin: The grid's y origin (m north of lat0).
+        g: Boolean grids by name: "kind" (the step's own ink class, with a
+            creek's dots chained) and the ink.classes masks brown, black,
+            blue, red, road, creek, contour, dotlike and text.
+        kind: The step's kind.
+        shape: The grid's (rows, cols).
+        sheets: The open sheets.
+        line: The feature's raw line ink (contours: brown not next to red
+            fill; creeks: creek or blue; roads: road).
+        long: The line ink's long pieces (>= 40 m).
+        d_long: The distance to the nearest long piece (m).
+        other_long: Other classes' long ink, for the wrong-class test.
+    """
 
     def __init__(self, sheets, lines, kind):
+        """Builds the grid around the lines and samples the ink on it.
+
+        Args:
+            sheets: The open sheets (quadsheets.open_sheets).
+            lines: The NAD83 coordinates of each version of the step's line.
+            kind: "contour", "creek" or "road".
+        """
         allc = np.vstack([np.asarray(c)[:, :2] for c in lines])
         self.lon0, self.lat0 = (
             float(allc[:, 0].mean()),
@@ -158,12 +213,15 @@ class StepGrid:
         self.kind = kind
         self.shape = (ny, nx)
         self.sheets = sheets
-        # the feature's raw line ink for identity: contours = brown that is not road ink; creeks = creek ink;
-        # roads = road ink (casings)
-        # (not "brown minus road": over the halftone tint a contour breaks into dash-shaped pieces that ink.dashes()
-        # gives to the road class; only the highway casings next to the red fill are taken out)
-        # Brown only. Over the halftone woodland tint some contour ink classes black (olive-grey); brown|black was tried
-        # Oct. 16 and lost two owner-reported hops (roads and fences become lanes) -- that is blind spot 59/(-99.0094, 30.9285)
+        # the feature's raw line ink for identity: contours = brown that is not
+        # road ink; creeks = creek ink; roads = road ink (casings)
+        # (not "brown minus road": over the halftone tint a contour breaks into
+        # dash-shaped pieces that ink.dashes() gives to the road class; only the
+        # highway casings next to the red fill are taken out)
+        # Brown only. Over the halftone woodland tint some contour ink classes
+        # black (olive-grey); brown|black was tried Oct. 16 and lost two
+        # owner-reported hops (roads and fences become lanes) -- that is blind
+        # spot 59/(-99.0094, 30.9285)
         if kind == "contour":
             self.line = self.g["brown"] & ~ndimage.binary_dilation(
                 self.g["red"], iterations=3
@@ -172,11 +230,13 @@ class StepGrid:
             self.line = self.g["creek"] | self.g["blue"]
         else:
             self.line = self.g["road"]
-        # LONG-line ink: connected pieces whose principal-axis length is >= 40 m (digits, ticks, dots drop out)
+        # LONG-line ink: connected pieces whose principal-axis length is >= 40 m
+        # (digits, ticks, dots drop out)
         self.long = long_pieces(self.line, 40.0)
         self.d_long = ndimage.distance_transform_edt(~self.long) * cl.RES
         # other classes' long ink, for the wrong-class test
-        # (contours: blue only -- roads and lettering print over contours everywhere and hide them; lettering never)
+        # (contours: blue only -- roads and lettering print over contours
+        # everywhere and hide them; lettering never)
         txt = ndimage.binary_dilation(self.g["text"], iterations=2)
         if kind == "contour":
             other = self.g["blue"]
@@ -187,17 +247,20 @@ class StepGrid:
         self.other_long = long_pieces(other & ~txt, 40.0)
 
     def xy(self, coords):
+        """Returns NAD83 coordinates as (n, 2) metres in the grid's frame."""
         c = np.asarray(coords)[:, :2]
         return np.column_stack(
             [(c[:, 0] - self.lon0) * self.mx, (c[:, 1] - self.lat0) * self.my]
         )
 
     def lonlat(self, pts):
+        """Returns (lon, lat) of points given in the grid's frame (m)."""
         return self.lon0 + pts[..., 0] / self.mx, self.lat0 + pts[
             ..., 1
         ] / self.my
 
     def sample(self, mask, px, py):
+        """Samples a grid at points px, py (m); False outside the grid."""
         r = np.floor((py - self.ymin) / cl.RES).astype(int)
         c = np.floor((px - self.xmin) / cl.RES).astype(int)
         ok = (r >= 0) & (r < self.shape[0]) & (c >= 0) & (c < self.shape[1])
@@ -207,6 +270,12 @@ class StepGrid:
 
 
 def long_pieces(mask, min_len):
+    """Returns the connected pieces of a mask at least min_len metres long.
+
+    A piece's length is its box's longer side or, when that is shorter, the
+    length of a uniform bar with its spread along its principal axis (a
+    diagonal piece).
+    """
     lab, n = ndimage.label(mask, structure=np.ones((3, 3)))
     if n == 0:
         return np.zeros_like(mask)
@@ -232,8 +301,12 @@ def long_pieces(mask, min_len):
     return keep[lab]
 
 
-# ---------------------------------------------------------------- lanes in the straightened frame
+# ---------------------------------------------- lanes in the straightened frame
 def typical_width(strip, o):
+    """Returns the median width (m) of the ink runs under the line, else 3.0.
+
+    The runs whose centre lies within RIDE of the line, over every row.
+    """
     widths = [
         q[1]
         for i in range(strip.shape[0])
@@ -244,11 +317,26 @@ def typical_width(strip, o):
 
 
 def track_lanes(strip, o, wide=None):
-    """S: rows (1 m along the line) x cols (offsets o). Returns lanes [{rows, offs, wid, merged, life}].
-    A run of ink continues a lane when it lies within GATE of the lane's last offset (or of its extrapolation), or
-    contains the last offset; ties go to the OLDER lane. A lane whose last offset lies inside the (ordinary-width) run
-    taken by an older lane is the same line seen twice and is absorbed into it. A run wider than `wide` (1.6 x the
-    line's typical width) holds lines welded together: lanes inside it coast, marked merged (identity ambiguous).
+    """Tracks the runs of ink across the line, row to row, into lanes.
+
+    A run of ink continues a lane when it lies within GATE of the lane's last
+    offset (or of its extrapolation), or contains the last offset; ties go to
+    the OLDER lane. A lane whose last offset lies inside the (ordinary-width)
+    run taken by an older lane is the same line seen twice and is absorbed
+    into it. A run wider than `wide` (by default 1.6 x the line's typical
+    width, at least 8 m) holds lines welded together: lanes inside it coast,
+    marked merged (identity ambiguous). A lane unseen for more than COAST
+    rows ends.
+
+    Args:
+        strip: The ink across the line: rows (1 m along the line) x columns
+            (offsets o).
+        o: The columns' offsets (m).
+        wide: The width (m) above which a run is lines welded together.
+
+    Returns:
+        The lanes: dicts of arrays rows, offs, wid and merged (one entry per
+        row the lane is seen in) and life (rows from its first to its last).
     """
     if wide is None:
         wide = max(8.0, 1.6 * typical_width(strip, o))
@@ -316,7 +404,8 @@ def track_lanes(strip, o, wide=None):
                 )
                 active.append(len(lanes) - 1)
                 upd[len(lanes) - 1] = j
-        # twins: a younger lane whose last offset lies inside the ordinary run an older lane took this row
+        # twins: a younger lane whose last offset lies inside the ordinary run
+        # an older lane took this row
         dead = set()
         for la, j in upd.items():
             q = found[j]
@@ -359,8 +448,12 @@ def track_lanes(strip, o, wide=None):
 
 
 def ridden_sequence(lanes, n):
-    """per row: the id of the long lane under the line (-1 none), and an 'ambiguous' flag (merged run under the line,
-    or two long lanes within +-RIDE)
+    """Finds which long lane the line rides, row by row.
+
+    Returns:
+        (rid, amb): per row, the index of the long lane (life >= LANE_MIN)
+        nearest under the line, within RIDE (-1: none), and an 'ambiguous'
+        flag (a merged run under the line, or two long lanes within +-RIDE).
     """
     rid = np.full(n, -1)
     best = np.full(n, np.inf)
@@ -387,10 +480,18 @@ def ridden_sequence(lanes, n):
 
 
 def lane_beside(lane, lo, hi, strip=None, o=None, elsewhere=None):
-    """metres of lane L seen BESIDE the line in rows [lo, hi), and the largest |off| there. Beside means: |off| >= BESIDE,
-    white paper (>= 1 m with no ink) between it and the line -- so a heavy line's halo or a split run is not a second
-    line -- and not on the line itself somewhere else (the other arm of a V or a hairpin is the same contour: elsewhere
-    is a per-observation flag computed from the whole line)
+    """Measures how much of a lane runs BESIDE the line in rows [lo, hi).
+
+    Beside means: BESIDE <= |off| <= HALF - 1, white paper (>= 1 m with no
+    ink) between it and the line -- so a heavy line's halo or a split run is
+    not a second line -- and not on the line itself somewhere else (the other
+    arm of a V or a hairpin is the same contour: `elsewhere` gives a
+    per-observation flag computed from the whole line). The white paper is
+    looked for only when strip and o are given, the line elsewhere only when
+    elsewhere is.
+
+    Returns:
+        (metres, largest |off|) of the lane seen beside the line there.
     """
     sel = (
         (lane["rows"] >= lo)
@@ -406,7 +507,8 @@ def lane_beside(lane, lo, hi, strip=None, o=None, elsewhere=None):
             between = (
                 strip[r, k0:j] if j > k0 else strip[r, j + 1 : k0 + 1][::-1]
             )
-            # the lane's own run is at the far end; require a white stretch of >= 2 cells somewhere between
+            # the lane's own run is at the far end; require a white stretch of
+            # >= 2 cells somewhere between
             w = ~between
             best = 0
             cur = 0
@@ -423,15 +525,39 @@ def lane_beside(lane, lo, hi, strip=None, o=None, elsewhere=None):
 
 
 def hop_events(lanes, rid, n, strip=None, o=None, line=None, nrm=None):
+    """Finds the hops: the line leaves a line that carries on beside it.
+
+    Each END of riding a lane is a hop when a long lane seen at the line near
+    the leaving point runs beside it (lane_beside) for >= 2 x BESIDE_MIN m,
+    or >= BESIDE_MIN m reaching >= 6 m off, within LOOK m after; each START
+    when a lane at the line there ran beside it as much within LOOK m before.
+    See the module doc.
+
+    Args:
+        lanes: track_lanes()'s lanes.
+        rid: ridden_sequence()'s lane per row.
+        n: The number of rows.
+        strip: The ink strip (for lane_beside's white-paper test), or None.
+        o: The strip's offsets (m).
+        line: The line's points (m), for the "elsewhere" test, or None.
+        nrm: The line's normals.
+
+    Returns:
+        A list of event dicts (type "hop", r0, r1, size_m, why).
+    """
     tree = cKDTree(line) if line is not None else None
 
     def elsewhere(lane, sel):
-        """observations of L that lie within 2 m of the line at an arc position > 20 m from the row they were seen at"""
+        """Flags a lane's observations that lie within 2 m of the line anywhere.
+
+        Returns a boolean array over the lane's rows, set only where sel is.
+        """
         r = lane["rows"][sel]
         f = lane["offs"][sel]
         pts = line[r] + f[:, None] * nrm[r]
-        # an observation >= 3 m off its own row that is within 2 m of the line ANYWHERE is ink the line rides
-        # elsewhere (the other arm of a V, a hairpin, the far side of a tight bend), not a second line
+        # an observation >= 3 m off its own row that is within 2 m of the line
+        # ANYWHERE is ink the line rides elsewhere (the other arm of a V, a
+        # hairpin, the far side of a tight bend), not a second line
         out = np.zeros(len(lane["rows"]), bool)
         out[np.flatnonzero(sel)] = tree.query(pts)[0] <= 2.0
         return out
@@ -449,10 +575,12 @@ def hop_events(lanes, rid, n, strip=None, o=None, line=None, nrm=None):
     ]  # one- or two-metre touches are crossings, handled there
     ev = []
     ew = elsewhere if tree is not None else None
-    # each END of riding a lane (the next lane ridden is another one) is tested for "the old line carries on beside";
-    # each START of riding a lane (the previous one was another) for "the new line was already running beside".
-    # Lane identity at a fork is arbitrary (the tracker may hand the old id to either branch), so the line that
-    # "carries on" is ANY long lane seen within 3.5 m of the line's position at the leaving point, not just the old id.
+    # each END of riding a lane (the next lane ridden is another one) is tested
+    # for "the old line carries on beside"; each START of riding a lane (the
+    # previous one was another) for "the new line was already running beside".
+    # Lane identity at a fork is arbitrary (the tracker may hand the old id to
+    # either branch), so the line that "carries on" is ANY long lane seen within
+    # 3.5 m of the line's position at the leaving point, not just the old id.
     at = {}
     k0 = len(o) // 2
     for li, lane in enumerate(lanes):
@@ -494,7 +622,10 @@ def hop_events(lanes, rid, n, strip=None, o=None, line=None, nrm=None):
                     r0=int(a1),
                     r1=int(r1),
                     size_m=round(outx, 1),
-                    why=f"left a line that carries on beside it ({outm} m, up to {outx:.1f} m off)",
+                    why=(
+                        "left a line that carries on beside it "
+                        f"({outm} m, up to {outx:.1f} m off)"
+                    ),
                 )
             )
     for x, (lane_in, b0, _b1) in enumerate(segs):
@@ -516,13 +647,27 @@ def hop_events(lanes, rid, n, strip=None, o=None, line=None, nrm=None):
                     r0=int(r0),
                     r1=int(b0),
                     size_m=round(inx, 1),
-                    why=f"joined a line that ran beside it before ({inm} m, up to {inx:.1f} m off)",
+                    why=(
+                        "joined a line that ran beside it before "
+                        f"({inm} m, up to {inx:.1f} m off)"
+                    ),
                 )
             )
     return ev
 
 
 def crossing_events(lanes, n, rid=None):
+    """Finds long lines crossing from one side of the line to the other.
+
+    For contours (contours never cross): a long lane (life >= LANE_MIN) seen
+    >= 2 m on one side and then, within 20 m, >= 2 m on the other, with at
+    least 8 sightings on each side within 40 m -- unless the line rides that
+    lane over 60% of the rows from 30 m before to 30 m after (its own
+    contour drifting from side to side).
+
+    Returns:
+        A list of event dicts (type "crossing", r0, r1, size_m, why).
+    """
     ev = []
     for li, lane in enumerate(lanes):
         if lane["life"] < LANE_MIN:
@@ -543,7 +688,8 @@ def crossing_events(lanes, n, rid=None):
                 after = int(
                     ((r >= r[b]) & (r <= r[b] + 40) & (side == side[b])).sum()
                 )
-                # the line's OWN contour drifting from one side to the other is wobble (graded off-centre), not a crossing
+                # the line's OWN contour drifting from one side to the other is
+                # wobble (graded off-centre), not a crossing
                 if (
                     rid is not None
                     and (
@@ -559,7 +705,11 @@ def crossing_events(lanes, n, rid=None):
                             r0=int(r[a]),
                             r1=int(r[b]),
                             size_m=round(float(max(abs(f[a]), abs(f[b]))), 1),
-                            why=f"a {lane['life']} m line passes from {f[a]:+.1f} m to {f[b]:+.1f} m across the line",
+                            why=(
+                                f"a {lane['life']} m line passes "
+                                f"from {f[a]:+.1f} m to {f[b]:+.1f} m "
+                                "across the line"
+                            ),
                         )
                     )
     return ev
@@ -567,6 +717,7 @@ def crossing_events(lanes, n, rid=None):
 
 # ---------------------------------------------------------------- shape checks
 def headings(pts, h=2):
+    """Returns each point's unwrapped heading (radians), over +-h points."""
     n = len(pts)
     i = np.arange(n)
     delta = pts[np.minimum(i + h, n - 1)] - pts[np.maximum(i - h, 0)]
@@ -574,9 +725,17 @@ def headings(pts, h=2):
 
 
 def wiggle_events(pts, d_long=None):
-    """loops through label digits: total |turn| - |net turn| over WIGGLE_WIN m > WIGGLE_DEG, AND inside that window the
-    line spends >= 5 m off long-line ink (it is riding digit strokes or nothing). A real hairpin or S-bend of the
-    contour turns as much, but the line stays on the contour's own long ink the whole way.
+    """Finds loops through label digits.
+
+    Total |turn| - |net turn| over WIGGLE_WIN m > WIGGLE_DEG, AND inside that
+    window the line spends >= 5 m off long-line ink (it is riding digit
+    strokes or nothing; with d_long None the ink is not looked at). A real
+    hairpin or S-bend of the contour turns as much, but the line stays on the
+    contour's own long ink the whole way.
+
+    Returns:
+        (events, score): the event dicts (type "wiggle") and the wiggle score
+        (degrees) at each point.
     """
     th = headings(pts)
     d = np.diff(th)
@@ -605,17 +764,28 @@ def wiggle_events(pts, d_long=None):
                 r0=int(r0),
                 r1=int(r1),
                 size_m=round(float(score[k]), 0),
-                why=f"turns {score[k]:.0f} deg back and forth within {win} m while off the line's ink (loop through digits?)",
+                why=(
+                    f"turns {score[k]:.0f} deg back and forth within {win} m "
+                    "while off the line's ink (loop through digits?)"
+                ),
             )
         )
     return ev, score
 
 
 def bridge_events(pts, grid):
-    """where the line is off long-line ink for 8-400 m it must bridge the gap smoothly: compared with the cubic Hermite
-    curve between the ink either side, with the line's own direction over the 10 m of ink before and after the gap
-    (straight across a label on a straight contour, along the bend for a gap on a bend). Max distance > max(3 m, 5% of
-    the chord) is flagged.
+    """Finds gaps in the long-line ink that the line does not bridge smoothly.
+
+    Where the line is off long-line ink for 8-400 m it must bridge the gap
+    smoothly: it is compared with the cubic Hermite curve between the ink
+    either side, with the line's own direction over the 10 m of ink before
+    and after the gap (straight across a label on a straight contour, along
+    the bend for a gap on a bend). Max distance > max(3 m, 5% of the chord)
+    is flagged.
+
+    Returns:
+        (events, d): the event dicts (type "bridge") and each point's
+        distance from long-line ink (m).
     """
     d = d_long_at(grid, pts)
     off = d > RIDE + 0.5
@@ -650,13 +820,18 @@ def bridge_events(pts, grid):
                     r0=int(a),
                     r1=int(b),
                     size_m=round(float(dev[k]), 1),
-                    why=f"off the line ink for {gap_len} m and {dev[k]:.1f} m from a smooth bridge across the gap (chord {ch:.0f} m)",
+                    why=(
+                        f"off the line ink for {gap_len} m and "
+                        f"{dev[k]:.1f} m from a smooth bridge "
+                        f"across the gap (chord {ch:.0f} m)"
+                    ),
                 )
             )
     return ev, d
 
 
 def d_long_at(grid, pts):
+    """Returns each point's distance (m) from long-line ink (on the grid)."""
     r = np.clip(
         ((pts[:, 1] - grid.ymin) / cl.RES).astype(int), 0, grid.shape[0] - 1
     )
@@ -667,6 +842,14 @@ def d_long_at(grid, pts):
 
 
 def wrongclass_events(pts, grid):
+    """Finds where the line rides another class's long ink for >= 10 m.
+
+    Within +-RIDE of the line there is the other classes' long ink and none
+    of its own (contours: blue; creeks: brown/black). Roads are not checked.
+
+    Returns:
+        A list of event dicts (type "wrongclass", r0, r1, size_m, why).
+    """
     if grid.kind == "road":
         return []
     nrm = cl.normals(pts)
@@ -684,14 +867,26 @@ def wrongclass_events(pts, grid):
                     r0=int(a),
                     r1=int(b),
                     size_m=float(b - a),
-                    why=f"rides other ink ({'blue' if grid.kind == 'contour' else 'brown/black'}) for {b - a} m",
+                    why=(
+                        "rides other ink ("
+                        f"{'blue' if grid.kind == 'contour' else 'brown/black'}"
+                        f") for {b - a} m"
+                    ),
                 )
             )
     return ev
 
 
 def seg_intersections(pts, other=None, cell=5.0, min_sep=4):
-    """crossings of polyline P with itself (Q None; segments >= min_sep apart) or with polyline Q: list of (i, j)"""
+    """Finds where polyline pts crosses itself, or another polyline.
+
+    Segments are put in buckets of cell x cell (m) to find the candidates.
+
+    Returns:
+        A sorted list of (i, j) segment index pairs: with other None, the
+        segments of pts that cross each other, at least min_sep apart
+        (i < j); else segment i of pts crossing segment j of other.
+    """
 
     def buckets(poly):
         cells = {}
@@ -734,6 +929,21 @@ def seg_intersections(pts, other=None, cell=5.0, min_sep=4):
 
 # ---------------------------------------------------------------- one line
 def check_line(grid, coords, others=(), sheet_rows=None):
+    """Runs every check on one traced line.
+
+    Args:
+        grid: The step's StepGrid.
+        coords: The line's NAD83 coordinates.
+        others: (name, coordinates) of the other steps, for crossings.
+        sheet_rows: The sheet index of each metre of the line, to tag the
+            events near a neatline crossing; or None.
+
+    Returns:
+        A dict: C (the line resampled at 1 m, in m), meas (grade()'s
+        offsets), rid, amb, lanes, events, the per-metre masks verified,
+        flagged and unmeasured, stats (the figures of per_step.csv), queue
+        (the unmeasured stretches of 15 m or more) and unmeasured_runs.
+    """
     pts = grid.xy(coords)
     line = cl.resample(pts, 1.0)
     line[0], line[-1] = pts[0], pts[-1]
@@ -787,7 +997,8 @@ def check_line(grid, coords, others=(), sheet_rows=None):
                     why=f"crosses step {name}",
                 )
             )
-    # sheet edges: events within 30 m of a neatline crossing are tagged (a jog there is expected and reported)
+    # sheet edges: events within 30 m of a neatline crossing are tagged (a jog
+    # there is expected and reported)
     if sheet_rows is not None:
         edges = np.flatnonzero(np.diff(sheet_rows) != 0)
         for e in ev:
@@ -797,7 +1008,8 @@ def check_line(grid, coords, others=(), sheet_rows=None):
             ):
                 e["sheet_edge"] = True
     ev = [e for e in ev if e["r1"] >= END_SKIP and e["r0"] <= n - 1 - END_SKIP]
-    # context, for the reader only (pass/fail does not depend on it): a sharp bend at the event, lettering near it
+    # context, for the reader only (pass/fail does not depend on it): a sharp
+    # bend at the event, lettering near it
     th = headings(line)
     tx = ndimage.binary_dilation(grid.g["text"], structure=cl.disk(12 / cl.RES))
     for e in ev:
@@ -866,7 +1078,8 @@ def check_line(grid, coords, others=(), sheet_rows=None):
         verified_pct=round(100 * float(verified.sum()) / nc, 1),
         flagged_pct=round(100 * float(flagged.sum()) / nc, 1),
         unmeasured_pct=round(100 * float(unmeasured.sum()) / nc, 1),
-        # metres grade() calls within 2 m that are NOT on one continuous lane, or inside an event
+        # metres grade() calls within 2 m that are NOT on one continuous lane,
+        # or inside an event
         graded_ok_but_suspect_m=int(
             (graded_ok & core & (flagged | ~lane_ok)).sum()
         ),
@@ -922,9 +1135,13 @@ def check_line(grid, coords, others=(), sheet_rows=None):
     )
 
 
-# ---------------------------------------------------------------- roads: the casing pair
+# ------------------------------------------------------- roads: the casing pair
 def road_ok(lanes, n):
-    """a metre is lane-verified when a long lane is on each side of the line (a casing pair) within 2.5-11 m"""
+    """Roads: marks the metres with a long lane on each side (a casing pair).
+
+    A lane (life >= LANE_MIN) counts on a side from 1.25 m to 11 m off the
+    line, and a casing seen within +-8 m along counts (dashes).
+    """
     left = np.zeros(n, bool)
     right = np.zeros(n, bool)
     for lane in lanes:
@@ -944,7 +1161,15 @@ def road_ok(lanes, n):
 
 
 def road_events(lanes, n):
-    """roads: the line crosses a long casing lane (it went over the road's edge onto something else)"""
+    """Roads: finds where the line crosses a long casing lane.
+
+    That is, it went over the road's edge onto something else: a lane of life
+    >= 25 seen >= 1 m on one side and then, within 15 m, on the other, with
+    at least 12 sightings on each side within 40 m.
+
+    Returns:
+        A list of event dicts (type "road_leave", r0, r1, size_m, why).
+    """
     ev = []
     for lane in lanes:
         if lane["life"] < 25:
@@ -967,47 +1192,66 @@ def road_events(lanes, n):
                             r0=int(r[a]),
                             r1=int(r[b]),
                             size_m=round(float(max(abs(f[a]), abs(f[b]))), 1),
-                            why=f"a {lane['life']} m casing/line passes from {f[a]:+.1f} m to {f[b]:+.1f} m across the line",
+                            why=(
+                                f"a {lane['life']} m casing/line passes "
+                                f"from {f[a]:+.1f} m to {f[b]:+.1f} m "
+                                "across the line"
+                            ),
                         )
                     )
     return ev
 
 
-# ---------------------------------------------------------------- known blind spots (always queued, never verified)
-# Places where the checks above are known to be blind (Oct. 16, 2026); a person signs each off on its crop.
+# ---------------------------- known blind spots (always queued, never verified)
+# Places where the checks above are known to be blind (Oct. 16, 2026); a person
+# signs each off on its crop.
 BLIND_SPOTS = [
     (
         "59",
         -99.0094,
         30.9285,
         (
-            "grey contour over the tint: the abandoned contour prints grey (classes black) over the halftone "
-            "tint, so a hop here is invisible to the lane test; every version and the prior step onto the next contour here"
+            "grey contour over the tint: the abandoned contour prints grey "
+            "(classes black) over the halftone tint, so a hop here is "
+            "invisible to the lane test; every version and the prior step "
+            "onto the next contour here"
         ),
     ),
     (
         "59",
         -99.0222,
         30.9380,
-        "label digits not detected by ink.py: check the line bridges the label straight on its own contour",
+        (
+            "label digits not detected by ink.py: check the line bridges the "
+            "label straight on its own contour"
+        ),
     ),
     (
         "59",
         -99.0231,
         30.9378,
-        "label digits not detected by ink.py: check the line bridges the label straight on its own contour",
+        (
+            "label digits not detected by ink.py: check the line bridges the "
+            "label straight on its own contour"
+        ),
     ),
     (
         "82",
         -99.2068,
         30.7202,
-        "label digits not detected by ink.py: check the line bridges the label straight on its own contour",
+        (
+            "label digits not detected by ink.py: check the line bridges the "
+            "label straight on its own contour"
+        ),
     ),
     (
         "3",
         -99.3951,
         30.7775,
-        "the '1' of a contour label has no hole and is not detected: check for a spike toward it",
+        (
+            "the '1' of a contour label has no hole and is not detected: check "
+            "for a spike toward it"
+        ),
     ),
 ]
 VALIDATED = {
@@ -1026,7 +1270,7 @@ SEVERITY = {
 }
 CLUSTER_M = 60
 
-# ---------------------------------------------------------------- crops for the reviewer
+# ------------------------------------------------------- crops for the reviewer
 COL = {
     "black": (255, 0, 255),
     "red": (255, 140, 0),
@@ -1048,8 +1292,15 @@ def _font(size):
 def render_crop(
     sheets, lon, lat, traced, prior, stretches, lines, out, half_px=60, scale=3
 ):
-    """left: the scan with the traced line (purple), the prior (thin red) and the item's stretches (yellow, ends circled);
-    right: the ink classes (black/grey magenta, red fill orange, brown green, blue/teal blue) with the traced line
+    """Draws the reviewer's crop of one queue item and saves it as a PNG.
+
+    Left: the scan with the traced line (purple), the prior (thin red) and the
+    item's stretches (yellow, ends circled); right: the ink classes
+    (black/grey magenta, red fill orange, brown green, blue/teal blue) with
+    the traced line; above them, the text lines (wrapped, at most 8).
+
+    Returns:
+        False when no sheet holds the point, else True.
     """
     sh = sheet_of(sheets, lon, lat)
     if sh is None:
@@ -1123,6 +1374,7 @@ def render_crop(
 
 
 def wrap(t, n=150):
+    """Splits text at spaces into lines of at most n characters."""
     out = []
     while len(t) > n:
         k = t.rfind(" ", 0, n)
@@ -1134,8 +1386,12 @@ def wrap(t, n=150):
 
 # ---------------------------------------------------------------- driver
 def main():
+    """Checks the traced lines; writes per_step.csv, queue.geojson and crops."""
     ap = argparse.ArgumentParser(
-        description="acceptance check: is each traced line on the RIGHT feature (identity), not just near ink"
+        description=(
+            "acceptance check: is each traced line on the RIGHT feature "
+            "(identity), not just near ink"
+        )
     )
     ap.add_argument(
         "--quads",
@@ -1193,7 +1449,8 @@ def main():
         chk = check_line(grid, coords, others, sheet_index(sheets, lo, la))
         st = chk["stats"]
         ok = kind in VALIDATED
-        # ---- queue entries: every event, and every unmeasured stretch >= 15 m; clustered along the line
+        # ---- queue entries: every event, and every unmeasured stretch >= 15 m;
+        # clustered along the line
         ent = [
             dict(
                 r0=e["r0"],
@@ -1342,9 +1599,15 @@ def main():
         )
         r_ = rows[-1]
         print(
-            f"{sid:>4} {kind:7s} {'' if ok else '(unvalidated) '}current check: within 2 m of measured {r_['current_within2_of_measured_pct']}%, "
-            f"strict {r_['current_strict_pct']}% | VERIFIED {r_['verified_pct']}% FLAGGED {r_['flagged_pct']}% UNMEASURED {r_['unmeasured_pct']}% | "
-            f"wrong line {r_['wrong_line_m']} m | events {sum(c_.values())} -> {r_['queue_items']} queue items | {r_['seconds']} s",
+            f"{sid:>4} {kind:7s} {'' if ok else '(unvalidated) '}"
+            "current check: within 2 m of measured "
+            f"{r_['current_within2_of_measured_pct']}%, "
+            f"strict {r_['current_strict_pct']}% | "
+            f"VERIFIED {r_['verified_pct']}% FLAGGED {r_['flagged_pct']}% "
+            f"UNMEASURED {r_['unmeasured_pct']}% | "
+            f"wrong line {r_['wrong_line_m']} m | "
+            f"events {sum(c_.values())} -> {r_['queue_items']} queue items | "
+            f"{r_['seconds']} s",
             flush=True,
         )
     # ---- crops, then the outputs
@@ -1362,21 +1625,25 @@ def main():
                 ext = max(ext, float(np.hypot(dx, dy).max()))
         half = int(min(110, max(50, ext / 2.03 + 25)))
         where = (
-            f"size {it['size']}  metres {it['s_from_m']}-{it['s_to_m']} along the line"
+            f"size {it['size']}  "
+            f"metres {it['s_from_m']}-{it['s_to_m']} along the line"
             if it["s_from_m"] is not None
             else "fixed item: a place the checks are known to be blind to"
         )
         head = [
             (
-                f"item {it['item']}  step {it['step']} ({it['kind']}{', UNVALIDATED detector' if not it['validated'] else ''})  {it['types']}  "
-                f"at {it['lon']}, {it['lat']}  {where}"
+                f"item {it['item']}  step {it['step']} ({it['kind']}"
+                f"{', UNVALIDATED detector' if not it['validated'] else ''})  "
+                f"{it['types']}  at {it['lon']}, {it['lat']}  {where}"
             )
         ]
         head += [it["why"]]
         head += [
             (
-                "left: scan, traced line purple, prior thin red, the item's stretch yellow; right: ink classes (grey/black magenta, red orange, "
-                "brown green, blue blue). Is the purple line on the CENTRE of the RIGHT feature here?"
+                "left: scan, traced line purple, prior thin red, the item's "
+                "stretch yellow; right: ink classes (grey/black magenta, "
+                "red orange, brown green, blue blue). Is the purple line on "
+                "the CENTRE of the RIGHT feature here?"
             )
         ]
         render_crop(
@@ -1423,14 +1690,21 @@ def main():
         json.dump(fc, fh, indent=1)
     nv = [r for r in rows if r["validated"]]
     print(
-        f"\n{len(rows)} steps, {len(items)} queue items ({sum(1 for i in items if i['validated'])} validated, "
-        f"{sum(1 for i in items if not i['validated'])} unvalidated), {round(time.time() - t0)} s. Outputs in {a.out_dir}"
+        f"\n{len(rows)} steps, {len(items)} queue items "
+        f"({sum(1 for i in items if i['validated'])} validated, "
+        f"{sum(1 for i in items if not i['validated'])} unvalidated), "
+        f"{round(time.time() - t0)} s. Outputs in {a.out_dir}"
     )
     if nv:
         tot = sum(r["core_m"] for r in nv)
+        n_passing = sum(
+            1 for r in nv if r["verified_pct"] >= 95 and r["queue_items"] == 0
+        )
         print(
-            f"validated kinds: VERIFIED {100 * sum(r['verified_m'] for r in nv) / tot:.1f}% of {tot} m; "
-            f"steps passing (VERIFIED >= 95% and no open items): {sum(1 for r in nv if r['verified_pct'] >= 95 and r['queue_items'] == 0)} of {len(nv)}"
+            "validated kinds: VERIFIED "
+            f"{100 * sum(r['verified_m'] for r in nv) / tot:.1f}% of {tot} m; "
+            "steps passing (VERIFIED >= 95% and no open items): "
+            f"{n_passing} of {len(nv)}"
         )
 
 

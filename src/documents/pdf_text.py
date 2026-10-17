@@ -31,10 +31,16 @@ INDENT, FULL = (
     3,
     25,
 )  # a line indented > 3 pt starts a paragraph; a line ending < 25 pt short is full
-num = lambda attrs, k: float(re.search(rf'{k}="([-\d.]+)"', attrs).group(1))
-words_of = lambda s: [
-    html.unescape(w) for w in re.findall(r"<word[^>]*>(.*?)</word>", s)
-]
+
+
+def num(attrs, name):
+    """The number in attribute NAME of a tag's attribute text."""
+    return float(re.search(rf'{name}="([-\d.]+)"', attrs).group(1))
+
+
+def words_of(s):
+    """The words of a line of poppler's XHTML, unescaped."""
+    return [html.unescape(w) for w in re.findall(r"<word[^>]*>(.*?)</word>", s)]
 
 
 def paragraphs(xml):
@@ -52,10 +58,10 @@ def paragraphs(xml):
         ):
             lines = [
                 (num(a, "xMin"), num(a, "xMax"), w)
-                for a, l in re.findall(
+                for a, line in re.findall(
                     r"<line([^>]*)>(.*?)</line>", block, re.S
                 )
-                if (w := words_of(l))
+                if (w := words_of(line))
             ]
             if lines:
                 blocks.append(
@@ -134,7 +140,9 @@ def join(
     return s
 
 
-squash = lambda s: re.sub(r"[\s\-]", "", s)
+def squash(s):
+    """S without spaces or hyphens, to compare text before and after joining."""
+    return re.sub(r"[\s\-]", "", s)
 
 
 def text_of(
@@ -177,7 +185,8 @@ def main(src, out):
     ).stdout
     paras, printed = paragraphs(xml)
     text = text_of(paras, printed, out)
-    open(out, "w", encoding="utf-8").write("\n".join(text) + "\n")
+    with open(out, "w", encoding="utf-8") as f:
+        f.write("\n".join(text) + "\n")
     print(
         f"{out.split('/')[-1]}: {len(text)} paragraphs from {len(printed)} "
         "printed words"

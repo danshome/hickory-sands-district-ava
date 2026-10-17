@@ -19,19 +19,20 @@ OSV = "https://api.osv.dev/v1"
 def entries(path):
     """{normalised name: (name, version, [lines of the entry])} from a pip-compile lock file"""
     out, cur = {}, None
-    for line in open(path, encoding="utf-8"):
-        m = PIN.match(line)
-        if m:
-            cur = [line.rstrip("\n")]
-            out[re.sub(r"[-_.]+", "-", m.group(1)).lower()] = (
-                m.group(1),
-                m.group(2),
-                cur,
-            )
-        elif cur is not None and line.startswith(" "):
-            cur.append(line.rstrip("\n"))
-        else:
-            cur = None
+    with open(path, encoding="utf-8") as f:
+        for line in f:
+            m = PIN.match(line)
+            if m:
+                cur = [line.rstrip("\n")]
+                out[re.sub(r"[-_.]+", "-", m.group(1)).lower()] = (
+                    m.group(1),
+                    m.group(2),
+                    cur,
+                )
+            elif cur is not None and line.startswith(" "):
+                cur.append(line.rstrip("\n"))
+            else:
+                cur = None
     return out
 
 
@@ -72,7 +73,9 @@ def audit(locks):
                     ]
                 },
             )
-            for k, r in zip(chunk, res.get("results", [])):
+            # not strict: a short answer from OSV leaves the rest unflagged,
+            # as before, rather than stopping the audit with a ValueError
+            for k, r in zip(chunk, res.get("results", []), strict=False):
                 if r.get("vulns"):
                     found[k] = [v["id"] for v in r["vulns"]]
     except OSError as e:
@@ -106,9 +109,11 @@ def audit(locks):
                         if "fixed" in e
                     }
                 )
+                summary = v.get("summary", "").strip()[:100]
+                fixed_in = f"  (fixed in {', '.join(fixed)})" if fixed else ""
                 print(
                     f"  {pkgs[k]} {k[1]}: {vid} {' '.join(cves)} - "
-                    f"{v.get('summary', '').strip()[:100]}{'  (fixed in ' + ', '.join(fixed) + ')' if fixed else ''}",
+                    f"{summary}{fixed_in}",
                     file=sys.stderr,
                 )
             except OSError:

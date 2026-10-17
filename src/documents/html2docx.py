@@ -31,11 +31,11 @@ def jpeg_size(p):
     i = 2
     while i < len(d):
         m = d[i + 1]
-        L = struct.unpack(">H", d[i + 2 : i + 4])[0]
+        seg_len = struct.unpack(">H", d[i + 2 : i + 4])[0]
         if m in (0xC0, 0xC1, 0xC2):
             h, w = struct.unpack(">HH", d[i + 5 : i + 9])
             return w, h
-        i += 2 + L
+        i += 2 + seg_len
     raise ValueError("no SOF marker in " + p)
 
 
@@ -465,8 +465,9 @@ def footer_xml(text):
 
 def convert(src, dst, footer, title="", author=""):
     c = Conv(os.path.dirname(os.path.abspath(src)))
-    text = open(src, encoding="utf-8").read()
-    LANDSCAPE = 'name="orientation" content="landscape"' in text
+    with open(src, encoding="utf-8") as f:
+        text = f.read()
+    landscape = 'name="orientation" content="landscape"' in text
     c.feed(text)
     c.flush()
     ns = (
@@ -480,7 +481,7 @@ def convert(src, dst, footer, title="", author=""):
         '<w:sectPr><w:footerReference w:type="default" r:id="rIdFtr"/>'
         + (
             '<w:pgSz w:w="15840" w:h="12240" w:orient="landscape"/>'
-            if LANDSCAPE
+            if landscape
             else '<w:pgSz w:w="12240" w:h="15840"/>'
         )
         + '<w:pgMar w:top="1296" w:right="1296" w:bottom="1296" w:left="1296"'
@@ -574,7 +575,7 @@ def convert(src, dst, footer, title="", author=""):
             + "</Relationships>",
         )
         z.writestr("docProps/core.xml", core)
-        for rid, name, p in c.media:
+        for _rid, name, p in c.media:
             z.write(p, f"word/media/{name}")
 
 

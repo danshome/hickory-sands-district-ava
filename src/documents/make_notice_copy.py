@@ -26,6 +26,8 @@ The copy is altered, so it must not pass for GPO's signed file (QA issue #39):
 Usage: python make_notice_copy.py
 """
 
+import contextlib
+import difflib
 import io
 import json
 import os
@@ -50,35 +52,42 @@ OUT = os.path.join(
     "documents",
     "TTB-Notice-243-with-proposed-Hickory-Sands-District-changes-2026-10-15-UNOFFICIAL.pdf",
 )
-S = {
-    s["step"]: s["text"]
-    for s in json.load(open(os.path.join(HERE, "agreed-steps.json")))["steps"]
-}
+with open(os.path.join(HERE, "agreed-steps.json")) as f:
+    S = {s["step"]: s["text"] for s in json.load(f)["steps"]}
 
 doc = pymupdf.open(SRC)
 pristine = pymupdf.open(SRC)
 COLX = [45.0, 222.0, 399.0]
 INDENT, SIZE, LEAD, TOP, BOTTOM = 9.0, 9.0, 9.5, 67.0, 739.0
 P86, P87, P88 = 10, 11, 12  # page indexes of 52586, 52587 and 52588
-col_of = lambda x: 0 if x < 215 else (1 if x < 392 else 2)
+
+
+def col_of(x):
+    """The column (0, 1 or 2) that x (points from the page's left) is in."""
+    return 0 if x < 215 else (1 if x < 392 else 2)
+
 
 FONTS = {}
 for pno in (P86, P87, P88):
-    for xref, ext, typ, name, *_ in doc[pno].get_fonts():
+    for xref, _ext, _type, name, *_ in doc[pno].get_fonts():
         FONTS.setdefault(
             name.split("+")[-1],
             pymupdf.Font(fontbuffer=doc.extract_font(xref)[3]),
         )
 MEL = FONTS["Melior"]
-adv = lambda c, f="Melior", s=SIZE: FONTS[f].text_length(c, s)
+
+
+def adv(c, f="Melior", s=SIZE):
+    """The advance width of text c in font f at s points."""
+    return FONTS[f].text_length(c, s)
 
 
 def col_lines(pno, col):
     """TTB's lines in one column, top to bottom: dict(y, ch=[(char, x relative to the column, font, size)], text)"""
     rows = {}
     for b in doc[pno].get_text("rawdict")["blocks"]:
-        for l in b.get("lines", []):
-            for s in l["spans"]:
+        for line in b.get("lines", []):
+            for s in line["spans"]:
                 for c in s["chars"]:
                     x, y = c["origin"]
                     if y < 55 or y > 765 or x < 40 or col_of(x) != col:
@@ -90,7 +99,7 @@ def col_lines(pno, col):
     for y, ch in sorted(rows.items()):
         ch.sort(key=lambda t: t[1])
         out.append(dict(y=y, ch=ch, text="".join(c[0] for c in ch)))
-    assert all(f in FONTS for l in out for _, _, f, _ in l["ch"])
+    assert all(f in FONTS for line in out for _, _, f, _ in line["ch"])
     return out
 
 
@@ -98,8 +107,8 @@ def col_lines(pno, col):
 gaps, widths = [], []
 for pno in (P86, P87, P88):
     for col in (0, 1, 2):
-        for l in col_lines(pno, col):
-            ch = l["ch"]
+        for line in col_lines(pno, col):
+            ch = line["ch"]
             if not all(f == "Melior" and s == SIZE for _, _, f, s in ch):
                 continue
             for i in range(1, len(ch) - 1):
@@ -125,40 +134,38 @@ def set_lines(text, breaks=None, mark=None):
     """GPO style: ragged right, fixed word space, first line indented; breaks = TTB's pieces per line, to keep them.
     mark: True (all), or one flag per piece; flagged glyphs carry a 5th element True and are highlighted.
     """
-    P = pieces_of(text, at_hyphens=bool(breaks))
-    lines, i = (
-        [],
-        0,
-    )  # new text never breaks at a hyphen (reads cleanly in a text compare)
-    M = [bool(mark)] * len(P) if not isinstance(mark, list) else mark
-    assert len(M) == len(P), (text[:40], len(M), len(P))
-    while i < len(P):
+    # new text never breaks at a hyphen (reads cleanly in a text compare)
+    pieces = pieces_of(text, at_hyphens=bool(breaks))
+    lines, i = [], 0
+    marked = [bool(mark)] * len(pieces) if not isinstance(mark, list) else mark
+    assert len(marked) == len(pieces), (text[:40], len(marked), len(pieces))
+    while i < len(pieces):
         x0 = INDENT if not lines else 0.0
         if breaks:
             j = i + breaks[len(lines)]
         else:
             j = i + 1
-            while j < len(P):
+            while j < len(pieces):
                 w = (
                     x0
-                    + sum(adv(p) for p, _ in P[i : j + 1])
-                    + WORDSP * sum(1 for _, sb in P[i + 1 : j + 1] if sb)
+                    + sum(adv(p) for p, _ in pieces[i : j + 1])
+                    + WORDSP * sum(1 for _, sb in pieces[i + 1 : j + 1] if sb)
                 )
                 if w > MEASURE + 0.01:
                     break
                 j += 1
-        lines.append((x0, P[i:j]))
+        lines.append((x0, pieces[i:j]))
         i = j
     out = []
     k = 0
-    for x0, L in lines:
+    for x0, line_pieces in lines:
         g, x = [], x0
-        for n, (p, sb) in enumerate(L):
+        for n, (p, sb) in enumerate(line_pieces):
             if n and sb:
-                g.append((" ", x, "Melior", SIZE, M[k] and M[k - 1]))
+                g.append((" ", x, "Melior", SIZE, marked[k] and marked[k - 1]))
                 x += WORDSP
             for c in p:
-                g.append((c, x, "Melior", SIZE, M[k]))
+                g.append((c, x, "Melior", SIZE, marked[k]))
                 x += adv(c)
             k += 1
         assert x <= MEASURE + 0.01, (text[:50], x)
@@ -168,35 +175,31 @@ def set_lines(text, breaks=None, mark=None):
 
 
 # what the proposed text adds to TTB's step, word by word (as the side-by-side marks it)
-TTB_STEPS = {
-    int(k): v
-    for k, v in json.load(
-        open(
-            os.path.join(
-                ROOT,
-                "resources",
-                "boundary",
-                "description",
-                "ttb-notice-243-steps.json",
-            ),
-            encoding="utf-8",
-        )
-    ).items()
-}
+with open(
+    os.path.join(
+        ROOT,
+        "resources",
+        "boundary",
+        "description",
+        "ttb-notice-243-steps.json",
+    ),
+    encoding="utf-8",
+) as f:
+    TTB_STEPS = {int(k): v for k, v in json.load(f).items()}
 
 
 def added_words(n):
-    import difflib
 
-    key = lambda w: w.strip(
-        ",;:"
-    )  # "377," in TTB's text is the same word as "377"
+    def key(w):
+        # "377," in TTB's text is the same word as "377"
+        return w.strip(",;:")
+
     a, b = (
         [key(w) for w in TTB_STEPS[n].split(" ")],
         [key(w) for w in S[n].split(" ")],
     )
     keep = [False] * len(b)
-    for op, i1, i2, j1, j2 in difflib.SequenceMatcher(
+    for op, _i1, _i2, j1, j2 in difflib.SequenceMatcher(
         None, a, b, autojunk=False
     ).get_opcodes():
         if op == "equal":
@@ -207,20 +210,27 @@ def added_words(n):
 
 def paragraphs(lines):
     paras = []
-    for l in lines:
+    for line in lines:
         if (
-            abs(l["ch"][0][1] - INDENT) < 1.0
-            and l["ch"][0][3] == SIZE
-            and re.match(r"\(\d+\) ", l["text"])
+            abs(line["ch"][0][1] - INDENT) < 1.0
+            and line["ch"][0][3] == SIZE
+            and re.match(r"\(\d+\) ", line["text"])
         ):
-            paras.append([l])
+            paras.append([line])
         else:
-            paras[-1].append(l)
+            paras[-1].append(line)
     return paras
 
 
-num = lambda p: int(re.match(r"\((\d+)\) ", p[0]["text"]).group(1))
-body = lambda t: re.sub(r"^\(\d+\)\s*", "", t)
+def step_number(p):
+    """The number of the step that paragraph p (a list of lines) holds."""
+    return int(re.match(r"\((\d+)\) ", p[0]["text"]).group(1))
+
+
+def step_body(t):
+    """Step text t without its number: "(10) Proceed ..." -> "Proceed ..."."""
+    return re.sub(r"^\(\d+\)\s*", "", t)
+
 
 # Check with a reading-order text conversion (src/documents/pdf_text.py, poppler's pdftotext, makes the compare-text
 # files); a column-blind conversion (Beyond Compare's default -simple mode) runs the three columns together even on
@@ -228,15 +238,19 @@ body = lambda t: re.sub(r"^\(\d+\)\s*", "", t)
 
 # ------------------------------------------------------------------ page 52586, column 3: steps (10)-(11)
 c3 = col_lines(P86, 2)
-i10 = next(i for i, l in enumerate(c3) if l["text"].startswith("(10) Proceed"))
-i12 = next(i for i, l in enumerate(c3) if l["text"].startswith("(12) Proceed"))
+i10 = next(
+    i for i, line in enumerate(c3) if line["text"].startswith("(10) Proceed")
+)
+i12 = next(
+    i for i, line in enumerate(c3) if line["text"].startswith("(12) Proceed")
+)
 tail = (
     set_lines(S[10], mark=added_words(10))
     + set_lines(S[11], mark=added_words(11))
-    + [l["ch"] for l in c3[i12:]]
+    + [line["ch"] for line in c3[i12:]]
 )
 col86 = (
-    [l["ch"] for l in c3[:i10]] + tail
+    [line["ch"] for line in c3[:i10]] + tail
 )  # the whole column, re-spaced evenly so it still ends level with columns 1-2
 lead86 = (c3[-1]["y"] - c3[0]["y"]) / (len(col86) - 1)
 place86 = [(c3[0]["y"] + k * lead86, g) for k, g in enumerate(col86)]
@@ -248,22 +262,26 @@ print(
 
 # ------------------------------------------------------------------ page 52588, column 2 from step (90); the rest on an added page
 c2 = col_lines(P88, 1)
-i90 = next(i for i, l in enumerate(c2) if l["text"].startswith("(90) Proceed"))
-isig = next(i for i, l in enumerate(c2) if l["text"].startswith("Signed:"))
+i90 = next(
+    i for i, line in enumerate(c2) if line["text"].startswith("(90) Proceed")
+)
+isig = next(
+    i for i, line in enumerate(c2) if line["text"].startswith("Signed:")
+)
 old = paragraphs(c2[i90:isig])
-assert [num(p) for p in old] == list(range(90, 97))
+assert [step_number(p) for p in old] == list(range(90, 97))
 lines88 = []
 for k in range(90, 101):
     lines88 += [
         (g, n == 0) for n, g in enumerate(set_lines(S[k], mark=True))
     ]  # replace TTB's (90)-(92)
 for p in old[3:]:  # TTB's (93)-(96) -> (101)-(104), TTB's line breaks kept
-    n = num(p)
+    n = step_number(p)
     new = S[n + 8]
-    assert body(new) == body(
-        " ".join(l["text"].strip() for l in p).replace("- ", "-")
+    assert step_body(new) == step_body(
+        " ".join(line["text"].strip() for line in p).replace("- ", "-")
     ), n
-    br = [len(pieces_of(l["text"].strip())) for l in p]
+    br = [len(pieces_of(line["text"].strip())) for line in p]
     assert sum(br) == len(pieces_of(new)), (n, br)
     lines88 += [
         (g, m == 0)
@@ -274,7 +292,7 @@ for p in old[3:]:  # TTB's (93)-(96) -> (101)-(104), TTB's line breaks kept
         )
     ]  # new number only
 sig = c2[isig:]
-sig_dy = [l["y"] - sig[0]["y"] for l in sig]
+sig_dy = [line["y"] - sig[0]["y"] for line in sig]
 gap_sig = sig[0]["y"] - c2[isig - 1]["y"]
 
 # Columns 2 and 3 from step (90) take the spacing TTB used in column 2 of this page: 10.4 pt between the lines of a step
@@ -323,7 +341,9 @@ ysig = place88[2][-1][0] + gap_sig
 assert ysig + sig_dy[-1] <= BOTTOM + 0.01, (
     "signature block runs past the bottom of column 3"
 )
-place88[2] += [[ysig + dy, l["ch"], False] for dy, l in zip(sig_dy, sig)]
+place88[2] += [
+    [ysig + dy, line["ch"], False] for dy, line in zip(sig_dy, sig, strict=True)
+]
 print(
     f"52588: col 2 {n2} lines from step (90) (room for {fit}; {spare:.2f} pt "
     f"spread over {len(starts)} gaps); col 3 {len(lines88) - n2} step lines, "
@@ -336,23 +356,23 @@ print(
 # TTB's glyphs, and only the lines that change are cleared (a band from 6 pt above to 1 pt below the baseline, inside the
 # glyphs of that line and clear of the lines above and below, 9.5-10.4 pt away) and set anew on TTB's baseline.
 def in_place(pno, col, n):
-    L = col_lines(pno, col)
+    lines = col_lines(pno, col)
     k = next(
         i
-        for i, l in enumerate(L)
-        if l["text"].startswith(f"({n}) Proceed")
-        and abs(l["ch"][0][1] - INDENT) < 1.0
+        for i, line in enumerate(lines)
+        if line["text"].startswith(f"({n}) Proceed")
+        and abs(line["ch"][0][1] - INDENT) < 1.0
     )
     j = next(
         i
-        for i in range(k + 1, len(L))
-        if re.match(r"\(\d+\) ", L[i]["text"])
-        and abs(L[i]["ch"][0][1] - INDENT) < 1.0
+        for i in range(k + 1, len(lines))
+        if re.match(r"\(\d+\) ", lines[i]["text"])
+        and abs(lines[i]["ch"][0][1] - INDENT) < 1.0
     )
-    old = L[k:j]
-    assert body(
-        " ".join(l["text"].strip() for l in old).replace("- ", "-")
-    ) == body(TTB_STEPS[n]), n
+    old = lines[k:j]
+    assert step_body(
+        " ".join(line["text"].strip() for line in old).replace("- ", "-")
+    ) == step_body(TTB_STEPS[n]), n
     new = set_lines(S[n], mark=added_words(n))
     assert len(new) == len(old), (
         n,
@@ -360,18 +380,25 @@ def in_place(pno, col, n):
         len(old),
         len(new),
     )
-    text = lambda g: "".join(c[0] for c in g).strip()
+
+    def glyph_text(g):
+        return "".join(c[0] for c in g).strip()
+
     placed = [
-        (l["y"], g) for l, g in zip(old, new) if text(g) != l["text"].strip()
+        (line["y"], g)
+        for line, g in zip(old, new, strict=True)
+        if glyph_text(g) != line["text"].strip()
     ]
     assert not any(
         len(c) > 4 and c[4]
-        for l, g in zip(old, new)
-        if text(g) == l["text"].strip()
+        for line, g in zip(old, new, strict=True)
+        if glyph_text(g) == line["text"].strip()
         for c in g
     ), n
-    assert placed and body(" ".join(text(g) for g in new)) == body(S[n]), n
-    return placed, L
+    assert placed and step_body(
+        " ".join(glyph_text(g) for g in new)
+    ) == step_body(S[n]), n
+    return placed, lines
 
 
 FIXED = {P87: (2, 49), P88: (1, 85)}  # page -> (column, step)
@@ -393,8 +420,8 @@ for pno, (col, n) in FIXED.items():
         graphics=pymupdf.PDF_REDACT_LINE_ART_NONE,
     )
     gone = {y for y, _ in place_fix[pno]}
-    assert [l["text"] for l in col_lines(pno, col)] == [
-        l["text"] for l in before if l["y"] not in gone
+    assert [line["text"] for line in col_lines(pno, col)] == [
+        line["text"] for line in before if line["y"] not in gone
     ], (n, "clearing the changed lines touched others")
     print(
         f"step ({n}): {len(place_fix[pno])} line(s) set anew in place on page "
@@ -438,10 +465,10 @@ p88.apply_redactions(
 # converter reads rotated text last on a page with text in only one column, which would put it after the slug line;
 # set horizontally just above the slug, it reads stamp, then slug, as on TTB's page 52588.
 stamp = [
-    l
+    line
     for b in pristine[P88].get_text("rawdict")["blocks"]
-    for l in b.get("lines", [])
-    if l["spans"][0]["chars"][0]["origin"][0] < 24
+    for line in b.get("lines", [])
+    if line["spans"][0]["chars"][0]["origin"][0] < 24
 ]
 assert len(stamp) == 1, len(stamp)
 STAMP = "".join(c["c"] for sp in stamp[0]["spans"] for c in sp["chars"])
@@ -461,7 +488,7 @@ tw.write_text(
 def write(page, col, placed, per_line=False):
     tw = pymupdf.TextWriter(page.rect)
     for y, g, *_ in placed:
-        for c, x, f, s, *_ in g:
+        for c, x, f, s, *_flags in g:
             tw.append(
                 pymupdf.Point(COLX[col] + x, y), c, font=FONTS[f], fontsize=s
             )
@@ -505,12 +532,12 @@ PX, NOTE_X0, NOTE_X1 = (
 def red_note(text, size):
     """text in red bold sans, size pt, wrapped at spaces to the page's text width: PNG bytes, rows, height (pt), pixel size"""
     fnt = ImageFont.truetype(BOLD, round(size * PX))
-    W = (NOTE_X1 - NOTE_X0) * PX
+    width_px = (NOTE_X1 - NOTE_X0) * PX
     rows, cur = [], ""
     dr = ImageDraw.Draw(Image.new("RGB", (10, 10)))
     for w in text.split(" "):
         t = (cur + " " + w).strip()
-        if dr.textlength(t, font=fnt) > W and cur:
+        if dr.textlength(t, font=fnt) > width_px and cur:
             rows.append(cur)
             cur = w
         else:
@@ -520,7 +547,9 @@ def red_note(text, size):
         round(1.3 * size * PX),
         round(0.1 * size * PX),
     )  # 52 px lines and 4 px margins for the 5 pt note
-    im = Image.new("RGBA", (W, lead * len(rows) + 2 * pad), (255, 255, 255, 0))
+    im = Image.new(
+        "RGBA", (width_px, lead * len(rows) + 2 * pad), (255, 255, 255, 0)
+    )
     dr = ImageDraw.Draw(im)
     for k, t in enumerate(rows):
         dr.text((0, pad + lead * k), t, font=fnt, fill=(190, 0, 0, 255))
@@ -554,7 +583,7 @@ def highlight(page, cols_placed):
     for col, placed in cols_placed:
         for y, g, *_ in placed:
             run = []
-            for t in g + [(" ", 0, "Melior", SIZE, False)]:
+            for t in [*g, (" ", 0, "Melior", SIZE, False)]:
                 if len(t) > 4 and t[4]:
                     run.append(t)
                     continue
@@ -571,21 +600,21 @@ def highlight(page, cols_placed):
                 run = []
     if rects:  # the outline MuPDF draws for a highlight annotation: the box with rounded ends bulging out h/(3 sqrt 2)
         sh = page.new_shape()
-        P = pymupdf.Point
+        point = pymupdf.Point
         for r in rects:
             k = r.height / (3 * 2**0.5)
             sh.draw_bezier(
-                P(r.x0, r.y1),
-                P(r.x0 - k, r.y1 - k),
-                P(r.x0 - k, r.y0 + k),
-                P(r.x0, r.y0),
+                point(r.x0, r.y1),
+                point(r.x0 - k, r.y1 - k),
+                point(r.x0 - k, r.y0 + k),
+                point(r.x0, r.y0),
             )
-            sh.draw_line(P(r.x0, r.y0), P(r.x1, r.y0))
+            sh.draw_line(point(r.x0, r.y0), point(r.x1, r.y0))
             sh.draw_bezier(
-                P(r.x1, r.y0),
-                P(r.x1 + k, r.y0 + k),
-                P(r.x1 + k, r.y1 - k),
-                P(r.x1, r.y1),
+                point(r.x1, r.y0),
+                point(r.x1 + k, r.y0 + k),
+                point(r.x1 + k, r.y1 - k),
+                point(r.x1, r.y1),
             )
         sh.finish(color=None, fill=YELLOW, width=0, closePath=True)
         sh.commit(overlay=False)  # overlay=False: under all the page's content
@@ -682,8 +711,11 @@ n = 0
 # ... and gives the fonts it adds generic names, flags and metrics (ascent 952 for TTB's 745); give them TTB's, since
 # text converters use the ascent and descent to decide which lines belong together
 DESC = {}
+# MuPDF's errors (pymupdf.mupdf.FzErrorBase), such as "cannot find object in
+# xref" for the docket PDF's free objects, skip that object
+MUPDF_ERROR = pymupdf.mupdf.FzErrorBase
 for xref in range(1, pristine.xref_length()):
-    try:
+    with contextlib.suppress(MUPDF_ERROR):
         if pristine.xref_get_key(xref, "Type")[1] == "/FontDescriptor":
             DESC.setdefault(
                 pristine.xref_get_key(xref, "FontName")[1],
@@ -703,12 +735,10 @@ for xref in range(1, pristine.xref_length()):
                     if pristine.xref_get_key(xref, k)[0] != "null"
                 },
             )
-    except Exception:
-        pass
 for xref in range(1, d2.xref_length()):
     try:
         is0 = d2.xref_get_key(xref, "Subtype")[1] == "/Type0"
-    except Exception:
+    except MUPDF_ERROR:
         continue
     if is0:
         name = d2.xref_get_key(xref, "BaseFont")[1].replace(" Regular", "")
@@ -727,7 +757,7 @@ for xref in range(1, d2.xref_length()):
 for xref in range(1, d2.xref_length()):
     try:
         is0 = d2.xref_get_key(xref, "Subtype")[1] == "/Type0"
-    except Exception:
+    except MUPDF_ERROR:
         continue
     if is0:
         tu = d2.xref_get_key(xref, "ToUnicode")
@@ -756,16 +786,25 @@ assert chk.get_sigflags() == -1 and not chk.is_form_pdf
 assert not [a.type for pg in chk for a in pg.annots()] and not any(
     pg.first_widget for pg in chk
 ), "annotations other than links left"
-has = lambda size: [
-    i
-    for i, pg in enumerate(chk)
-    if any(tuple(im[2:4]) == tuple(size) for im in pg.get_images(full=True))
-]
-assert has(RUN_PX) == [P86, P87, P88, len(chk) - 1], (
+
+
+def pages_with_image(size):
+    """The pages of the saved copy that show an image of SIZE pixels."""
+    return [
+        i
+        for i, pg in enumerate(chk)
+        if any(tuple(im[2:4]) == tuple(size) for im in pg.get_images(full=True))
+    ]
+
+
+assert pages_with_image(RUN_PX) == [P86, P87, P88, len(chk) - 1], (
     "running line on pages",
-    has(RUN_PX),
+    pages_with_image(RUN_PX),
 )
-assert has(NOTE_PX) == [0], ("first-page note on pages", has(NOTE_PX))
+assert pages_with_image(NOTE_PX) == [0], (
+    "first-page note on pages",
+    pages_with_image(NOTE_PX),
+)
 assert not any("UNOFFICIAL" in pg.get_text() for pg in chk), (
     "a red note became text"
 )

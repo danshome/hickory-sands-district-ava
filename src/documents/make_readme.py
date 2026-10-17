@@ -32,10 +32,8 @@ def heading(
         "Notice No.",
         re.sub(r"\bttb\b", "TTB", m.group(1).capitalize()),
     )
-    return (
-        "<h2>"
-        f"{html.escape(title)}{' <small>' + text(m.group(2)) + '</small>' if m.group(2) else ''}</h2>"
-    )
+    note = f" <small>{text(m.group(2))}</small>" if m.group(2) else ""
+    return f"<h2>{html.escape(title)}{note}</h2>"
 
 
 def is_heading(
@@ -82,6 +80,21 @@ def prose(lines):
     return "".join(out)
 
 
+def file_names(names):
+    """The names for a table cell, one per line; a long one breaks after - _ /.
+
+    Args:
+        names: the file names, as README.txt lists them.
+
+    Returns:
+        HTML: the names escaped, separated by <br>, with a <wbr> after each
+        -, _ and / so a long name can break there.
+    """
+    return "<br>".join(
+        re.sub(r"([-_/])", r"\1<wbr>", html.escape(n)) for n in names
+    )
+
+
 def package(lines):
     """folder lines at column 0; under each, 'name   description' rows (or a name alone with its description indented
     below it, or several names sharing one), description continuations indented further, or plain prose
@@ -98,18 +111,20 @@ def package(lines):
         end_row()
         if folder:
             name, note = folder
+            small = f" <small>{text(note)}</small>" if note else ""
             out.append(
-                f'<h3><span class="path">{html.escape(name)}</span>{" <small>" + text(note) + "</small>" if note else ""}</h3>'
+                f'<h3><span class="path">{html.escape(name)}</span>{small}</h3>'
             )
             if rows:
                 out.append(
                     '<table class="files">'
                     + "".join(
-                        f'<tr><td class="f">{"<br>".join(re.sub(r"([-_/])", r"\1<wbr>", html.escape(n)) for n in ns)}</td><td>{text(d)}</td></tr>'
+                        f'<tr><td class="f">{file_names(ns)}</td>'
+                        f"<td>{text(d)}</td></tr>"
                         for ns, d in rows
                     )
                     + "</table>"
-                )  # long file names break after - _ /
+                )
             if para:
                 out.append("<p>" + text(" ".join(para)) + "</p>")
         rows.clear()
@@ -157,22 +172,24 @@ def words(
 
 
 def main():
-    built = json.load(open(os.path.join(HERE, "agreed-steps.json")))
+    with open(os.path.join(HERE, "agreed-steps.json")) as f:
+        built = json.load(f)
     fill = {
-        "AREA_SQMI": "%.2f" % built["sqmi"],
+        "AREA_SQMI": f"{built['sqmi']:.2f}",
         "STEPS": str(len(built["steps"])),
     }
-    readme = open(
-        os.path.join(DOC, "README.template.txt"), encoding="utf-8"
-    ).read()
+    with open(os.path.join(DOC, "README.template.txt"), encoding="utf-8") as f:
+        readme = f.read()
     for k, v in fill.items():
         readme = readme.replace("{" + k + "}", v)
-    assert not re.search(r"\{[A-Z_]+\}", readme), (
-        "unfilled placeholder in README.template.txt: %s"
-        % re.findall(r"\{[A-Z_]+\}", readme)
+    unfilled = re.findall(r"\{[A-Z_]+\}", readme)
+    assert not unfilled, (
+        f"unfilled placeholder in README.template.txt: {unfilled}"
     )
-    open(os.path.join(HERE, "README.txt"), "w", encoding="utf-8").write(readme)
-    lic = open(os.path.join(ROOT, "LICENSE.txt"), encoding="utf-8").read()
+    with open(os.path.join(HERE, "README.txt"), "w", encoding="utf-8") as f:
+        f.write(readme)
+    with open(os.path.join(ROOT, "LICENSE.txt"), encoding="utf-8") as f:
+        lic = f.read()
 
     page_readme = readme.replace(
         "(see LICENSE.txt)", "(full text at the end of this page)"
@@ -212,16 +229,17 @@ def main():
         if got[i : i + 1] != want[i : i + 1]
     )
 
-    page = open(
+    with open(
         os.path.join(DOC, "read-me-first.template.html"), encoding="utf-8"
-    ).read()
+    ) as f:
+        page = f.read()
     page = (
         page.replace("{HEADER}", readme_html)
         .replace("{README}", body)
         .replace("{LICENSE}", license_html)
     )
     os.makedirs(os.path.join(HERE, "documents"), exist_ok=True)
-    open(
+    with open(
         os.path.join(
             HERE,
             "documents",
@@ -229,10 +247,11 @@ def main():
         ),
         "w",
         encoding="utf-8",
-    ).write(page)
+    ) as f:
+        f.write(page)
     print(
-        "README.txt and read-me-first page: AVA %s sq mi, %s steps"
-        % (fill["AREA_SQMI"], fill["STEPS"])
+        f"README.txt and read-me-first page: AVA {fill['AREA_SQMI']} sq mi, "
+        f"{fill['STEPS']} steps"
     )
 
 

@@ -8,6 +8,7 @@ import csv
 import html
 import json
 import os
+import re
 
 ROOT = os.path.abspath(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
@@ -15,15 +16,22 @@ ROOT = os.path.abspath(
 HERE = os.environ.get("HSD_WORK") or os.path.join(
     ROOT, "target", "work"
 )  # build work dir (build.sh stages resources/ here)
-S = json.load(open(os.path.join(HERE, "agreed-steps.json")))
+DESCRIPTION = os.path.join(ROOT, "resources", "boundary", "description")
+
+
+def load_json(path, encoding=None):
+    """The JSON file at PATH, read with ENCODING (the locale's by default)."""
+    with open(path, encoding=encoding) as f:
+        return json.load(f)
+
+
+S = load_json(os.path.join(HERE, "agreed-steps.json"))
 L = {
     f["properties"]["step"]: f["properties"]
-    for f in json.load(
-        open(
-            os.path.join(
-                HERE,
-                "gis/hickory-sands-district-boundary-proposed-2026-10-15-line-EPSG4269.geojson",
-            )
+    for f in load_json(
+        os.path.join(
+            HERE,
+            "gis/hickory-sands-district-boundary-proposed-2026-10-15-line-EPSG4269.geojson",
         )
     )["features"]
 }
@@ -71,9 +79,8 @@ txt = (
     + [C]
     + ["    " + t for t in steps]
 )
-open(os.path.join(OUT, STEM + ".txt"), "w", encoding="utf-8").write(
-    "\n".join(txt) + "\n"
-)
+with open(os.path.join(OUT, STEM + ".txt"), "w", encoding="utf-8") as fh:
+    fh.write("\n".join(txt) + "\n")
 
 # ---------- CSV
 with open(
@@ -105,9 +112,16 @@ with open(
             ]
         )
 
-# ---------- HTML (PDF + DOCX)
+# ---------- the HTML page, printed to PDF and converted to DOCX
 e = html.escape
-P = lambda t, cls="": f"<p{' class=%s' % cls if cls else ''}>{e(t)}</p>"
+
+
+def para(t, cls=""):
+    """A <p> of text T, escaped, with class CLS if one is given."""
+    attr = f" class={cls}" if cls else ""
+    return f"<p{attr}>{e(t)}</p>"
+
+
 pet91 = (
     "Proceed north-easterly, then north-westerly, then north-easterly along "
     "Honey Creek to the marked 1727-foot elevation point at its intersection "
@@ -119,23 +133,9 @@ corr = (
     "along the tributary</b> to the marked 1,727-foot elevation point at its "
     "intersection with US Highway 377; then"
 )
-import re as _re
-
-assert (
-    pet91
-    == json.load(
-        open(
-            os.path.join(
-                ROOT,
-                "resources",
-                "boundary",
-                "description",
-                "petition-steps.json",
-            )
-        )
-    )["91"]
-), "petition step 91 changed"
-assert _re.sub("<[^>]+>", "", corr) == _re.sub(
+PETITION = load_json(os.path.join(DESCRIPTION, "petition-steps.json"))
+assert pet91 == PETITION["91"], "petition step 91 changed"
+assert re.sub("<[^>]+>", "", corr) == re.sub(
     r"^\(90\)\s*", "", S["steps"][89]["text"]
 ), "correction box out of step with step (90)"
 rd91, rd92 = (
@@ -145,34 +145,15 @@ rd91, rd92 = (
 assert "eastbound lane of " + rd91 + ";" in S["steps"][90]["text"], (
     "road names note out of step with step (91)"
 )
-assert (
-    "eastbound lane of " + rd92 + ";"
-    in json.load(
-        open(
-            os.path.join(
-                ROOT,
-                "resources",
-                "boundary",
-                "description",
-                "petition-steps.json",
-            )
-        )
-    )["92"]
-), "petition step 92 changed"
+assert "eastbound lane of " + rd92 + ";" in PETITION["92"], (
+    "petition step 92 changed"
+)
 # the two corrections to TTB's own wording (issue #38): TTB's step, then the proposed step, the changed words in bold
 TTB = {
     int(k): v
-    for k, v in json.load(
-        open(
-            os.path.join(
-                ROOT,
-                "resources",
-                "boundary",
-                "description",
-                "ttb-notice-243-steps.json",
-            ),
-            encoding="utf-8",
-        )
+    for k, v in load_json(
+        os.path.join(DESCRIPTION, "ttb-notice-243-steps.json"),
+        encoding="utf-8",
     ).items()
 }
 FIX = {
@@ -183,7 +164,7 @@ fixed = {n: e(TTB[n]).replace(old, new) for n, (old, new) in FIX.items()}
 for n in FIX:
     assert (
         TTB[n].count(FIX[n][0]) == 1
-        and _re.sub("<[^>]+>", "", fixed[n]) == S["steps"][n - 1]["text"]
+        and re.sub("<[^>]+>", "", fixed[n]) == S["steps"][n - 1]["text"]
     ), f"correction box out of step with step ({n})"
     assert S["steps"][n - 1]["change"].startswith("text correction"), n
 same = list(range(1, 10)) + [
@@ -193,8 +174,8 @@ assert all(S["steps"][n - 1]["text"] == TTB[n] for n in same), (
     "a step the table calls unchanged differs from TTB's"
 )
 assert all(
-    _re.sub(r"^\(\d+\)", "", S["steps"][n - 1]["text"])
-    == _re.sub(r"^\(\d+\)", "", TTB[n - 8])
+    re.sub(r"^\(\d+\)", "", S["steps"][n - 1]["text"])
+    == re.sub(r"^\(\d+\)", "", TTB[n - 8])
     for n in range(101, 105)
 ), "(101)-(104) differ from TTB's (93)-(96)"
 rows = [
@@ -345,13 +326,13 @@ h = (
             "The changes are listed after the text.</p>"
         ),
         "<h2>Regulatory text</h2>",
-        P("§ 9.___ Hickory Sands District.", "sec"),
-        P(A),
-        P(B),
+        para("§ 9.___ Hickory Sands District.", "sec"),
+        para(A),
+        para(B),
     ]
-    + [P(m, "ind") for m in MAPS]
-    + [P(C)]
-    + [P(t, "ind") for t in steps]
+    + [para(m, "ind") for m in MAPS]
+    + [para(C)]
+    + [para(t, "ind") for t in steps]
     + [
         "<h2>Changes from TTB’s published text (Notice No. 243)</h2>",
         "<table><tr><th>Steps</th><th>Text</th><th>Source</th></tr>"
@@ -457,7 +438,6 @@ h = (
         "</body></html>",
     ]
 )
-open(os.path.join(OUT, STEM + ".html"), "w", encoding="utf-8").write(
-    "\n".join(h)
-)
+with open(os.path.join(OUT, STEM + ".html"), "w", encoding="utf-8") as fh:
+    fh.write("\n".join(h))
 print("ok", len(steps), "steps;", OUT)

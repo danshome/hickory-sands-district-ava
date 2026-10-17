@@ -25,7 +25,7 @@ PDF_DIR = os.path.join(ROOT, "resources", "quads", "geopdf")
 
 
 def md5_of(path):
-    h = hashlib.md5()
+    h = hashlib.md5(usedforsecurity=False)
     with open(path, "rb") as f:
         for chunk in iter(lambda: f.read(1 << 20), b""):
             h.update(chunk)
@@ -33,7 +33,7 @@ def md5_of(path):
 
 
 def md5_of_zip_member(zpath, member):
-    h = hashlib.md5()
+    h = hashlib.md5(usedforsecurity=False)
     with zipfile.ZipFile(zpath) as z, z.open(member) as f:
         for chunk in iter(lambda: f.read(1 << 20), b""):
             h.update(chunk)

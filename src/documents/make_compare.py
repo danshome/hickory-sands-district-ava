@@ -19,25 +19,26 @@ ROOT = os.path.abspath(
 HERE = os.environ.get("HSD_WORK") or os.path.join(
     ROOT, "target", "work"
 )  # build work dir (build.sh stages resources/ here)
+DESCRIPTION = os.path.join(ROOT, "resources", "boundary", "description")
+
+
+def load_json(path, encoding=None):
+    """The JSON file at PATH, read with ENCODING (the locale's by default)."""
+    with open(path, encoding=encoding) as f:
+        return json.load(f)
+
+
 S = {
     s["step"]: s
-    for s in json.load(open(os.path.join(HERE, "agreed-steps.json")))["steps"]
+    for s in load_json(os.path.join(HERE, "agreed-steps.json"))["steps"]
 }
 # TTB's steps word for word from the Federal Register's own text of Notice No. 243 (document 2026-16670, full-text XML,
 # downloaded 2026-10-15; the PDF is byte-identical to our copy and its text identical to the regulations.gov copy)
 NPRM = {
     int(k): v
-    for k, v in json.load(
-        open(
-            os.path.join(
-                ROOT,
-                "resources",
-                "boundary",
-                "description",
-                "ttb-notice-243-steps.json",
-            ),
-            encoding="utf-8",
-        )
+    for k, v in load_json(
+        os.path.join(DESCRIPTION, "ttb-notice-243-steps.json"),
+        encoding="utf-8",
     ).items()
 }
 assert "light-duty" in NPRM[15] and "Mason-McCulloch" in NPRM[19]
@@ -45,24 +46,22 @@ assert "light-duty" in NPRM[91]
 # the petition as filed in the docket (TTB-2026-0005-0012), downloaded 2026-10-15
 PET = {
     int(k): v
-    for k, v in json.load(
-        open(
-            os.path.join(
-                ROOT,
-                "resources",
-                "boundary",
-                "description",
-                "petition-steps-docket.json",
-            ),
-            encoding="utf-8",
-        )
+    for k, v in load_json(
+        os.path.join(DESCRIPTION, "petition-steps-docket.json"),
+        encoding="utf-8",
     ).items()
     if v
 }
 PET[102] = PET[102][
     : PET[102].index("beginning point.") + len("beginning point.")
 ]
-body = lambda t: re.sub(r"^\(\d+\)\s*", "", t)
+
+
+def step_body(t):
+    """Step text T without its number: "(10) Proceed ..." -> "Proceed ..."."""
+    return re.sub(r"^\(\d+\)\s*", "", t)
+
+
 e = html.escape
 TOK = re.compile(
     r"[A-Za-z0-9][A-Za-z0-9.,’'\-]*[A-Za-z0-9]|[A-Za-z0-9]|[^\sA-Za-z0-9]"
@@ -102,7 +101,7 @@ def marks(src, final):
     """src words not in final -> struck; returns html for src."""
     a, b = tok(src), tok(final)
     pieces = []
-    for op, i1, i2, j1, j2 in difflib.SequenceMatcher(
+    for op, i1, i2, _j1, _j2 in difflib.SequenceMatcher(
         None, a, b, autojunk=False
     ).get_opcodes():
         for t in a[i1:i2]:
@@ -115,21 +114,45 @@ def added(final, ttb):
     f = tok(final)
     keep = [False] * len(f)
     if ttb:
-        for op, i1, i2, j1, j2 in difflib.SequenceMatcher(
+        for op, _i1, _i2, j1, j2 in difflib.SequenceMatcher(
             None, tok(ttb), f, autojunk=False
         ).get_opcodes():
             if op == "equal":
                 for j in range(j1, j2):
                     keep[j] = True
-    return render([(w, None if k else "ins") for w, k in zip(f, keep)])
+    return render(
+        [(w, None if k else "ins") for w, k in zip(f, keep, strict=True)]
+    )
 
 
-F = lambda n: body(S[n]["text"])
-T = lambda n: body(NPRM[n])
-L = lambda s: f"<b>{s}</b> "
-pet = lambda k: f"<small>petition step {k}</small><br>{e(PET[k])}"
+def proposed_step(n):
+    """The proposed text of step N, without its number."""
+    return step_body(S[n]["text"])
+
+
+def ttb_step(n):
+    """TTB's published text of step N (Notice No. 243), without its number."""
+    return step_body(NPRM[n])
+
+
+def label(s):
+    """A step number in bold, for the start of a cell."""
+    return f"<b>{s}</b> "
+
+
+def petition_cell(k):
+    """The petition column: petition step K, as filed, with its number."""
+    return f"<small>petition step {k}</small><br>{e(PET[k])}"
+
+
 DASH = "<small>—</small>"
-q = lambda t: "“" + e(t) + "”"
+
+
+def quoted(t):
+    """T escaped, in curly double quotes."""
+    return "“" + e(t) + "”"
+
+
 US = (
     " The petition wrote “U.S. Highway”; we write “US Highway”, as TTB’s "
     "published text does."
@@ -138,9 +161,9 @@ rows = []  # (ttb, petition, final, why) or ("HEAD", text)
 
 rows.append(
     (
-        L("(10)") + marks(T(10), F(10)),
-        pet(11),
-        L("(10)") + added(F(10), T(10)),
+        label("(10)") + marks(ttb_step(10), proposed_step(10)),
+        petition_cell(11),
+        label("(10)") + added(proposed_step(10), ttb_step(10)),
         "TTB’s published text says “along State Highway 29”, with no lane. "
         "The original petition (step 11) said “along the westbound lane of "
         "State Highway 29”. <b>We are adding “the westbound lane of” back</b> "
@@ -154,9 +177,9 @@ rows.append(
 )
 rows.append(
     (
-        L("(11)") + marks(T(11), F(11)),
-        pet(12),
-        L("(11)") + added(F(11), T(11)),
+        label("(11)") + marks(ttb_step(11), proposed_step(11)),
+        petition_cell(12),
+        label("(11)") + added(proposed_step(11), ttb_step(11)),
         "TTB’s published text says “along US Highway 377, crossing onto the "
         "Purdy Hill map, to the highway’s intersection with US Highway 87”. "
         "The original petition (step 12) said “along U.S. Highway 377 along "
@@ -184,9 +207,9 @@ rows.append(
 )
 rows.append(
     (
-        L("(49)") + marks(T(49), F(49)),
-        pet(50),
-        L("(49)") + added(F(49), T(49)),
+        label("(49)") + marks(ttb_step(49), proposed_step(49)),
+        petition_cell(50),
+        label("(49)") + added(proposed_step(49), ttb_step(49)),
         (
             "<b>Editorial correction.</b> TTB’s published text says “the "
             "marked 1,586-elevation point”, without “-foot”. Everywhere else "
@@ -202,9 +225,9 @@ rows.append(
 )
 rows.append(
     (
-        L("(85)") + marks(T(85), F(85)),
-        pet(86),
-        L("(85)") + added(F(85), T(85)),
+        label("(85)") + marks(ttb_step(85), proposed_step(85)),
+        petition_cell(86),
+        label("(85)") + added(proposed_step(85), ttb_step(85)),
         (
             "<b>Correction.</b> TTB’s published text says “the marked "
             "1,801-foot summit”. The step ends at a summit on the Turtle "
@@ -231,12 +254,18 @@ rows.append(
         ),
     )
 )
-whole = lambda n, txt, tag: f"<b>({n})</b> <{tag}>{e(txt)}</{tag}>"
+
+
+def whole_step(n, txt, tag):
+    """Step N's text TXT, all of it marked with TAG (del or ins)."""
+    return f"<b>({n})</b> <{tag}>{e(txt)}</{tag}>"
+
+
 rows.append(
     (
-        whole(90, T(90), "del"),
-        pet(91),
-        whole(90, F(90), "ins"),
+        whole_step(90, ttb_step(90), "del"),
+        petition_cell(91),
+        whole_step(90, proposed_step(90), "ins"),
         "TTB’s published text follows Honey Creek, crossing onto the Grit "
         "map, only as far as the highway at the marked 1,668-foot elevation "
         "point, then follows the highway to Old Junction Road (TTB’s step "
@@ -249,12 +278,12 @@ rows.append(
         "leaves Honey Creek where an unnamed, intermittent tributary joins it "
         "and follows that tributary, past Bench Mark 1680, to the 1727. So "
         "the petition’s "
-        + q(
+        + quoted(
             "north-easterly, then north-westerly, then north-easterly along "
             "Honey Creek to the marked 1727…"
         )
         + " becomes "
-        + q(
+        + quoted(
             "northeasterly, then northwesterly along Honey Creek to its "
             "confluence with an unnamed, intermittent tributary, then "
             "northeasterly along the tributary to the marked 1,727…"
@@ -272,13 +301,13 @@ rows.append(
 )
 rows.append(
     (
-        whole(91, T(91), "del"),
-        pet(92),
-        whole(91, F(91), "ins"),
+        whole_step(91, ttb_step(91), "del"),
+        petition_cell(92),
+        whole_step(91, proposed_step(91), "ins"),
         "TTB’s published text runs southwest, then northwest, along the "
         "highway to Old Junction Road; the proposed text does not use that "
         "route. The original petition (step 92) said "
-        + q(PET[92].rstrip(",").rsplit("; then", 1)[0])
+        + quoted(PET[92].rstrip(",").rsplit("; then", 1)[0])
         + ". <b>We are using the petition’s step</b>, the return pass along "
         "the eastbound lane (see step (10)), <b>with the roads named as TTB "
         "names them</b>: from the 1,727 back to the junction near Grit the "
@@ -292,8 +321,8 @@ rows.append(
 rows.append(
     (
         DASH,
-        pet(93),
-        whole(92, F(92), "ins"),
+        petition_cell(93),
+        whole_step(92, proposed_step(92), "ins"),
         (
             "Not in TTB’s published text. <b>The original petition’s step 93, "
             "word for word</b>, written in TTB’s style: “1,737-foot” (the "
@@ -305,8 +334,8 @@ rows.append(
 rows.append(
     (
         DASH,
-        pet(94),
-        whole(93, F(93), "ins"),
+        petition_cell(94),
+        whole_step(93, proposed_step(93), "ins"),
         (
             "<b>New step, proposed (steps (93)–(96)), as discussed with TTB "
             "on October 15, 2026.</b> The original petition (step 94) said "
@@ -327,7 +356,7 @@ for n in (94, 95, 96):
         (
             DASH,
             "<small>— (replaces petition step 94; see step (93))</small>",
-            whole(n, F(n), "ins"),
+            whole_step(n, proposed_step(n), "ins"),
             "New, proposed; see step (93).",
         )
     )
@@ -342,8 +371,8 @@ for n, k in ((97, 95), (98, 96), (99, 97)):
     rows.append(
         (
             DASH,
-            pet(k),
-            whole(n, F(n), "ins"),
+            petition_cell(k),
+            whole_step(n, proposed_step(n), "ins"),
             (
                 "Not in TTB’s published text. <b>The original petition’s "
                 f"step {k}, word for word.</b>{extra}"
@@ -352,13 +381,13 @@ for n, k in ((97, 95), (98, 96), (99, 97)):
     )
 rows.append(
     (
-        whole(92, T(92), "del"),
-        pet(98),
-        whole(100, F(100), "ins"),
+        whole_step(92, ttb_step(92), "del"),
+        petition_cell(98),
+        whole_step(100, proposed_step(100), "ins"),
         "TTB’s published text reaches the same place, the end of Lange Road, "
         "by a straight line from Old Junction Road, “crossing onto the Turtle "
         "Creek map”. The original petition (step 98) said "
-        + q(PET[98].rsplit("; then", 1)[0])
+        + quoted(PET[98].rsplit("; then", 1)[0])
         + ", from the marked 1765 summit. <b>We are using the petition’s step "
         "word for word</b>, as discussed with TTB. (The petition’s words "
         "don’t mention the Turtle Creek map; the line does cross onto it "
@@ -377,7 +406,7 @@ rows.append(
 )
 for k in (93, 94, 95, 96):
     n = k + 8
-    same_as_pet = T(k) == PET[k + 6]
+    same_as_pet = ttb_step(k) == PET[k + 6]
     why = (
         f"TTB’s published step ({k}), <b>word for word, renumbered ({n})</b>: "
         "the area near Grit is now eleven steps instead of three, so the "
@@ -392,32 +421,41 @@ for k in (93, 94, 95, 96):
         )
     rows.append(
         (
-            f"<b>(<del>{k}</del>)</b> " + e(T(k)),
-            pet(k + 6),
-            f"<b>(<ins>{n}</ins>)</b> " + e(F(n)),
+            f"<b>(<del>{k}</del>)</b> " + e(ttb_step(k)),
+            petition_cell(k + 6),
+            f"<b>(<ins>{n}</ins>)</b> " + e(proposed_step(n)),
             why,
         )
     )
 
+
 # the proposed column, stripped of marking, is exactly the proposed text; TTB's column is exactly TTB's text
-strip = lambda h: html.unescape(re.sub("<[^>]+>", "", h))
+def strip_tags(h):
+    """The text of HTML H: tags dropped, entities unescaped."""
+    return html.unescape(re.sub("<[^>]+>", "", h))
+
+
 for r in rows:
     if r[0] == "HEAD":
         continue
-    m = re.match(r"\((\d+)\) (.*)$", strip(r[2]), re.S)
-    assert m and m.group(2) == F(int(m.group(1))), strip(r[2])[:80]
+    m = re.match(r"\((\d+)\) (.*)$", strip_tags(r[2]), re.S)
+    assert m and m.group(2) == proposed_step(int(m.group(1))), strip_tags(r[2])[
+        :80
+    ]
     if r[0] != DASH:
-        m = re.match(r"\((\d+)\) (.*)$", strip(r[0]), re.S)
-        assert m and m.group(2) == T(int(m.group(1))), strip(r[0])[:80]
+        m = re.match(r"\((\d+)\) (.*)$", strip_tags(r[0]), re.S)
+        assert m and m.group(2) == ttb_step(int(m.group(1))), strip_tags(r[0])[
+            :80
+        ]
     if r[1].startswith("<small>petition step"):
         k = int(re.match(r"<small>petition step (\d+)", r[1]).group(1))
-        assert strip(r[1]).endswith(PET[k])
+        assert strip_tags(r[1]).endswith(PET[k])
 shown = sorted(
-    int(re.match(r"\((\d+)\)", strip(r[2])).group(1))
+    int(re.match(r"\((\d+)\)", strip_tags(r[2])).group(1))
     for r in rows
     if r[0] != "HEAD"
 )
-assert shown == [10, 11, 49, 85] + list(range(90, 105)), shown
+assert shown == [10, 11, 49, 85, *range(90, 105)], shown
 FIXED = {
     49: (
         "Proceed south in a straight line to the marked 1,586-foot elevation "
@@ -429,15 +467,15 @@ FIXED = {
     ),
 }  # issue #38
 assert all(
-    F(n) == T(n)
+    proposed_step(n) == ttb_step(n)
     for n in list(range(1, 10)) + list(range(12, 90))
     if n not in FIXED
 ), "a step outside the table differs from TTB"
-assert all(F(n) == t for n, t in FIXED.items()), (
+assert all(proposed_step(n) == t for n, t in FIXED.items()), (
     "steps (49) and (85) are not the corrected text"
 )
 pet_of = {
-    int(re.match(r"\((\d+)\)", strip(r[2])).group(1)): int(
+    int(re.match(r"\((\d+)\)", strip_tags(r[2])).group(1)): int(
         re.match(r"<small>petition step (\d+)", r[1]).group(1)
     )
     for r in rows
@@ -553,5 +591,6 @@ OUT = os.path.join(
     "documents",
     "Hickory-Sands-District-boundary-changes-side-by-side-2026-10-15.html",
 )
-open(OUT, "w", encoding="utf-8").write("\n".join(h))
+with open(OUT, "w", encoding="utf-8") as fh:
+    fh.write("\n".join(h))
 print(OUT, len([r for r in rows if r[0] != "HEAD"]), "rows")

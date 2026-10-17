@@ -361,7 +361,8 @@ def main():
         "petition: marked 1,737 to marked 1,762",
         "93-96",
         straight,
-        "the petition (February 2, 2023), replaced by new steps (93)-(96)",
+        "the petition (as amended June 6, 2023), replaced by new steps "
+        "(93)-(96)",
     )
 
     crs = {"type": "name", "properties": {"name": "urn:ogc:def:crs:EPSG::4269"}}

@@ -42,7 +42,7 @@ WHAT IS IN THIS PACKAGE
    the NAD83 line is carried onto them with the NADCON 5.0 CONUS grid.
 
 WHAT WE PROPOSE TO CHANGE IN NOTICE NO. 243 (details in 3_changes-side-by-side; marked in 2_TTB-notice-243-...)
-   Steps (10)-(11) and (90)-(100) near Grit use the petition's own wording (February 2, 2023), lane wording included,
+   Steps (10)-(11) and (90)-(100) near Grit use the petition's own wording (as amended June 6, 2023), lane wording included,
    in place of TTB's steps (10)-(11) and (90)-(92). Within them:
    - steps (93)-(96) are new: they go around a lobe of granite northwest of the area near Grit by a windmill, a fence
      line and Topaz Lane, instead of the petition's straight line from the marked 1737 to the marked 1762;

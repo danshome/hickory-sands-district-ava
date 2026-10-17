@@ -1,20 +1,33 @@
-"""Problem finder: walks every traced line and cuts a close-up of each place that may not be on the ink, plus a few
-random controls, for review by a person or by reviewer agents (the "critic" pass). Writes:
-  OUT/problems.json   one record per spot: pid, line id, kind, type, lon, lat, sheet, detail, png
-  OUT/<pid>.png       left: the scan, prior (current line) red, traced line purple; right: the ink classes the
-                      tracer sees (black/gray magenta, red orange, brown green, blue/teal blue) with the traced line
+"""Problem finder: close-ups of every place a traced line may be off the ink.
+
+Walks every traced line and cuts a close-up of each place that may not be on the
+ink, plus a few random controls, for review by a person or by reviewer agents
+(the "critic" pass). Writes:
+  OUT/problems.json   one record per spot: pid, line id, kind, type, lon, lat,
+                      sheet, detail, png
+  OUT/<pid>.png       left: the scan, prior (current line) red, traced line
+                      purple; right: the ink classes the tracer sees
+                      (black/gray magenta, red orange, brown green, blue/teal
+                      blue) with the traced line
 Spot types:
-  off_center   the independent check measured the symbol's centre > 2 m from the line (traced 'off_center_runs')
-  gap          >= 15 m where no centre could be measured (traced 'gaps'): lettering, ink missed, a real gap
-  moved        the traced line is > 8 m from the prior (local maxima): one of them is wrong
-  sheet_edge   the line crosses from one sheet to another: is there a jog, is it the right size
+  off_center   the independent check measured the symbol's centre > 2 m from
+               the line (traced 'off_center_runs')
+  gap          >= 15 m where no centre could be measured (traced 'gaps'):
+               lettering, ink missed, a real gap
+  moved        the traced line is > 8 m from the prior (local maxima): one of
+               them is wrong
+  sheet_edge   the line crosses from one sheet to another: is there a jog, is
+               it the right size
   control      random places, so a reviewer also sees what right looks like
-CLI: problems.py --quads "GLOB" --traced traced.geojson [--prior lines.geojson] --out-dir DIR [--ids ...]
-     [--controls 1] [--half 32] [--scale 6] [--spots regression.json]   (at most 3 off_center, 2 moved, 2 gap, 1 sheet_edge, 1 control per line)
+CLI: problems.py --quads "GLOB" --traced traced.geojson [--prior lines.geojson]
+                 --out-dir DIR [--ids ...] [--controls 1] [--half 32]
+                 [--scale 6] [--spots regression.json]
+     (at most 3 off_center, 2 moved, 2 gap, 1 sheet_edge, 1 control per line)
 Review with agents: references/review-rubric.md.
 """
 
 import argparse
+from collections import Counter
 import json
 import math
 import os
@@ -58,6 +71,7 @@ SMALL = _font(16)
 
 
 def m_between(a, b):
+    """Returns the flat distance in metres between two NAD83 (lon, lat)."""
     return math.hypot(
         (a[0] - b[0]) * 111320 * math.cos(math.radians(a[1])),
         (a[1] - b[1]) * 110574,
@@ -65,19 +79,44 @@ def m_between(a, b):
 
 
 def dist_to(line, p):
-    O = np.array(line)
-    X = (O[:, 0] - p[0]) * 111320 * math.cos(math.radians(p[1]))
-    Y = (O[:, 1] - p[1]) * 110574
-    A = np.column_stack([X, Y])
-    D = A[1:] - A[:-1]
-    L = (D**2).sum(1)
-    L[L == 0] = 1
-    t = np.clip(-(A[:-1] * D).sum(1) / L, 0, 1)
-    C = A[:-1] + t[:, None] * D
-    return float(np.sqrt((C**2).sum(1)).min())
+    """Returns the distance in metres from a point to a polyline.
+
+    Both are NAD83 (lon, lat); the distance is measured in a flat frame around
+    the point (111320 m per degree of longitude times cos(lat), 110574 m per
+    degree of latitude).
+    """
+    pts = np.array(line)
+    dx = (pts[:, 0] - p[0]) * 111320 * math.cos(math.radians(p[1]))
+    dy = (pts[:, 1] - p[1]) * 110574
+    rel = np.column_stack([dx, dy])
+    seg = rel[1:] - rel[:-1]
+    seg_len2 = (seg**2).sum(1)
+    seg_len2[seg_len2 == 0] = 1
+    t = np.clip(-(rel[:-1] * seg).sum(1) / seg_len2, 0, 1)
+    foot = rel[:-1] + t[:, None] * seg
+    return float(np.sqrt((foot**2).sum(1)).min())
 
 
 def closeup(sh, lon, lat, old, new, half, scale, label):
+    """Draws the close-up of one spot: the scan beside the ink classes.
+
+    Left, the scan with the prior (red) and the traced line (purple); right,
+    the ink classes the tracer sees (COL, classified with a 30-pixel margin)
+    with the traced line; both enlarged, the spot circled, the label above.
+
+    Args:
+        sh: The sheet holding the spot (quadsheets.Sheet).
+        lon: The spot's NAD83 longitude.
+        lat: The spot's NAD83 latitude.
+        old: The prior's NAD83 points, or None.
+        new: The traced line's NAD83 points.
+        half: Half the close-up's width and height, in scan pixels.
+        scale: The enlargement (nearest neighbour).
+        label: The text above the panels.
+
+    Returns:
+        The PIL image.
+    """
     c, r, _ = sh.pixel(lon, lat)
     a, c0, r0 = sh.read(c - half, r - half, c + half, r + half)
     big, bc0, br0 = sh.read(
@@ -89,10 +128,10 @@ def closeup(sh, lon, lat, old, new, half, scale, label):
     ov = np.full_like(rgb, 255)
     for k, col in COL.items():
         ov[m[k][oy : oy + rgb.shape[0], ox : ox + rgb.shape[1]]] = col
-    W = rgb.shape[1] * scale
-    H = rgb.shape[0] * scale
-    left = Image.fromarray(rgb).resize((W, H), Image.NEAREST)
-    right = Image.fromarray(ov).resize((W, H), Image.NEAREST)
+    width = rgb.shape[1] * scale
+    height = rgb.shape[0] * scale
+    left = Image.fromarray(rgb).resize((width, height), Image.NEAREST)
+    right = Image.fromarray(ov).resize((width, height), Image.NEAREST)
     for im, lines in ((left, ((old, OLD), (new, NEW))), (right, ((new, NEW),))):
         d = ImageDraw.Draw(im)
         for pts, col in lines:
@@ -100,23 +139,45 @@ def closeup(sh, lon, lat, old, new, half, scale, label):
                 continue
             cc, rr, _, _ = sh.pixels([p[0] for p in pts], [p[1] for p in pts])
             d.line(
-                [((u - c0) * scale, (v - r0) * scale) for u, v in zip(cc, rr)],
+                [
+                    ((u - c0) * scale, (v - r0) * scale)
+                    for u, v in zip(cc, rr, strict=True)
+                ],
                 fill=col,
                 width=2,
             )
         d.ellipse(
-            [W / 2 - 5, H / 2 - 5, W / 2 + 5, H / 2 + 5],
+            [width / 2 - 5, height / 2 - 5, width / 2 + 5, height / 2 + 5],
             outline=(0, 0, 0),
             width=1,
         )
-    out = Image.new("RGB", (2 * W + 10, H + 28), "white")
+    out = Image.new("RGB", (2 * width + 10, height + 28), "white")
     out.paste(left, (0, 28))
-    out.paste(right, (W + 10, 28))
+    out.paste(right, (width + 10, 28))
     ImageDraw.Draw(out).text((6, 5), label, fill=(0, 0, 0), font=SMALL)
     return out
 
 
 def spots_for(feat, prior, sheets, controls, rng):
+    """Finds the spots of one traced line worth a close-up, worst first.
+
+    Candidates: the check's off-centre runs (worst: length times offset) and
+    its gaps of 15 m or more, from the line's properties; the local maxima over
+    8 m of the line's distance from the prior (points every 2 m); the places
+    where the line passes from one sheet to another (looked at every 10 m); and
+    `controls` random points. Of each type, worst first, at most QUOTA[type]
+    are kept, none within 40 m of a spot already kept.
+
+    Args:
+        feat: The traced line, a GeoJSON feature with trace()'s figures.
+        prior: The prior's NAD83 points, or None (then no "moved" spots).
+        sheets: The open sheets (quadsheets.open_sheets).
+        controls: How many random control spots.
+        rng: The random.Random the controls are drawn with.
+
+    Returns:
+        A list of (type, lon, lat, detail).
+    """
     st = feat["properties"]
     new = [tuple(p[:2]) for p in feat["geometry"]["coordinates"]]
     out = []
@@ -169,7 +230,8 @@ def spots_for(feat, prior, sheets, controls, rng):
     for _ in range(controls):
         p = dense[rng.randrange(len(dense))]
         out.append(("control", p[0], p[1], "random place on the line", 0.0))
-    kept = []  # worst first within each type, at most QUOTA[type], one spot per 40 m
+    # worst first within each type, at most QUOTA[type], one spot per 40 m
+    kept = []
     for typ in ("off_center", "moved", "gap", "sheet_edge", "control"):
         n = 0
         for s in sorted((s for s in out if s[0] == typ), key=lambda s: -s[4]):
@@ -182,6 +244,7 @@ def spots_for(feat, prior, sheets, controls, rng):
 
 
 def main():
+    """Finds and draws the spots of the traced lines, or re-renders --spots."""
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--quads", action="append", required=True)
     ap.add_argument("--traced", required=True)
@@ -194,7 +257,10 @@ def main():
     ap.add_argument("--scale", type=int, default=6)
     ap.add_argument(
         "--spots",
-        help="re-render these spots (a problems.json, e.g. the labelled regression cases) instead of finding new ones",
+        help=(
+            "re-render these spots (a problems.json, e.g. the labelled "
+            "regression cases) instead of finding new ones"
+        ),
     )
     a = ap.parse_args()
     sheets = open_sheets(a.quads)
@@ -202,25 +268,30 @@ def main():
     rng = random.Random(1)
     pri = {}
     if a.prior:
-        for f in json.load(open(a.prior))["features"]:
+        with open(a.prior) as fh:
+            prior_fc = json.load(fh)
+        for f in prior_fc["features"]:
             pri[str(f["properties"].get(a.id_field))] = [
                 tuple(p[:2]) for p in f["geometry"]["coordinates"]
             ]
     records = []
     if a.spots:
-        T = {
-            str(f["properties"]["id"]): f
-            for f in json.load(open(a.traced))["features"]
-        }
-        S = json.load(open(a.spots))
-        S = S["spots"] if isinstance(S, dict) else S
-        for r in S:
-            f = T.get(str(r["id"]))
+        with open(a.traced) as fh:
+            traced_fc = json.load(fh)
+        traced = {str(f["properties"]["id"]): f for f in traced_fc["features"]}
+        with open(a.spots) as fh:
+            spots = json.load(fh)
+        spots = spots["spots"] if isinstance(spots, dict) else spots
+        for r in spots:
+            f = traced.get(str(r["id"]))
             if f is None or (a.ids and str(r["id"]) not in a.ids):
                 continue
             sh = sheet_of(sheets, r["lon"], r["lat"])
             new = [tuple(p[:2]) for p in f["geometry"]["coordinates"]]
-            label = f"{r['pid']}  {f['properties']['kind']}  ({sh.name})  re-check: {r.get('detail', '')}"
+            label = (
+                f"{r['pid']}  {f['properties']['kind']}  ({sh.name})  "
+                f"re-check: {r.get('detail', '')}"
+            )
             closeup(
                 sh,
                 r["lon"],
@@ -232,14 +303,13 @@ def main():
                 label,
             ).save(os.path.join(a.out_dir, r["pid"] + ".png"))
             records.append(dict(r, png=r["pid"] + ".png"))
-        json.dump(
-            records,
-            open(os.path.join(a.out_dir, "problems.json"), "w"),
-            indent=1,
-        )
+        with open(os.path.join(a.out_dir, "problems.json"), "w") as fh:
+            json.dump(records, fh, indent=1)
         print(len(records), "spots re-rendered")
         return
-    for f in json.load(open(a.traced))["features"]:
+    with open(a.traced) as fh:
+        traced_fc = json.load(fh)
+    for f in traced_fc["features"]:
         fid = str(f["properties"]["id"])
         if a.ids and fid not in a.ids:
             continue
@@ -273,11 +343,8 @@ def main():
             f"{fid}: {sum(1 for r in records if r['id'] == fid)} spots",
             flush=True,
         )
-    json.dump(
-        records, open(os.path.join(a.out_dir, "problems.json"), "w"), indent=1
-    )
-    from collections import Counter
-
+    with open(os.path.join(a.out_dir, "problems.json"), "w") as fh:
+        json.dump(records, fh, indent=1)
     print(len(records), "spots:", dict(Counter(r["type"] for r in records)))
 
 

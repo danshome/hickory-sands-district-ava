@@ -1,7 +1,12 @@
-"""Re-run THE CHECK (centerline.grade) on already-traced lines without re-tracing: raw ink sampled around each line,
-the grader's figures rewritten into the GeoJSON properties, plus the STRICT figure (within 2 m of the whole line,
-unmeasured metres counted as failed -- Dan's rule) and the unmeasured stretches as a review list.
-CLI: regrade.py --quads "GLOB" --traced traced.geojson [--ids 3 6 ...] [--kind-field kind]
+"""Re-run THE CHECK (centerline.grade) on already-traced lines.
+
+No re-tracing: the raw ink is sampled around each line and the grader's figures
+are rewritten into the GeoJSON properties (the file is rewritten in place), plus
+the STRICT figure (within 2 m of the whole line, unmeasured metres counted as
+failed -- Dan's rule) and the unmeasured stretches as a review list.
+
+CLI: regrade.py --quads "GLOB" --traced traced.geojson [--ids 3 6 ...]
+                [--kind-field kind]
 """
 
 import argparse
@@ -12,6 +17,7 @@ import os
 import sys
 
 import numpy as np
+from scipy import ndimage
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import centerline as cl
@@ -19,31 +25,48 @@ from quadsheets import open_sheets
 
 
 def regrade(sheets, coords, kind):
+    """Grades one traced line on the raw ink of the sheets.
+
+    The line is resampled at 1 m (its ends kept), the kind's ink is sampled
+    within 14 m of it (a creek's dots chained as trace() does) and
+    centerline.grade() is run over it; the 10 m at each end (the pins) are
+    left out of the figures, as in trace().
+
+    Args:
+        sheets: The open sheets (quadsheets.open_sheets).
+        coords: The line's NAD83 lon/lat coordinates.
+        kind: "road", "creek" or "contour".
+
+    Returns:
+        The properties to update: symbol, graded (a timestamp), measured_pct,
+        off_center_median_m, off_center_p95_m, within_2m_pct,
+        strict_within_2m_pct, off_center_runs, gaps, pin_start_off_center_m
+        and pin_end_off_center_m.
+    """
     lon0 = float(np.mean([c[0] for c in coords]))
     lat0 = float(np.mean([c[1] for c in coords]))
     mx, my = 111320.0 * math.cos(math.radians(lat0)), 110574.0
-    XY = np.array([[(c[0] - lon0) * mx, (c[1] - lat0) * my] for c in coords])
-    C = cl.resample(XY, 1.0)
-    C[0], C[-1] = XY[0], XY[-1]
+    pts = np.array([[(c[0] - lon0) * mx, (c[1] - lat0) * my] for c in coords])
+    line = cl.resample(pts, 1.0)
+    line[0], line[-1] = pts[0], pts[-1]
     pad = 16.0
-    xmin, ymin = C[:, 0].min() - pad, C[:, 1].min() - pad
+    xmin, ymin = line[:, 0].min() - pad, line[:, 1].min() - pad
     nx, ny = (
-        int((C[:, 0].max() + pad - xmin) / cl.RES) + 1,
-        int((C[:, 1].max() + pad - ymin) / cl.RES) + 1,
+        int((line[:, 0].max() + pad - xmin) / cl.RES) + 1,
+        int((line[:, 1].max() + pad - ymin) / cl.RES) + 1,
     )
-    # ink only within 14 m of the line (what grade() reads), sampled on the sheets
+    # ink only within 14 m of the line (what grade() reads), sampled on the
+    # sheets
     near = np.zeros((ny, nx), bool)
-    rr = np.clip(((C[:, 1] - ymin) / cl.RES).astype(int), 0, ny - 1)
-    cc = np.clip(((C[:, 0] - xmin) / cl.RES).astype(int), 0, nx - 1)
+    rr = np.clip(((line[:, 1] - ymin) / cl.RES).astype(int), 0, ny - 1)
+    cc = np.clip(((line[:, 0] - xmin) / cl.RES).astype(int), 0, nx - 1)
     near[rr, cc] = True
-    from scipy import ndimage
-
     near = ndimage.binary_dilation(near, structure=cl.disk(14 / cl.RES))
     iy, ix = np.nonzero(near)
     lons = lon0 + (xmin + (ix + 0.5) * cl.RES) / mx
     lats = lat0 + (ymin + (iy + 0.5) * cl.RES) / my
     if kind == "creek":
-        ink_c, have, ext = cl.sample_ink(
+        ink_c, _have, ext = cl.sample_ink(
             sheets, kind, lons, lats, extra=("dotlike",)
         )
         ink = np.zeros((ny, nx), bool)
@@ -54,11 +77,11 @@ def regrade(sheets, coords, kind):
             ink, dl, cl.RES
         )  # as trace() does: the dots of a dotted creek are creek ink
     else:
-        ink_c, have = cl.sample_ink(sheets, kind, lons, lats)
+        ink_c, _have = cl.sample_ink(sheets, kind, lons, lats)
         ink = np.zeros((ny, nx), bool)
         ink[iy, ix] = ink_c
-    meas, symbol = cl.grade(C, ink, xmin, ymin, kind)
-    core = np.zeros(len(C), bool)
+    meas, symbol = cl.grade(line, ink, xmin, ymin, kind)
+    core = np.zeros(len(line), bool)
     core[10:-10] = True
     resid = np.abs(meas)
     r_ok = resid[core & ~np.isnan(resid)]
@@ -67,7 +90,7 @@ def regrade(sheets, coords, kind):
     for a, b in cl.runs(core & (np.nan_to_num(resid, nan=0) > 2)):
         if b - a >= 3:
             k = a + int(np.nanargmax(resid[a:b]))
-            x, y = C[k]
+            x, y = line[k]
             off_runs.append(
                 [
                     round(lon0 + x / mx, 6),
@@ -78,7 +101,7 @@ def regrade(sheets, coords, kind):
             )
     for a, b in cl.runs(np.isnan(meas)):
         if b - a >= 8:
-            x, y = C[(a + b) // 2]
+            x, y = line[(a + b) // 2]
             gaps.append(
                 [round(lon0 + x / mx, 6), round(lat0 + y / my, 6), int(b - a)]
             )
@@ -111,6 +134,7 @@ def regrade(sheets, coords, kind):
 
 
 def main():
+    """Regrades the --traced lines (all, or --ids) and rewrites the file."""
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--quads", action="append", required=True)
     ap.add_argument("--traced", required=True)
@@ -118,7 +142,8 @@ def main():
     ap.add_argument("--kind-field", default="kind")
     a = ap.parse_args()
     sheets = open_sheets(a.quads)
-    out = json.load(open(a.traced))
+    with open(a.traced) as fh:
+        out = json.load(fh)
     for f in out["features"]:
         fid = str(f["properties"]["id"])
         kind = f["properties"][a.kind_field]
@@ -127,11 +152,15 @@ def main():
         st = regrade(sheets, f["geometry"]["coordinates"], kind)
         f["properties"].update(st)
         print(
-            f"{fid:>4} {kind:8} measured {st['measured_pct']:5.1f}%  within 2 m {st['within_2m_pct']}%  STRICT {st['strict_within_2m_pct']:5.1f}%  "
-            f"gaps>=8 m {len(st['gaps'])}  off-centre runs {len(st['off_center_runs'])}",
+            f"{fid:>4} {kind:8} measured {st['measured_pct']:5.1f}%  "
+            f"within 2 m {st['within_2m_pct']}%  "
+            f"STRICT {st['strict_within_2m_pct']:5.1f}%  "
+            f"gaps>=8 m {len(st['gaps'])}  "
+            f"off-centre runs {len(st['off_center_runs'])}",
             flush=True,
         )
-    json.dump(out, open(a.traced, "w"))
+    with open(a.traced, "w") as fh:
+        json.dump(out, fh)
 
 
 if __name__ == "__main__":

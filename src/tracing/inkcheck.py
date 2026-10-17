@@ -1,8 +1,13 @@
-"""Show how ink.py classifies the scan at given points: for each point, the scan beside its class overlay (lettering gray, road
-magenta, highway red orange, contour green, creek blue). Use it to check or recalibrate the classes on a new sheet set -- look at
-creeks over paper and over the woodland tint, light and heavy contours, dashed and solid roads, and highways.
+"""Show how ink.py classifies the scan at given points.
 
-CLI: inkcheck.py --quads "GLOB" --at LON,LAT [--at LON,LAT ...] --out check.png [--half 60] [--scale 4]
+For each point, the scan beside its class overlay (lettering gray, road
+magenta, highway red orange, contour green, creek blue). Use it to check or
+recalibrate the classes on a new sheet set -- look at creeks over paper and
+over the woodland tint, light and heavy contours, dashed and solid roads, and
+highways.
+
+CLI: inkcheck.py --quads "GLOB" --at LON,LAT [--at LON,LAT ...] --out check.png
+                 [--half 60] [--scale 4]
 """
 
 import argparse
@@ -17,7 +22,8 @@ import ink
 from quadsheets import open_sheets
 from quadsheets import sheet_of
 
-# drawn in this order: lettering (gray) first, then the FINAL per-kind masks the tracer uses
+# drawn in this order: lettering (gray) first, then the FINAL per-kind masks the
+# tracer uses
 COL = {
     "text": (120, 120, 120),
     "contour": (0, 160, 0),
@@ -28,6 +34,19 @@ COL = {
 
 
 def panel(sheets, lon, lat, half=60):
+    """Returns the scan around one point beside its ink-class overlay.
+
+    Args:
+        sheets: The open sheets (quadsheets.open_sheets).
+        lon: The point's NAD83 longitude.
+        lat: The point's NAD83 latitude.
+        half: Half the panel's width and height, in scan pixels.
+
+    Returns:
+        An RGB array (rows, 2 * cols, 3): the scan, then the classes in COL's
+        colours on white (classified with a 30-pixel margin); None when no
+        sheet holds the point.
+    """
     sh = sheet_of(sheets, lon, lat)
     if sh is None:
         return None
@@ -46,6 +65,7 @@ def panel(sheets, lon, lat, half=60):
 
 
 def main():
+    """Stacks the panels of every --at point into one PNG (--out), scaled up."""
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--quads", action="append", required=True)
     ap.add_argument("--at", action="append", required=True)

@@ -1,10 +1,14 @@
-"""Review sheets for traced lines: one PNG per line, the proof a person checks before the linework is used.
-Top: the whole line on the USGS scan, the prior (current line) in red, the trace in purple, the check's figures in the
-header. Below: six close-ups about 120 m across -- the worst stretches off the measured centre, the largest moves from
-the prior, and the longest gaps bridged -- each labelled with what it shows and the sheet it is on.
+"""Review sheets for traced lines: one PNG per line.
 
-CLI: review.py --quads "GLOB" --traced traced.geojson [--prior lines.geojson] [--title-field narrative]
-               --out-dir DIR [--ids ...]
+Each sheet is the proof a person checks before the linework is used. Top: the
+whole line on the USGS scan, the prior (current line) in red, the trace in
+purple, the check's figures in the header. Below: six close-ups about 120 m
+across -- the worst stretches off the measured centre, the largest moves from
+the prior, and the longest gap bridged, topped up with evenly spaced samples --
+each labelled with what it shows and the sheet it is on.
+
+CLI: review.py --quads "GLOB" --traced traced.geojson [--prior lines.geojson]
+               [--title-field narrative] --out-dir DIR [--ids ...]
 """
 
 import argparse
@@ -39,12 +43,28 @@ OLD, NEW = (230, 0, 0), (120, 0, 230)
 
 
 def crop(sh, c0, r0, c1, r1, out_w, lines):
+    """Cuts a window of one sheet's scan, scaled to a width, with lines on it.
+
+    Args:
+        sh: The sheet (quadsheets.Sheet).
+        c0: The window's left pixel column.
+        r0: The window's top pixel row.
+        c1: The window's right pixel column.
+        r1: The window's bottom pixel row.
+        out_w: The image's width in pixels (Lanczos when shrinking, nearest
+            neighbour when enlarging).
+        lines: (points, colour, width) per line to draw, the points NAD83
+            (lon, lat); an empty or missing list of points is skipped.
+
+    Returns:
+        The PIL image.
+    """
     a, cc0, rr0 = sh.read(c0, r0, c1, r1)
     im = Image.fromarray(np.transpose(a, (1, 2, 0)).astype("uint8"))
-    S = out_w / a.shape[2]
+    scale = out_w / a.shape[2]
     im = im.resize(
-        (out_w, max(1, int(a.shape[1] * S))),
-        Image.LANCZOS if S < 1 else Image.NEAREST,
+        (out_w, max(1, int(a.shape[1] * scale))),
+        Image.LANCZOS if scale < 1 else Image.NEAREST,
     )
     d = ImageDraw.Draw(im)
     for pts, col, w in lines:
@@ -52,7 +72,10 @@ def crop(sh, c0, r0, c1, r1, out_w, lines):
             continue
         c, r, _, _ = sh.pixels([p[0] for p in pts], [p[1] for p in pts])
         d.line(
-            [((u - cc0) * S, (v - rr0) * S) for u, v in zip(c, r)],
+            [
+                ((u - cc0) * scale, (v - rr0) * scale)
+                for u, v in zip(c, r, strict=True)
+            ],
             fill=col,
             width=w,
         )
@@ -60,26 +83,52 @@ def crop(sh, c0, r0, c1, r1, out_w, lines):
 
 
 def osr_ct(sh):
-    """sheet projection -> NAD83 lon/lat (inverse of the sheet's own transform)"""
+    """Returns the transform from the sheet's projection to NAD83 lon/lat.
+
+    The inverse of the sheet's own transform, kept on the sheet once made.
+    """
     if not hasattr(sh, "_inv"):
         sh._inv = sh.ct.GetInverse()
     return sh._inv
 
 
 def dist_to(line, p):
-    O = np.array(line)
-    X = (O[:, 0] - p[0]) * 111320 * math.cos(math.radians(p[1]))
-    Y = (O[:, 1] - p[1]) * 110574
-    A = np.column_stack([X, Y])
-    D = A[1:] - A[:-1]
-    L = (D**2).sum(1)
-    L[L == 0] = 1
-    t = np.clip(-(A[:-1] * D).sum(1) / L, 0, 1)
-    Cc = A[:-1] + t[:, None] * D
-    return float(np.sqrt((Cc**2).sum(1)).min())
+    """Returns the distance in metres from a point to a polyline.
+
+    Both are NAD83 (lon, lat); the distance is measured in a flat frame around
+    the point (111320 m per degree of longitude times cos(lat), 110574 m per
+    degree of latitude).
+    """
+    pts = np.array(line)
+    dx = (pts[:, 0] - p[0]) * 111320 * math.cos(math.radians(p[1]))
+    dy = (pts[:, 1] - p[1]) * 110574
+    rel = np.column_stack([dx, dy])
+    seg = rel[1:] - rel[:-1]
+    seg_len2 = (seg**2).sum(1)
+    seg_len2[seg_len2 == 0] = 1
+    t = np.clip(-(rel[:-1] * seg).sum(1) / seg_len2, 0, 1)
+    foot = rel[:-1] + t[:, None] * seg
+    return float(np.sqrt((foot**2).sum(1)).min())
 
 
 def sheet_png(sheets, feat, prior, title, out_path, width=1500):
+    """Draws one line's review sheet and saves it as a PNG.
+
+    The overview is drawn on the sheet that holds most of the line, with the
+    parts on other sheets filled in from their own map faces.
+
+    Args:
+        sheets: The open sheets (quadsheets.open_sheets).
+        feat: The traced line, a GeoJSON feature with centerline.trace()'s
+            figures as properties.
+        prior: The prior's NAD83 coordinates, or None.
+        title: The header's first line (when empty, "line <id>").
+        out_path: Where the PNG is written.
+        width: The overview's width in pixels.
+
+    Returns:
+        out_path.
+    """
     st = feat["properties"]
     new = [tuple(p[:2]) for p in feat["geometry"]["coordinates"]]
     old = [tuple(p[:2]) for p in prior] if prior else []
@@ -101,22 +150,21 @@ def sheet_png(sheets, feat, prior, title, out_path, width=1500):
         width,
         [(old, OLD, 3), (new, NEW, 3)],
     )
-    # where the line runs onto another sheet, show that sheet's own map face there (not this sheet's collar)
-    others = [
-        s2 for s2 in {id(o): o for o in owners if o and o is not sh}.values()
-    ]
+    # where the line runs onto another sheet, show that sheet's own map face
+    # there (not this sheet's collar)
+    others = list({id(o): o for o in owners if o and o is not sh}.values())
     if others:
-        S = width / side
-        H = over.height
-        gx, gy = np.meshgrid(np.arange(0, width, 4), np.arange(0, H, 4))
-        pc = (cx - side / 2) + gx / S
-        pr = (cy - side / 2) + gy / S
+        scale = width / side
+        height = over.height
+        gx, gy = np.meshgrid(np.arange(0, width, 4), np.arange(0, height, 4))
+        pc = (cx - side / 2) + gx / scale
+        pr = (cy - side / 2) + gy / scale
         g = sh.gt
-        X = g[0] + pc * g[1]
-        Y = g[3] + pr * g[5]
+        proj_x = g[0] + pc * g[1]
+        proj_y = g[3] + pr * g[5]
         ll = np.array(
             osr_ct(sh).TransformPoints(
-                np.column_stack([X.ravel(), Y.ravel()]).tolist()
+                np.column_stack([proj_x.ravel(), proj_y.ravel()]).tolist()
             )
         )[:, :2]
         for s2 in others:
@@ -144,8 +192,11 @@ def sheet_png(sheets, feat, prior, title, out_path, width=1500):
             c, r, _, _ = sh.pixels([p[0] for p in pts], [p[1] for p in pts])
             d.line(
                 [
-                    ((u - (cx - side / 2)) * S, (v - (cy - side / 2)) * S)
-                    for u, v in zip(c, r)
+                    (
+                        (u - (cx - side / 2)) * scale,
+                        (v - (cy - side / 2)) * scale,
+                    )
+                    for u, v in zip(c, r, strict=True)
                 ],
                 fill=col,
                 width=3,
@@ -213,16 +264,23 @@ def sheet_png(sheets, feat, prior, title, out_path, width=1500):
     )
     d.text(
         (10, 42),
-        f"{st['kind']}: {st['length_prior_m']:.0f} m -> {st['length_m']:.0f} m; centre measured along {st['measured_pct']}%; "
-        f"off centre median {st['off_center_median_m']} m, 95% {st['off_center_p95_m']} m, within 2 m {st['within_2m_pct']}%; "
+        f"{st['kind']}: {st['length_prior_m']:.0f} m -> "
+        f"{st['length_m']:.0f} m; "
+        f"centre measured along {st['measured_pct']}%; "
+        f"off centre median {st['off_center_median_m']} m, "
+        f"95% {st['off_center_p95_m']} m, "
+        f"within 2 m {st['within_2m_pct']}%; "
         f"largest move {st['moved_max_m']} m",
         fill=(0, 0, 0),
         font=SMALL,
     )
     d.text(
         (10, 68),
-        f"pins off the centreline: start {st['pin_start_off_center_m']} m, end {st['pin_end_off_center_m']} m; gaps bridged "
-        f">= 8 m: {len(st.get('gaps', []))}.  Red: prior (current line).  Purple: traced centreline.  Sheet: {sh.name}",
+        f"pins off the centreline: start {st['pin_start_off_center_m']} m, "
+        f"end {st['pin_end_off_center_m']} m; "
+        f"gaps bridged >= 8 m: {len(st.get('gaps', []))}.  "
+        "Red: prior (current line).  Purple: traced centreline.  "
+        f"Sheet: {sh.name}",
         fill=(0, 0, 0),
         font=SMALL,
     )
@@ -236,6 +294,7 @@ def sheet_png(sheets, feat, prior, title, out_path, width=1500):
 
 
 def main():
+    """Writes a review sheet per traced line (all, or --ids) into --out-dir."""
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--quads", action="append", required=True)
     ap.add_argument("--traced", required=True)
@@ -249,9 +308,13 @@ def main():
     os.makedirs(a.out_dir, exist_ok=True)
     pri = {}
     if a.prior:
-        for f in json.load(open(a.prior))["features"]:
+        with open(a.prior) as fh:
+            prior_fc = json.load(fh)
+        for f in prior_fc["features"]:
             pri[str(f["properties"].get(a.id_field))] = f
-    for f in json.load(open(a.traced))["features"]:
+    with open(a.traced) as fh:
+        traced_fc = json.load(fh)
+    for f in traced_fc["features"]:
         fid = str(f["properties"]["id"])
         if a.ids and fid not in a.ids:
             continue

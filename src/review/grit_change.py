@@ -59,6 +59,16 @@ def geojson_ll(g):
     r = lambda c: [round(c[0], 8), round(c[1], 8)] if isinstance(c[0], float) else [r(x) for x in c]
     j = json.loads(g.ExportToJson()); j["coordinates"] = r(j["coordinates"]); return j
 
+def tally(stats, what, exact):   # a piece's exact acres into its kind's totals
+    s = stats.setdefault(what, {"pieces": 0, "acres": 0.0, "granite_acres": 0.0, "sandstone_acres": 0.0})
+    s["pieces"] += 1
+    for k, v in exact.items(): s[k] += v   # summed unrounded, rounded once by rounded() (issue #33: no double rounding)
+
+def rounded(stats):   # the totals, rounded once, from the unrounded sums
+    for s in stats.values():
+        for k in ("acres", "granite_acres", "sandstone_acres"): s[k] = round(s[k], 2)
+    return stats
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--line", required=True); ap.add_argument("--oct14", required=True); ap.add_argument("--geology", required=True)
@@ -100,15 +110,12 @@ def main():
             if what == "petition, not Notice No. 243" and ttb_along == [10, 11]:
                 props["what"], props["why"] = "lane wording", "the petition's westbound lane of the highway, 30 m from the center line Notice No. 243 follows"
             areas.append({"type": "Feature", "geometry": geojson_ll(p), "properties": props})
-            s = stats.setdefault(props["what"], {"pieces": 0, "acres": 0.0, "granite_acres": 0.0, "sandstone_acres": 0.0})
-            s["pieces"] += 1
-            for k, v in exact.items(): s[k] += v   # summed unrounded, rounded once below (issue #33: no double rounding)
+            tally(stats, props["what"], exact)
     add("Notice No. 243, not the petition", "in Notice No. 243's text; the petition leaves it out", ttb.Difference(petition), "left out", petition_lines)
     add("petition, not Notice No. 243", "in the petition; Notice No. 243's text leaves it out", petition.Difference(ttb), "put in", petition_lines)
     add("granite lobe", "also left out now: new steps (93)-(96) go around it instead of the petition's straight line", petition.Difference(ours), "left out", ours_lines)
     add("put back", "put back: between the marked 1,737 and the windmill, inside the petition's straight line", ours.Difference(petition), "put in", ours_lines)
-    for s in stats.values():
-        for k in ("acres", "granite_acres", "sandstone_acres"): s[k] = round(s[k], 2)
+    rounded(stats)
 
     # ---- lines
     lines = []

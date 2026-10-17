@@ -78,6 +78,14 @@ def geojson_ll(g):   # metres (EPSG:5070) -> NAD83 lon/lat GeoJSON geometry, 8 d
     r = lambda c: [round(c[0], 8), round(c[1], 8)] if isinstance(c[0], float) else [r(x) for x in c]
     j = json.loads(g.ExportToJson()); j["coordinates"] = r(j["coordinates"]); return j
 
+def touched_areas(circ, pieces, rev_only):
+    """the area (m2) of the whole pieces of land a ring touches: (in the proposed revision only, in the Map Explorer polygon only)"""
+    filled = ogr.Geometry(ogr.wkbPolygon); filled.AddGeometry(circ.GetGeometryRef(0))   # the ring as published: its outline
+    touched = [(g, side) for g, side in pieces if g.Intersects(filled) and poly_area(g.Intersection(filled)) > 1.0]
+    add = sum(g.GetArea() for g, side in touched if side == rev_only)        # whole pieces (issue #26: a long stretch's
+    rem = sum(g.GetArea() for g, side in touched if side != rev_only)        # outline can have a hole; only its outline shows)
+    return add, rem
+
 def runs(mask, s, gap):
     """contiguous index runs where mask is true, bridging gaps shorter than `gap` m along s"""
     idx = np.flatnonzero(mask); out = []
@@ -190,10 +198,7 @@ def main():
                 q = ogr.Geometry(ogr.wkbPoint); q.AddPoint_2D(float(x), float(y)); mp.AddGeometry(q)
             circ = mp.Buffer(40.0, 8).ConvexHull() if rad <= 600 else mp.Buffer(40.0, 8).Buffer(20.0, 8).Buffer(-20.0, 8)
             if circ.GetGeometryType() == ogr.wkbMultiPolygon: circ = circ.ConvexHull()
-        filled = ogr.Geometry(ogr.wkbPolygon); filled.AddGeometry(circ.GetGeometryRef(0))   # the ring as published: its outline
-        touched = [(g, side) for g, side in pieces if g.Intersects(filled) and poly_area(g.Intersection(filled)) > 1.0]
-        add = sum(g.GetArea() for g, side in touched if side == REV_ONLY)        # whole pieces (issue #26: a long stretch's
-        rem = sum(g.GetArea() for g, side in touched if side != REV_ONLY)        # outline can have a hole; only its outline shows)
+        add, rem = touched_areas(circ, pieces, REV_ONLY)
         stt = status(p["steps"]); ok = stt.startswith("intended")
         kinds = sorted({kind.get(st_, "?") for st_ in p["steps"]})
         pins = [st_ for st_ in sorted(set(p["steps"]) | {st_ - 1 for st_ in p["steps"]}) if st_ in PINS]

@@ -1,5 +1,8 @@
-"""The 13 USGS quads the build reads, checked against quads-manifest.csv (MD5 of each GeoTIFF inside its zip, and of
-each GeoPDF). Exit 1 if any is missing or altered; build.sh then fetches them (src/quads/fetch_quads.py)
+"""The 13 USGS quads the build reads, checked against quads-manifest.csv.
+
+Each GeoTIFF's MD5 is taken inside its zip, and each GeoPDF's from the file
+(MD5: USGS's checksums in the manifest, not a security measure). Exit 1 if any
+is missing or altered; build.sh then fetches them (src/quads/fetch_quads.py).
 """
 
 import csv
@@ -13,9 +16,11 @@ ROOT = os.path.abspath(
 )
 bad = []
 n = 0
-for r in csv.reader(
-    open(os.path.join(ROOT, "resources", "quads", "quads-manifest.csv"))
-):
+with open(
+    os.path.join(ROOT, "resources", "quads", "quads-manifest.csv")
+) as manifest:
+    rows = list(csv.reader(manifest))
+for r in rows:
     if not r or not r[4].endswith(".tif"):
         continue
     tif, tif_md5, pdf, pdf_md5 = r[4], r[7], r[8], r[11]
@@ -23,7 +28,7 @@ for r in csv.reader(
     n += 1
     try:
         with zipfile.ZipFile(z) as zf, zf.open(tif) as fh:
-            h = hashlib.md5()
+            h = hashlib.md5(usedforsecurity=False)
             for b in iter(lambda: fh.read(1 << 20), b""):
                 h.update(b)
         if h.hexdigest() != tif_md5:
@@ -33,10 +38,13 @@ for r in csv.reader(
     q = os.path.join(ROOT, "resources", "quads", "geopdf", pdf)
     if not os.path.exists(q):
         bad.append(q + " (missing)")
-    elif hashlib.md5(open(q, "rb").read()).hexdigest() != pdf_md5:
-        bad.append(pdf + " (MD5 differs)")
+    else:
+        with open(q, "rb") as fh:
+            pdf_digest = hashlib.md5(fh.read(), usedforsecurity=False)
+        if pdf_digest.hexdigest() != pdf_md5:
+            bad.append(pdf + " (MD5 differs)")
 print(
-    "quads: %d GeoTIFFs + %d GeoPDFs match quads-manifest.csv" % (n, n)
+    f"quads: {n:d} GeoTIFFs + {n:d} GeoPDFs match quads-manifest.csv"
     if not bad
     else "QUAD CHECK FAILED:\n  " + "\n  ".join(bad)
 )

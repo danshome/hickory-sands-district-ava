@@ -157,12 +157,12 @@ package() {
     ( cd "$DIST" && shasum -a 256 "$NAME.zip" "$NAME-README.txt" > SHA256SUMS.txt )
     {
         echo "Hickory Sands District AVA - boundary as proposed to TTB: build report"
-        echo "built      $(date '+%Y-%m-%d %H:%M %Z') on $(hostname -s)"
+        echo "built      $(date '+%Y-%m-%d %H:%M %Z') on $(hostname -s) ($(uname -s), GDAL $(gdal-config --version), $(pdftotext -v 2>&1 | head -n 1))"
         echo "source     git $(git rev-parse --short HEAD 2>/dev/null || echo '?')$(git diff --quiet 2>/dev/null || echo ' (with uncommitted changes)')"
         run -c "import json; d = json.load(open('$WORK/agreed-steps.json')); print('area       %.3f sq mi (GRS 1980), %d steps' % (d['sqmi'], len(d['steps'])))"
         run src/checks/check_build.py "$WORK/gis" | sed 's/^/check      /'
         [ -f "$WORK/review/tips-short-EPSG4269.geojson" ] && run -c "import json; print('tips       %d tips of contours/creeks the line stops short of (report)' % len(json.load(open('$WORK/review/tips-short-EPSG4269.geojson'))['features']))"
-        [ -f "$WORK/review/ttb-diff-stats.json" ] && run -c "import json; s = json.load(open('$WORK/review/ttb-diff-stats.json')); print('vs TTB     %d places beyond hand-drawing noise (%.0f m), %d not covered by the change register (report: target/work/review/ttb-diff-report.md)' % (s['places'], s['threshold_m'], s['check']))"
+        [ -f "$WORK/review/ttb-diff-stats.json" ] && run -c "import json; s = json.load(open('$WORK/review/ttb-diff-stats.json')); a = s['areas']; print('comparison %d big differences from the AVA Map Explorer polygon (lines %.0f m or more apart); %d pieces of land between the two lines, from the same text drawn differently %.0f acres in the proposed revision only and %.0f in the Map Explorer polygon only (reports: target/work/review/)' % (s['big'], s['big_m'], sum(v['pieces'] for v in a.values()), a['drawing']['revision_only_acres'], a['drawing']['map_explorer_only_acres']))"
         echo "package    $NAME.zip  $(stat -f %z "$DIST/$NAME.zip") bytes, $(unzip -Z1 "$DIST/$NAME.zip" | grep -v '/$' | wc -l | tr -d ' ') files"
     } | tee "$DIST/build-report.txt"
 }

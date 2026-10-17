@@ -116,7 +116,7 @@ def main():
                     min(trace.length(st), s_tr + 40),
                     pad=40,
                 )
-            except Exception:  # noqa: BLE001, S112, RUF100
+            except Exception:  # noqa: BLE001, S112
                 continue
             gx, gy = g.xy(lon, lat)
             if kinds[st] == "contour":

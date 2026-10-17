@@ -122,7 +122,7 @@ def check(name):
     def run(f):
         try:
             problems, ok = f()
-        except Exception as e:  # noqa: BLE001, RUF100  an error fails the check
+        except Exception as e:  # noqa: BLE001  an error fails the check
             problems, ok = [f"{type(e).__name__}: {e}"], ""
         for p in problems:
             print(f"{name.upper()} CHECK FAILED: {p}")
@@ -226,7 +226,7 @@ def _():
                 continue  # the catalog, read above
             try:
                 o = d.xref_object(x, compressed=True).replace(" ", "")
-            except Exception:  # noqa: BLE001, S112, RUF100
+            except Exception:  # noqa: BLE001, S112
                 continue  # an object pymupdf cannot read has no key to find
             for k in (
                 "/SigFlags",

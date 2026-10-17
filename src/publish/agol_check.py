@@ -139,7 +139,7 @@ def get(url, params=None, limit=None, tries=3):
                 break
         # No answer (DNS, TLS, a timeout, a dropped connection, a bad URL):
         # whatever the error, it is the link's result, not the check's.
-        except Exception as e:  # noqa: BLE001, RUF100
+        except Exception as e:  # noqa: BLE001
             code, err = None, f"{type(e).__name__}: {getattr(e, 'reason', e)}"
         if i < tries - 1:
             time.sleep(2 * (i + 1))
@@ -177,7 +177,7 @@ def problem(url, **params):
     try:
         rest(url, **params)
     # Whatever goes wrong is the answer: it is reported, not raised.
-    except Exception as e:  # noqa: BLE001, RUF100
+    except Exception as e:  # noqa: BLE001
         return f"{type(e).__name__}: {e}"
 
 
@@ -387,7 +387,7 @@ def load():
             items += page["items"]
             start = page.get("nextStart", -1)
     # Whatever the error, nothing else can be checked: report it and stop.
-    except Exception as e:  # noqa: BLE001, RUF100
+    except Exception as e:  # noqa: BLE001
         print(
             "FAIL  group      the group cannot be read without signing in "
             f"(is it public?): {e}"
@@ -403,7 +403,7 @@ def load():
                 None,
             )
         # Whatever the error, the dashboard check reports it.
-        except Exception as e:  # noqa: BLE001, RUF100
+        except Exception as e:  # noqa: BLE001
             dash_err = f"its JSON cannot be read: {type(e).__name__}: {e}"
     # the web map: the one the dashboard's map shows, else the group's only web
     # map
@@ -433,7 +433,7 @@ def load():
                 None,
             )
         # Whatever the error, the web map check reports it.
-        except Exception as e:  # noqa: BLE001, RUF100
+        except Exception as e:  # noqa: BLE001
             wm_err = (
                 f"{wm_item['title']}: its JSON cannot be read: "
                 f"{type(e).__name__}: {e}"
@@ -1100,7 +1100,7 @@ def main():
         try:
             summary = fn(bad.append, notes.append)
         # Any error is that check's failure, reported with the others.
-        except Exception as e:  # noqa: BLE001, RUF100
+        except Exception as e:  # noqa: BLE001
             summary = "could not finish"
             bad.append(f"{type(e).__name__}: {e}")
         status, once = (

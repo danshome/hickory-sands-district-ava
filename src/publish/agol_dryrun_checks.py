@@ -888,7 +888,7 @@ def run(b, out=print):
         try:
             summary = fn(b, bad.append)
         # Any error is that check's failure, reported with the others.
-        except Exception as e:  # noqa: BLE001, RUF100
+        except Exception as e:  # noqa: BLE001
             summary = "could not finish"
             bad.append(f"{type(e).__name__}: {e}")
         once = {x: bad.count(x) for x in bad}

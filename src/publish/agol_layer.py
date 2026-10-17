@@ -590,7 +590,7 @@ def set_aliases(lyr, out):
             lyr.manager.update_definition({"fields": out})
         # The ArcGIS API raises bare Exception: a failure is reported, and
         # the publish goes on.
-        except Exception as e:  # noqa: BLE001, RUF100
+        except Exception as e:  # noqa: BLE001
             print(
                 "could not set the field aliases of",
                 lyr.properties.name,
@@ -864,7 +864,7 @@ def rename(lyr, nm):
             lyr.manager.update_definition({"name": nm})
         # The ArcGIS API raises bare Exception: a failure is reported, and
         # the publish goes on.
-        except Exception as e:  # noqa: BLE001, RUF100
+        except Exception as e:  # noqa: BLE001
             print(
                 "could not rename",
                 lyr.properties.name,
@@ -1996,7 +1996,7 @@ def main():
                 lyr.manager.update_definition({"name": NAMES[gtype]})
             # The ArcGIS API raises bare Exception: a failure is reported,
             # and the publish goes on.
-            except Exception as e:  # noqa: BLE001, RUF100
+            except Exception as e:  # noqa: BLE001
                 print(
                     "could not rename",
                     lyr.properties.name,

@@ -75,6 +75,12 @@ LIC_MAP = ("The map and the petitioner's layers (the proposed revision, the diff
            "geology): " + CC0 + " The AVA Map Explorer polygon (TTB's AVAs_Production layer) and the step text from Notice No. 243: "
            "U.S. Government work (public domain). USGS quadrangles and USGS SGMC geology: public domain. Basemaps: Esri, under "
            "Esri's terms of use.")
+# the boundary layer (4b) holds TTB's text and data too (the step text, the AVAs_Production values): the same split as
+# the downloads 4c-4i (agol_publish.py)
+LIC_GIS = ("TTB's text and data, the step text from Notice No. 243 (boundary line layer) and the values copied from TTB's "
+           "AVAs_Production record (Name, Status, Counties and the like): U.S. Government work (public domain). The petitioner's "
+           "work, the boundary as drawn, its other attributes and the proposed changes to the text: " + CC0)
+CREDIT_GIS = CREDIT + "; TTB (Notice No. 243 step text, AVAs_Production record values)"
 CREDIT_MAP = (CREDIT + "; TTB (AVAs_Production layer, Notice No. 243); USGS (quadrangles, via Esri USA Historical Topo Maps; "
               "SGMC geology); basemaps: Esri")
 TAGS = ["Hickory Sands District", "AVA", "TTB", "Notice No. 243", "TTB-2026-0005", "proposed boundary"]
@@ -124,7 +130,7 @@ props = {"snippet": "The proposed boundary as a hosted feature layer: the AVA po
                         "from the item page are made from that copy. For the data in NAD83 (EPSG:4269), the datum of TTB's "
                         "AVAs_Production layer, download items 4c-4i: the GeoPackage this layer is published from (4c), the "
                         "shapefiles (4d-4f) and the GeoJSON (4g-4i), all with TTB's AVAs_Production fields.</p>",
-         "tags": ",".join(TAGS), "licenseInfo": CC0, "accessInformation": CREDIT, "culture": CULTURE, "extent": EXTENT}
+         "tags": ",".join(TAGS), "licenseInfo": LIC_GIS, "accessInformation": CREDIT_GIS, "culture": CULTURE, "extent": EXTENT}
 
 # ---------------------------------------------------------------- hosted feature layer
 fl = items.get(LAYER_TITLE)
@@ -355,7 +361,8 @@ if os.path.exists(GRIT_GPKG):
     os.remove(GRIT_GPKG)
 for f, name in (("grit-change-lines-EPSG4269.geojson", "lines_swapped"), ("grit-change-areas-EPSG4269.geojson", "areas_moved")):
     gdal.VectorTranslate(GRIT_GPKG, os.path.join(REVIEW, f), format="GPKG", layerName=name, accessMode="append" if os.path.exists(GRIT_GPKG) else None)
-def gs(k, f="acres"): return f"{int(GSTATS[k][f] + 0.5):,}"   # half up, whole acres, as the map's labels round
+def gs(k, f="acres"):   # whole acres, rounded once, half up, from the build's unrounded stats (issue #33; as the map's labels)
+    return f"{math.floor(GSTATS[k][f] + 0.5):,}"
 def ga(k):   # an area's acres and its granite, for every area, put in or left out (QA #43)
     g = gs(k, "granite_acres")
     return f"{gs(k)} acres ({'no' if g == '0' else g} granite)"

@@ -183,7 +183,7 @@ about_html = ('<div style="font-size:13px;line-height:1.45">'
               "holds the Map Explorer's four basemaps (Topographic, Streets, Imagery, USA Topo Maps): turn it on and pick one.</p></div>")
 
 A = GRIT["areas"]
-def ac(x): return f"{int(x + 0.5):,}"   # half up, as the map's labels round
+def ac(x): return f"{int(x + 0.5):,}"   # whole acres, rounded once, half up, from the build's unrounded stats (issue #33)
 def grow(key, label):
     r = A[key]
     return (f'<tr><td style="padding:3px 6px">{label}</td><td style="padding:3px 6px;text-align:right;white-space:nowrap">{ac(r["acres"])}</td>'

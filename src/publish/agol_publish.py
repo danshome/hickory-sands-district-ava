@@ -190,9 +190,15 @@ for i, (key, (what, n, layer, extra)) in enumerate(GIS_LAYERS.items()):
                   f"named in the file's crs member), with the full field names. The same features and attributes as the {layer} "
                   f"layer of the GeoPackage (4c) and the shapefile ({shp}): TTB's AVAs_Production fields (Name, Status, "
                   f"CFR_Section, Counties and the rest), and {extra}.</p>", CC0, CREDIT))
-# the description (1a-1d) and the side-by-side (3a, 3b) are mostly TTB's text, so they carry the same split license as 2a, 2d
+# the description (1a-1d) and the side-by-side (3a, 3b) are mostly TTB's text, so they carry the same split license as 2a, 2d;
+# the GIS downloads (4c-4i) hold TTB's text and data too (the step text, the AVAs_Production values), so they get the same split
 LIC_MIX = "TTB's text: U.S. Government work (public domain). The petitioner's changes: " + CC0
-ITEMS = [(r, ti, ty, c, s, d, LIC_MIX if ti[:1] in "13" else lic, cr) for r, ti, ty, c, s, d, lic, cr in ITEMS]
+LIC_GIS = ("TTB's text and data, the step text from Notice No. 243 (boundary line layer) and the values copied from TTB's "
+           "AVAs_Production record (Name, Status, Counties and the like): U.S. Government work (public domain). The petitioner's "
+           "work, the boundary as drawn, its other attributes and the proposed changes to the text: " + CC0)
+CREDIT_GIS = CREDIT + "; TTB (Notice No. 243 step text, AVAs_Production record values)"
+ITEMS = [(r, ti, ty, c, s, d, LIC_MIX if ti[:1] in "13" else LIC_GIS if ti[:1] == "4" else lic, CREDIT_GIS if ti[:1] == "4" else cr)
+         for r, ti, ty, c, s, d, lic, cr in ITEMS]
 ITEMS += quad_items()
 WAS.update({   # 2a-2d: "Notice No. 243", the official name, in place of "TTB Notice 243" (QA #31)
     "2a Notice No. 243 with the proposed changes highlighted (unofficial copy, PDF)": ["2a TTB Notice 243 with the proposed changes highlighted (unofficial copy, PDF)"],

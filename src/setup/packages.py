@@ -83,11 +83,13 @@ def audit(locks):
         return 2
     if not found:
         print(
-            f"security audit: {len(keys)} packages pinned in {', '.join(locks)}: no known vulnerabilities (OSV)"
+            f"security audit: {len(keys)} packages pinned in "
+            f"{', '.join(locks)}: no known vulnerabilities (OSV)"
         )
         return 0
     print(
-        f"SECURITY AUDIT FAILED: {len(found)} of {len(keys)} pinned packages have known vulnerabilities (OSV):",
+        f"SECURITY AUDIT FAILED: {len(found)} of {len(keys)} pinned packages "
+        "have known vulnerabilities (OSV):",
         file=sys.stderr,
     )
     for k in sorted(found):
@@ -105,14 +107,15 @@ def audit(locks):
                     }
                 )
                 print(
-                    f"  {pkgs[k]} {k[1]}: {vid} {' '.join(cves)} - {v.get('summary', '').strip()[:100]}"
-                    f"{'  (fixed in ' + ', '.join(fixed) + ')' if fixed else ''}",
+                    f"  {pkgs[k]} {k[1]}: {vid} {' '.join(cves)} - "
+                    f"{v.get('summary', '').strip()[:100]}{'  (fixed in ' + ', '.join(fixed) + ')' if fixed else ''}",
                     file=sys.stderr,
                 )
             except OSError:
                 print(f"  {pkgs[k]} {k[1]}: {vid}", file=sys.stderr)
     print(
-        "Update the package (./build.sh upgrade) or wait for a fixed release; nothing has been installed.",
+        "Update the package (./build.sh upgrade) or wait for a fixed release; "
+        "nothing has been installed.",
         file=sys.stderr,
     )
     return 1

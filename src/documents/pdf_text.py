@@ -159,7 +159,8 @@ def text_of(
         printed
     ):  # every printed word went somewhere
         sys.exit(
-            f"{out}: {len(printed)} printed words but {sum(len(ws) for p in paras for ws in p)} in the text"
+            f"{out}: {len(printed)} printed words but "
+            f"{sum(len(ws) for p in paras for ws in p)} in the text"
         )
     return text
 
@@ -178,7 +179,8 @@ def main(src, out):
     text = text_of(paras, printed, out)
     open(out, "w", encoding="utf-8").write("\n".join(text) + "\n")
     print(
-        f"{out.split('/')[-1]}: {len(text)} paragraphs from {len(printed)} printed words"
+        f"{out.split('/')[-1]}: {len(text)} paragraphs from {len(printed)} "
+        "printed words"
     )
 
 

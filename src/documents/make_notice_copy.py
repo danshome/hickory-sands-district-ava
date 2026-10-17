@@ -241,7 +241,9 @@ col86 = (
 lead86 = (c3[-1]["y"] - c3[0]["y"]) / (len(col86) - 1)
 place86 = [(c3[0]["y"] + k * lead86, g) for k, g in enumerate(col86)]
 print(
-    f"52586 col 3: steps (10)-(11) {i12 - i10} -> {len(tail) - (len(c3) - i12)} lines; column leading {lead86:.3f} pt (TTB's 9.5-10.0)"
+    f"52586 col 3: steps (10)-(11) {i12 - i10} -> "
+    f"{len(tail) - (len(c3) - i12)} lines; column leading {lead86:.3f} pt "
+    "(TTB's 9.5-10.0)"
 )
 
 # ------------------------------------------------------------------ page 52588, column 2 from step (90); the rest on an added page
@@ -323,8 +325,9 @@ assert ysig + sig_dy[-1] <= BOTTOM + 0.01, (
 )
 place88[2] += [[ysig + dy, l["ch"], False] for dy, l in zip(sig_dy, sig)]
 print(
-    f"52588: col 2 {n2} lines from step (90) (room for {fit}; {spare:.2f} pt spread over {len(starts)} gaps); "
-    f"col 3 {len(lines88) - n2} step lines, then TTB's signature block; BILLING CODE at y {place88[2][-1][0]:.2f}"
+    f"52588: col 2 {n2} lines from step (90) (room for {fit}; {spare:.2f} pt "
+    f"spread over {len(starts)} gaps); col 3 {len(lines88) - n2} step lines, "
+    f"then TTB's signature block; BILLING CODE at y {place88[2][-1][0]:.2f}"
 )
 
 
@@ -394,7 +397,8 @@ for pno, (col, n) in FIXED.items():
         l["text"] for l in before if l["y"] not in gone
     ], (n, "clearing the changed lines touched others")
     print(
-        f"step ({n}): {len(place_fix[pno])} line(s) set anew in place on page {52576 + pno}, column {col + 1}"
+        f"step ({n}): {len(place_fix[pno])} line(s) set anew in place on page "
+        f"{52576 + pno}, column {col + 1}"
     )
 
 # ------------------------------------------------------------------ the next document moves, unchanged and in place, to an added last page
@@ -488,7 +492,8 @@ BOLD = next(
     None,
 )
 assert BOLD, (
-    "no bold sans font for the red notes (Arial Bold, Liberation Sans Bold or DejaVu Sans Bold)"
+    "no bold sans font for the red notes (Arial Bold, Liberation Sans Bold or "
+    "DejaVu Sans Bold)"
 )
 PX, NOTE_X0, NOTE_X1 = (
     8,
@@ -526,7 +531,10 @@ def red_note(text, size):
 
 # a running line in the top margin of every page this script changes, in the page content (not an annotation), set after
 # the redactions above (the added page's top was cleared): 7 pt, its baseline at about y 24, above GPO's running head (y 33.8)
-RUNNING = "UNOFFICIAL COPY - petitioner's copy with the proposed changes set in and highlighted; not the official Federal Register text"
+RUNNING = (
+    "UNOFFICIAL COPY - petitioner's copy with the proposed changes set in "
+    "and highlighted; not the official Federal Register text"
+)
 png, n, h, RUN_PX = red_note(RUNNING, 7.0)
 assert n == 1, "running line wider than the page's text"
 run_rect = pymupdf.Rect(NOTE_X0, 27.5 - h, NOTE_X1, 27.5)
@@ -618,10 +626,14 @@ doc.update_object(
 
 # ------------------------------------------------------------------ first-page note (an image, so it is not text)
 NOTE = (
-    "UNOFFICIAL COPY prepared by the petitioner (Dan McLaughlin): TTB's Notice No. 243 with the Hickory Sands District boundary "
-    "changes proposed to TTB (discussed with TTB on October 15, 2026) set into TTB's pages 52586, 52587 and 52588 and highlighted in yellow (the start of the next document, Kaw Valley, "
-    "is moved to an added last page). Not the official Federal Register text; the official notice is FR Doc. 2026-16670 on govinfo.gov. "
-    "GPO's digital signature and authentication seal are removed, as this copy is altered."
+    "UNOFFICIAL COPY prepared by the petitioner (Dan McLaughlin): TTB's "
+    "Notice No. 243 with the Hickory Sands District boundary changes proposed "
+    "to TTB (discussed with TTB on October 15, 2026) set into TTB's pages "
+    "52586, 52587 and 52588 and highlighted in yellow (the start of the next "
+    "document, Kaw Valley, is moved to an added last page). Not the official "
+    "Federal Register text; the official notice is FR Doc. 2026-16670 on "
+    "govinfo.gov. GPO's digital signature and authentication seal are "
+    "removed, as this copy is altered."
 )
 png, n, h, NOTE_PX = red_note(NOTE, 5.0)
 assert n <= 3 and 33 - h >= 12, (
@@ -636,12 +648,27 @@ doc.del_xml_metadata()
 now = pymupdf.get_pdf_now()
 doc.set_metadata(
     {
-        "title": "Notice No. 243 (91 FR 52576) - UNOFFICIAL copy with the proposed Hickory Sands District changes (Oct. 15, 2026)",
-        "author": "Dan McLaughlin (petitioner), from TTB's docket copy TTB-2026-0005-0001",
-        "subject": "The petitioner's unofficial copy, modified from FR Doc. 2026-16670; not the official Federal Register text",
+        "title": (
+            "Notice No. 243 (91 FR 52576) - UNOFFICIAL copy with the "
+            "proposed Hickory Sands District changes (Oct. 15, 2026)"
+        ),
+        "author": (
+            "Dan McLaughlin (petitioner), from TTB's docket copy "
+            "TTB-2026-0005-0001"
+        ),
+        "subject": (
+            "The petitioner's unofficial copy, modified from FR Doc. "
+            "2026-16670; not the official Federal Register text"
+        ),
         "keywords": "",
-        "creator": "The petitioner's unofficial copy, modified from FR Doc. 2026-16670 (src/documents/make_notice_copy.py)",
-        "producer": f"PyMuPDF {pymupdf.VersionBind}; GPO's digital signature removed (altered copy)",
+        "creator": (
+            "The petitioner's unofficial copy, modified from FR Doc. "
+            "2026-16670 (src/documents/make_notice_copy.py)"
+        ),
+        "producer": (
+            f"PyMuPDF {pymupdf.VersionBind}; GPO's digital signature "
+            "removed (altered copy)"
+        ),
         "creationDate": now,
         "modDate": now,
         "trapped": "",

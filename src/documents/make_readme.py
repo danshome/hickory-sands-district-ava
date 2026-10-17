@@ -32,7 +32,10 @@ def heading(
         "Notice No.",
         re.sub(r"\bttb\b", "TTB", m.group(1).capitalize()),
     )
-    return f"<h2>{html.escape(title)}{' <small>' + text(m.group(2)) + '</small>' if m.group(2) else ''}</h2>"
+    return (
+        "<h2>"
+        f"{html.escape(title)}{' <small>' + text(m.group(2)) + '</small>' if m.group(2) else ''}</h2>"
+    )
 
 
 def is_heading(
@@ -203,7 +206,8 @@ def main():
     want = words(html.escape(page_readme)) + words(html.escape(lic))
     got = words(readme_html + "<!--intro-->" + body + license_html)
     assert got == want, next(
-        f"read-me page differs from README.txt/LICENSE.txt at word {i}: {got[i : i + 8]} vs {want[i : i + 8]}"
+        f"read-me page differs from README.txt/LICENSE.txt at word {i}: "
+        f"{got[i : i + 8]} vs {want[i : i + 8]}"
         for i in range(max(len(got), len(want)))
         if got[i : i + 1] != want[i : i + 1]
     )

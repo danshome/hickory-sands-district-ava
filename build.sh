@@ -10,11 +10,12 @@
 #   ./build.sh distclean  also remove .venv
 #   ./build.sh publish    push the built package to ArcGIS Online (Dan's account; run only when you mean it)
 #
-# No manual steps: missing tools are installed with Homebrew (GDAL, Python 3.14, Google Chrome); every Python package in
-# the lock files is checked against the OSV vulnerability database before anything is installed, then installed into the
-# project's .venv from requirements.txt with every download's SHA-256 checked (nothing global); and any missing or altered USGS quad is downloaded and
-# checked against resources/quads/quads-manifest.csv. Inputs: src/ (code), resources/ (boundary decisions, TTB files,
-# quads), documents/ (README templates), LICENSE.txt. Everything made along the way: target/. The distribution: dist/.
+# No manual steps, on macOS or Linux: missing tools are installed with Homebrew (GDAL, poppler, Python 3.14; on macOS
+# also Google Chrome, which Linux needs installed); every Python package in the lock files is checked against the OSV
+# vulnerability database before anything is installed, then installed into the project's .venv from requirements.txt
+# with every download's SHA-256 checked (nothing global); and any missing or altered USGS quad is downloaded and checked
+# against resources/quads/quads-manifest.csv. Inputs: src/ (code), resources/ (boundary decisions, TTB files, quads),
+# documents/ (README templates), LICENSE.txt. Everything made along the way: target/. The distribution: dist/.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")" && pwd)"; cd "$ROOT"
 NAME=Hickory-Sands-District-AVA_boundary-as-proposed-2026-10-15
@@ -22,8 +23,12 @@ STEM=hickory-sands-district-boundary-proposed-2026-10-15
 TARGET="$ROOT/target"; WORK="$TARGET/work"; DIST="$ROOT/dist"; export HSD_WORK="$WORK"
 mkdir -p "$TARGET/tmp"; export TMPDIR="$TARGET/tmp" PIP_CACHE_DIR="$TARGET/pip-cache"   # temp files and downloads stay in target/
 VENV="$ROOT/.venv"; PY="$VENV/bin/python"
-CHROME="${HSD_CHROME:-/Applications/Google Chrome.app/Contents/MacOS/Google Chrome}"
+OS="$(uname -s)"                        # Darwin (Dan's Mac) or Linux (GitHub Actions); the tools come from Homebrew on both
+if [ "$OS" = Darwin ]; then CHROME="${HSD_CHROME:-/Applications/Google Chrome.app/Contents/MacOS/Google Chrome}"
+else CHROME="${HSD_CHROME:-$(command -v google-chrome || command -v google-chrome-stable || echo /usr/bin/google-chrome)}"; fi
 step() { printf '\n== %s\n' "$*"; }
+sha256() { if command -v shasum >/dev/null; then shasum -a 256 "$@"; else sha256sum "$@"; fi; }   # same output either way
+fsize() { wc -c < "$1" | tr -d ' '; }                                                           # bytes (BSD and GNU)
 run() { "$PY" -E -s -B "$@"; }          # the project's Python only; -B: no __pycache__ in src/
 
 need_brew() { command -v brew >/dev/null || { echo "Homebrew is needed to install $1: https://brew.sh"; exit 1; }; }
@@ -34,10 +39,13 @@ env_setup() {
     command -v pdftotext >/dev/null || { need_brew poppler; brew install poppler; }     # the compare-text files (GDAL brings it)
     local base="${HSD_PYTHON:-$(brew --prefix 2>/dev/null || echo /opt/homebrew)/bin/python3.14}"
     [ -x "$base" ] || { need_brew "Python 3.14"; brew install python@3.14; }
-    [ -x "$CHROME" ] || { need_brew "Google Chrome"; brew install --cask google-chrome; }
+    if [ ! -x "$CHROME" ]; then                                                    # Homebrew casks are macOS-only
+        [ "$OS" = Darwin ] || { echo "Google Chrome is needed to print the PDFs: install it, or set HSD_CHROME"; exit 1; }
+        need_brew "Google Chrome"; brew install --cask google-chrome
+    fi
     local want; want="$(sed -n 's/^gdal==\([^ ]*\).*/\1/Ip' requirements.txt)"
     [ "$want" = "$(gdal-config --version)" ] || { echo "Homebrew's GDAL is $(gdal-config --version) but requirements.in pins GDAL==$want: set it to match, then ./build.sh upgrade"; exit 1; }
-    local lock; lock="$(cat requirements.txt requirements-dev.txt | shasum -a 256 | cut -c1-64)"
+    local lock; lock="$(cat requirements.txt requirements-dev.txt | sha256 | cut -c1-64)"
     local installed=""; [ -f "$VENV/.lock-sha256" ] && installed="$(cat "$VENV/.lock-sha256")"
     local fresh=0
     if [ "$installed" != "$lock" ] || [ ! -x "$PY" ]; then                         # the lock changed: a fresh .venv
@@ -154,7 +162,7 @@ package() {
     rm -rf "$DIST"; mkdir -p "$DIST"
     cp "$WORK/$NAME.zip" "$DIST"/
     cp "$WORK/README.txt" "$DIST/$NAME-README.txt"
-    ( cd "$DIST" && shasum -a 256 "$NAME.zip" "$NAME-README.txt" > SHA256SUMS.txt )
+    ( cd "$DIST" && sha256 "$NAME.zip" "$NAME-README.txt" > SHA256SUMS.txt )
     {
         echo "Hickory Sands District AVA - boundary as proposed to TTB: build report"
         echo "built      $(date '+%Y-%m-%d %H:%M %Z') on $(hostname -s) ($(uname -s), GDAL $(gdal-config --version), $(pdftotext -v 2>&1 | head -n 1))"
@@ -163,7 +171,7 @@ package() {
         run src/checks/check_build.py "$WORK/gis" | sed 's/^/check      /'
         [ -f "$WORK/review/tips-short-EPSG4269.geojson" ] && run -c "import json; print('tips       %d tips of contours/creeks the line stops short of (report)' % len(json.load(open('$WORK/review/tips-short-EPSG4269.geojson'))['features']))"
         [ -f "$WORK/review/ttb-diff-stats.json" ] && run -c "import json; s = json.load(open('$WORK/review/ttb-diff-stats.json')); a = s['areas']; print('comparison %d big differences from the AVA Map Explorer polygon (lines %.0f m or more apart); %d pieces of land between the two lines, from the same text drawn differently %.0f acres in the proposed revision only and %.0f in the Map Explorer polygon only (reports: target/work/review/)' % (s['big'], s['big_m'], sum(v['pieces'] for v in a.values()), a['drawing']['revision_only_acres'], a['drawing']['map_explorer_only_acres']))"
-        echo "package    $NAME.zip  $(stat -f %z "$DIST/$NAME.zip") bytes, $(unzip -Z1 "$DIST/$NAME.zip" | grep -v '/$' | wc -l | tr -d ' ') files"
+        echo "package    $NAME.zip  $(fsize "$DIST/$NAME.zip") bytes, $(unzip -Z1 "$DIST/$NAME.zip" | grep -v '/$' | wc -l | tr -d ' ') files"
     } | tee "$DIST/build-report.txt"
 }
 

@@ -245,7 +245,9 @@ print(f"highlighted {nh} runs of changed wording")
 NOTE = ("UNOFFICIAL COPY prepared by the petitioner (Dan McLaughlin): TTB's Notice No. 243 with the Hickory Sands District boundary "
         "changes proposed to TTB (discussed with TTB on October 15, 2026) set into TTB's pages 52586 and 52588 and highlighted in yellow (the start of the next document, Kaw Valley, "
         "is moved to an added last page). Not the official Federal Register text; the official notice is FR Doc. 2026-16670 on govinfo.gov.")
-fnt = ImageFont.truetype("/System/Library/Fonts/Supplemental/Arial Bold.ttf", 40)
+fnt = ImageFont.truetype(next(f for f in ("/System/Library/Fonts/Supplemental/Arial Bold.ttf",              # macOS
+                                         "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",  # Linux: Arial's metrics
+                                         "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf") if os.path.exists(f)), 40)
 NOTE_X0, NOTE_X1 = 88, 567                     # right of GPO's authentication seal (x 42-82)
 Wpx = int((NOTE_X1 - NOTE_X0) * 8); rows, cur = [], ""
 dr = ImageDraw.Draw(Image.new("RGB", (10, 10)))

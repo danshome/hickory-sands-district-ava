@@ -151,7 +151,7 @@ shown = sorted(int(re.match(r"\((\d+)\)", strip(r[2])).group(1)) for r in rows i
 assert shown == [10, 11] + list(range(90, 105)), shown
 assert all(F(n) == T(n) for n in list(range(1, 10)) + list(range(12, 90))), "a step outside the table differs from TTB"
 
-css = ("body{font-family:Calibri,Arial,sans-serif;font-size:9pt;margin:0.3in 0.4in} h1{font-size:15pt;margin:0 0 3pt}"
+css = ("body{font-family:Arial,'Liberation Sans',sans-serif;font-size:9pt;margin:0.3in 0.4in} h1{font-size:15pt;margin:0 0 3pt}"
        "p{margin:0 0 5pt} table{border-collapse:collapse;width:100%;table-layout:fixed} td,th{border:1px solid #999;padding:3pt 4pt;vertical-align:top;text-align:left;font-size:9pt} tr{break-inside:avoid;page-break-inside:avoid}"
        "th{background:#e8e8e8} td.why{font-size:8.5pt;color:#222;line-height:1.25} td.head{background:#eef2f7} small{color:#777;font-size:7.5pt}"
        "col.t{width:21%} col.w{width:37%}"

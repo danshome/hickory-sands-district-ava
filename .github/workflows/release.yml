@@ -1,5 +1,5 @@
 # A release: push a tag such as v2026.10.20 (git tag v2026.10.20 && git push origin v2026.10.20) and this builds that
-# commit on one of GitHub's Mac machines with `./build.sh` and attaches dist/ to a GitHub release of the same name: the
+# commit on one of GitHub's Linux machines with `./build.sh` (the same Homebrew tools as build.yml) and attaches dist/ to a GitHub release of the same name: the
 # package zip, its README, SHA256SUMS.txt and build-report.txt. Run it by hand (Actions > release > Run workflow) to
 # rebuild a tag; the release's files are then replaced. Publishing to ArcGIS Online stays `./build.sh publish`, by Dan.
 name: release
@@ -19,16 +19,25 @@ concurrency:
 jobs:
   release:
     name: build and release ${{ inputs.tag || github.ref_name }}
-    runs-on: macos-15
+    runs-on: ubuntu-24.04
     timeout-minutes: 120
     env:
       HOMEBREW_NO_INSTALL_CLEANUP: "1"
+      HOMEBREW_NO_ENV_HINTS: "1"
       TAG: ${{ inputs.tag || github.ref_name }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           ref: refs/tags/${{ inputs.tag || github.ref_name }}
           persist-credentials: false
+      - name: Homebrew's tools, as on the Mac (GDAL, PROJ with the NADCON5 grid, poppler, Python 3.14), fonts, Chrome
+        run: |
+          echo /home/linuxbrew/.linuxbrew/bin >> "$GITHUB_PATH"
+          echo /home/linuxbrew/.linuxbrew/sbin >> "$GITHUB_PATH"
+          /home/linuxbrew/.linuxbrew/bin/brew install --quiet gdal poppler python@3.14
+          dpkg -s fonts-liberation >/dev/null 2>&1 || { sudo apt-get update -q && sudo apt-get install -y -q fonts-liberation; }
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0   # Ubuntu 24.04 blocks headless Chrome's sandbox
+          echo "HSD_CHROME=$(command -v google-chrome)" >> "$GITHUB_ENV"
       - name: The 13 USGS quads (kept between runs; the build checks each against its MD5 and downloads any missing)
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:

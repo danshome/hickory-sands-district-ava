@@ -1,0 +1,2038 @@
+{
+ "about": "The group's item list as the publish dry run's stand-ins (src/publish/agol_dryrun.py --fetch): titles, types, fake ids, and each hosted layer's service URL and layer definitions (id, name, geometry, fields), read anonymously from the public site.",
+ "portal": "https://robertclayvines.maps.arcgis.com",
+ "items": [
+  {
+   "title": "0 Dashboard - the proposed boundary and everything in this group",
+   "id": "00000000000000000000000000000001",
+   "type": "Dashboard"
+  },
+  {
+   "title": "0 Read me first - what is in this group, and the license",
+   "id": "00000000000000000000000000000002",
+   "type": "PDF"
+  },
+  {
+   "title": "1a Boundary description as proposed (PDF)",
+   "id": "00000000000000000000000000000003",
+   "type": "PDF"
+  },
+  {
+   "title": "1b Boundary description as proposed (Word)",
+   "id": "00000000000000000000000000000004",
+   "type": "Microsoft Word"
+  },
+  {
+   "title": "1c Boundary description as proposed (plain text)",
+   "id": "00000000000000000000000000000005",
+   "type": "Code Sample"
+  },
+  {
+   "title": "1d Boundary steps, one row per step (CSV)",
+   "id": "00000000000000000000000000000006",
+   "type": "CSV"
+  },
+  {
+   "title": "2a Notice No. 243 with the proposed changes highlighted (unofficial copy, PDF)",
+   "id": "00000000000000000000000000000007",
+   "type": "PDF"
+  },
+  {
+   "title": "2b Notice No. 243 as published, docket TTB-2026-0005-0001 (PDF)",
+   "id": "00000000000000000000000000000008",
+   "type": "PDF"
+  },
+  {
+   "title": "2c Text for comparing - 1 Notice No. 243 as published (plain text)",
+   "id": "00000000000000000000000000000009",
+   "type": "Code Sample"
+  },
+  {
+   "title": "2d Text for comparing - 2 Notice No. 243 with the proposed changes (plain text)",
+   "id": "00000000000000000000000000000010",
+   "type": "Code Sample"
+  },
+  {
+   "title": "3a Changes side by side - TTB's text, the petition, the proposed text and why (PDF)",
+   "id": "00000000000000000000000000000011",
+   "type": "PDF"
+  },
+  {
+   "title": "3b Changes side by side (Word)",
+   "id": "00000000000000000000000000000012",
+   "type": "Microsoft Word"
+  },
+  {
+   "title": "4a Proposed boundary - map over the 13 USGS quadrangles",
+   "id": "00000000000000000000000000000013",
+   "type": "Web Map"
+  },
+  {
+   "title": "4b Proposed boundary - layer (AVA polygon, 104 steps, step endpoints)",
+   "id": "00000000000000000000000000000014",
+   "type": "Feature Service",
+   "url": "https://services3.arcgis.com/FgD9ae359Y9QwuZY/arcgis/rest/services/Hickory_Sands_District_proposed_boundary_2026_10_15/FeatureServer",
+   "layers": [
+    {
+     "id": 0,
+     "name": "AVA (proposed, 193.83 sq mi)",
+     "type": "Feature Layer",
+     "geometryType": "esriGeometryPolygon",
+     "objectIdField": "fid",
+     "globalIdField": "GlobalId",
+     "geometryProperties": {
+      "shapeAreaFieldName": "Shape__Area_2",
+      "shapeLengthFieldName": "Shape__Length_2",
+      "units": "esriMeters"
+     },
+     "hasAttachments": true,
+     "fields": [
+      {
+       "name": "fid",
+       "type": "esriFieldTypeOID",
+       "alias": "fid",
+       "sqlType": "sqlTypeOther",
+       "length": 8,
+       "nullable": false,
+       "editable": false,
+       "domain": null,
+       "defaultValue": "",
+       "required": true
+      },
+      {
+       "name": "OBJECTID",
+       "type": "esriFieldTypeInteger",
+       "alias": "OBJECTID",
+       "sqlType": "sqlTypeOther",
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "Name",
+       "type": "esriFieldTypeString",
+       "alias": "Name",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "Id",
+       "type": "esriFieldTypeInteger",
+       "alias": "Id",
+       "sqlType": "sqlTypeOther",
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "Area",
+       "type": "esriFieldTypeDouble",
+       "alias": "Area",
+       "sqlType": "sqlTypeOther",
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "States",
+       "type": "esriFieldTypeString",
+       "alias": "States",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "Phase",
+       "type": "esriFieldTypeString",
+       "alias": "Phase",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "Level_",
+       "type": "esriFieldTypeInteger",
+       "alias": "Level",
+       "sqlType": "sqlTypeOther",
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "Contains_",
+       "type": "esriFieldTypeString",
+       "alias": "Contains",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "Within",
+       "type": "esriFieldTypeString",
+       "alias": "Within",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "Established",
+       "type": "esriFieldTypeDateOnly",
+       "alias": "Established",
+       "sqlType": "sqlTypeOther",
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "Status",
+       "type": "esriFieldTypeString",
+       "alias": "Status",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "CFR_Section",
+       "type": "esriFieldTypeString",
+       "alias": "CFR Section",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "Partially_Overlaps",
+       "type": "esriFieldTypeString",
+       "alias": "Partially Overlaps",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "Note",
+       "type": "esriFieldTypeString",
+       "alias": "Note",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "Counties",
+       "type": "esriFieldTypeString",
+       "alias": "Counties",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "Shape__Area",
+       "type": "esriFieldTypeDouble",
+       "alias": "Shape Area",
+       "sqlType": "sqlTypeOther",
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "Shape__Length",
+       "type": "esriFieldTypeDouble",
+       "alias": "Shape Length",
+       "sqlType": "sqlTypeOther",
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "area_sqmi",
+       "type": "esriFieldTypeDouble",
+       "alias": "Area (sq mi, GRS 1980)",
+       "sqlType": "sqlTypeOther",
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "source",
+       "type": "esriFieldTypeString",
+       "alias": "Source",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "version_note",
+       "type": "esriFieldTypeString",
+       "alias": "Version",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "Shape__Area_2",
+       "type": "esriFieldTypeDouble",
+       "alias": "Shape__Area_2",
+       "sqlType": "sqlTypeDouble",
+       "nullable": true,
+       "editable": false,
+       "domain": null,
+       "defaultValue": null
+      },
+      {
+       "name": "Shape__Length_2",
+       "type": "esriFieldTypeDouble",
+       "alias": "Shape__Length_2",
+       "sqlType": "sqlTypeDouble",
+       "nullable": true,
+       "editable": false,
+       "domain": null,
+       "defaultValue": null
+      },
+      {
+       "name": "GlobalId",
+       "type": "esriFieldTypeGlobalID",
+       "alias": "GlobalId",
+       "sqlType": "sqlTypeOther",
+       "length": 38,
+       "nullable": false,
+       "editable": false,
+       "domain": null,
+       "defaultValue": "NEWID() WITH VALUES"
+      }
+     ]
+    },
+    {
+     "id": 1,
+     "name": "Boundary steps (104)",
+     "type": "Feature Layer",
+     "geometryType": "esriGeometryPolyline",
+     "objectIdField": "fid",
+     "globalIdField": "",
+     "geometryProperties": {
+      "shapeLengthFieldName": "Shape__Length_2",
+      "units": "esriMeters"
+     },
+     "hasAttachments": false,
+     "fields": [
+      {
+       "name": "fid",
+       "type": "esriFieldTypeOID",
+       "alias": "fid",
+       "sqlType": "sqlTypeOther",
+       "length": 8,
+       "nullable": false,
+       "editable": false,
+       "domain": null,
+       "defaultValue": "",
+       "required": true
+      },
+      {
+       "name": "OBJECTID",
+       "type": "esriFieldTypeInteger",
+       "alias": "OBJECTID",
+       "sqlType": "sqlTypeOther",
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "Name",
+       "type": "esriFieldTypeString",
+       "alias": "Name",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "Id",
+       "type": "esriFieldTypeInteger",
+       "alias": "Id",
+       "sqlType": "sqlTypeOther",
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "Area",
+       "type": "esriFieldTypeDouble",
+       "alias": "Area",
+       "sqlType": "sqlTypeOther",
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "States",
+       "type": "esriFieldTypeString",
+       "alias": "States",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "Phase",
+       "type": "esriFieldTypeString",
+       "alias": "Phase",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "Level_",
+       "type": "esriFieldTypeInteger",
+       "alias": "Level",
+       "sqlType": "sqlTypeOther",
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "Contains_",
+       "type": "esriFieldTypeString",
+       "alias": "Contains",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "Within",
+       "type": "esriFieldTypeString",
+       "alias": "Within",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "Established",
+       "type": "esriFieldTypeDateOnly",
+       "alias": "Established",
+       "sqlType": "sqlTypeOther",
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "Status",
+       "type": "esriFieldTypeString",
+       "alias": "Status",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "CFR_Section",
+       "type": "esriFieldTypeString",
+       "alias": "CFR Section",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "Partially_Overlaps",
+       "type": "esriFieldTypeString",
+       "alias": "Partially Overlaps",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "Note",
+       "type": "esriFieldTypeString",
+       "alias": "Note",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "Counties",
+       "type": "esriFieldTypeString",
+       "alias": "Counties",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "Shape__Area",
+       "type": "esriFieldTypeDouble",
+       "alias": "Shape Area",
+       "sqlType": "sqlTypeOther",
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "Shape__Length",
+       "type": "esriFieldTypeDouble",
+       "alias": "Shape Length",
+       "sqlType": "sqlTypeOther",
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "area_sqmi",
+       "type": "esriFieldTypeDouble",
+       "alias": "Area (sq mi, GRS 1980)",
+       "sqlType": "sqlTypeOther",
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "source",
+       "type": "esriFieldTypeString",
+       "alias": "Source",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "version_note",
+       "type": "esriFieldTypeString",
+       "alias": "Version",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "step",
+       "type": "esriFieldTypeInteger",
+       "alias": "Step",
+       "sqlType": "sqlTypeOther",
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "kind",
+       "type": "esriFieldTypeString",
+       "alias": "Kind",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "endpoint",
+       "type": "esriFieldTypeString",
+       "alias": "Ends at",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "quad",
+       "type": "esriFieldTypeString",
+       "alias": "USGS quadrangle",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "length_m",
+       "type": "esriFieldTypeDouble",
+       "alias": "Length (m)",
+       "sqlType": "sqlTypeOther",
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "narrative",
+       "type": "esriFieldTypeString",
+       "alias": "Text",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "txt_source",
+       "type": "esriFieldTypeString",
+       "alias": "Text source",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "change",
+       "type": "esriFieldTypeString",
+       "alias": "Change from Notice No. 243's text",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "Shape__Length_2",
+       "type": "esriFieldTypeDouble",
+       "alias": "Shape__Length_2",
+       "sqlType": "sqlTypeDouble",
+       "nullable": true,
+       "editable": false,
+       "domain": null,
+       "defaultValue": null
+      }
+     ]
+    },
+    {
+     "id": 2,
+     "name": "Step endpoints",
+     "type": "Feature Layer",
+     "geometryType": "esriGeometryPoint",
+     "objectIdField": "fid",
+     "globalIdField": "",
+     "geometryProperties": null,
+     "hasAttachments": false,
+     "fields": [
+      {
+       "name": "fid",
+       "type": "esriFieldTypeOID",
+       "alias": "fid",
+       "sqlType": "sqlTypeOther",
+       "length": 8,
+       "nullable": false,
+       "editable": false,
+       "domain": null,
+       "defaultValue": "",
+       "required": true
+      },
+      {
+       "name": "OBJECTID",
+       "type": "esriFieldTypeInteger",
+       "alias": "OBJECTID",
+       "sqlType": "sqlTypeOther",
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "Name",
+       "type": "esriFieldTypeString",
+       "alias": "Name",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "Id",
+       "type": "esriFieldTypeInteger",
+       "alias": "Id",
+       "sqlType": "sqlTypeOther",
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "Area",
+       "type": "esriFieldTypeDouble",
+       "alias": "Area",
+       "sqlType": "sqlTypeOther",
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "States",
+       "type": "esriFieldTypeString",
+       "alias": "States",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "Phase",
+       "type": "esriFieldTypeString",
+       "alias": "Phase",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "Level_",
+       "type": "esriFieldTypeInteger",
+       "alias": "Level",
+       "sqlType": "sqlTypeOther",
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "Contains_",
+       "type": "esriFieldTypeString",
+       "alias": "Contains",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "Within",
+       "type": "esriFieldTypeString",
+       "alias": "Within",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "Established",
+       "type": "esriFieldTypeDateOnly",
+       "alias": "Established",
+       "sqlType": "sqlTypeOther",
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "Status",
+       "type": "esriFieldTypeString",
+       "alias": "Status",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "CFR_Section",
+       "type": "esriFieldTypeString",
+       "alias": "CFR Section",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "Partially_Overlaps",
+       "type": "esriFieldTypeString",
+       "alias": "Partially Overlaps",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "Note",
+       "type": "esriFieldTypeString",
+       "alias": "Note",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "Counties",
+       "type": "esriFieldTypeString",
+       "alias": "Counties",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "Shape__Area",
+       "type": "esriFieldTypeDouble",
+       "alias": "Shape Area",
+       "sqlType": "sqlTypeOther",
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "Shape__Length",
+       "type": "esriFieldTypeDouble",
+       "alias": "Shape Length",
+       "sqlType": "sqlTypeOther",
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "area_sqmi",
+       "type": "esriFieldTypeDouble",
+       "alias": "Area (sq mi, GRS 1980)",
+       "sqlType": "sqlTypeOther",
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "source",
+       "type": "esriFieldTypeString",
+       "alias": "Source",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "version_note",
+       "type": "esriFieldTypeString",
+       "alias": "Version",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "point",
+       "type": "esriFieldTypeString",
+       "alias": "Point number",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "step",
+       "type": "esriFieldTypeInteger",
+       "alias": "Step",
+       "sqlType": "sqlTypeOther",
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "kind",
+       "type": "esriFieldTypeString",
+       "alias": "Kind",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "point_name",
+       "type": "esriFieldTypeString",
+       "alias": "Point",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "quad",
+       "type": "esriFieldTypeString",
+       "alias": "USGS quadrangle",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "4c Proposed boundary - GeoPackage (AVA polygon, 104 steps, step endpoints)",
+   "id": "00000000000000000000000000000015",
+   "type": "GeoPackage"
+  },
+  {
+   "title": "4d Proposed boundary - AVA polygon (shapefile)",
+   "id": "00000000000000000000000000000016",
+   "type": "Shapefile"
+  },
+  {
+   "title": "4e Proposed boundary - 104 boundary steps (shapefile)",
+   "id": "00000000000000000000000000000017",
+   "type": "Shapefile"
+  },
+  {
+   "title": "4f Proposed boundary - step endpoints (shapefile)",
+   "id": "00000000000000000000000000000018",
+   "type": "Shapefile"
+  },
+  {
+   "title": "4g Proposed boundary - AVA polygon (GeoJSON)",
+   "id": "00000000000000000000000000000019",
+   "type": "GeoJson"
+  },
+  {
+   "title": "4h Proposed boundary - 104 boundary steps (GeoJSON)",
+   "id": "00000000000000000000000000000020",
+   "type": "GeoJson"
+  },
+  {
+   "title": "4i Proposed boundary - step endpoints (GeoJSON)",
+   "id": "00000000000000000000000000000021",
+   "type": "GeoJson"
+  },
+  {
+   "title": "4j Differences from the AVA Map Explorer polygon - GeoPackage (the big ones, and all of them)",
+   "id": "00000000000000000000000000000022",
+   "type": "GeoPackage"
+  },
+  {
+   "title": "4k Differences from the AVA Map Explorer polygon - layer (the big ones, and all of them)",
+   "id": "00000000000000000000000000000023",
+   "type": "Feature Service",
+   "url": "https://services3.arcgis.com/FgD9ae359Y9QwuZY/arcgis/rest/services/Hickory_Sands_District_differences_from_TTB_2026_10_15/FeatureServer",
+   "layers": [
+    {
+     "id": 0,
+     "name": "All differences between the two lines (990 pieces)",
+     "type": "Feature Layer",
+     "geometryType": "esriGeometryPolygon",
+     "objectIdField": "fid",
+     "globalIdField": "",
+     "geometryProperties": {
+      "shapeAreaFieldName": "Shape__Area",
+      "shapeLengthFieldName": "Shape__Length",
+      "units": "esriMeters"
+     },
+     "hasAttachments": false,
+     "fields": [
+      {
+       "name": "fid",
+       "type": "esriFieldTypeOID",
+       "alias": "fid",
+       "sqlType": "sqlTypeOther",
+       "length": 8,
+       "nullable": false,
+       "editable": false,
+       "domain": null,
+       "defaultValue": "",
+       "required": true
+      },
+      {
+       "name": "side",
+       "type": "esriFieldTypeString",
+       "alias": "Side",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "cause",
+       "type": "esriFieldTypeString",
+       "alias": "Cause",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "acres",
+       "type": "esriFieldTypeDouble",
+       "alias": "Acres",
+       "sqlType": "sqlTypeOther",
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "length_m",
+       "type": "esriFieldTypeInteger",
+       "alias": "Length (m)",
+       "sqlType": "sqlTypeOther",
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "mean_width_m",
+       "type": "esriFieldTypeDouble",
+       "alias": "Average width (m)",
+       "sqlType": "sqlTypeOther",
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "widest_m",
+       "type": "esriFieldTypeDouble",
+       "alias": "Farthest apart (m)",
+       "sqlType": "sqlTypeOther",
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "steps",
+       "type": "esriFieldTypeString",
+       "alias": "Proposed revision steps along it",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "Shape__Area",
+       "type": "esriFieldTypeDouble",
+       "alias": "Shape__Area",
+       "sqlType": "sqlTypeDouble",
+       "nullable": true,
+       "editable": false,
+       "domain": null,
+       "defaultValue": null
+      },
+      {
+       "name": "Shape__Length",
+       "type": "esriFieldTypeDouble",
+       "alias": "Shape__Length",
+       "sqlType": "sqlTypeDouble",
+       "nullable": true,
+       "editable": false,
+       "domain": null,
+       "defaultValue": null
+      }
+     ]
+    },
+    {
+     "id": 1,
+     "name": "Big differences from the Map Explorer polygon (6)",
+     "type": "Feature Layer",
+     "geometryType": "esriGeometryPolygon",
+     "objectIdField": "fid",
+     "globalIdField": "",
+     "geometryProperties": {
+      "shapeAreaFieldName": "Shape__Area",
+      "shapeLengthFieldName": "Shape__Length",
+      "units": "esriMeters"
+     },
+     "hasAttachments": false,
+     "fields": [
+      {
+       "name": "fid",
+       "type": "esriFieldTypeOID",
+       "alias": "fid",
+       "sqlType": "sqlTypeOther",
+       "length": 8,
+       "nullable": false,
+       "editable": false,
+       "domain": null,
+       "defaultValue": "",
+       "required": true
+      },
+      {
+       "name": "n",
+       "type": "esriFieldTypeInteger",
+       "alias": "Big difference number",
+       "sqlType": "sqlTypeOther",
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "why",
+       "type": "esriFieldTypeString",
+       "alias": "Why",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "steps",
+       "type": "esriFieldTypeString",
+       "alias": "Steps",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "kind",
+       "type": "esriFieldTypeString",
+       "alias": "Kind of step",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "max_apart_m",
+       "type": "esriFieldTypeDouble",
+       "alias": "Farthest apart (m)",
+       "sqlType": "sqlTypeOther",
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "length_m",
+       "type": "esriFieldTypeInteger",
+       "alias": "Length of the stretch (m)",
+       "sqlType": "sqlTypeOther",
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "revision_only_acres",
+       "type": "esriFieldTypeDouble",
+       "alias": "In the proposed revision only (acres)",
+       "sqlType": "sqlTypeOther",
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "map_explorer_only_acres",
+       "type": "esriFieldTypeDouble",
+       "alias": "In the Map Explorer polygon only (acres)",
+       "sqlType": "sqlTypeOther",
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "endpoints",
+       "type": "esriFieldTypeString",
+       "alias": "Step endpoints vs the Map Explorer polygon's nearest vertex",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "Shape__Area",
+       "type": "esriFieldTypeDouble",
+       "alias": "Shape__Area",
+       "sqlType": "sqlTypeDouble",
+       "nullable": true,
+       "editable": false,
+       "domain": null,
+       "defaultValue": null
+      },
+      {
+       "name": "Shape__Length",
+       "type": "esriFieldTypeDouble",
+       "alias": "Shape__Length",
+       "sqlType": "sqlTypeDouble",
+       "nullable": true,
+       "editable": false,
+       "domain": null,
+       "defaultValue": null
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "4l Geology - USGS SGMC units shifted to the outcrops - GeoPackage",
+   "id": "00000000000000000000000000000024",
+   "type": "GeoPackage"
+  },
+  {
+   "title": "4m Geology - USGS SGMC units shifted to the outcrops - layer",
+   "id": "00000000000000000000000000000025",
+   "type": "Feature Service",
+   "url": "https://services3.arcgis.com/FgD9ae359Y9QwuZY/arcgis/rest/services/Hickory_Sands_District_geology_SGMC_shifted/FeatureServer",
+   "layers": [
+    {
+     "id": 0,
+     "name": "Hickory Sandstone Member formation (USGS SGMC, shifted)",
+     "type": "Feature Layer",
+     "geometryType": "esriGeometryPolygon",
+     "objectIdField": "fid",
+     "globalIdField": "",
+     "geometryProperties": {
+      "shapeAreaFieldName": "Shape__Area",
+      "shapeLengthFieldName": "Shape__Length",
+      "units": "esriMeters"
+     },
+     "hasAttachments": false,
+     "fields": [
+      {
+       "name": "fid",
+       "type": "esriFieldTypeOID",
+       "alias": "fid",
+       "sqlType": "sqlTypeOther",
+       "length": 8,
+       "nullable": false,
+       "editable": false,
+       "domain": null,
+       "defaultValue": "",
+       "required": true
+      },
+      {
+       "name": "name",
+       "type": "esriFieldTypeString",
+       "alias": "SGMC unit",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "unit_link",
+       "type": "esriFieldTypeString",
+       "alias": "Unit code",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "generalize",
+       "type": "esriFieldTypeString",
+       "alias": "Rock type",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "source",
+       "type": "esriFieldTypeString",
+       "alias": "Source",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "unit_url",
+       "type": "esriFieldTypeString",
+       "alias": "USGS unit page",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "alignment",
+       "type": "esriFieldTypeString",
+       "alias": "Shift",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "area_acres",
+       "type": "esriFieldTypeDouble",
+       "alias": "Area (acres)",
+       "sqlType": "sqlTypeOther",
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "Shape__Area",
+       "type": "esriFieldTypeDouble",
+       "alias": "Shape__Area",
+       "sqlType": "sqlTypeDouble",
+       "nullable": true,
+       "editable": false,
+       "domain": null,
+       "defaultValue": null
+      },
+      {
+       "name": "Shape__Length",
+       "type": "esriFieldTypeDouble",
+       "alias": "Shape__Length",
+       "sqlType": "sqlTypeDouble",
+       "nullable": true,
+       "editable": false,
+       "domain": null,
+       "defaultValue": null
+      }
+     ]
+    },
+    {
+     "id": 1,
+     "name": "Town Mountain Granite (USGS SGMC, shifted)",
+     "type": "Feature Layer",
+     "geometryType": "esriGeometryPolygon",
+     "objectIdField": "fid",
+     "globalIdField": "",
+     "geometryProperties": {
+      "shapeAreaFieldName": "Shape__Area",
+      "shapeLengthFieldName": "Shape__Length",
+      "units": "esriMeters"
+     },
+     "hasAttachments": false,
+     "fields": [
+      {
+       "name": "fid",
+       "type": "esriFieldTypeOID",
+       "alias": "fid",
+       "sqlType": "sqlTypeOther",
+       "length": 8,
+       "nullable": false,
+       "editable": false,
+       "domain": null,
+       "defaultValue": "",
+       "required": true
+      },
+      {
+       "name": "name",
+       "type": "esriFieldTypeString",
+       "alias": "SGMC unit",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "unit_link",
+       "type": "esriFieldTypeString",
+       "alias": "Unit code",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "generalize",
+       "type": "esriFieldTypeString",
+       "alias": "Rock type",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "source",
+       "type": "esriFieldTypeString",
+       "alias": "Source",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "unit_url",
+       "type": "esriFieldTypeString",
+       "alias": "USGS unit page",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "alignment",
+       "type": "esriFieldTypeString",
+       "alias": "Shift",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "area_acres",
+       "type": "esriFieldTypeDouble",
+       "alias": "Area (acres)",
+       "sqlType": "sqlTypeOther",
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "Shape__Area",
+       "type": "esriFieldTypeDouble",
+       "alias": "Shape__Area",
+       "sqlType": "sqlTypeDouble",
+       "nullable": true,
+       "editable": false,
+       "domain": null,
+       "defaultValue": null
+      },
+      {
+       "name": "Shape__Length",
+       "type": "esriFieldTypeDouble",
+       "alias": "Shape__Length",
+       "sqlType": "sqlTypeDouble",
+       "nullable": true,
+       "editable": false,
+       "domain": null,
+       "defaultValue": null
+      }
+     ]
+    },
+    {
+     "id": 2,
+     "name": "Younger granitic intrusions (USGS SGMC, shifted)",
+     "type": "Feature Layer",
+     "geometryType": "esriGeometryPolygon",
+     "objectIdField": "fid",
+     "globalIdField": "",
+     "geometryProperties": {
+      "shapeAreaFieldName": "Shape__Area",
+      "shapeLengthFieldName": "Shape__Length",
+      "units": "esriMeters"
+     },
+     "hasAttachments": false,
+     "fields": [
+      {
+       "name": "fid",
+       "type": "esriFieldTypeOID",
+       "alias": "fid",
+       "sqlType": "sqlTypeOther",
+       "length": 8,
+       "nullable": false,
+       "editable": false,
+       "domain": null,
+       "defaultValue": "",
+       "required": true
+      },
+      {
+       "name": "name",
+       "type": "esriFieldTypeString",
+       "alias": "SGMC unit",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "unit_link",
+       "type": "esriFieldTypeString",
+       "alias": "Unit code",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "generalize",
+       "type": "esriFieldTypeString",
+       "alias": "Rock type",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "source",
+       "type": "esriFieldTypeString",
+       "alias": "Source",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "unit_url",
+       "type": "esriFieldTypeString",
+       "alias": "USGS unit page",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "alignment",
+       "type": "esriFieldTypeString",
+       "alias": "Shift",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "area_acres",
+       "type": "esriFieldTypeDouble",
+       "alias": "Area (acres)",
+       "sqlType": "sqlTypeOther",
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "Shape__Area",
+       "type": "esriFieldTypeDouble",
+       "alias": "Shape__Area",
+       "sqlType": "sqlTypeDouble",
+       "nullable": true,
+       "editable": false,
+       "domain": null,
+       "defaultValue": null
+      },
+      {
+       "name": "Shape__Length",
+       "type": "esriFieldTypeDouble",
+       "alias": "Shape__Length",
+       "sqlType": "sqlTypeDouble",
+       "nullable": true,
+       "editable": false,
+       "domain": null,
+       "defaultValue": null
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "4n The change near Grit - GeoPackage (lines swapped, areas moved, granite acres)",
+   "id": "00000000000000000000000000000026",
+   "type": "GeoPackage"
+  },
+  {
+   "title": "4o The change near Grit - layer (lines swapped, areas moved, granite acres)",
+   "id": "00000000000000000000000000000027",
+   "type": "Feature Service",
+   "url": "https://services3.arcgis.com/FgD9ae359Y9QwuZY/arcgis/rest/services/Hickory_Sands_District_change_near_Grit_2026_10_15/FeatureServer",
+   "layers": [
+    {
+     "id": 0,
+     "name": "Areas the change near Grit moves, with their granite",
+     "type": "Feature Layer",
+     "geometryType": "esriGeometryPolygon",
+     "objectIdField": "fid",
+     "globalIdField": "",
+     "geometryProperties": {
+      "shapeAreaFieldName": "Shape__Area",
+      "shapeLengthFieldName": "Shape__Length",
+      "units": "esriMeters"
+     },
+     "hasAttachments": false,
+     "fields": [
+      {
+       "name": "fid",
+       "type": "esriFieldTypeOID",
+       "alias": "fid",
+       "sqlType": "sqlTypeOther",
+       "length": 8,
+       "nullable": false,
+       "editable": false,
+       "domain": null,
+       "defaultValue": "",
+       "required": true
+      },
+      {
+       "name": "what",
+       "type": "esriFieldTypeString",
+       "alias": "Which area",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "why",
+       "type": "esriFieldTypeString",
+       "alias": "Why",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "side",
+       "type": "esriFieldTypeString",
+       "alias": "Left out or put in",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "acres",
+       "type": "esriFieldTypeDouble",
+       "alias": "Acres",
+       "sqlType": "sqlTypeOther",
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "granite_acres",
+       "type": "esriFieldTypeDouble",
+       "alias": "Granite (acres)",
+       "sqlType": "sqlTypeOther",
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "sandstone_acres",
+       "type": "esriFieldTypeDouble",
+       "alias": "Hickory Sandstone Member formation (acres)",
+       "sqlType": "sqlTypeOther",
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "revision_steps",
+       "type": "esriFieldTypeString",
+       "alias": "Proposed revision (or petition) steps along it",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "notice_steps",
+       "type": "esriFieldTypeString",
+       "alias": "Notice No. 243 steps along it",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "Shape__Area",
+       "type": "esriFieldTypeDouble",
+       "alias": "Shape__Area",
+       "sqlType": "sqlTypeDouble",
+       "nullable": true,
+       "editable": false,
+       "domain": null,
+       "defaultValue": null
+      },
+      {
+       "name": "Shape__Length",
+       "type": "esriFieldTypeDouble",
+       "alias": "Shape__Length",
+       "sqlType": "sqlTypeDouble",
+       "nullable": true,
+       "editable": false,
+       "domain": null,
+       "defaultValue": null
+      }
+     ]
+    },
+    {
+     "id": 1,
+     "name": "Lines the change near Grit swaps",
+     "type": "Feature Layer",
+     "geometryType": "esriGeometryPolyline",
+     "objectIdField": "fid",
+     "globalIdField": "",
+     "geometryProperties": {
+      "shapeLengthFieldName": "Shape__Length",
+      "units": "esriMeters"
+     },
+     "hasAttachments": false,
+     "fields": [
+      {
+       "name": "fid",
+       "type": "esriFieldTypeOID",
+       "alias": "fid",
+       "sqlType": "sqlTypeOther",
+       "length": 8,
+       "nullable": false,
+       "editable": false,
+       "domain": null,
+       "defaultValue": "",
+       "required": true
+      },
+      {
+       "name": "role",
+       "type": "esriFieldTypeString",
+       "alias": "What it is",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "label",
+       "type": "esriFieldTypeString",
+       "alias": "Label",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "steps",
+       "type": "esriFieldTypeString",
+       "alias": "Steps",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "length_m",
+       "type": "esriFieldTypeInteger",
+       "alias": "Length (m)",
+       "sqlType": "sqlTypeOther",
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "source",
+       "type": "esriFieldTypeString",
+       "alias": "Drawn from",
+       "sqlType": "sqlTypeOther",
+       "length": 2147483647,
+       "nullable": true,
+       "editable": true,
+       "domain": null,
+       "defaultValue": ""
+      },
+      {
+       "name": "Shape__Length",
+       "type": "esriFieldTypeDouble",
+       "alias": "Shape__Length",
+       "sqlType": "sqlTypeDouble",
+       "nullable": true,
+       "editable": false,
+       "domain": null,
+       "defaultValue": null
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "5a USGS quadrangle with the boundary (GeoPDF) - Fly Gap, TX (1962, photorevised 1982)",
+   "id": "00000000000000000000000000000028",
+   "type": "PDF"
+  },
+  {
+   "title": "5a USGS quadrangle with the boundary (GeoPDF) - Fredonia, TX (1962)",
+   "id": "00000000000000000000000000000029",
+   "type": "PDF"
+  },
+  {
+   "title": "5a USGS quadrangle with the boundary (GeoPDF) - Grit, TX (1970)",
+   "id": "00000000000000000000000000000030",
+   "type": "PDF"
+  },
+  {
+   "title": "5a USGS quadrangle with the boundary (GeoPDF) - Katemcy, TX (1970)",
+   "id": "00000000000000000000000000000031",
+   "type": "PDF"
+  },
+  {
+   "title": "5a USGS quadrangle with the boundary (GeoPDF) - Long Mountain, TX (1970)",
+   "id": "00000000000000000000000000000032",
+   "type": "PDF"
+  },
+  {
+   "title": "5a USGS quadrangle with the boundary (GeoPDF) - Mason, TX (1967, photoinspected 1979)",
+   "id": "00000000000000000000000000000033",
+   "type": "PDF"
+  },
+  {
+   "title": "5a USGS quadrangle with the boundary (GeoPDF) - Pecan Springs, TX (1963)",
+   "id": "00000000000000000000000000000034",
+   "type": "PDF"
+  },
+  {
+   "title": "5a USGS quadrangle with the boundary (GeoPDF) - Pontotoc, TX (1955)",
+   "id": "00000000000000000000000000000035",
+   "type": "PDF"
+  },
+  {
+   "title": "5a USGS quadrangle with the boundary (GeoPDF) - Purdy Hill, TX (1962)",
+   "id": "00000000000000000000000000000036",
+   "type": "PDF"
+  },
+  {
+   "title": "5a USGS quadrangle with the boundary (GeoPDF) - Sheep Run Creek, TX (1968)",
+   "id": "00000000000000000000000000000037",
+   "type": "PDF"
+  },
+  {
+   "title": "5a USGS quadrangle with the boundary (GeoPDF) - Spy Rock, TX (1963)",
+   "id": "00000000000000000000000000000038",
+   "type": "PDF"
+  },
+  {
+   "title": "5a USGS quadrangle with the boundary (GeoPDF) - Turtle Creek, TX (1968)",
+   "id": "00000000000000000000000000000039",
+   "type": "PDF"
+  },
+  {
+   "title": "5a USGS quadrangle with the boundary (GeoPDF) - Voca, TX (1963)",
+   "id": "00000000000000000000000000000040",
+   "type": "PDF"
+  },
+  {
+   "title": "5b USGS quadrangle with the boundary (GeoTIFF) - Fly Gap, TX (1962, photorevised 1982)",
+   "id": "00000000000000000000000000000041",
+   "type": "Image"
+  },
+  {
+   "title": "5b USGS quadrangle with the boundary (GeoTIFF) - Fredonia, TX (1962)",
+   "id": "00000000000000000000000000000042",
+   "type": "Image"
+  },
+  {
+   "title": "5b USGS quadrangle with the boundary (GeoTIFF) - Grit, TX (1970)",
+   "id": "00000000000000000000000000000043",
+   "type": "Image"
+  },
+  {
+   "title": "5b USGS quadrangle with the boundary (GeoTIFF) - Katemcy, TX (1970)",
+   "id": "00000000000000000000000000000044",
+   "type": "Image"
+  },
+  {
+   "title": "5b USGS quadrangle with the boundary (GeoTIFF) - Long Mountain, TX (1970)",
+   "id": "00000000000000000000000000000045",
+   "type": "Image"
+  },
+  {
+   "title": "5b USGS quadrangle with the boundary (GeoTIFF) - Mason, TX (1967, photoinspected 1979)",
+   "id": "00000000000000000000000000000046",
+   "type": "Image"
+  },
+  {
+   "title": "5b USGS quadrangle with the boundary (GeoTIFF) - Pecan Springs, TX (1963)",
+   "id": "00000000000000000000000000000047",
+   "type": "Image"
+  },
+  {
+   "title": "5b USGS quadrangle with the boundary (GeoTIFF) - Pontotoc, TX (1955)",
+   "id": "00000000000000000000000000000048",
+   "type": "Image"
+  },
+  {
+   "title": "5b USGS quadrangle with the boundary (GeoTIFF) - Purdy Hill, TX (1962)",
+   "id": "00000000000000000000000000000049",
+   "type": "Image"
+  },
+  {
+   "title": "5b USGS quadrangle with the boundary (GeoTIFF) - Sheep Run Creek, TX (1968)",
+   "id": "00000000000000000000000000000050",
+   "type": "Image"
+  },
+  {
+   "title": "5b USGS quadrangle with the boundary (GeoTIFF) - Spy Rock, TX (1963)",
+   "id": "00000000000000000000000000000051",
+   "type": "Image"
+  },
+  {
+   "title": "5b USGS quadrangle with the boundary (GeoTIFF) - Turtle Creek, TX (1968)",
+   "id": "00000000000000000000000000000052",
+   "type": "Image"
+  },
+  {
+   "title": "5b USGS quadrangle with the boundary (GeoTIFF) - Voca, TX (1963)",
+   "id": "00000000000000000000000000000053",
+   "type": "Image"
+  }
+ ]
+}

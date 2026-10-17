@@ -1,7 +1,7 @@
 """Dashboard for the PROPOSED boundary, in Dan's folder, shared only to the private group: one page that organizes
 everything in the group for TTB's reviewer.
 - header: the docket, and a selector for which steps to show (petition wording near Grit, new around the granite lobe,
-  unchanged from Notice No. 243's text);
+  the two corrections to Notice No. 243's wording, (49) and (85), unchanged from Notice No. 243's text);
 - left: the AVA's area, the steps shown, how many differ from Notice No. 243, the big differences from the AVA Map
   Explorer polygon and the acres
   between the two boundaries from the same text drawn differently; tabs with every item in the group by number, the 13 USGS quadrangles (GeoPDF, GeoTIFF, the steps
@@ -11,6 +11,14 @@ Wording (Dan, 2026-10-16): the official names, Notice No. 243, the AVA Map Explo
 "ours" against "TTB's".
 - right: the 104 steps, the big differences and all the differences, as lists that zoom the map, and the selected
   step's record; a tab on the left sets out the change near Grit, acre by acre, with its granite.
+On a phone (narrow screens; issue #49) ArcGIS Dashboards shows a second layout, the mobileView, with its own copies of
+the elements (ids "mobile-" + the desktop name; elementMappings pairs each with its desktop twin):
+- header: the title and one line; the step selector is in the drawer (a phone header holds text and images only);
+- top: the AVA's area, the steps reworded and the big differences; then the same web map, half the screen;
+- below it, tabs: the steps (tap one to zoom the map; the list item holds the step's whole record), what changes,
+  the change near Grit (its table as stacked rows) and the documents (one large link each).
+Both views are built from the same builders and data below, so they cannot drift; check_views() stops the publish if
+an element is not placed, or an action points outside its own view.
 Items are found by title in the folder at run time (their ids change if they are republished). Re-running updates the
 dashboard in place. Sign-in: GIS(profile="hsd"). Never write "agreed".
 Run by ./build.sh publish after agol_layer.py (or .venv/bin/python src/publish/agol_dashboard.py)"""
@@ -57,6 +65,13 @@ def wid(name):   # stable element ids, so a re-run changes only what changed
 MAP, LIST, DIFFS, ALLD, DETAILS, SELECT = wid("map"), wid("steps"), wid("differences"), wid("all-differences"), wid("details"), wid("selector")
 IND = {k: wid("indicator-" + k) for k in ("area", "steps", "changed", "places", "acres")}
 TXT = {k: wid("text-" + k) for k in ("documents", "quads", "about", "grit")}
+def mwid(name):   # the phone layout's twin of the element wid(name)
+    return wid("mobile-" + name)
+M_MAP, M_LIST, M_SELECT = mwid("map"), mwid("steps"), mwid("selector")
+M_IND = {k: mwid("indicator-" + k) for k in ("area", "changed", "places")}
+M_TXT = {k: mwid("text-" + k) for k in ("about", "grit", "documents")}
+TWINS = {MAP: M_MAP, LIST: M_LIST, SELECT: M_SELECT, **{IND[k]: M_IND[k] for k in M_IND}, **{TXT[k]: M_TXT[k] for k in M_TXT}}
+PHONE = '<div style="font-size:15px;line-height:1.5">'   # the phone's text: 15 px, its small print 13 px (desktop 13 and 11)
 
 gis = GIS(profile="hsd")
 folder = gis.content.folders.get(FOLDER)
@@ -82,9 +97,18 @@ def target(element, by="whereClause", selection=False, **kw):
 def widget(id_, name, type_, **kw):
     return {"id": id_, "dashboardItemType": "widget", "name": name, "type": type_, "noDataState": {}, "noFilterState": {},
             "focusModeEnabled": False, **kw}
+def page(it):   # the item's page: its description, license and download (an item's /data link would only download)
+    return f"{gis.url}/home/item.html?id={it.id}"
 def link(it, text=None):
-    return (f'<a href="{gis.url}/home/item.html?id={it.id}" target="_blank" rel="noopener noreferrer">'
+    return (f'<a href="{page(it)}" target="_blank" rel="noopener noreferrer">'
             f'{html.escape(text or it.title.split(" ", 1)[1])}</a>')
+def button(url, title, note=""):   # a link the size of a finger, for the phone: "Title - note" -> title, note below it
+    return (f'<a href="{url}" target="_blank" rel="noopener noreferrer" style="display:block;padding:12px 14px;margin:0 0 10px;'
+            f'border:1px solid #d9c3c8;border-radius:8px;background:#faf6f7;color:{WINE};text-decoration:none;font-size:16px;'
+            f'line-height:1.35"><strong>{html.escape(title)}</strong>'
+            + (f'<br><span style="font-size:14px;color:#555">{html.escape(note)}</span>' if note else "") + "</a>")
+def item_button(it):
+    return button(page(it), *it.title.split(" ", 1)[1].split(" - ", 1))
 def spans(nums):   # 1,2,3,7,9,10 -> (1)-(3), (7), (9)-(10)
     out, nums = [], sorted(nums)
     for n in nums:
@@ -111,6 +135,13 @@ for key, head in SECTIONS.items():
         f"<li><span style=\"color:#666\">{html.escape(it.title.split(' ', 1)[0])}</span> {link(it)}</li>" for it in group_items) + "</ul>")
 parts.append("</div>")
 documents_html = "".join(parts)
+numbered = {t.split(" ", 1)[0]: it for t, it in docs}
+for n in ("0", "1a", "2a", "3a"):
+    assert n in numbered, f"no item {n} in the folder for the phone's Documents tab"
+group_button = button(f"{gis.url}/home/group.html?id={GROUP_ID}", "Everything in the group",
+                      "the Word files, the GIS data and the 13 USGS quadrangles")
+documents_phone = (PHONE + '<p style="margin:0 0 10px">Each opens the item\'s page, where it can be read or downloaded.</p>'
+                   + "".join(item_button(numbered[n]) for n in ("0", "1a", "2a", "3a")) + group_button + "</div>")
 
 quads = {}
 for t, it in docs:
@@ -163,24 +194,33 @@ def readme_section(start):
     flush()
     return "".join(out)
 head = open(README, encoding="utf-8").read().splitlines()[:3]
+CHANGES = readme_section("WHAT WE PROPOSE TO CHANGE")
+MAP_RED = f"Red: the proposed revision, {SQMI} square miles."   # the map's key, in both views
+MAP_BLUE = "Blue: the AVA Map Explorer polygon for Notice No. 243, from TTB's live AVAs_Production layer."
+MAP_SHADED = ("Shaded: every piece of land between them (red: in the proposed revision only; blue: in the Map Explorer polygon "
+              "only; grey: the proposed text change near Grit)")
+MAP_RINGED = (f"Ringed: the {STATS['big']} big differences, where the lines are {STATS['big_m']:.0f} m or more apart (orange: the "
+              "two lines take different paths; grey dashed: the proposed text change near Grit)")
+MAP_BASEMAPS = ("In the map's layer list, <em>TTB's AVA Map Explorer basemaps</em> holds the Map Explorer's four basemaps "
+                "(Topographic, Streets, Imagery, USA Topo Maps): turn it on and pick one.")
 about_html = ('<div style="font-size:13px;line-height:1.45">'
               f"<p>{html.escape(head[1])}<br>{html.escape(head[2].replace('(see LICENSE.txt)', '(full text in item 0, the read me)'))}</p>"
               "<p style=\"margin:10px 0 2px\"><strong>What the proposed revision changes in Notice No. 243</strong></p>"
-              + readme_section("WHAT WE PROPOSE TO CHANGE") +
+              + CHANGES +
               "<p style=\"margin:10px 0 2px\"><strong>How the line is drawn</strong></p>" + readme_section("HOW THE LINE IS DRAWN") +
               "<p style=\"margin:10px 0 2px\"><strong>The map</strong></p>"
-              f"<p>Red: the proposed revision, {SQMI} square miles. Blue: the AVA Map Explorer polygon for Notice No. 243, from TTB's "
-              "live AVAs_Production layer. The Map Explorer polygon was digitized by hand and the proposed revision follows the printed "
+              f"<p>{MAP_RED} {MAP_BLUE} The Map Explorer polygon was digitized by hand and the proposed revision follows the printed "
               f"linework, so the two differ a little almost everywhere (median {STATS['median_m']:.0f} m apart, measured every 2 m along "
-              "each line). Shaded: every piece of land "
-              "between them (red: in the proposed revision only; blue: in the Map Explorer polygon only; grey: the proposed text change "
-              f"near Grit); from the same text drawn differently they add up to {same['revision_only_acres']:,.0f} acres in the proposed "
-              f"revision only and {same['map_explorer_only_acres']:,.0f} in the Map Explorer polygon only. Ringed: the {STATS['big']} big "
-              f"differences, where the lines are {STATS['big_m']:.0f} m or more apart (orange: the two lines take different paths; grey "
-              "dashed: the proposed text change near Grit). Under them: the USGS geologic units "
+              f"each line). {MAP_SHADED}; from the same text drawn differently they add up to {same['revision_only_acres']:,.0f} acres "
+              f"in the proposed revision only and {same['map_explorer_only_acres']:,.0f} in the Map Explorer polygon only. {MAP_RINGED}. "
+              "Under them: the USGS geologic units "
               "(Town Mountain Granite, younger granitic intrusions, Hickory Sandstone Member formation), shifted about 400 m to "
-              "sit on the outcrops, and the 13 USGS quadrangles. In the map's layer list, <em>TTB's AVA Map Explorer basemaps</em> "
-              "holds the Map Explorer's four basemaps (Topographic, Streets, Imagery, USA Topo Maps): turn it on and pick one.</p></div>")
+              f"sit on the outcrops, and the 13 USGS quadrangles. {MAP_BASEMAPS}</p></div>")
+about_phone = (PHONE + '<p style="margin:0 0 4px"><strong>What the proposed revision changes in Notice No. 243</strong></p>' + CHANGES
+               + f'<p style="margin:12px 0 4px"><strong>On the map</strong></p><p>{MAP_RED} {MAP_BLUE} {MAP_SHADED}. {MAP_RINGED}.</p>'
+               f"<p>{MAP_BASEMAPS}</p>"
+               '<p style="margin:12px 0 4px"><strong>Every change, step by step</strong></p>'
+               + item_button(numbered["3a"]) + item_button(numbered["2a"]) + "</div>")
 
 A = GRIT["areas"]
 def ac(x): return f"{int(x + 0.5):,}"   # whole acres, rounded once, half up, from the build's unrounded stats (issue #33)
@@ -189,37 +229,63 @@ def grow(key, label):
     return (f'<tr><td style="padding:3px 6px">{label}</td><td style="padding:3px 6px;text-align:right;white-space:nowrap">{ac(r["acres"])}</td>'
             f'<td style="padding:3px 6px;text-align:right;white-space:nowrap">{ac(r["granite_acres"])}</td>'
             f'<td style="padding:3px 6px;text-align:right;white-space:nowrap">{ac(r["sandstone_acres"])}</td></tr>')
+def gblock(key, label):   # a row of the table as a paragraph, for the phone (no wide tables)
+    r = A[key]
+    return (f'<p style="margin:8px 0 0"><strong>{label}</strong><br>{ac(r["acres"])} acres &middot; granite {ac(r["granite_acres"])} '
+            f'&middot; sandstone* {ac(r["sandstone_acres"])}</p>')
 def key(color, dash, label):
     return (f'<li><span style="display:inline-block;width:26px;border-top:4px {"dashed" if dash else "solid"} {color};vertical-align:middle;'
             f'margin-right:6px"></span>{label}</li>')
+GRIT_LINES = (("#005aff", True, "Replaced: Notice No. 243 steps (10)-(11), (90)-(92), as drawn by the petitioner on the USGS maps"),
+              ("#008c3c", False, "Put back: the petition's wording, (10)-(11), (90)-(92), (97)-(100)"),
+              ("#be0082", False, "New: (93)-(96), around the granite lobe"),
+              ("#008c3c", True, "Replaced: the petition's straight line from the marked 1,737 to the marked 1,762"))
+GRIT_AREAS = (("Notice No. 243, not the petition", "In Notice No. 243's text, left out by the petition"),
+              ("granite lobe", "Granite lobe, also left out now by (93)-(96)"),
+              ("put back", "Put back, between the marked 1,737 and the windmill"),
+              ("lane wording", "Added by the petition's lane wording, (10)-(11)"),
+              ("petition, not Notice No. 243", "In the petition, not Notice No. 243's text, (99)-(100)"))
 reworded = [s["step"] for s in steps if "unchanged" not in (s["change"] or "")]   # as the indicator counts them
-grit_html = ('<div style="font-size:13px;line-height:1.45"><p>Near Grit the proposed text puts back the petition\'s wording in place of '
-             "Notice No. 243's steps (10)-(11) and (90)-(92), and adds steps (93)-(96) around a lobe of granite. Turn on <em>The change near Grit</em> in "
-             "the map's layer list (on by default) to see each line and area.</p>"
-             f"<p>All {len(reworded)} steps worded differently from Notice No. 243 (<em>Steps reworded</em>, at the top) are here, "
-             f"near Grit: {spans(reworded)}. Every other step is Notice No. 243's text word for word.</p>"
-             '<p style="margin:10px 0 2px"><strong>The lines</strong></p><ul style="list-style:none;padding-left:4px;margin:0">'
-             + key("#005aff", True, "Replaced: Notice No. 243 steps (10)-(11), (90)-(92), as drawn by the petitioner on the USGS maps")
-             + key("#008c3c", False, "Put back: the petition's wording, (10)-(11), (90)-(92), (97)-(100)")
-             + key("#be0082", False, "New: (93)-(96), around the granite lobe")
-             + key("#008c3c", True, "Replaced: the petition's straight line from the marked 1,737 to the marked 1,762") + "</ul>"
-             '<p style="margin:10px 0 2px"><strong>The areas</strong> (granite: Town Mountain Granite and younger granitic intrusions; '
-             "USGS SGMC shifted to the outcrops)</p>"
+FIX = "text correction"   # how build_agreed.py's change notes for (49) and (85) start: Notice No. 243's wording corrected
+fixes = [s["step"] for s in steps if FIX in (s["change"] or "")]
+near_grit = [n for n in reworded if n not in fixes]
+def and_list(nums):   # 49, 85 -> (49) and (85)
+    s = [f"({n})" for n in sorted(nums)]
+    return s[0] if len(s) == 1 else ", ".join(s[:-1]) + " and " + s[-1]
+REWORDED = (f"All {len(reworded)} steps worded differently from Notice No. 243 (<em>Steps reworded</em>, at the top) are here, "
+            f"near Grit: {spans(reworded)}." if not fixes else
+            f"Of the {len(reworded)} steps worded differently from Notice No. 243 (<em>Steps reworded</em>, at the top), "
+            f"{len(near_grit)} are here, near Grit: {spans(near_grit)}. "
+            + (f"The other one, {and_list(fixes)}, corrects Notice No. 243's own wording elsewhere, one word; " if len(fixes) == 1 else
+               f"The other {({2: 'two', 3: 'three', 4: 'four'}).get(len(fixes), len(fixes))}, {and_list(fixes)}, correct Notice "
+               "No. 243's own wording elsewhere, one word each; ")
+            + "the line does not change.")
+def grit_tab(phone=False):   # the same text in both views; on the phone larger, and the table as stacked rows
+    head = '<p style="margin:12px 0 4px">' if phone else '<p style="margin:10px 0 2px">'
+    areas = ("".join(gblock(*a) for a in GRIT_AREAS) if phone else
              '<table style="border-collapse:collapse;width:100%"><tr style="text-align:left;border-bottom:1px solid #ccc">'
              '<th style="padding:3px 6px"></th><th style="padding:3px 6px;text-align:right">acres</th><th style="padding:3px 6px;text-align:right;white-space:nowrap">granite</th>'
-             '<th style="padding:3px 6px;text-align:right;white-space:nowrap">sandstone*</th></tr>'
-             + grow("Notice No. 243, not the petition", "In Notice No. 243's text, left out by the petition")
-             + grow("granite lobe", "Granite lobe, also left out now by (93)-(96)")
-             + grow("put back", "Put back, between the marked 1,737 and the windmill")
-             + grow("lane wording", "Added by the petition's lane wording, (10)-(11)")
-             + grow("petition, not Notice No. 243", "In the petition, not Notice No. 243's text, (99)-(100)") + "</table>"
-             '<p style="font-size:11px;color:#666;margin-top:2px">* the Hickory Sandstone Member formation</p>'
-             f'<p style="margin-top:8px">The AVA drawn three ways: Notice No. 243\'s text {GRIT["sqmi"]["notice_243"]:.2f} square miles; the petition '
-             f'{GRIT["sqmi"]["petition"]:.2f}; the proposed revision {GRIT["sqmi"]["revision"]:.2f}. All three are drawn the same way, on the '
-             "printed linework of the USGS maps; none is taken from the AVA Map Explorer polygon.</p></div>")
+             '<th style="padding:3px 6px;text-align:right;white-space:nowrap">sandstone*</th></tr>' + "".join(grow(*a) for a in GRIT_AREAS) + "</table>")
+    return ((PHONE if phone else '<div style="font-size:13px;line-height:1.45">')
+            + "<p>Near Grit the proposed text puts back the petition's wording in place of "
+            "Notice No. 243's steps (10)-(11) and (90)-(92), and adds steps (93)-(96) around a lobe of granite. Turn on <em>The change near Grit</em> in "
+            "the map's layer list (on by default) to see each line and area.</p>"
+            f"<p>{REWORDED} Every other step is Notice No. 243's text word for word.</p>"
+            + head + '<strong>The lines</strong></p><ul style="list-style:none;padding-left:4px;margin:0">'
+            + "".join(key(*k) for k in GRIT_LINES) + "</ul>"
+            + head + "<strong>The areas</strong> (granite: Town Mountain Granite and younger granitic intrusions; "
+            "USGS SGMC shifted to the outcrops)</p>" + areas
+            + ('<p style="font-size:13px;color:#555;margin-top:4px">' if phone else '<p style="font-size:11px;color:#666;margin-top:2px">')
+            + "* the Hickory Sandstone Member formation</p>"
+            f'<p style="margin-top:8px">The AVA drawn three ways: Notice No. 243\'s text {GRIT["sqmi"]["notice_243"]:.2f} square miles; the petition '
+            f'{GRIT["sqmi"]["petition"]:.2f}; the proposed revision {GRIT["sqmi"]["revision"]:.2f}. All three are drawn the same way, on the '
+            "printed linework of the USGS maps; none is taken from the AVA Map Explorer polygon.</p></div>")
+grit_html, grit_phone = grit_tab(), grit_tab(phone=True)
 
 # ---------------------------------------------------------------- elements
-def indicator(id_, name, op, top, bottom, stat, digits=0, flt=None):
+def indicator(id_, k, captions):   # the same number in both views (IND_DATA), with each view's captions
+    name, op, stat, digits, flt = IND_DATA[k]
+    top, bottom = captions[k]
     return widget(id_, name, "indicatorWidget",
                   datasets=[dataset(op, statisticDefinitions=[stat], **({"filter": flt} if flt else {}))],
                   defaultSettings={"topSection": {"maxHeight": 30, "textInfo": {"text": top, "weight": "normal"}},
@@ -233,35 +299,55 @@ def indicator(id_, name, op, top, bottom, stat, digits=0, flt=None):
 count = {"onStatisticField": OID, "statisticType": "count", "outStatisticFieldName": "value"}
 changed = {"type": "filterGroup", "condition": "AND", "rules": [{"type": "filterRule", "field": {"name": "change", "type": "string"},
                                                                   "operator": "not_contains", "constraint": {"type": "value", "value": "unchanged"}}]}
-indicators = [
-    indicator(IND["area"], "AVA area", AREA_OP, "AVA as proposed", "sq mi (GRS 1980)",
-              {"onStatisticField": "area_sqmi", "statisticType": "max", "outStatisticFieldName": "value"}, digits=2),
-    indicator(IND["steps"], "Steps shown", LINE_OP, "Steps shown", f"of {len(steps)}", count),
-    indicator(IND["changed"], "Steps worded differently from Notice No. 243", LINE_OP, "Steps reworded", "from Notice No. 243", count, flt=changed),
-    indicator(IND["places"], "Big differences", RINGS_OP, f"Big differences ({STATS['big_m']:.0f} m+)", "from the Map Explorer polygon",
-              {"onStatisticField": RINGS_OID, "statisticType": "count", "outStatisticFieldName": "value"}),
-    indicator(IND["acres"], "Land between the boundaries", ALL_OP, "Acres between the boundaries", "same text, drawn differently",
-              {"onStatisticField": "acres", "statisticType": "sum", "outStatisticFieldName": "value"},
-              flt={"type": "filterGroup", "condition": "AND", "rules": [{"type": "filterRule", "field": {"name": "cause", "type": "string"},
-                                                                         "operator": "equal", "constraint": {"type": "value", "value": SAME_TEXT}}]})]
+IND_DATA = {   # key: name, layer, statistic, decimals, filter
+    "area": ("AVA area", AREA_OP, {"onStatisticField": "area_sqmi", "statisticType": "max", "outStatisticFieldName": "value"}, 2, None),
+    "steps": ("Steps shown", LINE_OP, count, 0, None),
+    "changed": ("Steps worded differently from Notice No. 243", LINE_OP, count, 0, changed),
+    "places": ("Big differences", RINGS_OP, {"onStatisticField": RINGS_OID, "statisticType": "count", "outStatisticFieldName": "value"}, 0, None),
+    "acres": ("Land between the boundaries", ALL_OP, {"onStatisticField": "acres", "statisticType": "sum", "outStatisticFieldName": "value"}, 0,
+              {"type": "filterGroup", "condition": "AND", "rules": [{"type": "filterRule", "field": {"name": "cause", "type": "string"},
+                                                                    "operator": "equal", "constraint": {"type": "value", "value": SAME_TEXT}}]})}
+CAPTIONS = {"area": ("AVA as proposed", "sq mi (GRS 1980)"), "steps": ("Steps shown", f"of {len(steps)}"),
+            "changed": ("Steps reworded", "from Notice No. 243"),
+            "places": (f"Big differences ({STATS['big_m']:.0f} m+)", "from the Map Explorer polygon"),
+            "acres": ("Acres between the boundaries", "same text, drawn differently")}
+PHONE_CAPTIONS = {"area": ("AVA area", "sq mi"), "changed": ("Steps reworded", "from Notice No. 243"),
+                  "places": ("Big differences", f"{STATS['big_m']:.0f} m+ apart")}   # a third of a phone's width each: short
+indicators = [indicator(IND[k], k, CAPTIONS) for k in IND]
 
-zoom_and_flash = [{"type": "flashGeometry", "targets": [target(MAP, "geometry")]}, {"type": "zoom", "targets": [target(MAP, "geometry")]}]
+def zoom_and_flash(map_id):
+    return [{"type": "flashGeometry", "targets": [target(map_id, "geometry")]}, {"type": "zoom", "targets": [target(map_id, "geometry")]}]
+def map_widget(id_, phone=False, layers=()):
+    """the web map 4a. The phone's: no measure tool, a locate button (is this place in the AVA?), and no selection by
+    tapping (nothing on the phone listens to it); pop-ups stay on, to tell what a tapped line or area is."""
+    return widget(id_, "Map", "mapWidget", itemId=wm.id, flashRepeats=3, linkedMapWidgetIds=[], pointZoomScale=10000,
+                  mapTools=[{"type": "mapContentsTool"}, {"type": "legendTool"}], showMeasureTool=not phone, showNavigation=True,
+                  showPanRotate=False, showLocate=phone, showCompass=False, showPopup=True, scalebarStyle="line", editingEnabled=False,
+                  selectionColor="#00b4ff", highlightColor="#00b4ff", trackedFeatureColor="#0000ff", trackedFeatureRadius=100,
+                  **({"layers": list(layers)} if layers else {}),
+                  selectTool={"type": "selectTool", "clickToSelect": not phone, "advanceSketchTools": []})
+STEP_ITEM = (f'<p><span style="font-size:13px">{{field/narrative}}</span></p>'
+             f'<p><span style="font-size:11px;color:{INK}">{{field/change}}</span><span style="font-size:11px;color:#777"> &middot; '
+             "{field/quad} quad &middot; {field/length_m} m</span></p>")
+STEP_PHONE = ('<p><span style="font-size:15px">{field/narrative}</span></p>'   # the phone has no details panel: the whole record
+              f'<p><span style="font-size:13px;color:{INK}">{{field/change}}</span></p>'
+              '<p><span style="font-size:13px;color:#555">Ends at {field/endpoint} &middot; {field/quad} quad &middot; '
+              "{field/length_m} m &middot; {field/txt_source}</span></p>")
+def steps_list(id_, map_id, details=None, phone=False):
+    filter_details = [{"type": "filter", "targets": [target(details + "#main", selection=True)]}] if details else []
+    return widget(id_, "Steps", "listWidget", datasets=[dataset(LINE_OP, orderByFields=["step ASC"], maxFeatures=200)],
+                  events=[{"type": "selectionChanged", "actions": filter_details + zoom_and_flash(map_id)}],
+                  selectionMode="single", iconType="none", showFilter=True, separatorColor="#dddddd", selectionColor="#f3e3e6",
+                  text=STEP_PHONE if phone else STEP_ITEM,
+                  **({"topCaption": '<p style="font-size:14px;margin:4px 6px">Tap a step to show it on the map.</p>'} if phone else {}))
+def text_widget(id_, name, text):
+    return widget(id_, name, "richTextWidget", datasets=[], valueType="none", showFeatureMenu=False, text=text)
 widgets = [
-    widget(MAP, "Map", "mapWidget", itemId=wm.id, flashRepeats=3, linkedMapWidgetIds=[], pointZoomScale=10000,
-           mapTools=[{"type": "mapContentsTool"}, {"type": "legendTool"}], showMeasureTool=True, showNavigation=True,
-           showPanRotate=False, showLocate=False, showCompass=False, showPopup=True, scalebarStyle="line", editingEnabled=False,
-           selectionColor="#00b4ff", highlightColor="#00b4ff", trackedFeatureColor="#0000ff", trackedFeatureRadius=100,
-           layers=[{"type": "layer", "dataSource": ds(LINE_OP), "events": [{"type": "selectionChanged", "actions": [   # the list's selection gates the details
-               {"type": "filter", "targets": [target(DETAILS + "#main")]}]}]}],
-           selectTool={"type": "selectTool", "clickToSelect": True, "advanceSketchTools": []}),
-    widget(LIST, "Steps", "listWidget", datasets=[dataset(LINE_OP, orderByFields=["step ASC"], maxFeatures=200)],
-           events=[{"type": "selectionChanged", "actions": [{"type": "filter", "targets": [target(DETAILS + "#main", selection=True)]}] + zoom_and_flash}],
-           selectionMode="single", iconType="none", showFilter=True, separatorColor="#dddddd", selectionColor="#f3e3e6",
-           text=(f'<p><span style="font-size:13px">{{field/narrative}}</span></p>'
-                 f'<p><span style="font-size:11px;color:{INK}">{{field/change}}</span><span style="font-size:11px;color:#777"> &middot; '
-                 "{field/quad} quad &middot; {field/length_m} m</span></p>")),
+    map_widget(MAP, layers=[{"type": "layer", "dataSource": ds(LINE_OP), "events": [{"type": "selectionChanged", "actions": [   # the list's selection gates the details
+        {"type": "filter", "targets": [target(DETAILS + "#main")]}]}]}]),
+    steps_list(LIST, MAP, details=DETAILS),
     widget(DIFFS, "Big differences from the Map Explorer polygon", "listWidget", datasets=[dataset(RINGS_OP, orderByFields=["n ASC"], maxFeatures=100)],
-           events=[{"type": "selectionChanged", "actions": zoom_and_flash}], selectionMode="single", iconType="none", showFilter=False,
+           events=[{"type": "selectionChanged", "actions": zoom_and_flash(MAP)}], selectionMode="single", iconType="none", showFilter=False,
            separatorColor="#dddddd", selectionColor="#fdebd9",
            text=('<p><span style="font-size:13px"><strong>#{field/n}</strong> &middot; step(s) {field/steps}: up to {field/max_apart_m} m apart '
                  "over {field/length_m} m</span></p>"
@@ -269,7 +355,7 @@ widgets = [
                  "in the proposed revision only: {field/revision_only_acres} ac &middot; in the Map Explorer polygon only: "
                  "{field/map_explorer_only_acres} ac</span></p>")),
     widget(ALLD, "All differences between the two lines", "listWidget", datasets=[dataset(ALL_OP, orderByFields=["acres DESC"], maxFeatures=2000)],
-           events=[{"type": "selectionChanged", "actions": zoom_and_flash}], selectionMode="single", iconType="none", showFilter=False,
+           events=[{"type": "selectionChanged", "actions": zoom_and_flash(MAP)}], selectionMode="single", iconType="none", showFilter=False,
            separatorColor="#dddddd", selectionColor="#e8eef9",
            topCaption=(f'<p style="font-size:12px;margin:4px 6px">Every piece of land in one line and not the other, largest first. '
                        f"Same text drawn differently: <strong>{same['revision_only_acres']:,.0f} acres</strong> in the proposed revision only and "
@@ -281,31 +367,48 @@ widgets = [
                  "&middot; up to {field/widest_m} m apart</span></p>")),
     widget(DETAILS, "Selected step", "detailsWidget", datasets=[dataset(LINE_OP, maxFeatures=1)], mapWidgetId=MAP, showTitle=True,
            showContents=True, showMedia=True, showAttachments=False, showFeatureMenu=False),
-    widget(TXT["documents"], "Documents", "richTextWidget", datasets=[], valueType="none", showFeatureMenu=False, text=documents_html),
-    widget(TXT["quads"], "USGS quadrangles", "richTextWidget", datasets=[], valueType="none", showFeatureMenu=False, text=quads_html),
-    widget(TXT["about"], "About", "richTextWidget", datasets=[], valueType="none", showFeatureMenu=False, text=about_html),
-    widget(TXT["grit"], "The change near Grit", "richTextWidget", datasets=[], valueType="none", showFeatureMenu=False, text=grit_html),
+    text_widget(TXT["documents"], "Documents", documents_html),
+    text_widget(TXT["quads"], "USGS quadrangles", quads_html),
+    text_widget(TXT["about"], "About", about_html),
+    text_widget(TXT["grit"], "The change near Grit", grit_html),
     *indicators]
+phone_widgets = [map_widget(M_MAP, phone=True), *(indicator(M_IND[k], k, PHONE_CAPTIONS) for k in M_IND),
+                 steps_list(M_LIST, M_MAP, phone=True), text_widget(M_TXT["about"], "What changes", about_phone),
+                 text_widget(M_TXT["grit"], "The change near Grit", grit_phone), text_widget(M_TXT["documents"], "Documents", documents_phone)]
 
-selector = {"id": SELECT, "dashboardItemType": "selector", "name": "Steps to show", "noDataState": {}, "noFilterState": {},
+CHOICES = (("1", "Petition wording near Grit", "petition wording"), ("2", "New: around the granite lobe", "NEW"),
+           ("4", "Corrections to Notice No. 243's wording", FIX), ("3", "Unchanged from Notice No. 243", "unchanged"))
+for s in steps:   # the filter is "contains": every step in exactly one choice, matched with or without case
+    for fold in (str, str.lower):
+        hits = [value for _, _, value in CHOICES if fold(value) in fold(s["change"] or "")]
+        assert len(hits) == 1, ("step selector", s["step"], s["change"], hits)
+def step_selector(id_, targets, phone=False):   # which steps to show, by the `change` field; on the phone in the drawer
+    return {"id": id_, "dashboardItemType": "selector", "name": "Steps to show", "noDataState": {}, "noFilterState": {},
             "focusModeEnabled": False, "label": "Steps", "placeholderText": f"All {len(steps)} steps", "showActionButtons": True,
             "type": "categorySelectorWidget", "category": {"type": "static"}, "selection": {"operator": "contains", "type": "multiple"},
-            "showFilter": False, "displayType": "list", "maxSize": "compact", "presentationMode": "dropdown",
+            "showFilter": False, "displayType": "list", "maxSize": "none" if phone else "compact",
+            "presentationMode": "drilldown" if phone else "dropdown",
             "datasets": [{"type": "staticDataset", "name": "main", "data": {"type": "staticValues", "dataType": "string", "values": [
-                {"type": "labelledValue", "id": "1", "label": "Petition wording near Grit", "value": "petition wording"},
-                {"type": "labelledValue", "id": "2", "label": "New: around the granite lobe", "value": "NEW"},
-                {"type": "labelledValue", "id": "3", "label": "Unchanged from Notice No. 243", "value": "unchanged"}]}}],
+                {"type": "labelledValue", "id": i, "label": label, "value": value} for i, label, value in CHOICES]}}],
             "events": [{"type": "selectionChanged", "actions": [{"type": "filter", "targets": [
-                target(t, fieldMap=[{"sourceName": "filterField", "targetName": "change"}])
-                for t in (LIST + "#main", f"{MAP}#{LINE_OP}", IND["steps"] + "#main", IND["changed"] + "#main")]}]}]}
+                target(t, fieldMap=[{"sourceName": "filterField", "targetName": "change"}]) for t in targets]}]}]}
+selector = step_selector(SELECT, (LIST + "#main", f"{MAP}#{LINE_OP}", IND["steps"] + "#main", IND["changed"] + "#main"))
+phone_selector = step_selector(M_SELECT, (M_LIST + "#main", f"{M_MAP}#{LINE_OP}", M_IND["changed"] + "#main"), phone=True)
 
 COLS = (0.3, 0.42, 0.28)    # left, map, right: shares of the width (the left was 0.27, the map 0.45: QA #45)
 ROWS = (0.2, 0.18, 0.62)    # left column: indicators, indicators, tabs: shares of the height (were 0.16, 0.15, 0.69)
-assert abs(sum(COLS) - 1) < 1e-9 and abs(sum(ROWS) - 1) < 1e-9
+PHONE_ROWS = (0.12, 0.52, 0.36)   # the phone, top to bottom: indicators, map, tabs: shares of the screen below the header
+assert abs(sum(COLS) - 1) < 1e-9 and abs(sum(ROWS) - 1) < 1e-9 and abs(sum(PHONE_ROWS) - 1) < 1e-9
 def item(id_, w=1, h=1, **kw):
     return {"type": "itemLayoutElement", "id": id_, "width": w, "height": h, **kw}
-def stack(orientation, elements, name, w=1, h=1):
-    return {"type": "stackLayoutElement", "orientation": orientation, "id": wid("layout-" + name), "width": w, "height": h, "elements": elements}
+def stack(orientation, elements, name, w=1, h=1, ids=wid):
+    return {"type": "stackLayoutElement", "orientation": orientation, "id": ids("layout-" + name), "width": w, "height": h, "elements": elements}
+phone_layout = {"type": "dockingLayout", "rootElement": stack("row", [   # one column: rows top to bottom
+    stack("col", [item(M_IND[k], 1 / 3) for k in M_IND], "indicators", h=PHONE_ROWS[0], ids=mwid),
+    item(M_MAP, h=PHONE_ROWS[1]),
+    {"type": "tabsLayoutElement", "id": mwid("layout-tabs"), "width": 1, "height": PHONE_ROWS[2], "elements": [
+        item(M_LIST, tabName="Steps"), item(M_TXT["about"], tabName="What changes"), item(M_TXT["grit"], tabName="Grit"),
+        item(M_TXT["documents"], tabName="Documents")]}], "root", ids=mwid)}
 layout = {"type": "dockingLayout", "rootElement": stack("col", [
     stack("row", [
         stack("col", [item(IND[k], 1 / 3) for k in ("area", "steps", "changed")], "indicators", h=ROWS[0]),
@@ -320,12 +423,64 @@ layout = {"type": "dockingLayout", "rootElement": stack("col", [
             item(LIST, tabName="Steps"), item(DIFFS, tabName="Big differences"), item(ALLD, tabName="All differences")]},
         item(DETAILS, h=0.4)], "right", w=COLS[2])], "root")}
 
-header = {"type": "header", "dashboardItemType": "panel", "title": "Hickory Sands District AVA: the boundary as proposed to TTB",
-          "subtitle": "Docket No. TTB-2026-0005, Notice No. 243 (91 FR 52576) - changes discussed with TTB on October 15, 2026 - "
-                      "prepared by Dan McLaughlin, Robert Clay Vineyards (petitioner)",
-          "textColor": "#ffffff", "titleTextColor": "#ffffff", "backgroundColor": WINE, "logoSize": "small",
-          "backgroundImageSizing": "fit-height", "normalBackgroundImagePlacement": "left", "horizontalBackgroundImagePlacement": "top",
-          "showSignOutMenu": False, "subtitlePlacement": "below", "showMargin": True, "menuContents": [], "selectors": [selector]}
+def header(title, subtitle, phone=False):   # a phone header holds text and images only: its selector is in the drawer
+    return {"type": "header", "dashboardItemType": "panel", "title": title, "subtitle": subtitle,
+            "textColor": "#ffffff", "titleTextColor": "#ffffff", "backgroundColor": WINE, "logoSize": "small",
+            "backgroundImageSizing": "fit-height", "normalBackgroundImagePlacement": "left", "horizontalBackgroundImagePlacement": "top",
+            "showSignOutMenu": False, "subtitlePlacement": "below", "showMargin": not phone, "menuContents": [],
+            **({} if phone else {"selectors": [selector]})}
+desktop_view = {"type": "desktop", "layout": layout, "widgets": widgets,
+                "header": header("Hickory Sands District AVA: the boundary as proposed to TTB",
+                                 "Docket No. TTB-2026-0005, Notice No. 243 (91 FR 52576) - changes discussed with TTB on October 15, 2026 - "
+                                 "prepared by Dan McLaughlin, Robert Clay Vineyards (petitioner)"),
+                "settings": {"allowElementResizing": True, "allowElementExpansion": True, "allowReset": True}}
+phone_view = {"type": "mobile", "layout": phone_layout, "widgets": phone_widgets,
+              "header": header("Hickory Sands District AVA: proposed boundary", "Notice No. 243, changes discussed with TTB Oct. 15, 2026",
+                               phone=True),
+              "drawer": {"type": "drawer", "dashboardItemType": "panel", "selectors": [phone_selector]},
+              "settings": {"allowElementResizing": False, "allowElementExpansion": True, "allowReset": False}}
+
+def check_views(d):
+    """Hard checks on the two layouts before anything is sent: in each view every element is placed once and every
+    action, filter and map link points at an element of that same view (a phone action aimed at a desktop element
+    would silently do nothing); the two views share no id; elementMappings pairs every phone element with a desktop
+    element of the same type, one to one."""
+    seen = {}
+    for name in ("desktopView", "mobileView"):
+        v = d[name]
+        widgets_ = {w["id"]: w for w in v["widgets"]}
+        selectors = {s["id"]: s for p in ("header", "sidebar", "drawer") for s in v.get(p, {}).get("selectors", [])}
+        placed, boxes = [], []
+        def walk(e):
+            if e["type"] == "itemLayoutElement":
+                placed.append(e["id"])
+                return
+            boxes.append(e["id"])
+            if e["type"] == "stackLayoutElement":   # a stack's shares add up to 1
+                assert abs(sum(c["width" if e["orientation"] == "col" else "height"] for c in e["elements"]) - 1) < 1e-9, (name, e["id"])
+            for c in e["elements"]:
+                walk(c)
+        walk(v["layout"]["rootElement"])
+        assert sorted(placed) == sorted(widgets_), (name, set(placed) ^ set(widgets_))
+        ids = [*widgets_, *selectors, *boxes]
+        assert len(ids) == len(set(ids)), (name, "an id is used twice")
+        for el in [*widgets_.values(), *selectors.values()]:
+            for t in re.findall(r'"targetId": "([^"]*)"', json.dumps(el)):
+                base, _, part = t.partition("#")
+                assert base in widgets_, (name, el["name"], "targets an element not in this view", t)
+                if part == "main":
+                    assert any(x["name"] == "main" for x in widgets_[base].get("datasets", [])), (name, t)
+                elif part:
+                    assert widgets_[base]["type"] == "mapWidget" and part in ops, (name, t)
+            if "mapWidgetId" in el:
+                assert el["mapWidgetId"] in widgets_, (name, el["name"], "a map not in this view")
+        seen[name] = ({**widgets_, **selectors}, set(ids))
+    (desk, desk_ids), (phone, phone_ids) = seen["desktopView"], seen["mobileView"]
+    assert not desk_ids & phone_ids, "the desktop and phone views share an id"
+    m = d["elementMappings"]
+    assert len(set(m.values())) == len(m) and set(m.values()) == set(phone), "every phone element is the twin of one desktop element"
+    assert all(desk[a]["type"] == phone[b]["type"] for a, b in m.items()), "a twin of another type"
+    assert "selectors" not in d["mobileView"]["header"], "on a phone the header holds text and images only"
 
 dashboard = {"version": "5.1.0", "authoringApp": "ArcGIS Dashboards", "authoringAppVersion": "5.1.0", "maxPaginationRecords": 50000,
              "maxChartRecords": 10000, "timeZone": "system", "theme": {"id": "light", "type": "defined"},
@@ -333,9 +488,8 @@ dashboard = {"version": "5.1.0", "authoringApp": "ArcGIS Dashboards", "authoring
                  ("yotta", "Y", True), ("zeta", "Z", True), ("exa", "E", True), ("peta", "P", True), ("tera", "T", True),
                  ("giga", "G", True), ("mega", "M", True), ("kilo", "k", True), ("base", "", True), ("deci", "d", False),
                  ("centi", "c", False), ("milli", "m", False), ("micro", "µ", False), ("nano", "n", False))],
-             "desktopView": {"type": "desktop", "layout": layout, "widgets": widgets, "header": header,
-                             "settings": {"allowElementResizing": True, "allowElementExpansion": True, "allowReset": True}},
-             "elementMappings": {}}
+             "desktopView": desktop_view, "mobileView": phone_view, "elementMappings": TWINS}
+check_views(dashboard)
 text = json.dumps(dashboard)
 assert "agree" not in text.lower()
 

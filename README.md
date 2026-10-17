@@ -97,8 +97,9 @@ Both are published as map layers and listed on the dashboard.
 
 ## Build it yourself
 
-Requirements: macOS with [Homebrew](https://brew.sh), and network access the first time. The build installs the rest
-(GDAL, Python 3.14, Google Chrome) and keeps every Python package in the project's own `.venv`.
+Requirements: macOS or Linux with [Homebrew](https://brew.sh) (and Google Chrome on Linux), and network access the first
+time. The build installs the rest (GDAL, poppler, Python 3.14, and Chrome on macOS) and keeps every Python package in the
+project's own `.venv`.
 
 ```
 ./build.sh            # everything: tools, audit, quads, trace, boundary, checks, documents, quad sheets, package
@@ -113,7 +114,7 @@ To change the boundary, change only the inputs in `resources/boundary/` (a pin, 
 texts) and run `./build.sh`; every figure in the documents and the ArcGIS descriptions comes from the build.
 [BUILD.md](BUILD.md) has the stages, the layout, the security checks on Python packages, and the commit hooks.
 
-Every pull request is checked on GitHub (the commit hooks, and the whole build on a Mac when the build's inputs
+Every pull request is checked on GitHub (the commit hooks, and the whole build on Linux when the build's inputs
 change), and each release (a `v...` tag) is built on GitHub and attached to the repository's Releases page; see
 [BUILD.md](BUILD.md#github-actions-and-releases).
 

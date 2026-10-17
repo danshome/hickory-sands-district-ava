@@ -19,4 +19,4 @@ cp gis/shapefiles/*.zip "$P"/4_GIS/shapefiles/
 cp quads/*_geo.pdf quads/*_geo.tif "$P"/5_USGS-quadrangles-with-boundary/
 cmp -s "$D"/TTB-Notice-243-91FR52576-docket-TTB-2026-0005-0001.pdf ttb-source-check-2026-10-15/regs-TTB-2026-0005-0001.pdf   # TTB's file, unchanged
 (cd pkg && rm -f "../$NAME.zip" && zip -q -r -X "../$NAME.zip" "$NAME" -x '*.DS_Store')
-echo "package: $(find "$P" -type f | wc -l | tr -d ' ') files; $NAME.zip $(stat -f %z "$NAME.zip") bytes"
+echo "package: $(find "$P" -type f | wc -l | tr -d ' ') files; $NAME.zip $(wc -c < "$NAME.zip" | tr -d ' ') bytes"

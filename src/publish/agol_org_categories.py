@@ -1,7 +1,13 @@
-"""Organization content categories for every item in Dan's folder "Hickory Sands District - Final Proposed Boundary and
-Narrative" (the group has its own categories, set by agol_publish.py / agol_layer.py). Matched by the item title's number.
-Sets each item's full list, so re-running is safe. categories() needs no sign-in (the publish dry run, agol_dryrun.py,
-checks them). Sign-in: GIS(profile="hsd"). Run by ./build.sh publish (or .venv/bin/python src/publish/agol_org_categories.py)
+"""Sets the organization's content categories of every item in Dan's folder.
+
+The folder is "Hickory Sands District - Final Proposed Boundary and
+Narrative"; the group has its own categories, set by agol_publish.py and
+agol_layer.py. Each item's categories are matched by its title's number. Each
+item's full list is set, so re-running is safe. categories() needs no sign-in
+(the publish dry run, agol_dryrun.py, checks them).
+
+Sign-in: GIS(profile="hsd"). Run by ./build.sh publish (or
+.venv/bin/python src/publish/agol_org_categories.py).
 """
 
 import json
@@ -40,11 +46,23 @@ RULES = [
 
 
 def categories(title):
-    """an item's organization categories, by its title's number"""
-    return [AVA] + next(c for prefix, c in RULES if title.startswith(prefix))
+    """Returns an item's organization categories, by its title's number.
+
+    Args:
+        title: The item's title ("0 Dashboard - ...", "4b Proposed ...").
+
+    Returns:
+        The AVA's category, then those of the first rule in RULES whose prefix
+        starts the title.
+    """
+    return [AVA, *next(c for prefix, c in RULES if title.startswith(prefix))]
 
 
 def main():
+    """Signs in and sets the categories of every item in the folder at once.
+
+    Prints how many items were categorized, and the first few failures.
+    """
     gis = GIS(profile="hsd")
     items = list(gis.content.folders.get(FOLDER).list())
     payload = []

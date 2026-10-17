@@ -15,3 +15,6 @@ pillow                  # quad sheets, notice copy
 pypdf                   # GeoPDF layers on the quad sheets
 pymupdf                 # TTB notice copy with the changes highlighted; PDF text
 arcgis                  # ./build.sh publish (ArcGIS Online). Esri's arcgis caps dask, pyarrow and puremagic below their latest
+# Linux only (keyring, from arcgis, needs them there); listed for every platform so the one lock serves macOS and Linux
+secretstorage
+jeepney

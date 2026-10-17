@@ -9,13 +9,15 @@
 #   ./build.sh upgrade    every Python package to its latest compatible version (requirements*.in), audited, reinstalled
 #   ./build.sh clean      remove target/ and dist/ (keeps .venv and the downloaded quads)
 #   ./build.sh distclean  also remove .venv
-#   ./build.sh publish    push the built package to ArcGIS Online (Dan's account; run only when you mean it)
+#   ./build.sh publish    push the built package to ArcGIS Online (Dan's account; run only when you mean it), then check-live
+#   ./build.sh check-live check the public ArcGIS Online site anonymously, as TTB sees it, against the build (read-only)
 #
-# No manual steps: missing tools are installed with Homebrew (GDAL, Python 3.14, Google Chrome); every Python package in
-# the lock files is checked against the OSV vulnerability database before anything is installed, then installed into the
-# project's .venv from requirements.txt with every download's SHA-256 checked (nothing global); and any missing or altered USGS quad is downloaded and
-# checked against resources/quads/quads-manifest.csv. Inputs: src/ (code), resources/ (boundary decisions, TTB files,
-# quads), documents/ (README templates), LICENSE.txt. Everything made along the way: target/. The distribution: dist/.
+# No manual steps, on macOS or Linux: missing tools are installed with Homebrew (GDAL, poppler, Python 3.14; on macOS
+# also Google Chrome, which Linux needs installed); every Python package in the lock files is checked against the OSV
+# vulnerability database before anything is installed, then installed into the project's .venv from requirements.txt
+# with every download's SHA-256 checked (nothing global); and any missing or altered USGS quad is downloaded and checked
+# against resources/quads/quads-manifest.csv. Inputs: src/ (code), resources/ (boundary decisions, TTB files, quads),
+# documents/ (README templates), LICENSE.txt. Everything made along the way: target/. The distribution: dist/.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")" && pwd)"; cd "$ROOT"
 NAME=Hickory-Sands-District-AVA_boundary-as-proposed-2026-10-15
@@ -23,8 +25,12 @@ STEM=hickory-sands-district-boundary-proposed-2026-10-15
 TARGET="$ROOT/target"; WORK="$TARGET/work"; DIST="$ROOT/dist"; export HSD_WORK="$WORK"
 mkdir -p "$TARGET/tmp"; export TMPDIR="$TARGET/tmp" PIP_CACHE_DIR="$TARGET/pip-cache"   # temp files and downloads stay in target/
 VENV="$ROOT/.venv"; PY="$VENV/bin/python"
-CHROME="${HSD_CHROME:-/Applications/Google Chrome.app/Contents/MacOS/Google Chrome}"
+OS="$(uname -s)"                        # Darwin (Dan's Mac) or Linux (GitHub Actions); the tools come from Homebrew on both
+if [ "$OS" = Darwin ]; then CHROME="${HSD_CHROME:-/Applications/Google Chrome.app/Contents/MacOS/Google Chrome}"
+else CHROME="${HSD_CHROME:-$(command -v google-chrome || command -v google-chrome-stable || echo /usr/bin/google-chrome)}"; fi
 step() { printf '\n== %s\n' "$*"; }
+sha256() { if command -v shasum >/dev/null; then shasum -a 256 "$@"; else sha256sum "$@"; fi; }   # same output either way
+fsize() { wc -c < "$1" | tr -d ' '; }                                                           # bytes (BSD and GNU)
 run() { "$PY" -E -s -B "$@"; }          # the project's Python only; -B: no __pycache__ in src/
 
 need_brew() { command -v brew >/dev/null || { echo "Homebrew is needed to install $1: https://brew.sh"; exit 1; }; }
@@ -35,10 +41,13 @@ env_setup() {
     command -v pdftotext >/dev/null || { need_brew poppler; brew install poppler; }     # the compare-text files (GDAL brings it)
     local base="${HSD_PYTHON:-$(brew --prefix 2>/dev/null || echo /opt/homebrew)/bin/python3.14}"
     [ -x "$base" ] || { need_brew "Python 3.14"; brew install python@3.14; }
-    [ -x "$CHROME" ] || { need_brew "Google Chrome"; brew install --cask google-chrome; }
+    if [ ! -x "$CHROME" ]; then                                                    # Homebrew casks are macOS-only
+        [ "$OS" = Darwin ] || { echo "Google Chrome is needed to print the PDFs: install it, or set HSD_CHROME"; exit 1; }
+        need_brew "Google Chrome"; brew install --cask google-chrome
+    fi
     local want; want="$(sed -n 's/^gdal==\([^ ]*\).*/\1/Ip' requirements.txt)"
     [ "$want" = "$(gdal-config --version)" ] || { echo "Homebrew's GDAL is $(gdal-config --version) but requirements.in pins GDAL==$want: set it to match, then ./build.sh upgrade"; exit 1; }
-    local lock; lock="$(cat requirements.txt requirements-dev.txt | shasum -a 256 | cut -c1-64)"
+    local lock; lock="$(cat requirements.txt requirements-dev.txt | sha256 | cut -c1-64)"
     local installed=""; [ -f "$VENV/.lock-sha256" ] && installed="$(cat "$VENV/.lock-sha256")"
     local fresh=0
     if [ "$installed" != "$lock" ] || [ ! -x "$PY" ]; then                         # the lock changed: a fresh .venv
@@ -132,8 +141,11 @@ documents() {
     run src/documents/make_docs.py >/dev/null
     run src/documents/make_compare.py >/dev/null
     for S in $S1 $S2 Hickory-Sands-District-read-me-first-2026-10-15; do
-        "$CHROME" --headless=new --disable-gpu --no-pdf-header-footer --print-to-pdf="$D/$S.pdf" "file://$D/$S.html" 2>/dev/null
-        [ -s "$D/$S.pdf" ] || { echo "Chrome did not write $S.pdf"; exit 1; }
+        # shellcheck disable=SC2086   # HSD_CHROME_FLAGS: extra options, split on purpose (GitHub's Linux runners set them)
+        # HSD_CHROME_TMPDIR: a short temp dir for Chrome's socket where target/tmp's path is too long for one (Linux: 108 bytes)
+        TMPDIR="${HSD_CHROME_TMPDIR:-$TMPDIR}" "$CHROME" --headless=new --disable-gpu --no-pdf-header-footer ${HSD_CHROME_FLAGS:-} \
+            --print-to-pdf="$D/$S.pdf" "file://$D/$S.html" 2>"$WORK/chrome.log" || true
+        [ -s "$D/$S.pdf" ] || { echo "Chrome did not write $S.pdf:"; tail -n 20 "$WORK/chrome.log"; exit 1; }
     done
     run src/documents/html2docx.py "$D/$S1.html" "$D/$S1.docx" "Hickory Sands District AVA: regulatory text as proposed to TTB" "Dan McLaughlin" "Hickory Sands District AVA - boundary description as proposed to TTB (Oct. 15, 2026)"
     run src/documents/html2docx.py "$D/$S2.html" "$D/$S2.docx" "Hickory Sands District AVA: changes to TTB's published boundary description" "Dan McLaughlin" "Hickory Sands District AVA - changes to TTB's published boundary description (Oct. 15, 2026)"
@@ -155,16 +167,18 @@ package() {
     rm -rf "$DIST"; mkdir -p "$DIST"
     cp "$WORK/$NAME.zip" "$DIST"/
     cp "$WORK/README.txt" "$DIST/$NAME-README.txt"
-    ( cd "$DIST" && shasum -a 256 "$NAME.zip" "$NAME-README.txt" > SHA256SUMS.txt )
+    ( cd "$DIST" && sha256 "$NAME.zip" "$NAME-README.txt" > SHA256SUMS.txt )
+    run src/checks/check_outputs.py "$WORK" "$DIST" | tee "$WORK/review/output-checks.txt"   # hard: what reaches TTB (warnings do not stop)
     {
         echo "Hickory Sands District AVA - boundary as proposed to TTB: build report"
         echo "built      $(date '+%Y-%m-%d %H:%M %Z') on $(hostname -s) ($(uname -s), GDAL $(gdal-config --version), $(pdftotext -v 2>&1 | head -n 1))"
         echo "source     git $(git rev-parse --short HEAD 2>/dev/null || echo '?')$(git diff --quiet 2>/dev/null || echo ' (with uncommitted changes)')"
         run -c "import json; d = json.load(open('$WORK/agreed-steps.json')); print('area       %.3f sq mi (GRS 1980), %d steps' % (d['sqmi'], len(d['steps'])))"
         run src/checks/check_build.py "$WORK/gis" | sed 's/^/check      /'
+        grep -E '^(output checks|WARNING)' "$WORK/review/output-checks.txt" | sed 's/^/check      /'
         [ -f "$WORK/review/tips-short-EPSG4269.geojson" ] && run -c "import json; print('tips       %d tips of contours/creeks the line stops short of (report)' % len(json.load(open('$WORK/review/tips-short-EPSG4269.geojson'))['features']))"
         [ -f "$WORK/review/ttb-diff-stats.json" ] && run -c "import json; s = json.load(open('$WORK/review/ttb-diff-stats.json')); a = s['areas']; print('comparison %d big differences from the AVA Map Explorer polygon (lines %.0f m or more apart); %d pieces of land between the two lines, from the same text drawn differently %.0f acres in the proposed revision only and %.0f in the Map Explorer polygon only (reports: target/work/review/)' % (s['big'], s['big_m'], sum(v['pieces'] for v in a.values()), a['drawing']['revision_only_acres'], a['drawing']['map_explorer_only_acres']))"
-        echo "package    $NAME.zip  $(stat -f %z "$DIST/$NAME.zip") bytes, $(unzip -Z1 "$DIST/$NAME.zip" | grep -v '/$' | wc -l | tr -d ' ') files"
+        echo "package    $NAME.zip  $(fsize "$DIST/$NAME.zip") bytes, $(unzip -Z1 "$DIST/$NAME.zip" | grep -v '/$' | wc -l | tr -d ' ') files"
     } | tee "$DIST/build-report.txt"
 }
 
@@ -175,7 +189,13 @@ publish() {
     run src/publish/agol_layer.py
     run src/publish/agol_dashboard.py        # after the layers: it finds the map and layers by title
     run src/publish/agol_org_categories.py   # it categorizes the items the three above put in the folder
-    run src/publish/agol_share.py            # last: everything in the folder, and the group, public (Dan, 2026-10-16)
+    run src/publish/agol_share.py            # everything in the folder, and the group, public (Dan, 2026-10-16)
+    check_live                               # last: the public site as TTB sees it, against this build
+}
+
+check_live() {
+    step "the public site, checked anonymously against the build (security, sharing, links, figures, files)"
+    run src/publish/agol_check.py
 }
 
 case "${1:-all}" in
@@ -184,9 +204,10 @@ case "${1:-all}" in
     clean)     rm -rf "$TARGET" "$DIST"; echo "removed target/ and dist/" ;;
     distclean) rm -rf "$TARGET" "$DIST" "$VENV"; echo "removed target/, dist/ and .venv/" ;;
     publish)   env_setup; publish ;;
+    check-live) env_setup; check_live ;;
     audit)     env_setup; audit ;;
     upgrade)   upgrade ;;
     lint)      env_setup; step "pre-commit hooks on every file"; PRE_COMMIT_HOME="$TARGET/pre-commit" "$VENV/bin/pre-commit" run --all-files ;;
     test)      env_setup; step "unit tests (tests/, pytest)"; run -m pytest -q tests ;;
-    *)         echo "usage: ./build.sh [all|env|lint|test|audit|upgrade|clean|distclean|publish]"; exit 2 ;;
+    *)         echo "usage: ./build.sh [all|env|lint|test|audit|upgrade|clean|distclean|publish|check-live]"; exit 2 ;;
 esac

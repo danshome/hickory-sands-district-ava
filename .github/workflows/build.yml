@@ -1,8 +1,9 @@
-# The whole build, `./build.sh`, on one of GitHub's Mac machines: the same Homebrew tools (GDAL, PROJ with the NADCON5
-# grid, poppler, Python 3.14) and the same system fonts as Dan's Mac, so the documents come out the same. Runs on pull
+# The whole build, `./build.sh`, on one of GitHub's Linux machines (Dan, 2026-10-17: Linux, not paid Mac minutes), with
+# the same Homebrew tools as Dan's Mac (GDAL, PROJ with the NADCON5 grid, poppler, Python 3.14); the PDFs use the
+# Liberation fonts, which have the same character widths as Times New Roman, Arial and Courier New. Runs on pull
 # requests that touch what the build reads (not src/publish/, which only ArcGIS publishing uses), and by hand
-# (Actions > build > Run workflow). The package zip itself is
-# not kept here (about 290 MB); the build report, checksums and GIS lines are, for comparing with a local build.
+# (Actions > build > Run workflow). The package zip itself is not kept here (about 290 MB); the build report,
+# checksums and GIS lines are, for comparing with a local build.
 # Releases are made by release.yml.
 name: build
 on:
@@ -25,15 +26,38 @@ concurrency:
   cancel-in-progress: true
 jobs:
   build:
-    name: ./build.sh (macOS)
-    runs-on: macos-15
+    name: ./build.sh (Linux)
+    runs-on: ubuntu-24.04
     timeout-minutes: 120
     env:
       HOMEBREW_NO_INSTALL_CLEANUP: "1"
+      HOMEBREW_NO_ENV_HINTS: "1"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           persist-credentials: false
+      - name: Homebrew's tools from the last run (installing them takes about 13 minutes)
+        id: brew-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        with:
+          path: /home/linuxbrew/.linuxbrew
+          key: linuxbrew-gdal-poppler-python314-${{ hashFiles('requirements.txt') }}
+      - name: Homebrew's tools, as on the Mac (GDAL, PROJ with the NADCON5 grid, poppler, Python 3.14), fonts, Chrome
+        run: |
+          echo /home/linuxbrew/.linuxbrew/bin >> "$GITHUB_PATH"
+          echo /home/linuxbrew/.linuxbrew/sbin >> "$GITHUB_PATH"
+          /home/linuxbrew/.linuxbrew/bin/brew install --quiet gdal poppler python@3.14
+          dpkg -s fonts-liberation >/dev/null 2>&1 || { sudo apt-get update -q && sudo apt-get install -y -q fonts-liberation; }
+          echo "HSD_CHROME=$(command -v google-chrome)" >> "$GITHUB_ENV"
+          # headless Chrome prints only the build's own local HTML here; Ubuntu 24.04 blocks its sandbox, /dev/shm is small
+          echo "HSD_CHROME_FLAGS=--no-sandbox --disable-dev-shm-usage" >> "$GITHUB_ENV"
+          echo "HSD_CHROME_TMPDIR=$RUNNER_TEMP" >> "$GITHUB_ENV"   # target/tmp's path is too long for Chrome's socket here
+      - name: Keep Homebrew's tools for the next run (saved even if the build fails later)
+        if: steps.brew-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        with:
+          path: /home/linuxbrew/.linuxbrew
+          key: linuxbrew-gdal-poppler-python314-${{ hashFiles('requirements.txt') }}
       - name: The 13 USGS quads (kept between runs; the build checks each against its MD5 and downloads any missing)
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:

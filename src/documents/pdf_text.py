@@ -15,39 +15,38 @@ from those positions:
 Checks that every printed character is in the text, in order (spaces and line-end hyphens aside), or exits 1.
 Usage: pdf_text.py IN.pdf OUT.txt"""
 import html, re, shutil, subprocess, sys
-src, out = sys.argv[1], sys.argv[2]
-exe = shutil.which("pdftotext") or sys.exit("pdftotext (poppler) is needed: brew install poppler")
-xml = subprocess.run([exe, "-enc", "UTF-8", "-bbox-layout", src, "-"], check=True, capture_output=True, text=True).stdout
 HEAD, FOOT, LEFT = 50, 750, 30          # points: running head above y 50; slug below y 750 (text ends at 742); note left of x 30
 INDENT, FULL = 3, 25                    # a line indented > 3 pt starts a paragraph; a line ending < 25 pt short is full
 num = lambda attrs, k: float(re.search(rf'{k}="([-\d.]+)"', attrs).group(1))
 words_of = lambda s: [html.unescape(w) for w in re.findall(r"<word[^>]*>(.*?)</word>", s)]
 
-paras, pending, printed = [], [], []    # paragraphs (lists of lines, each a list of words); furniture waiting to go out
-last_full = False                       # did the last body line run to its block's right edge?
-for page in re.findall(r"<page[^>]*>(.*?)</page>", xml, re.S):
-    blocks = []
-    for attrs, block in re.findall(r"<block([^>]*)>(.*?)</block>", page, re.S):
-        lines = [(num(a, "xMin"), num(a, "xMax"), w) for a, l in re.findall(r"<line([^>]*)>(.*?)</line>", block, re.S)
-                 if (w := words_of(l))]
-        if lines: blocks.append((num(attrs, "xMin"), num(attrs, "yMin"), num(attrs, "xMax"), num(attrs, "yMax"), lines))
-    for b in blocks: printed += [w for _, _, ws in b[4] for w in ws]
-    head = [b for b in blocks if b[3] < HEAD]
-    foot = sorted((b for b in blocks if b[1] > FOOT or b[2] < LEFT), key=lambda b: (b[0], b[1]))
-    pending += [[ws for _, _, ws in b[4]] for b in head]
-    for b in blocks:
-        if b in head or b in foot: continue
-        left, right = min(x0 for x0, _, _ in b[4]), max(x1 for _, x1, _ in b[4])
-        for i, (x0, x1, ws) in enumerate(b[4]):
-            carry_on = paras and (x0 <= left + INDENT) and (i > 0 or (last_full and not re.search(r"[.:;?!]\W*$", " ".join(paras[-1][-1]))))
-            if not carry_on:
-                paras += pending; pending = []; paras.append([])
-            paras[-1].append(ws); last_full = x1 >= right - FULL
-    pending += [[ws for _, _, ws in b[4]] for b in foot]
-paras += pending
+def paragraphs(xml):
+    """poppler's -bbox-layout XHTML -> the paragraphs (lists of lines, each a list of words) and every printed word"""
+    paras, pending, printed = [], [], []    # paragraphs (lists of lines, each a list of words); furniture waiting to go out
+    last_full = False                       # did the last body line run to its block's right edge?
+    for page in re.findall(r"<page[^>]*>(.*?)</page>", xml, re.S):
+        blocks = []
+        for attrs, block in re.findall(r"<block([^>]*)>(.*?)</block>", page, re.S):
+            lines = [(num(a, "xMin"), num(a, "xMax"), w) for a, l in re.findall(r"<line([^>]*)>(.*?)</line>", block, re.S)
+                     if (w := words_of(l))]
+            if lines: blocks.append((num(attrs, "xMin"), num(attrs, "yMin"), num(attrs, "xMax"), num(attrs, "yMax"), lines))
+        for b in blocks: printed += [w for _, _, ws in b[4] for w in ws]
+        head = [b for b in blocks if b[3] < HEAD]
+        foot = sorted((b for b in blocks if b[1] > FOOT or b[2] < LEFT), key=lambda b: (b[0], b[1]))
+        pending += [[ws for _, _, ws in b[4]] for b in head]
+        for b in blocks:
+            if b in head or b in foot: continue
+            left, right = min(x0 for x0, _, _ in b[4]), max(x1 for _, x1, _ in b[4])
+            for i, (x0, x1, ws) in enumerate(b[4]):
+                carry_on = paras and (x0 <= left + INDENT) and (i > 0 or (last_full and not re.search(r"[.:;?!]\W*$", " ".join(paras[-1][-1]))))
+                if not carry_on:
+                    paras += pending; pending = []; paras.append([])
+                paras[-1].append(ws); last_full = x1 >= right - FULL
+        pending += [[ws for _, _, ws in b[4]] for b in foot]
+    paras += pending
+    return paras, printed
 
-flat = " ".join(printed)
-def join(lines):
+def join(lines, flat):   # flat: every printed word, so a hyphenated form printed elsewhere keeps its hyphen
     s = " ".join(lines[0])
     for ws in lines[1:]:
         a, y = s.split()[-1], ws[0]
@@ -60,15 +59,27 @@ def join(lines):
     return s
 
 squash = lambda s: re.sub(r"[\s\-]", "", s)
-text = []
-for p in paras:
-    t = re.sub(r"(?<=\S) :(?=\s|$)", ":", join(p))                         # "ACTION :": the bold caps and their colon
-    if squash(t) != squash(" ".join(w for ws in p for w in ws)):          # joining lost or added a character
-        sys.exit(f"{out}: a paragraph lost text in joining: {t[:80]}")
-    star = set(t) <= {"*", " "}                                            # GPO's "* * * * *", one star per line here
-    if star and text and set(text[-1]) <= {"*", " "}: text[-1] += " " + t
-    else: text.append(t)
-if sum(len(ws) for p in paras for ws in p) != len(printed):                # every printed word went somewhere
-    sys.exit(f"{out}: {len(printed)} printed words but {sum(len(ws) for p in paras for ws in p)} in the text")
-open(out, "w", encoding="utf-8").write("\n".join(text) + "\n")
-print(f"{out.split('/')[-1]}: {len(text)} paragraphs from {len(printed)} printed words")
+def text_of(paras, printed, out):   # one line per paragraph; exits, naming OUT, if a character or a word went missing
+    flat = " ".join(printed)
+    text = []
+    for p in paras:
+        t = re.sub(r"(?<=\S) :(?=\s|$)", ":", join(p, flat))                   # "ACTION :": the bold caps and their colon
+        if squash(t) != squash(" ".join(w for ws in p for w in ws)):          # joining lost or added a character
+            sys.exit(f"{out}: a paragraph lost text in joining: {t[:80]}")
+        star = set(t) <= {"*", " "}                                            # GPO's "* * * * *", one star per line here
+        if star and text and set(text[-1]) <= {"*", " "}: text[-1] += " " + t
+        else: text.append(t)
+    if sum(len(ws) for p in paras for ws in p) != len(printed):                # every printed word went somewhere
+        sys.exit(f"{out}: {len(printed)} printed words but {sum(len(ws) for p in paras for ws in p)} in the text")
+    return text
+
+def main(src, out):
+    exe = shutil.which("pdftotext") or sys.exit("pdftotext (poppler) is needed: brew install poppler")
+    xml = subprocess.run([exe, "-enc", "UTF-8", "-bbox-layout", src, "-"], check=True, capture_output=True, text=True).stdout
+    paras, printed = paragraphs(xml)
+    text = text_of(paras, printed, out)
+    open(out, "w", encoding="utf-8").write("\n".join(text) + "\n")
+    print(f"{out.split('/')[-1]}: {len(text)} paragraphs from {len(printed)} printed words")
+
+if __name__ == "__main__":
+    main(sys.argv[1], sys.argv[2])

@@ -4,6 +4,7 @@
 Usage:
   sb.py req METHOD PATH [--json '<body>'] [--file-body <path>]
 PATH is appended to https://api.supabase.com. Prints status and response body.
+Other options are ignored.
 The Management API access token is supplied by the connector credential
 surrogate; it is never read from a file or printed here.
 """
@@ -27,7 +28,8 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
         """Raises instead of following a redirect.
 
         Args:
-            *args: The redirect's request, response and headers (unused).
+            *args: The original request, the response, its status code,
+                message and headers, and the new URL (all unused).
 
         Raises:
             RuntimeError: Always.
@@ -41,12 +43,18 @@ def do(method, path, body=None, raw=False):
     Args:
         method: The HTTP method, such as GET or POST.
         path: The path after https://api.supabase.com.
-        body: The request body: an object to send as JSON, bytes to send as
-            they are, or None for no body.
-        raw: True to send body as it is, with no Content-Type header.
+        body: The request body: a value json.dumps can encode when raw is
+            False, bytes when raw is True, or None for no body.
+        raw: True to send body (bytes) as it is, which urllib labels
+            application/x-www-form-urlencoded; False to send it as JSON,
+            labelled application/json.
 
     Returns:
         The HTTP status code and the response body (bytes).
+
+    Raises:
+        RuntimeError: On a redirect (see NoRedirect).
+        urllib.error.URLError: On a network failure or a timeout.
     """
     url = BASE + path
     data = None
@@ -76,7 +84,8 @@ def main(argv):
 
     Returns:
         The exit status: 0 for an HTTP status below 400, 1 for an error
-        status, 2 for a usage error.
+        status, 2 for a usage error. Other errors (a malformed --json value,
+        a missing --file-body file, a network failure) raise.
     """
     if len(argv) < 4 or argv[1] != "req":
         print(__doc__)
@@ -96,13 +105,14 @@ def main(argv):
         else:
             i += 1
     raw = isinstance(body, bytes)
-    # A --file-body body is sent as its bytes, with no Content-Type header;
-    # use --json for a JSON body (a database query, for example).
+    # A --file-body body is sent as its bytes, which urllib labels
+    # application/x-www-form-urlencoded; use --json for a JSON body (a
+    # database query, for example).
     status, payload = do(method, path, body=body, raw=raw)
     sys.stdout.write(f"HTTP {status}\n")
     try:
         sys.stdout.write(payload.decode("utf-8") + "\n")
-    except UnicodeDecodeError:
+    except UnicodeError:  # not UTF-8, or stdout cannot encode it
         sys.stdout.write(f"<binary {len(payload)} bytes>\n")
     return 0 if status < 400 else 1
 

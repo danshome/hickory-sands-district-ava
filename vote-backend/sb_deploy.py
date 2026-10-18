@@ -25,7 +25,8 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
         """Raises instead of following a redirect.
 
         Args:
-            *args: The redirect's request, response and headers (unused).
+            *args: The original request, the response, its status code,
+                message and headers, and the new URL (all unused).
 
         Raises:
             RuntimeError: Always.

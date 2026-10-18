@@ -14,6 +14,7 @@
 #   ./build.sh publish-dry-run  (or publish --dry-run) build everything publish would send, without signing in, into
 #                         target/publish/ as JSON, and check it (src/publish/agol_dryrun.py)
 #   ./build.sh check-live check the public ArcGIS Online site anonymously, as TTB sees it, against the build (read-only)
+#   ./build.sh site-data  refresh the website's map data (docs/data/) from the last build; commit it with the change
 #
 # No manual steps, on macOS or Linux: missing tools are installed with Homebrew (GDAL, poppler, Python 3.14; on macOS
 # also Google Chrome, which Linux needs installed); every Python package in the lock files is checked against the OSV
@@ -141,6 +142,14 @@ checks() {
     run src/review/grit_change.py --line "$WORK/gis/$STEM-line-EPSG4269.geojson" \
         --oct14 "$ROOT/resources/boundary/proposed/step-lines-2026-10-14-EPSG4269.geojson" \
         --geology "$ROOT/resources/geology/usgs-sgmc-geology-shifted-to-naip-EPSG4269.gpkg" --out-dir "$WORK/review"   # report
+    touch "$WORK/.checks-passed"             # ./build.sh site-data copies only a boundary that passed the hard checks
+}
+
+SITE_DATA=(src/site/make_site_data.py --gis "$WORK/gis" --out docs/data)
+
+site_data() {
+    step "the website's map data (docs/data/) against this build"   # hard, after the package: a boundary change must reach the site
+    run "${SITE_DATA[@]}" --check            # exits 3 when docs/data/ is stale, and says how to refresh it
 }
 
 documents() {
@@ -216,13 +225,15 @@ check_live() {
 }
 
 case "${1:-all}" in
-    all)       env_setup; quads; stage; linework; checks; documents; quadsheets; package ;;
+    all)       env_setup; quads; stage; linework; checks; documents; quadsheets; package; site_data ;;
     env)       env_setup ;;
     clean)     rm -rf "$TARGET" "$DIST"; echo "removed target/ and dist/" ;;
     distclean) rm -rf "$TARGET" "$DIST" "$VENV"; echo "removed target/, dist/ and .venv/" ;;
     publish)   env_setup; if [ "${2:-}" = --dry-run ]; then dry_run; else publish; fi ;;
     publish-dry-run) env_setup; dry_run ;;
     check-live) env_setup; check_live ;;
+    site-data) env_setup; [ -f "$WORK/.checks-passed" ] || { echo "no checked build: run ./build.sh first"; exit 1; }
+               step "the website's map data (docs/data/) from the last build"; run "${SITE_DATA[@]}" ;;
     audit)     env_setup; audit ;;
     upgrade)   upgrade ;;
     lint)      env_setup; step "pre-commit hooks on every file"; PRE_COMMIT_HOME="$TARGET/pre-commit" "$VENV/bin/pre-commit" run --all-files ;;

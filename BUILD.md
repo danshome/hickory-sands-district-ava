@@ -123,6 +123,7 @@ src/
   checks/                hard checks: quads vs manifest, every pin on its line, no self-crossing, valid polygon;
                          check_outputs: what reaches TTB (PDF fonts, compare text, figures, wording, GIS, zip paths)
   package/               make_package.sh (the zip)
+  site/                  make_site_data: the website's map data (docs/data/) from the boundary build
   publish/               ArcGIS Online: agol_publish, agol_layer, agol_dashboard, agol_org_categories, agol_share (what
                          is sent); agol_dryrun + agol_dryrun_checks (the dry run); agol_check (the live site)
 resources/
@@ -136,7 +137,8 @@ resources/
   quads/                 quads-manifest.csv, cropped/ (neatline VRT templates); geotiff/ and geopdf/ are downloaded
 documents/               hand-written texts: README.template.txt ({AREA_SQMI} filled by the build),
                          read-me-first.template.html
-docs/                    the website, hickorysandsdistrictava.org, as GitHub Pages serves it (site.yml deploys it)
+docs/                    the website, hickorysandsdistrictava.org, as GitHub Pages serves it (site.yml deploys it);
+                         docs/data/: its map data, made by the build (./build.sh site-data), never edited by hand
 LICENSE.txt              CC0 1.0 (also copied into the package)
 .venv/                   the project's Python environment (made by build.sh; not in git)
 target/                  everything the build makes (not in git): work/ (recreated on every run), quads-cropped/,
@@ -151,7 +153,8 @@ tobedeleted/             set aside for review and deletion, used by nothing (not
 2. **quads** - the 13 quads checked against their MD5s in `quads-manifest.csv`; missing or altered ones downloaded.
 3. **stage** - a fresh `target/work/`; the inputs are read in place from `resources/`.
 4. **trace** - every follow step traced onto the ink (`src/boundary/ink_centerline.py`), pins from `tracing/pin-moves.json`,
-   route hints from `tracing/route-overrides-EPSG4269.geojson`. Deterministic: two runs give identical lines.
+   route hints from `tracing/route-overrides-EPSG4269.geojson`. Deterministic: two runs on one machine give identical lines (two
+   machines can place a vertex differently along the same ink: #116).
 5. **hand patches** - spliced onto the traces; a patch whose ends no longer lie on the trace stops the build (redo
    that patch). Patch joins that turn more than 25 degrees are rounded.
 6. **boundary** - pins, straight-line steps, traced steps, polygon, points, GeoPackage, shapefiles.
@@ -172,6 +175,11 @@ tobedeleted/             set aside for review and deletion, used by nothing (not
    NAD27 cell, through NADCON 5.0 CONUS), every `length_m` geodesic, every layer and `.prj` NAD83. A warning, not a
    failure: zip paths longer than Windows' 260-character limit when Explorer extracts the zip under
    `C:\Users\<name>\Downloads\` (Dan: leave the names for now).
+11. **site data** - last, so it never holds back the package: the website's map data (`src/site/make_site_data.py`),
+   hard. `docs/data/` must match this build, so a boundary change stops the build until `./build.sh site-data`
+   refreshes it and it is committed with the change. Only the traced lines may differ, and only a little: two machines
+   (even two of GitHub's Linux runners) can place a vertex differently along the same ink (#116), so lines within 5 m
+   of each other are reported in metres, not failed.
 
 ## Python packages and security
 
@@ -238,6 +246,10 @@ for Python; 2-space YAML and TOML). By hand: `.venv/bin/ruff format .` and `.ven
 - `test_compare_ttb.py`: a big difference's acres are the whole pieces its ring touches, even inside a hole in the
   ring (#26), and the helpers that find the stretches;
 - `test_make_readme.py`: README.txt's headings ("WHAT WE PROPOSE TO CHANGE IN NOTICE NO. 243 (...)") on the read-me page;
+- `test_site_data.py`: the website's map data in `docs/data/`: 104 steps from the Beginning point, each ending at its
+  own point, around to the Beginning again; only the properties a reader needs; the README's area; a status the site can
+  show; and, on a small made-up build, the generator's rounding and refusals and the check's line between a stale
+  folder and platform drift;
 - `test_site.py`: every page of the website in `docs/` is a complete HTML document (doctype, language, character set,
   phone viewport, title), every local file it links to or loads is in `docs/`, and every link off the site is https;
 - `test_publish_dryrun.py`: the publish dry run's checks pass on a dry run of the current build
@@ -313,9 +325,13 @@ git tag v2026.10.20 && git push origin v2026.10.20
 
 ### The website
 
-hickorysandsdistrictava.org is GitHub Pages serving `docs/` (issue #96). A change to the site is a pull request like
-any other: `site.yml` tests it on the pull request and deploys it when it is merged to `main`. The rest is set outside
-the repository, once:
+hickorysandsdistrictava.org is GitHub Pages serving `docs/` (issue #96). Its maps (#112, #113) will read `docs/data/`:
+the boundary, steps and points as GeoJSON (NAD83 rounded to 6 decimal places, shown as WGS 84; the record is the package
+for TTB) and `status.json`, the AVA's status as TTB's own record gives it (`Status`, `Established` and `CFR_Section` in
+the AVAs_Production snapshot in `resources/ttb/`). When TTB establishes the AVA, refresh that snapshot, run the build
+and `./build.sh site-data`, and the site's status follows. A
+change to the site is a pull request like any other: `site.yml` tests it on the pull request and deploys it when it is
+merged to `main`. The rest is set outside the repository, once:
 
 - the repository's Pages settings: source GitHub Actions, custom domain hickorysandsdistrictava.org, HTTPS enforced;
 - the danshome account's verified domains (Settings > Pages): hickorysandsdistrictava.org, by the TXT record

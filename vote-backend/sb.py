@@ -2,29 +2,60 @@
 """Supabase Management API helper for the custom.supabase connector.
 
 Usage:
-  sb.py req METHOD PATH [--json '<body>'] [--file-body <path>] [--out <path>]
+  sb.py req METHOD PATH [--json '<body>'] [--file-body <path>]
 PATH is appended to https://api.supabase.com. Prints status and response body.
+Other options are ignored.
 The Management API access token is supplied by the connector credential
 surrogate; it is never read from a file or printed here.
 """
+
 import json
 import sys
-import urllib.request
 import urllib.error
+import urllib.request
 
 sys.path.insert(0, "/opt/muse/skills/custom-connector-setup/bin")
-from dynamic_credentials import add_surrogate_to_request, read_json_response
+from dynamic_credentials import add_surrogate_to_request
 
 BASE = "https://api.supabase.com"
 HOSTS = ["api.supabase.com"]
 
 
 class NoRedirect(urllib.request.HTTPRedirectHandler):
+    """Refuses every redirect, so the token goes only to the API's own host."""
+
     def redirect_request(self, *args):
+        """Raises instead of following a redirect.
+
+        Args:
+            *args: The original request, the response, its status code,
+                message and headers, and the new URL (all unused).
+
+        Raises:
+            RuntimeError: Always.
+        """
         raise RuntimeError("redirect refused, verify the endpoint")
 
 
 def do(method, path, body=None, raw=False):
+    """Sends one request to the Management API.
+
+    Args:
+        method: The HTTP method, such as GET or POST.
+        path: The path after https://api.supabase.com.
+        body: The request body: a value json.dumps can encode when raw is
+            False, bytes when raw is True, or None for no body.
+        raw: True to send body (bytes) as it is, which urllib labels
+            application/x-www-form-urlencoded; False to send it as JSON,
+            labelled application/json.
+
+    Returns:
+        The HTTP status code and the response body (bytes).
+
+    Raises:
+        RuntimeError: On a redirect (see NoRedirect).
+        urllib.error.URLError: On a network failure or a timeout.
+    """
     url = BASE + path
     data = None
     headers = {}
@@ -46,6 +77,16 @@ def do(method, path, body=None, raw=False):
 
 
 def main(argv):
+    """Runs the command line in argv.
+
+    Args:
+        argv: The command line, as sys.argv.
+
+    Returns:
+        The exit status: 0 for an HTTP status below 400, 1 for an error
+        status, 2 for a usage error. Other errors (a malformed --json value,
+        a missing --file-body file, a network failure) raise.
+    """
     if len(argv) < 4 or argv[1] != "req":
         print(__doc__)
         return 2
@@ -64,14 +105,15 @@ def main(argv):
         else:
             i += 1
     raw = isinstance(body, bytes)
-    # --file-body content is sent as-is with JSON content type set by caller need;
-    # for database query etc. prefer --json.
+    # A --file-body body is sent as its bytes, which urllib labels
+    # application/x-www-form-urlencoded; use --json for a JSON body (a
+    # database query, for example).
     status, payload = do(method, path, body=body, raw=raw)
-    sys.stdout.write("HTTP %d\n" % status)
+    sys.stdout.write(f"HTTP {status}\n")
     try:
         sys.stdout.write(payload.decode("utf-8") + "\n")
-    except Exception:
-        sys.stdout.write("<binary %d bytes>\n" % len(payload))
+    except UnicodeError:  # not UTF-8, or stdout cannot encode it
+        sys.stdout.write(f"<binary {len(payload)} bytes>\n")
     return 0 if status < 400 else 1
 
 

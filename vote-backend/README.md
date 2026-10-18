@@ -29,5 +29,5 @@ Backend: Supabase project "Hickory Sands District AVA"
 - sb.py: Management API helper (list projects, run SQL, set secrets).
   sb_deploy.py: deploys vote-api-index.ts via
   POST /v1/projects/{ref}/functions/deploy?slug=vote-api.
-  Both read the access token from the Muse connector credential
-  (custom.supabase); no token is stored in these files.
+  Both attach the Muse connector's credential surrogate (custom.supabase) to
+  each request; no token is stored in these files.

@@ -23,6 +23,9 @@ Backend: Supabase project "Hickory Sands District AVA"
   locally, never in this repo.
 - Culling (operator triggered only, never automatic on page load): a design
   with at least 25 total votes and under 35 percent likes retires.
+- Upload flood limits: max 5 uploads per IP per day, max 50 submissions
+  waiting in the pending queue, max 200 total, 3 MB per file, JPEG/PNG only
+  (magic bytes), and nothing is visible until approved.
 - sb.py: Management API helper (list projects, run SQL, set secrets).
   sb_deploy.py: deploys vote-api-index.ts via
   POST /v1/projects/{ref}/functions/deploy?slug=vote-api.

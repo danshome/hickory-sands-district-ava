@@ -10,7 +10,8 @@ boundary package for TTB, not these files. Standard library only, so the lint
 workflow can test it.
 
 Usage (the project .venv, -E -s):
-  make_site_data.py --gis DIR --out DIR [--walk TEMPLATE PAGE] [--check]
+  make_site_data.py --gis DIR --out DIR [--walk TEMPLATE PAGE] [--pages DIR]
+                    [--check]
 --gis is the build's GIS folder (target/work/gis). With --check nothing is
 written. It exits 3 when --out is stale: when it differs from the build in
 what every platform's build gives alike (the points, each step's number,
@@ -19,11 +20,14 @@ the status), or in a line by more than MAX_DRIFT_M. Two machines (even two of
 GitHub's Linux runners) can place a traced line's vertices differently along
 the same ink (#116), so lines that close are reported in metres, not failed.
 Other errors exit 1. With --walk it also makes (or checks) the walk page,
-the story map's text, from its template.
+the story map's text, from its template; with --pages it writes (or checks)
+every figure marked data-figure in the site's pages, so no page types the
+area, the counts, the length or the revision date.
 """
 
 import argparse
 import datetime
+import decimal
 import glob
 import html
 import itertools
@@ -49,8 +53,18 @@ M_PER_DEGREE = 111320.0  # metres per degree of latitude, near enough here
 CELL_M = 200.0  # the grid that finds a position's nearby segments
 SAMPLE_M = 1.0  # how often along a changed segment the distance is measured
 M_PER_MILE = 1609.344
-# The walk page's template fills these, each once (src/site/walk.template.html).
-WALK_TOKENS = ("@STEP_COUNT@", "@MILES@", "@STEPS@")
+# The walk page's template holds this once, for the list of steps
+# (src/site/walk.template.html); its figures are data-figure elements.
+WALK_TOKENS = ("@STEPS@",)
+# A figure in a page: an element marked data-figure="name" holding only text,
+# such as <span data-figure="area_sqmi">193.83</span>; the build writes it.
+FIGURE = re.compile(
+    r'<(?P<tag>[a-z][a-z0-9]*)(?P<attrs>[^>]*\sdata-figure="(?P<name>[a-z_]+)"'
+    r"[^>]*)>(?P<text>[^<]*)</(?P=tag)>",
+    re.IGNORECASE,
+)
+# Any mark at all, however written, so one the build cannot fill stops it.
+ANY_MARK = re.compile(r"data-figure\s*=", re.IGNORECASE)
 NOTE = (
     "Display copy of the Hickory Sands District boundary for the website "
     "(NAD83 coordinates, rounded to 6 decimal places, shown as WGS 84). The "
@@ -241,11 +255,60 @@ def numbered(features, key, first=None):
     return sorted(features, key=lambda f: want.index(str(f["properties"][key])))
 
 
-def site_data(gis_dir):
+def revision_of(gis_dir):
+    """Returns the proposed revision's date, as the build names its files.
+
+    Args:
+        gis_dir: The build's GIS folder, whose area file is named like
+            hickory-sands-district-boundary-proposed-2026-10-15-area-EPSG4269.
+
+    Returns:
+        The date, YYYY-MM-DD.
+
+    Raises:
+        SystemExit: When the area file's name carries no date.
+    """
+    found = glob.glob(os.path.join(gis_dir, "*-area-EPSG4269.geojson"))
+    dated = re.search(
+        r"-(\d{4}-\d{2}-\d{2})-area-EPSG4269\.geojson$",
+        found[0] if found else "",
+    )
+    if len(found) != 1 or not dated:
+        sys.exit(f"no dated area file in {gis_dir}")
+    return datetime.date.fromisoformat(dated.group(1)).isoformat()
+
+
+def compared_areas(stats_path):
+    """Returns the other boundaries' areas the build measured, in sq mi.
+
+    Args:
+        stats_path: The review stage's grit-change-stats.json, or None.
+
+    Returns:
+        A dict with petition_sqmi and notice_243_sqmi (empty without stats).
+
+    Raises:
+        SystemExit: When the file lacks either area.
+    """
+    if not stats_path:
+        return {}
+    with open(stats_path, encoding="utf-8") as fh:
+        sqmi = json.load(fh).get("sqmi", {})
+    if not {"petition", "notice_243"} <= set(sqmi):
+        sys.exit(f"{stats_path}: no petition and notice_243 areas")
+    return {
+        "petition_sqmi": float(sqmi["petition"]),
+        "notice_243_sqmi": float(sqmi["notice_243"]),
+    }
+
+
+def site_data(gis_dir, stats_path=None):
     """Returns the website's data files, by name, as the text to write.
 
     Args:
         gis_dir: The build's GIS folder.
+        stats_path: The review stage's grit-change-stats.json, for the
+            petition's and Notice No. 243's areas, or None.
 
     Returns:
         A dict from file name to file text.
@@ -265,6 +328,7 @@ def site_data(gis_dir):
 
     first = kept(area[0], ("Name", "area_sqmi", "Counties"), "boundary")
     status = record_status(area[0]["properties"])
+    revision = revision_of(gis_dir)
     boundary = [
         feature(
             area[0],
@@ -272,6 +336,8 @@ def site_data(gis_dir):
                 "name": first["Name"],
                 "area_sqmi": float(first["area_sqmi"]),
                 "counties": first["Counties"],
+                "revision": revision,
+                **compared_areas(stats_path),
             },
         )
     ]
@@ -571,6 +637,143 @@ def write(files, out_dir):
         os.remove(os.path.join(out_dir, name))
 
 
+def figures(files):
+    """Returns the figures the pages show, from the site's data files.
+
+    Args:
+        files: The data files, by name, as site_data() gives them or as
+            committed in docs/data/.
+
+    Returns:
+        A dict from figure name to (text, ISO date or None): area_sqmi
+        ("193.83"), area_whole ("194", rounded half up), step_count,
+        point_count, miles (the line's length, to the mile),
+        revision_date ("October 15, 2026", with its ISO date for a <time>),
+        and, when the build measured them, petition_area_whole and
+        notice_243_area_whole (the petition's and Notice No. 243's areas,
+        whole square miles).
+    """
+    (boundary,) = json.loads(files["boundary.geojson"])["features"]
+    steps = json.loads(files["steps.geojson"])["features"]
+    points = json.loads(files["points.geojson"])["features"]
+    area = boundary["properties"]["area_sqmi"]
+    metres = sum(f["properties"]["length_m"] for f in steps)
+    revision = datetime.date.fromisoformat(boundary["properties"]["revision"])
+
+    def whole(sqmi):  # whole square miles, rounded half up
+        return str(
+            decimal.Decimal(str(sqmi)).quantize(
+                decimal.Decimal(1), rounding=decimal.ROUND_HALF_UP
+            )
+        )
+
+    compared = {
+        f"{key.removesuffix('_sqmi')}_area_whole": (whole(value), None)
+        for key, value in boundary["properties"].items()
+        if key in ("petition_sqmi", "notice_243_sqmi")
+    }
+    return {
+        **compared,
+        "area_sqmi": (f"{area:.2f}", None),
+        "area_whole": (whole(area), None),
+        "step_count": (str(len(steps)), None),
+        "point_count": (str(len(points)), None),
+        "miles": (f"{metres / M_PER_MILE:.0f}", None),
+        "revision_date": (
+            f"{revision:%B} {revision.day}, {revision.year}",
+            revision.isoformat(),
+        ),
+    }
+
+
+def fill_figures(text, figs, where):
+    """Returns a page with each marked figure written from figs.
+
+    Args:
+        text: The page's HTML.
+        figs: The figures, from figures().
+        where: The page's name, for errors.
+
+    Returns:
+        The HTML with every data-figure element's text replaced (escaped),
+        and a <time>'s datetime set to the figure's ISO date.
+
+    Raises:
+        SystemExit: When a figure is unknown, or a marked element holds more
+            than text.
+    """
+    if len(ANY_MARK.findall(text)) != len(FIGURE.findall(text)):
+        sys.exit(
+            f"{where}: write each figure as "
+            '<tag data-figure="name">text</tag>, with only text inside'
+        )
+
+    def write_figure(m):
+        if m["name"] not in figs:
+            sys.exit(f"{where}: no figure called {m['name']}")
+        value, iso = figs[m["name"]]
+        attrs = m["attrs"]
+        if iso and m["tag"].lower() == "time":
+            dated = re.compile(r'(\sdatetime=")[^"]*(")', re.IGNORECASE)
+            if dated.search(attrs):
+                attrs = dated.sub(lambda d: f"{d[1]}{iso}{d[2]}", attrs)
+            else:
+                attrs += f' datetime="{iso}"'
+        return f"<{m['tag']}{attrs}>{html.escape(value)}</{m['tag']}>"
+
+    return FIGURE.sub(write_figure, text)
+
+
+def stale_figures(text, filled):
+    """Returns the names of the figures a page has wrong.
+
+    Args:
+        text: The page as committed.
+        filled: The page with its figures written by fill_figures().
+
+    Returns:
+        The sorted names of the marked figures that differ.
+    """
+    pairs = zip(FIGURE.finditer(text), FIGURE.finditer(filled), strict=True)
+    return sorted({a["name"] for a, b in pairs if a[0] != b[0]})
+
+
+def committed(files, out_dir):
+    """Returns the committed copies of the data files, by name.
+
+    Args:
+        files: The build's data files (for their names).
+        out_dir: The site's data folder.
+
+    Returns:
+        A dict from file name to its committed text.
+    """
+    texts = {}
+    for name in files:
+        with open(os.path.join(out_dir, name), encoding="utf-8") as fh:
+            texts[name] = fh.read()
+    return texts
+
+
+def site_pages(pages_dir, skip):
+    """Returns the site's pages that may hold figures, by path.
+
+    Args:
+        pages_dir: The site's folder (docs).
+        skip: A page the build makes itself (the walk page), or None.
+
+    Returns:
+        A dict from path to the page's text.
+    """
+    pages = {}
+    for path in sorted(glob.glob(os.path.join(pages_dir, "*.html"))):
+        if skip and os.path.abspath(path) == os.path.abspath(skip):
+            continue
+        with open(path, encoding="utf-8") as fh:
+            pages[path] = fh.read()
+    return pages
+
+
 def walk_item(anchor, step, eyebrow, text, ends_at):
     """Returns one step of the walk page as an HTML list item.
 
@@ -604,7 +807,8 @@ def walk_page(files, template):
 
     Args:
         files: The data files from site_data().
-        template: The page's template, with each of WALK_TOKENS once.
+        template: The page's template, with @STEPS@ once and its figures
+            marked data-figure.
 
     Returns:
         The page's HTML.
@@ -625,10 +829,8 @@ def walk_page(files, template):
             start["point_name"],
         )
     ]
-    metres = 0.0
     for f in steps:
         p = f["properties"]
-        metres += p["length_m"]
         miles = p["length_m"] / M_PER_MILE
         items.append(
             walk_item(
@@ -642,11 +844,8 @@ def walk_page(files, template):
     for token in WALK_TOKENS:
         if template.count(token) != 1:
             sys.exit(f"the walk template needs {token} once")
-    return (
-        template.replace("@STEP_COUNT@", str(len(steps)))
-        .replace("@MILES@", f"{metres / M_PER_MILE:.0f}")
-        .replace("@STEPS@", "\n".join(items))
-    )
+    page = template.replace("@STEPS@", "\n".join(items))
+    return fill_figures(page, figures(files), "the walk page")
 
 
 def check_page(files, out_dir, template, page_path):
@@ -665,13 +864,9 @@ def check_page(files, out_dir, template, page_path):
     Returns:
         "missing", "differs from the build", or None when it matches.
     """
-    committed = {}
-    for name in files:
-        with open(os.path.join(out_dir, name), encoding="utf-8") as fh:
-            committed[name] = fh.read()
     if not os.path.exists(page_path):
         return "missing"
-    if not same_text(page_path, walk_page(committed, template)):
+    if not same_text(page_path, walk_page(committed(files, out_dir), template)):
         return "differs from the build"
     return None
 
@@ -682,14 +877,23 @@ def main():
     ap.add_argument("--gis", required=True, help="the build's GIS folder")
     ap.add_argument("--out", required=True, help="the site's data folder")
     ap.add_argument(
+        "--stats",
+        help="the review stage's grit-change-stats.json (other areas)",
+    )
+    ap.add_argument(
         "--walk",
         nargs=2,
         metavar=("TEMPLATE", "PAGE"),
         help="also the walk page (docs/walk.html) from its template",
     )
+    ap.add_argument(
+        "--pages",
+        help="also write (or check) the figures in the site's pages (docs)",
+    )
     ap.add_argument("--check", action="store_true", help="compare only")
     args = ap.parse_args()
-    files = site_data(args.gis)
+    skip = args.walk[1] if args.walk else None
+    files = site_data(args.gis, args.stats)
     template = None
     if args.walk:
         with open(args.walk[0], encoding="utf-8") as fh:
@@ -711,18 +915,39 @@ def main():
             if page:
                 print(f"{args.walk[1]}: {page}")
                 stale = True
+        if args.pages and not stale:
+            figs = figures(committed(files, args.out))
+            for path, text in site_pages(args.pages, skip).items():
+                wrong = stale_figures(text, fill_figures(text, figs, path))
+                if wrong:
+                    names = ", ".join(wrong)
+                    print(f"{path}: figures differ from the build: {names}")
+                    stale = True
         if stale:
             print(
-                "run ./build.sh site-data and commit docs/data/ and walk.html"
+                "run ./build.sh site-data and commit docs/data/ and the pages"
             )
             sys.exit(STALE)
         print(f"{args.out} matches the build ({len(files)} files)")
         return
+    # Everything is made before anything is written, so an error in one page
+    # leaves the site as it was.
+    page = walk_page(files, template) if template is not None else None
+    pages = {}
+    if args.pages:
+        figs = figures(files)
+        for path, text in site_pages(args.pages, skip).items():
+            filled = fill_figures(text, figs, path)
+            if filled != text:
+                pages[path] = filled
     write(files, args.out)
     print(f"wrote {len(files)} files to {args.out}")
-    if template is not None:
-        write_one(args.walk[1], walk_page(files, template))
+    if page is not None:
+        write_one(args.walk[1], page)
         print(f"wrote {args.walk[1]}")
+    for path, filled in pages.items():
+        write_one(path, filled)
+        print(f"wrote the figures in {path}")
 
 
 if __name__ == "__main__":

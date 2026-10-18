@@ -10,7 +10,7 @@ boundary package for TTB, not these files. Standard library only, so the lint
 workflow can test it.
 
 Usage (the project .venv, -E -s):
-  make_site_data.py --gis DIR --out DIR [--check]
+  make_site_data.py --gis DIR --out DIR [--walk TEMPLATE PAGE] [--check]
 --gis is the build's GIS folder (target/work/gis). With --check nothing is
 written. It exits 3 when --out is stale: when it differs from the build in
 what every platform's build gives alike (the points, each step's number,
@@ -18,12 +18,14 @@ kind, endpoint, quad and text, the boundary's name, counties and area, and
 the status), or in a line by more than MAX_DRIFT_M. Two machines (even two of
 GitHub's Linux runners) can place a traced line's vertices differently along
 the same ink (#116), so lines that close are reported in metres, not failed.
-Other errors exit 1.
+Other errors exit 1. With --walk it also makes (or checks) the walk page,
+the story map's text, from its template.
 """
 
 import argparse
 import datetime
 import glob
+import html
 import itertools
 import json
 import math
@@ -46,6 +48,9 @@ MAX_DRIFT_M = 5.0
 M_PER_DEGREE = 111320.0  # metres per degree of latitude, near enough here
 CELL_M = 200.0  # the grid that finds a position's nearby segments
 SAMPLE_M = 1.0  # how often along a changed segment the distance is measured
+M_PER_MILE = 1609.344
+# The walk page's template fills these, each once (src/site/walk.template.html).
+WALK_TOKENS = ("@STEP_COUNT@", "@MILES@", "@STEPS@")
 NOTE = (
     "Display copy of the Hickory Sands District boundary for the website "
     "(NAD83 coordinates, rounded to 6 decimal places, shown as WGS 84). The "
@@ -523,6 +528,35 @@ def compare(files, out_dir):
     return missing, differs, unexpected, notes
 
 
+def same_text(path, text):
+    """Returns whether the file at path holds exactly text.
+
+    Args:
+        path: A file, which may be missing.
+        text: The text it should hold.
+
+    Returns:
+        True when it does.
+    """
+    try:
+        with open(path, encoding="utf-8") as fh:
+            return fh.read() == text
+    except FileNotFoundError:
+        return False
+
+
+def write_one(path, text):
+    """Writes text to path in one step (a temporary file, then a rename).
+
+    Args:
+        path: The file to write.
+        text: Its text.
+    """
+    with open(path + ".tmp", "w", encoding="utf-8") as fh:
+        fh.write(text)
+    os.replace(path + ".tmp", path)
+
+
 def write(files, out_dir):
     """Writes files to out_dir, each in one step, and removes any other file.
 
@@ -532,12 +566,86 @@ def write(files, out_dir):
     """
     os.makedirs(out_dir, exist_ok=True)
     for name, text in files.items():
-        path = os.path.join(out_dir, name)
-        with open(path + ".tmp", "w", encoding="utf-8") as fh:
-            fh.write(text)
-        os.replace(path + ".tmp", path)
+        write_one(os.path.join(out_dir, name), text)
     for name in compare(files, out_dir)[2]:
         os.remove(os.path.join(out_dir, name))
+
+
+def walk_item(anchor, step, eyebrow, text, ends_at):
+    """Returns one step of the walk page as an HTML list item.
+
+    Args:
+        anchor: The item's id, such as "step-13" or "beginning".
+        step: The step number, or 0 for the beginning point.
+        eyebrow: The line above the text, such as "Step 13 · Purdy Hill".
+        text: The step's text from the boundary description.
+        ends_at: The name of the point the step ends at.
+
+    Returns:
+        The item's HTML, every value escaped.
+    """
+    return (
+        f'<li class="walk-step" id="{anchor}" data-step="{step}">'
+        f'<p class="walk-eyebrow">{html.escape(eyebrow)}</p>'
+        f'<p class="walk-text">{html.escape(text)}</p>'
+        f'<p class="walk-point"><span>{"Begins" if step == 0 else "Ends"}'
+        f"</span> {html.escape(ends_at)}</p></li>"
+    )
+
+
+def walk_page(files, template):
+    """Returns the walk page (#112): every step of the line, in order.
+
+    The page is the story map's text, so it reads in full without
+    JavaScript; the map follows it when JavaScript runs. Lengths are shown
+    to a tenth of a mile, so the small drift between machines (#116) never
+    changes the page.
+
+    Args:
+        files: The data files from site_data().
+        template: The page's template, with each of WALK_TOKENS once.
+
+    Returns:
+        The page's HTML.
+
+    Raises:
+        SystemExit: When the template lacks a token or has one twice.
+    """
+    steps = json.loads(files["steps.geojson"])["features"]
+    points = json.loads(files["points.geojson"])["features"]
+    names = {p["properties"]["point"]: p["properties"] for p in points}
+    start = names["Beginning"]
+    items = [
+        walk_item(
+            "beginning",
+            0,
+            f"The beginning point · {start['quad']} quadrangle",
+            "The line begins here and returns here at its last step.",
+            start["point_name"],
+        )
+    ]
+    metres = 0.0
+    for f in steps:
+        p = f["properties"]
+        metres += p["length_m"]
+        miles = p["length_m"] / M_PER_MILE
+        items.append(
+            walk_item(
+                f"step-{p['step']}",
+                p["step"],
+                f"Step {p['step']} · {p['quad']} · {miles:.1f} mi",
+                p["narrative"],
+                names[str(p["step"])]["point_name"],
+            )
+        )
+    for token in WALK_TOKENS:
+        if template.count(token) != 1:
+            sys.exit(f"the walk template needs {token} once")
+    return (
+        template.replace("@STEP_COUNT@", str(len(steps)))
+        .replace("@MILES@", f"{metres / M_PER_MILE:.0f}")
+        .replace("@STEPS@", "\n".join(items))
+    )
 
 
 def main():
@@ -545,11 +653,23 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--gis", required=True, help="the build's GIS folder")
     ap.add_argument("--out", required=True, help="the site's data folder")
+    ap.add_argument(
+        "--walk",
+        nargs=2,
+        metavar=("TEMPLATE", "PAGE"),
+        help="also the walk page (docs/walk.html) from its template",
+    )
     ap.add_argument("--check", action="store_true", help="compare only")
     args = ap.parse_args()
     files = site_data(args.gis)
+    page = None
+    if args.walk:
+        with open(args.walk[0], encoding="utf-8") as fh:
+            page = walk_page(files, fh.read())
     if args.check:
         missing, differs, unexpected, notes = compare(files, args.out)
+        if page is not None and not same_text(args.walk[1], page):
+            differs.append(os.path.basename(args.walk[1]))
         for note in notes:
             print(f"note: {note} (#116; not a failure)")
         if missing or differs or unexpected:
@@ -560,12 +680,17 @@ def main():
             ):
                 if names:
                     print(f"{args.out}: {what}: {', '.join(names)}")
-            print("run ./build.sh site-data and commit docs/data/")
+            print(
+                "run ./build.sh site-data and commit docs/data/ (and walk.html)"
+            )
             sys.exit(STALE)
         print(f"{args.out} matches the build ({len(files)} files)")
         return
     write(files, args.out)
     print(f"wrote {len(files)} files to {args.out}")
+    if page is not None:
+        write_one(args.walk[1], page)
+        print(f"wrote {args.walk[1]}")
 
 
 if __name__ == "__main__":

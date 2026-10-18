@@ -176,8 +176,8 @@ tobedeleted/             set aside for review and deletion, used by nothing (not
    failure: zip paths longer than Windows' 260-character limit when Explorer extracts the zip under
    `C:\Users\<name>\Downloads\` (Dan: leave the names for now).
 11. **site data** - last, so it never holds back the package: the website's map data (`src/site/make_site_data.py`),
-   hard. `docs/data/` must match this build, so a boundary change stops the build until `./build.sh site-data`
-   refreshes it and it is committed with the change. Only the traced lines may differ, and only a little: two machines
+   hard. `docs/data/` and the walk page `docs/walk.html` must match this build, so a boundary change stops the build
+   until `./build.sh site-data` refreshes them and they are committed with the change. Only the traced lines may differ, and only a little: two machines
    (even two of GitHub's Linux runners) can place a vertex differently along the same ink (#116), so lines within 5 m
    of each other are reported in metres, not failed.
 
@@ -250,6 +250,9 @@ for Python; 2-space YAML and TOML). By hand: `.venv/bin/ruff format .` and `.ven
   own point, around to the Beginning again; only the properties a reader needs; the README's area; a status the site can
   show; and, on a small made-up build, the generator's rounding and refusals and the check's line between a stale
   folder and platform drift;
+- `test_site_maps.py`: the map pages load one pinned SDK release; the basemap key is empty or an API key; no map script
+  parses text as HTML; the walk page lists every step of `docs/data/` with its own text; Explore's figures are the
+  build's;
 - `test_site.py`: every page of the website in `docs/` is a complete HTML document (doctype, language, character set,
   phone viewport, title), every local file it links to or loads is in `docs/`, and every link off the site is https;
 - `test_publish_dryrun.py`: the publish dry run's checks pass on a dry run of the current build
@@ -325,11 +328,27 @@ git tag v2026.10.20 && git push origin v2026.10.20
 
 ### The website
 
-hickorysandsdistrictava.org is GitHub Pages serving `docs/` (issue #96). Its maps (#112, #113) will read `docs/data/`:
-the boundary, steps and points as GeoJSON (NAD83 rounded to 6 decimal places, shown as WGS 84; the record is the package
-for TTB) and `status.json`, the AVA's status as TTB's own record gives it (`Status`, `Established` and `CFR_Section` in
-the AVAs_Production snapshot in `resources/ttb/`). When TTB establishes the AVA, refresh that snapshot, run the build
-and `./build.sh site-data`, and the site's status follows. A
+hickorysandsdistrictava.org is GitHub Pages serving `docs/` (issue #96). Its maps read `docs/data/`: the boundary,
+steps and points as GeoJSON (NAD83 rounded to 6 decimal places, shown as WGS 84; the record is the package for TTB) and
+`status.json`, the AVA's status as TTB's own record gives it (`Status`, `Established` and `CFR_Section` in the
+AVAs_Production snapshot in `resources/ttb/`). When TTB establishes the AVA, refresh that snapshot, run the build and
+`./build.sh site-data`, and the site's status follows.
+
+The maps are drawn with Esri's ArcGIS Maps SDK for JavaScript, loaded from js.arcgis.com (release 5.1, pinned in the
+pages and checked by `tests/test_site_maps.py`), on Esri's basemaps:
+
+- **Explore** (`explore.html`, #113): one map with a popup for every step and point, and the dark grey map or greyscale
+  imagery.
+- **Walk the line** (`walk.html`, #112): every step's text in order, made by the build from `src/site/walk.template.html`
+  and the data (so it reads without JavaScript and cannot drift from the boundary); the map follows the step being
+  read.
+
+Their code is `docs/assets/maps.js` (shared), `explore.js`, `walk.js` and `maps.css`. Text from the data is only ever set
+as text, never parsed as HTML. The basemaps need the ArcGIS Online API key in `docs/assets/map-config.js`. It is public by
+design and limited to the basemap styles service and to the referrers `https://hickorysandsdistrictava.org` and
+`http://localhost:8765` (for previews: `python3 -m http.server 8765 -d docs`). Stored geocoding and other credit-consuming
+services are refused to it. It lasts up to a year: renew it in ArcGIS Online (Content > the API key item) and replace it
+there. With the key empty, the maps draw the line on a plain background. A
 change to the site is a pull request like any other: `site.yml` tests it on the pull request and deploys it when it is
 merged to `main`. The rest is set outside the repository, once:
 

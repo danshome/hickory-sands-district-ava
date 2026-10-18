@@ -445,3 +445,42 @@ def test_line_distance_ignores_where_vertices_fall():
     # Every vertex of each lies on the other, but one leaves a 1 km gap.
     pieces = [[line[0], [-99.0, 30.0001]], [[-99.0, 30.0099], line[1]]]
     assert msd.apart_m(line, pieces, 5.0) is None
+
+
+WALK = "<h1>@STEP_COUNT@ steps, @MILES@ miles</h1><ol>@STEPS@</ol>"
+
+
+def test_walk_page_lists_the_steps_escaped_with_coarse_lengths(build):
+    made_up_build(
+        build,
+        step_hook=lambda s: s[1]["properties"].update(narrative="A <b> & C"),
+    )
+    page = msd.walk_page(msd.site_data(build), WALK)
+    assert page.startswith("<h1>10 steps, ")
+    assert page.count('<li class="walk-step"') == 11
+    assert 'id="beginning" data-step="0"' in page
+    assert "A &lt;b&gt; &amp; C" in page
+    assert "<b>" not in page
+    assert "0.8 mi" in page  # 1234.5678 m, to a tenth of a mile
+
+
+def test_walk_template_needs_each_token_once(build):
+    with pytest.raises(SystemExit, match="needs @MILES@ once"):
+        msd.walk_page(msd.site_data(build), "@STEP_COUNT@ @STEPS@")
+
+
+def test_check_covers_the_walk_page(monkeypatch, capsys, build, tmp_path):
+    template = tmp_path / "walk.template.html"
+    template.write_text(WALK, encoding="utf-8")
+    page = tmp_path / "walk.html"
+    out = tmp_path / "data"
+    walk = ("--walk", str(template), str(page))
+    run_main(monkeypatch, capsys, build, out, *walk)
+    assert "matches the build" in run_main(
+        monkeypatch, capsys, build, out, *walk, "--check"
+    )
+    page.write_text("edited by hand", encoding="utf-8")
+    with pytest.raises(SystemExit) as stop:
+        run_main(monkeypatch, capsys, build, out, *walk, "--check")
+    assert stop.value.code == msd.STALE
+    assert "differs from the build: walk.html" in capsys.readouterr().out

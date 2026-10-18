@@ -32,8 +32,10 @@ zips the package into `dist/` with `SHA256SUMS.txt` and `build-report.txt`. `./b
   VRT templates; `geotiff/` zips and `geopdf/` are downloaded, gitignored; keep each GeoTIFF inside its zip).
 - `documents/` README and read-me-first templates (figures filled by the build); `LICENSE.txt` (CC0) at the root.
 - `docs/` the website, hickorysandsdistrictava.org (GitHub Pages; #96). Dan builds it; `site.yml` tests it on a PR and
-  deploys it on merge to `main`. Its map data, `docs/data/`, comes from the build (`./build.sh site-data`; the build
-  stops if it is stale), its status from TTB's AVAs_Production record in `resources/ttb/`. Its DNS is at
+  deploys it on merge to `main`. Its map data, `docs/data/` and the walk page `docs/walk.html`, comes from the build
+  (`./build.sh site-data`; the build stops if it is stale), its status from TTB's AVAs_Production record in
+  `resources/ttb/`. The maps (`explore.html`, `walk.html`) use Esri's SDK and a public, basemaps-only API key in
+  `docs/assets/map-config.js`. Its DNS is at
   Squarespace beside the Google Workspace mail records (MX, SPF, DKIM, DMARC `p=reject`): never touch those. The other
   Hickory Sands domains forward to it.
 - `target/` (gitignored) everything the build makes: `work/` (recreated each run; GIS in `work/gis/`, reviews in

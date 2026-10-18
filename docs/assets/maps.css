@@ -1,0 +1,41 @@
+/* The maps: Explore (explore.html) and Walk the line (walk.html). The text works without JavaScript; the maps are added by it. */
+arcgis-map{display:block;width:100%;height:100%;--calcite-font-family:var(--sans)}
+html:not(.js) .walk-map,html:not(.js) .explore-map{display:none}
+.map-nojs{max-width:40rem;color:var(--muted)}
+.js .map-nojs{display:none}
+
+/* Walk the line: the steps scroll; the map stays in view and follows them (above them on a phone, beside them on a wide screen). */
+.walk-map{position:sticky;top:0;z-index:2;height:42svh;margin-inline:-7vw;background:var(--ink);border-bottom:1px solid var(--line)}
+.walk-map arcgis-map{pointer-events:none}
+.walk-steps{list-style:none;margin:0;padding:0 0 45svh;max-width:38rem}
+.walk-step{padding:2.25rem 0 2.5rem;border-top:1px solid var(--line);scroll-margin-top:45svh}
+.walk-step.is-current{border-top-color:var(--sand)}
+.walk-eyebrow{font-family:var(--sans);font-size:.6875rem;font-weight:500;letter-spacing:.14em;line-height:1.5;text-transform:uppercase;color:var(--muted);margin:0 0 .9rem}
+.walk-step.is-current .walk-eyebrow{color:var(--sand)}
+.walk-text{font-family:var(--serif);font-size:1.375rem;line-height:1.45;margin:0;overflow-wrap:anywhere}
+.walk-point{font-family:var(--sans);font-size:.8125rem;line-height:1.5;color:var(--muted);margin:1rem 0 0}
+.walk-point span{font-size:.625rem;letter-spacing:.14em;text-transform:uppercase;margin-right:.5rem}
+@media(min-width:1000px){
+.walk{display:grid;grid-template-columns:minmax(0,34rem) minmax(0,1fr);column-gap:5vw;align-items:start}
+.walk-steps{grid-column:1;grid-row:1;padding-bottom:50svh}
+.walk-step{scroll-margin-top:40svh}
+.walk-map{grid-column:2;grid-row:1;height:100svh;margin-inline:0 -7vw;border-bottom:0;border-left:1px solid var(--line)}
+}
+
+/* Explore: one large map, its key and the downloads; a shorter heading, so the map is on the first screen. */
+.page-explore .page-heading h1{font-size:clamp(2.75rem,7vw,5rem);line-height:1.02}
+.page-explore .page-heading{padding-top:3rem;padding-bottom:2.5rem}
+.explore{margin:0}
+.explore-map{height:72svh;min-height:420px;margin-inline:-7vw;border-block:1px solid var(--line)}
+.explore figcaption{display:flex;flex-wrap:wrap;align-items:center;gap:.75rem 2rem;margin-top:1.25rem;font-size:.8125rem;line-height:1.5;color:var(--muted)}
+.legend-point{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--bone);margin-right:.6rem;vertical-align:middle}
+.map-basemaps{display:inline-flex;gap:.5rem}
+.map-basemaps[hidden]{display:none}
+.map-basemaps button{font:inherit;color:var(--bone);background:none;border:1px solid var(--line);min-height:44px;padding:0 1rem;cursor:pointer}
+.map-basemaps button[aria-pressed="true"]{color:var(--sand);border-color:var(--sand)}
+.map-basemaps button:focus-visible{outline:2px solid var(--sand);outline-offset:2px}
+@media(min-width:1000px){.explore-map{height:78svh;margin-inline:0;border:1px solid var(--line)}}
+
+/* The notes under each map. */
+.map-notes{max-width:44rem;margin-block:3rem 5rem;color:var(--muted)}
+.map-notes .document-list{display:flex;flex-direction:column}

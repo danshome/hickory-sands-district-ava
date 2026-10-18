@@ -14,7 +14,7 @@
 #   ./build.sh publish-dry-run  (or publish --dry-run) build everything publish would send, without signing in, into
 #                         target/publish/ as JSON, and check it (src/publish/agol_dryrun.py)
 #   ./build.sh check-live check the public ArcGIS Online site anonymously, as TTB sees it, against the build (read-only)
-#   ./build.sh site-data  refresh the website's map data (docs/data/) from the last build; commit it with the change
+#   ./build.sh site-data  refresh the website's map data (docs/data/, walk.html) from the last build; commit it with the change
 #
 # No manual steps, on macOS or Linux: missing tools are installed with Homebrew (GDAL, poppler, Python 3.14; on macOS
 # also Google Chrome, which Linux needs installed); every Python package in the lock files is checked against the OSV
@@ -145,7 +145,7 @@ checks() {
     touch "$WORK/.checks-passed"             # ./build.sh site-data copies only a boundary that passed the hard checks
 }
 
-SITE_DATA=(src/site/make_site_data.py --gis "$WORK/gis" --out docs/data)
+SITE_DATA=(src/site/make_site_data.py --gis "$WORK/gis" --out docs/data --walk src/site/walk.template.html docs/walk.html)
 
 site_data() {
     step "the website's map data (docs/data/) against this build"   # hard, after the package: a boundary change must reach the site

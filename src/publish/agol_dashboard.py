@@ -14,7 +14,7 @@ group for TTB's reviewer.
   package README, so it matches the build);
 - centre: the web map 4a (quadrangles, geology, the Map Explorer polygon, the
   proposed revision, the differences);
-- right: the 104 steps, the big differences and all the differences, as lists
+- right: the steps, the big differences and all the differences, as lists
   that zoom the map, and the selected step's record; a tab on the left sets
   out the change near Grit, acre by acre, with its granite.
 Wording (Dan, 2026-10-16): the official names, Notice No. 243, the AVA Map
@@ -65,7 +65,9 @@ HERE = os.environ.get("HSD_WORK") or os.path.join(
     ROOT, "target", "work"
 )  # build work dir
 with open(os.path.join(HERE, "proposed-steps.json")) as f:
-    SQMI = f"{json.load(f)['sqmi']:.2f}"  # the AVA's area, GRS80 square miles
+    PROPOSED = json.load(f)
+SQMI = f"{PROPOSED['sqmi']:.2f}"  # the AVA's area, GRS80 square miles
+STEPS = len(PROPOSED["steps"])  # the boundary's steps, as the build made them
 with open(os.path.join(HERE, "review", "ttb-diff-stats.json")) as f:
     STATS = json.load(f)
 same = STATS["areas"][
@@ -79,6 +81,8 @@ FOLDER = "Hickory Sands District - Final Proposed Boundary and Narrative"
 GROUP_ID = "65720ee9c5a743f88659ae39228704ec"
 TITLE = "0 Dashboard - the proposed boundary and everything in this group"
 MAP_TITLE = "4a Proposed boundary - map over the 13 USGS quadrangles"
+# An item's title is how ./build.sh publish finds it again: a fixed identifier
+# (like the services' names), not a figure the build derives.
 LAYER_TITLE = (
     "4b Proposed boundary - layer (AVA polygon, 104 steps, step endpoints)"
 )
@@ -1446,7 +1450,8 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
 
     props = {
         "snippet": "Start here: the proposed revision on the 13 USGS "
-        "quadrangles with the AVA Map Explorer polygon, the 104 steps, and "
+        "quadrangles with the AVA Map Explorer polygon, the "
+        f"{STEPS} steps, and "
         "every document, map and download in this group.",
         "description": ABOUT
         + "<p>One page for the whole group: pick a step to see it on the map "

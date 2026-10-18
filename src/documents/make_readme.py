@@ -9,8 +9,11 @@ paragraphs and "- " items become paragraphs and lists. A check stops the build
 if any word of README.txt or LICENSE.txt is missing from the page.
 """
 
+import glob
 import html
+import itertools
 import json
+import math
 import os
 import re
 import sys
@@ -227,19 +230,70 @@ def words(s):
     ]
 
 
+def web_mercator_sqmi(path):
+    """Returns a polygon's area as Web Mercator measures it, in square miles.
+
+    Web Mercator (EPSG:3857) stretches distances by 1/cos(latitude), so its
+    planar area overstates the true area; the README says by how much, for
+    AVAs_Production's Area field.
+
+    Args:
+        path: A GeoJSON file holding the AVA's polygon (NAD83 longitude and
+            latitude, used as WGS 84).
+
+    Returns:
+        The planar area of its rings in Web Mercator, in square miles.
+    """
+    radius = 6378137.0  # the sphere Web Mercator projects on, in metres
+
+    def ring_m2(ring):
+        xy = [
+            (
+                radius * math.radians(lon),
+                radius
+                * math.log(math.tan(math.pi / 4 + math.radians(lat) / 2)),
+            )
+            for lon, lat, *_ in ring
+        ]
+        pairs = itertools.pairwise(xy)
+        return abs(sum(x1 * y2 - x2 * y1 for (x1, y1), (x2, y2) in pairs)) / 2
+
+    with open(path, encoding="utf-8") as fh:
+        features = json.load(fh)["features"]
+    assert len(features) == 1, f"{path}: {len(features)} features, not one"
+    geometry = features[0]["geometry"]
+    polygons = (
+        geometry["coordinates"]
+        if geometry["type"] == "MultiPolygon"
+        else [geometry["coordinates"]]
+    )
+    m2 = sum(
+        ring_m2(rings[0]) - sum(ring_m2(hole) for hole in rings[1:])
+        for rings in polygons
+    )
+    return m2 / 1609.344**2
+
+
 def main():
     """Writes README.txt and the read-me-first page into the work folder.
 
-    Fills the template's {AREA_SQMI}, {STEPS}, {REVISION} and
-    {REVISION_SHORT} from the build and src/revision.py, and stops
+    Fills the template's {AREA_SQMI}, {STEPS}, {MERCATOR_SQMI},
+    {MERCATOR_PERCENT}, {REVISION} and {REVISION_SHORT} from the build
+    (proposed-steps.json and gis/*-area-EPSG4269.geojson) and
+    src/revision.py, and stops
     (AssertionError) on a placeholder left unfilled or on a word of README.txt
     or LICENSE.txt that the page does not have.
     """
     with open(os.path.join(HERE, "proposed-steps.json")) as f:
         built = json.load(f)
+    areas = glob.glob(os.path.join(HERE, "gis", "*-area-EPSG4269.geojson"))
+    assert len(areas) == 1, f"one AVA polygon in {HERE}/gis, found {areas}"
+    mercator = web_mercator_sqmi(areas[0])
     fill = {
         "AREA_SQMI": f"{built['sqmi']:.2f}",
         "STEPS": str(len(built["steps"])),
+        "MERCATOR_SQMI": f"{mercator:.0f}",
+        "MERCATOR_PERCENT": f"{100 * (mercator / built['sqmi'] - 1):.0f}",
         "REVISION": revision.ISO,
         "REVISION_SHORT": revision.SHORT,
     }

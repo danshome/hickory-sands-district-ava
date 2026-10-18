@@ -59,7 +59,9 @@ HERE = os.environ.get("HSD_WORK") or os.path.join(
     ROOT, "target", "work"
 )  # build work dir (build.sh stages resources/ here)
 with open(os.path.join(HERE, "proposed-steps.json")) as f:
-    SQMI = f"{json.load(f)['sqmi']:.2f}"  # the AVA's area, GRS80 square miles
+    PROPOSED = json.load(f)
+SQMI = f"{PROPOSED['sqmi']:.2f}"  # the AVA's area, GRS80 square miles
+STEPS = len(PROPOSED["steps"])  # the boundary's steps, as the build made them
 PKG = os.path.join(HERE, "pkg", revision.NAME)
 FOLDER = "Hickory Sands District - Final Proposed Boundary and Narrative"
 GROUP_ID = "65720ee9c5a743f88659ae39228704ec"
@@ -369,13 +371,15 @@ ABOUT = (
     "changes discussed with TTB on October 15, 2026. Prepared by Dan "
     "McLaughlin, Robert Clay Vineyards (petitioner).</p>"
 )
+# An item's title is how ./build.sh publish finds it again: a fixed identifier
+# (like the services' names), not a figure the build derives.
 LAYER_TITLE = (
     "4b Proposed boundary - layer (AVA polygon, 104 steps, step endpoints)"
 )
 MAP_TITLE = "4a Proposed boundary - map over the 13 USGS quadrangles"
 NAMES = {
     "esriGeometryPolygon": "AVA (proposed, " + SQMI + " sq mi)",
-    "esriGeometryPolyline": "Boundary steps (104)",
+    "esriGeometryPolyline": f"Boundary steps ({STEPS})",
     "esriGeometryPoint": "Step endpoints",
 }
 ATTACH = [
@@ -429,7 +433,7 @@ def lock(lyr):
 
 props = {
     "snippet": "The proposed boundary as a hosted feature layer: the AVA "
-    "polygon, the 104 boundary steps with their text, and the step "
+    f"polygon, the {STEPS} boundary steps with their text, and the step "
     "endpoints. Exports allowed.",
     "description": ABOUT
     + "<p>Add it to ArcGIS Pro from the portal, or open it in Map Viewer. "

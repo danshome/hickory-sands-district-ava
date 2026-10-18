@@ -59,6 +59,22 @@ def test_not_a_heading(line):
     assert not make_readme.is_heading(line)
 
 
+# A one-degree square at 30-31 degrees north: 5,553.08 square miles in Web
+# Mercator (GDAL: ogr2ogr to EPSG:3857, then its planar area), 4,109 true.
+SQUARE = {
+    "type": "Polygon",
+    "coordinates": [[[-100, 30], [-99, 30], [-99, 31], [-100, 31], [-100, 30]]],
+}
+
+
+def test_web_mercator_overstates_a_square_as_expected(tmp_path):
+    path = tmp_path / "square.geojson"
+    path.write_text(json.dumps({"features": [{"geometry": SQUARE}]}))
+    assert make_readme.web_mercator_sqmi(str(path)) == pytest.approx(
+        5553.08, abs=0.5
+    )
+
+
 def test_readme_and_page(tmp_path, monkeypatch):
     """The real templates, with the figures filled in.
 
@@ -69,6 +85,10 @@ def test_readme_and_page(tmp_path, monkeypatch):
             {"sqmi": 123.456, "steps": [{"step": n} for n in range(1, 8)]}
         )
     )
+    (tmp_path / "gis").mkdir()
+    (tmp_path / "gis" / "x-area-EPSG4269.geojson").write_text(
+        json.dumps({"features": [{"geometry": SQUARE}]})
+    )
     monkeypatch.setattr(make_readme, "HERE", str(tmp_path))
     make_readme.main()
     readme = (tmp_path / "README.txt").read_text(encoding="utf-8")
@@ -78,6 +98,7 @@ def test_readme_and_page(tmp_path, monkeypatch):
         / f"Hickory-Sands-District-read-me-first-{revision.ISO}.html"
     ).read_text(encoding="utf-8")
     assert "123.46" in readme and not re.search(r"\{[A-Z_]+\}", readme)
+    assert "all 7 boundary steps" in readme
     headings = [s for s in readme.splitlines()[3:] if make_readme.is_heading(s)]
     assert any(
         h.startswith("WHAT WE PROPOSE TO CHANGE IN NOTICE NO. 243")

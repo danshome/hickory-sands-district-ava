@@ -23,7 +23,7 @@ maps; none is copied from an existing boundary layer.
 | TTB's AVA Map Explorer | https://www.ttb.gov/ava |
 | The docket (Notice No. 243 and the public comments) | https://www.regulations.gov/docket/TTB-2026-0005 |
 
-The dashboard shows the boundary on the 13 quadrangles with TTB's AVA Map Explorer polygon, all 104 steps (pick one to
+The dashboard shows the boundary on the 13 quadrangles with TTB's AVA Map Explorer polygon, every step (pick one to
 see it on the map and read it), the change near Grit acre by acre, every difference from the AVA Map Explorer polygon,
 and a link to every file.
 
@@ -46,7 +46,7 @@ corrections**:
   substantive correction); step (49) says "the marked 1,586-foot elevation point", where the notice says "the marked
   1,586-elevation point", the only elevation in its 96 steps written without "-foot" (an editorial correction).
 
-Result (build of October 16, 2026): **104 steps, 105 points, 193.83 square miles** (true area on the GRS 1980
+Result (the build checks these against its own figures): **104 steps, 105 points, 193.83 square miles** (true area on the GRS 1980
 ellipsoid). The build report in `dist/` always has the current figures.
 
 What the change near Grit moves, with the granite (Town Mountain Granite and younger granitic intrusions, USGS State
@@ -73,7 +73,7 @@ petition, and 193.83 as proposed.
   benchmark, a road junction, a windmill), each straight-line step runs between two pins, and each "along the road /
   creek / contour" step is a trace of the centre of the printed ink (`src/tracing/`). TTB's polygon, the petition's
   layers and The National Map's contours were looked at only as hints and for comparison; no geometry comes from them.
-- **Hard checks stop the build:** every one of the 105 points lies exactly on its two steps; no step line crosses
+- **Hard checks stop the build:** every point lies exactly on its two steps; no step line crosses
   itself; the polygon is valid; the quads match their manifest.
 - **Datum.** The quadrangles are NAD27, in polyconic projections. Everything measured on them is moved to NAD83 point by
   point with NOAA's NADCON 5.0 CONUS grid. The layers are NAD83 (EPSG:4269), with TTB's AVAs_Production fields.
@@ -88,8 +88,8 @@ revision follows the centre of the printed linework. So the two lines differ a l
 2 m along each line, the median distance to the other line is 11 m. The build compares them (`src/review/compare_ttb.py`)
 and reports:
 
-- **6 big differences**, where the lines are 100 m or more apart: five where the two lines take different paths, and
-  the proposed text change near Grit;
+- **6 big differences**, where the lines are 100 m or more apart: the proposed text change near Grit, and the others
+  where the two lines take different paths;
 - **every piece of land between the two lines** (990 pieces): from the same text drawn differently, 682 acres are in
   the proposed revision only and 368 acres in the Map Explorer polygon only; the change near Grit accounts for the rest.
 

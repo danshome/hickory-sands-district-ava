@@ -1,6 +1,6 @@
 """src/site/make_site_data.py and docs/data/: the website's map data (#111).
 
-The committed data is the boundary as the build draws it: 104 steps that run
+The committed data is the boundary as the build draws it: the steps that run
 from the Beginning point, each ending at its own point, around to the
 Beginning again; only the properties a reader needs; the area the README
 gives; a status the site can show. The generator rounds, keeps and refuses

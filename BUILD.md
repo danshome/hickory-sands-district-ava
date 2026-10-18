@@ -87,8 +87,8 @@ Other commands:
   - dashboard: its JSON parses, its layout, data sources and actions name widgets and web map layers that exist, its
     map is the group's web map and it links every other item; no phone layout (`mobileView`) yet is only a note (#49);
   - figures, against the build's outputs in `target/work` (run by hand, `HSD_WORK` can point at another copy of them;
-    `./build.sh` always sets it to `target/work`): the AVA polygon's area (0.01 sq mi), the 104
-    steps and 105 points, the differences from the AVA Map Explorer polygon (pieces and acres by cause and side, each
+    `./build.sh` always sets it to `target/work`): the AVA polygon's area (0.01 sq mi), the
+    steps and points, the differences from the AVA Map Explorer polygon (pieces and acres by cause and side, each
     big difference's acres, 0.1 acre), the change near Grit (acres, granite, sandstone, 0.01 acre);
   - files: each uploaded file is the size of the one just built (and, up to 4 MB, downloaded and the same SHA-256),
     and the documents attached to the AVA polygon match the build's.
@@ -160,7 +160,7 @@ tobedeleted/             set aside for review and deletion, used by nothing (not
 5. **hand patches** - spliced onto the traces; a patch whose ends no longer lie on the trace stops the build (redo
    that patch). Patch joins that turn more than 25 degrees are rounded.
 6. **boundary** - pins, straight-line steps, traced steps, polygon, points, GeoPackage, shapefiles.
-7. **checks** - hard (stop the build): every one of the 105 pins exactly on its two steps; no step line crosses
+7. **checks** - hard (stop the build): every pin exactly on its two steps; no step line crosses
    itself; the polygon is valid; the step text uses only the Federal Register's characters and TTB's 96 steps are
    identical to the Federal Register's XML (`src/checks/check_step_text.py`, also a commit hook). Reports (in `target/work/review/`): tips of contours the line stops short of; where the
    proposed revision and the AVA Map Explorer polygon differ (rings beyond hand-drawing noise, the big differences 100 m
@@ -249,7 +249,8 @@ for Python; 2-space YAML and TOML). By hand: `.venv/bin/ruff format .` and `.ven
 - `test_compare_ttb.py`: a big difference's acres are the whole pieces its ring touches, even inside a hole in the
   ring (#26), and the helpers that find the stretches;
 - `test_make_readme.py`: README.txt's headings ("WHAT WE PROPOSE TO CHANGE IN NOTICE NO. 243 (...)") on the read-me page;
-- `test_site_data.py`: the website's map data in `docs/data/`: 104 steps from the Beginning point, each ending at its
+  every placeholder filled; the Web Mercator area against GDAL's for a one-degree square;
+- `test_site_data.py`: the website's map data in `docs/data/`: every step from the Beginning point, each ending at its
   own point, around to the Beginning again; only the properties a reader needs; the README's area; a status the site can
   show; and, on a small made-up build, the generator's rounding and refusals and the check's line between a stale
   folder and platform drift;
@@ -286,7 +287,7 @@ network access, Google Chrome and the published site, so `./build.sh test` and t
   the phone layout (`mobileView`) is shown, not the desktop one (`dashboards-mobile-layout` and the Filter button
   present, the desktop layout and the selected step's details panel absent); the header; the three indicators'
   numbers, and every caption inside its indicator and not printed over the number (each text's em box, measured in
-  the page); the map drawn; the four tabs (Steps, What changes, Grit, Documents) each open with content; all 104 steps
+  the page); the map drawn; the four tabs (Steps, What changes, Grit, Documents) each open with content; all the steps
   in the Steps list (it draws only the rows near its scroll position: the test scrolls it through); tapping a step
   zooms the map; the Documents tab's links open items of the group, with their titles; no sideways scrolling; the
   drawer's step selector, whose "Corrections to Notice No. 243's wording" leaves (49) and (85). A header cut short

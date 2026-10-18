@@ -47,8 +47,8 @@ Change the boundary only through `resources/boundary/` and rebuild; never edit o
 only in `resources/boundary/revision-date.txt` (`src/revision.py`); never type it, or a figure, in code or templates. Hard checks stop the build:
 quads vs manifest, every pin exactly on its two steps, no step line crossing itself, valid polygon; and, after the
 package, `src/checks/check_outputs.py` on what reaches TTB (PDF fonts, the notice copy, compare text, figures vs
-the stats, wording, quads/lengths/NAD83; zip path lengths only warn). Current build:
-104 steps, 105 pins, 193.83 sq mi (GRS 1980); the figures in the README and ArcGIS descriptions come from the build.
+the stats, wording, quads/lengths/NAD83; zip path lengths only warn). The current figures (steps, pins, area) are in
+`dist/build-report.txt`; the figures in the README and ArcGIS descriptions come from the build.
 
 Commits run the pre-commit hooks (`.pre-commit-config.yaml`, tools from `requirements-dev.txt` in `.venv`, via
 `.githooks/pre-commit`; `./build.sh lint` runs them all): file hygiene, JSON/YAML/TOML, detect-secrets, a

@@ -7,7 +7,7 @@
 target-version = "py314"
 line-length = 80
 cache-dir = "target/ruff-cache"
-extend-exclude = ["tobedeleted", "target", "dist"]
+extend-exclude = ["tobedeleted", "research", "target", "dist"]
 # Each script puts its own folder on sys.path and imports its neighbours by name (import centerline, ttb_record, ...):
 # those folders are first-party sources, so isort groups such imports as local ones.
 src = [".", "src/*"]

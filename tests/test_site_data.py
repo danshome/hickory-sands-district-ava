@@ -618,3 +618,31 @@ def test_compared_areas_come_from_the_review_stats(build, tmp_path):
     stats.write_text(json.dumps({"sqmi": {}}), encoding="utf-8")
     with pytest.raises(SystemExit, match="no petition and notice_243 areas"):
         msd.site_data(build, str(stats))
+
+
+def test_check_and_write_cover_the_pages(monkeypatch, capsys, build, tmp_path):
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    out = docs / "data"
+    stale = '<p><span data-figure="step_count">99</span> steps</p>\n'
+    (docs / "a.html").write_text(stale, encoding="utf-8")
+    (docs / "b.html").write_text("<p>no figures</p>\n", encoding="utf-8")
+    run_main(monkeypatch, capsys, build, out)  # the data first
+    pages = ("--pages", str(docs))
+    with pytest.raises(SystemExit) as stop:
+        run_main(monkeypatch, capsys, build, out, *pages, "--check")
+    assert stop.value.code == msd.STALE
+    assert (
+        "figures differ from the build: step_count" in capsys.readouterr().out
+    )
+    untouched = (docs / "b.html").stat().st_mtime_ns
+    said = run_main(monkeypatch, capsys, build, out, *pages)
+    assert "wrote the figures in" in said and "a.html" in said
+    assert "b.html" not in said
+    assert (docs / "b.html").stat().st_mtime_ns == untouched
+    assert (docs / "a.html").read_text(encoding="utf-8") == (
+        '<p><span data-figure="step_count">10</span> steps</p>\n'
+    )
+    assert "matches the build" in run_main(
+        monkeypatch, capsys, build, out, *pages, "--check"
+    )

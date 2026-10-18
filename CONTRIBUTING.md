@@ -24,7 +24,10 @@ Every change, however small, goes the same way:
 3. **Commits that pass the commit hooks.** Never skip them with `--no-verify`.
 4. **A pull request to `main`** that says `Fixes #n`, what changed, why, and how you checked it. GitHub runs the hooks
    and the tests on it, and the whole build when the build's inputs change.
-5. **The maintainer reviews it and merges it.** Nobody pushes to `main` directly; the branch is protected.
+5. **The maintainer reviews it and merges it.** Before merging, the maintainer's Claude Code session also reviews every
+   pull request to `main` with the `pr-review-toolkit` plugin's `/pr-review-toolkit:review-pr`. Its findings come back
+   in the pull request, to be fixed on the branch or answered there. Nobody can push to `main` directly; the branch is
+   protected.
 
 Keep a pull request to one change. Something else you notice on the way gets its own issue.
 

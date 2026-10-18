@@ -42,6 +42,8 @@ zips the package into `dist/` with `SHA256SUMS.txt` and `build-report.txt`. `./b
 - `target/` (gitignored) everything the build makes: `work/` (recreated each run; GIS in `work/gis/`, reviews in
   `work/review/`), `quads-cropped/` (neatline VRTs for QGIS). `dist/` (gitignored) the distribution.
 - `tobedeleted/` (gitignored) is where things no build uses go for Dan to review and delete. Nothing may depend on it.
+- Research (notes, audits, analyses, prototypes) is never checked in, and never kept in `target/` (`./build.sh clean`
+  wipes it): it lives in a research folder outside the repository. Public pages cite the published sources themselves.
 
 Change the boundary only through `resources/boundary/` and rebuild; never edit outputs. The revision's date is typed
 only in `resources/boundary/revision-date.txt` (`src/revision.py`); never type it, or a figure, in code or templates. Hard checks stop the build:

@@ -11,7 +11,7 @@ Sands" only as "Hickory Sands District"; never "agreed". timeline.js, an
 enhancement only, makes every element and sets every text itself, never from
 an HTML string, and timeline.css styles only its own geo- classes.
 
-The research behind the stages is resources/site/hickory-geology-research.md.
+Every stage rests on the published sources its Sources list cites.
 Standard library only, so the lint workflow runs these.
 """
 

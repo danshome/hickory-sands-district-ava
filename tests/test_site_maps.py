@@ -126,3 +126,13 @@ def test_a_page_says_so_when_its_map_cannot_load(page):
     text = read("docs", page)
     assert '<p class="map-nojs' in text
     assert "<noscript>" not in text  # the note must show when the map fails too
+
+
+def test_every_popup_fetches_its_fields():
+    # Popups built by functions get only what they ask for: without outFields
+    # a point's popup read "Point NaN" (#122).
+    text = read("docs", "assets", "maps.js")
+    blocks = re.findall(r"popupTemplate:\s*\{(.*?)\n\s*\},", text, re.S)
+    assert blocks
+    for block in blocks:
+        assert re.search(r'outFields:\s*\[\s*"\*"\s*\]', block), block

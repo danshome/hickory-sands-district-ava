@@ -66,11 +66,13 @@ Every change from here on:
 2. a commit (the hooks must pass; end the message with the Co-Authored-By line);
 3. `git push -u origin <branch>` and a PR to `main` with a detailed description: what changed, why, how it was
    verified, and what was republished to ArcGIS Online, if anything;
-4. review it with the `pr-review-toolkit` plugin (`pr-review-toolkit@claude-plugins-official`, installed per user;
-   Dan, 2026-10-18: every PR to `main`, subagents' and other agents' included): on the PR's branch (`gh pr checkout
-   <n>`, or its worktree) run `/pr-review-toolkit:review-pr`, naming the PR and its diff (`git diff main...<branch>`)
-   in the arguments, since the command finds its scope from the checked-out branch. Fix each finding on the branch,
-   or answer it in the PR, then add a PR comment with the review's result;
+4. review it with two commands (Dan, 2026-10-18: every PR to `main`, subagents' and other agents' included), on the PR's
+   branch (`gh pr checkout <n>`, or its worktree), with `origin/main` fetched, since both find their scope from the
+   checked-out branch: `/pr-review-toolkit:review-pr` (the `pr-review-toolkit@claude-plugins-official` plugin, installed
+   per user), naming the PR and its diff (`git diff main...<branch>`) in the arguments; then Claude Code's
+   `/security-review`, which takes no arguments and reviews the branch's changes against `main` (the toolkit has no
+   security review of its own). Fix each finding on the branch, or answer it in the PR, then add a PR comment with both
+   reviews' results;
 5. once `gh pr checks <n>` passes, or fails only on a known failure with its own issue (#99), merge it
    (`gh pr merge <n> --merge --admin`); keep the branch, so each change stays on its own branch;
 6. `git switch main && git pull --ff-only`.
@@ -84,8 +86,8 @@ in step when a rule changes.
 Subagents (Dan, 2026-10-17): fixes may be delegated to subagents, each in its own git worktree and branch, one area of
 files per agent so they never edit the same file at once. A subagent commits, pushes its branch and opens a PR; it never
 merges, never pushes to `main`, never publishes to ArcGIS Online and never comments on or closes issues. Only the main
-session reviews each PR (its diff and its result), runs `/pr-review-toolkit:review-pr` on it, answers the findings or
-sends the PR back to the subagent, and merges it to `main`.
+session reviews each PR (its diff and its result), runs `/pr-review-toolkit:review-pr` and `/security-review` on it,
+answers the findings or sends the PR back to the subagent, and merges it to `main`.
 
 GitHub Actions (`.github/workflows/`, see BUILD.md), all on GitHub's Linux runners (Dan, 2026-10-17: never Mac runners,
 they cost 10x): `lint` for every PR; `build` (the whole `./build.sh`, Homebrew on Linux) for PRs that change the build's

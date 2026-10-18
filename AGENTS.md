@@ -12,9 +12,9 @@ checks). Where this file and CLAUDE.md differ, CLAUDE.md wins.
    refused. Only Dan, or the Claude Code session he runs, merges pull requests into it.
 2. **Every change goes issue, branch, pull request.** Open or name a GitHub issue first. Branch off `main`, named by
    kind and topic (`docs/...`, `fix/...`, `feature/...`). Commit, push the branch, and open a pull request to `main`
-   that says `Fixes #n` and what changed, why, and how you checked it. Then stop, and don't merge it. Dan's Claude
-   Code session reviews every pull request to `main` with the `pr-review-toolkit` plugin's
-   `/pr-review-toolkit:review-pr` before merging it. If findings come back in the pull request, fix them on your
+   that says `Fixes #n` and what changed, why, and how you checked it. Then stop, and don't merge it. Dan's Claude Code
+   session reviews every pull request to `main` with the `pr-review-toolkit` plugin's `/pr-review-toolkit:review-pr` and
+   with Claude Code's `/security-review` before merging it. If findings come back in the pull request, fix them on your
    branch or answer them there.
 3. **The commit hooks must pass.** Run `./build.sh env` once (it makes `.venv` and installs the hooks), and let them
    run on every commit. Never `--no-verify`. Every rule in `ruff.toml` applies to all Python, new code included:

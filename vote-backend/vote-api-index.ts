@@ -6,11 +6,12 @@
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
 const ACTIVATION_UPVOTES = 50;
-const MIN_VOTES_TO_RETIRE = 8;
-const BOTTOM_FRACTION = 0.10;
-const RATIO_FLOOR = 0.5;
+const MIN_VOTES_TO_RETIRE = 25;
+const RETIRE_RATIO = 0.35;
 const MAX_UPLOAD_BYTES = 3 * 1024 * 1024;
 const MAX_SUBMISSIONS = 200;
+const MAX_PENDING = 50;
+const MAX_UPLOADS_PER_IP_DAY = 5;
 const BUCKET = "hsd-submissions";
 
 const sb = createClient(
@@ -50,24 +51,15 @@ async function retiredIds(): Promise<string[]> {
 }
 async function cullNow() {
   const t = await tally();
-  if (t.totalUp < ACTIVATION_UPVOTES) return { culled: [] as string[], reason: "not activated" };
   const retired = await retiredIds();
   const ids = new Set([...Object.keys(t.up), ...Object.keys(t.down)]);
-  const scored: { id: string; ratio: number }[] = [];
+  const culled: string[] = [];
   for (const id of ids) {
     const u = t.up[id] || 0;
     const d = t.down[id] || 0;
-    if (u + d >= MIN_VOTES_TO_RETIRE && !retired.includes(id)) {
-      scored.push({ id, ratio: u / (u + d) });
-    }
-  }
-  scored.sort((x, y) => x.ratio - y.ratio);
-  const n = Math.floor(scored.length * BOTTOM_FRACTION);
-  const culled: string[] = [];
-  for (let i = 0; i < Math.min(n, scored.length); i++) {
-    if (scored[i].ratio < RATIO_FLOOR) {
-      await sb.from("hsd_retired").insert({ design_id: scored[i].id });
-      culled.push(scored[i].id);
+    if (u + d >= MIN_VOTES_TO_RETIRE && !retired.includes(id) && u / (u + d) < RETIRE_RATIO) {
+      await sb.from("hsd_retired").insert({ design_id: id });
+      culled.push(id);
     }
   }
   return { culled };
@@ -168,6 +160,14 @@ Deno.serve(async (req) => {
     } else if (action === "upload" && p.data) {
       const { count } = await sb.from("hsd_submissions").select("id", { count: "exact", head: true });
       if ((count ?? 0) >= MAX_SUBMISSIONS) return textOut("full");
+      const { count: pendingCount } = await sb.from("hsd_submissions").select("id", { count: "exact", head: true }).eq("status", "pending");
+      if ((pendingCount ?? 0) >= MAX_PENDING) return textOut("queue full");
+      const clientIp = (req.headers.get("x-forwarded-for") || "").split(",")[0].trim();
+      if (clientIp) {
+        const dayAgo = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
+        const { count: ipCount } = await sb.from("hsd_submissions").select("id", { count: "exact", head: true }).eq("ip", clientIp).gte("created_at", dayAgo);
+        if ((ipCount ?? 0) >= MAX_UPLOADS_PER_IP_DAY) return textOut("slow down");
+      }
       if (p.data.length > 4500000) return textOut("too big");
       let bytes: Uint8Array;
       try {
@@ -189,6 +189,7 @@ Deno.serve(async (req) => {
         storage_path: path,
         content_type: mime,
         status: "pending",
+        ip: clientIp || null,
       });
     } else if (action === "admin_pending" && adminOk(p.key)) {
       const { data } = await sb

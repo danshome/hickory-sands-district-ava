@@ -22,11 +22,13 @@ Other errors exit 1.
 """
 
 import argparse
+import datetime
 import glob
 import itertools
 import json
 import math
 import os
+import re
 import sys
 
 DECIMALS = 6
@@ -43,6 +45,7 @@ DRIFTS = {"boundary.geojson": (), "steps.geojson": ("length_m",)}
 MAX_DRIFT_M = 5.0
 M_PER_DEGREE = 111320.0  # metres per degree of latitude, near enough here
 CELL_M = 200.0  # the grid that finds a position's nearby segments
+SAMPLE_M = 1.0  # how often along a changed segment the distance is measured
 NOTE = (
     "Display copy of the Hickory Sands District boundary for the website "
     "(NAD83 coordinates, rounded to 6 decimal places, shown as WGS 84). The "
@@ -123,6 +126,30 @@ def one(gis_dir, suffix):
         return json.load(fh)
 
 
+def as_date(value):
+    """Returns a date from TTB's record as YYYY-MM-DD.
+
+    Args:
+        value: The record's Established value: epoch milliseconds (an
+            esriFieldTypeDate in an ArcGIS REST response, in UTC), an ISO
+            date or date-time string, or None.
+
+    Returns:
+        The date, or None when value is not one.
+    """
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, (int, float)):
+        when = datetime.datetime.fromtimestamp(value / 1000, datetime.UTC)
+        return when.date().isoformat()
+    if isinstance(value, str):
+        try:
+            return datetime.date.fromisoformat(value[:10]).isoformat()
+        except ValueError:
+            return None
+    return None
+
+
 def record_status(record):
     """Returns the AVA's status as the website shows it, from its record.
 
@@ -136,7 +163,8 @@ def record_status(record):
 
     Raises:
         SystemExit: When the record's status is not one the site can show, or
-            an established AVA lacks its date or its CFR section.
+            an established AVA lacks its date or its CFR section (a
+            placeholder such as "27 CFR 9.XXX" is not one).
     """
     status = str(record.get("Status") or "").lower()
     if status not in STATUSES:
@@ -149,14 +177,16 @@ def record_status(record):
             "cfr_section": None,
         }
     cfr = record.get("CFR_Section") or ""
-    if not record.get("Established") or not cfr or "X" in cfr:
+    established_on = as_date(record.get("Established"))
+    if established_on is None or not re.fullmatch(r"27 CFR 9\.\d+", cfr):
         sys.exit(
             "an established AVA needs its Established date and CFR_Section"
+            f" (27 CFR 9.n): {record.get('Established')!r}, {cfr!r}"
         )
     return {
         "name": record["Name"],
         "status": status,
-        "established_on": record["Established"],
+        "established_on": established_on,
         "cfr_section": cfr,
     }
 
@@ -317,21 +347,44 @@ def to_segment(p, a, b):
     return math.hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dy)
 
 
-def farthest(points, lines, limit):
-    """Returns how far the farthest of points lies from lines, up to limit.
+def samples(a, b):
+    """Returns points every SAMPLE_M (or less) along a segment, ends included.
 
     Args:
-        points: (x, y) positions in metres.
+        a: The segment's start, (x, y) in metres.
+        b: Its end.
+
+    Returns:
+        A list of (x, y) points from a to b.
+    """
+    n = max(1, math.ceil(math.dist(a, b) / SAMPLE_M))
+    return [
+        (a[0] + (b[0] - a[0]) * k / n, a[1] + (b[1] - a[1]) * k / n)
+        for k in range(n + 1)
+    ]
+
+
+def farthest(lines, others, limit):
+    """Returns how far the farthest point of lines lies from others.
+
+    Each segment of lines that others do not share is measured every
+    SAMPLE_M along its length, so the answer is within SAMPLE_M / 2 of the
+    exact one.
+
+    Args:
         lines: Lines of (x, y) positions in metres.
+        others: The lines to measure from.
         limit: The distance beyond which the answer is only "too far".
 
     Returns:
-        The largest distance from a point to its nearest segment, in metres,
-        or None when a point is more than limit from every segment.
+        The largest distance from a point of lines to its nearest segment of
+        others, in metres, or None when one is more than limit away.
     """
     grid = {}
-    for line in lines:
+    shared = set()
+    for line in others:
         for a, b in itertools.pairwise(line):
+            shared.update(((a, b), (b, a)))
             cells = [
                 range(
                     math.floor((min(a[i], b[i]) - limit) / CELL_M),
@@ -342,26 +395,29 @@ def farthest(points, lines, limit):
             for cx in cells[0]:
                 for cy in cells[1]:
                     grid.setdefault((cx, cy), []).append((a, b))
-    vertices = {p for line in lines for p in line}
     worst = 0.0
-    for p in points:
-        if p in vertices:
-            continue
-        cell = (math.floor(p[0] / CELL_M), math.floor(p[1] / CELL_M))
-        near = grid.get(cell, ())
-        d = min((to_segment(p, a, b) for a, b in near), default=math.inf)
-        if d > limit:
-            return None
-        worst = max(worst, d)
+    for line in lines:
+        for a, b in itertools.pairwise(line):
+            if (a, b) in shared:
+                continue
+            for p in samples(a, b):
+                cell = (math.floor(p[0] / CELL_M), math.floor(p[1] / CELL_M))
+                d = min(
+                    (to_segment(p, c, e) for c, e in grid.get(cell, ())),
+                    default=math.inf,
+                )
+                if d > limit:
+                    return None
+                worst = max(worst, d)
     return worst
 
 
 def apart_m(a, b, limit):
     """Returns how far apart two shapes' lines are at most, up to limit.
 
-    The distance is the largest from a vertex of either shape to the other
-    shape's lines (the Hausdorff distance between them), so a vertex that
-    only slides along a line does not count, and the shapes may have
+    The distance is the largest from a point of either shape's lines to the
+    other's (their Hausdorff distance, measured every SAMPLE_M), so a vertex
+    that only slides along a line does not count, and the shapes may have
     different numbers of vertices.
 
     Args:
@@ -374,8 +430,8 @@ def apart_m(a, b, limit):
     """
     lat = parts(a)[0][0][1]
     la, lb = in_metres(a, lat), in_metres(b, lat)
-    one = farthest([p for line in la for p in line], lb, limit)
-    other = farthest([p for line in lb for p in line], la, limit)
+    one = farthest(la, lb, limit)
+    other = farthest(lb, la, limit)
     return None if one is None or other is None else max(one, other)
 
 
@@ -414,16 +470,20 @@ def drift(have, want):
 
     Returns:
         How far apart the two versions of any feature are at most, in metres,
-        or None when that is more than MAX_DRIFT_M.
+        or None when that is more than MAX_DRIFT_M or a committed shape is
+        malformed.
     """
     a, b = json.loads(have)["features"], json.loads(want)["features"]
     worst = 0.0
     for f, g in zip(a, b, strict=True):
-        d = apart_m(
-            f["geometry"]["coordinates"],
-            g["geometry"]["coordinates"],
-            MAX_DRIFT_M,
-        )
+        try:
+            d = apart_m(
+                f["geometry"]["coordinates"],
+                g["geometry"]["coordinates"],
+                MAX_DRIFT_M,
+            )
+        except IndexError, KeyError, TypeError:  # not a shape: stale
+            return None
         if d is None:
             return None
         worst = max(worst, d)
@@ -443,7 +503,9 @@ def compare(files, out_dir):
         by more than MAX_DRIFT_M); those in out_dir but not made by the
         build; and notes on lines that drift within MAX_DRIFT_M (#116).
     """
-    have = set(os.listdir(out_dir)) if os.path.isdir(out_dir) else set()
+    have = set()
+    if os.path.isdir(out_dir):  # leave dotfiles (.DS_Store) alone
+        have = {n for n in os.listdir(out_dir) if not n.startswith(".")}
     missing = sorted(set(files) - have)
     unexpected = sorted(have - set(files))
     differs, notes = [], []

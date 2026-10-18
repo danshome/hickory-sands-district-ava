@@ -108,6 +108,34 @@ def test_a_status_the_site_cannot_show_is_refused(record, message):
         msd.record_status(record)
 
 
+@pytest.mark.parametrize(
+    ("value", "date"),
+    [
+        (1798761600000, "2027-01-01"),  # epoch ms, as TTB's REST record gives
+        ("2027-01-01T05:00:00Z", "2027-01-01"),
+        ("2027-01-01", "2027-01-01"),
+        ("soon", None),
+        (True, None),
+        (None, None),
+    ],
+)
+def test_as_date_reads_the_record_s_dates(value, date):
+    assert msd.as_date(value) == date
+
+
+def test_a_placeholder_cfr_section_in_any_case_is_refused():
+    record = {
+        **PROPOSED,
+        "Status": "Established",
+        "Established": 1798761600000,
+        "CFR_Section": "27 CFR 9.xxx",
+    }
+    with pytest.raises(SystemExit, match="needs its Established date"):
+        msd.record_status(record)
+    record["CFR_Section"] = "27 CFR 9.300"
+    assert msd.record_status(record)["established_on"] == "2027-01-01"
+
+
 def test_the_status_follows_the_record():
     assert msd.record_status({**PROPOSED, "CFR_Section": "27 CFR 9.XXX"}) == {
         "name": "Hickory Sands District",
@@ -324,9 +352,23 @@ def test_check_exits_stale_and_write_fixes_it(
     assert "not made by the build: extra.json" in said
     run_main(monkeypatch, capsys, build, out)
     assert sorted(os.listdir(out)) == sorted(msd.site_data(build))
+    (out / ".DS_Store").write_bytes(b"\0")  # a Mac's Finder file is not stale
     assert "matches the build" in run_main(
         monkeypatch, capsys, build, out, "--check"
     )
+
+
+def test_a_malformed_committed_shape_is_stale_not_a_traceback(
+    monkeypatch, capsys, build, tmp_path
+):
+    out = tmp_path / "data"
+    run_main(monkeypatch, capsys, build, out)
+    steps = json.loads((out / "steps.geojson").read_text(encoding="utf-8"))
+    steps["features"][2]["geometry"]["coordinates"] = []
+    (out / "steps.geojson").write_text(json.dumps(steps), encoding="utf-8")
+    with pytest.raises(SystemExit) as stop:
+        run_main(monkeypatch, capsys, build, out, "--check")
+    assert stop.value.code == msd.STALE
 
 
 def nudge(degrees):
@@ -396,7 +438,10 @@ def test_check_tells_drift_from_a_changed_boundary(
 def test_line_distance_ignores_where_vertices_fall():
     line = [[-99.0, 30.0], [-99.0, 30.01]]
     more = [[-99.0, 30.0], [-99.0, 30.004], [-99.0, 30.01]]
-    assert msd.apart_m(line, more, 5.0) == 0.0
+    assert msd.apart_m(line, more, 5.0) == pytest.approx(0.0, abs=1e-6)
     beside = [[-99.0, 30.0], [-99.00003, 30.005], [-99.0, 30.01]]
     assert 2.5 < msd.apart_m(line, beside, 5.0) < 3.0  # 0.00003 deg east
     assert msd.apart_m(line, [[-99.001, 30.0], [-99.0, 30.01]], 5.0) is None
+    # Every vertex of each lies on the other, but one leaves a 1 km gap.
+    pieces = [[line[0], [-99.0, 30.0001]], [[-99.0, 30.0099], line[1]]]
+    assert msd.apart_m(line, pieces, 5.0) is None

@@ -46,7 +46,10 @@ HERE = os.environ.get("HSD_WORK") or os.path.join(
     ROOT, "target", "work"
 )  # build work dir (build.sh stages resources/ here)
 with open(os.path.join(HERE, "proposed-steps.json")) as f:
-    SQMI = f"{json.load(f)['sqmi']:.2f}"  # the AVA's area, GRS80 square miles
+    BUILT = json.load(f)
+SQMI = f"{BUILT['sqmi']:.2f}"  # the AVA's area, GRS80 square miles
+STEPS = len(BUILT["steps"])  # the boundary's steps, as the build made them
+POINTS = STEPS + 1  # the beginning point and each step's end
 PKG = os.path.join(HERE, "pkg", revision.NAME)
 FOLDER = "Hickory Sands District - Final Proposed Boundary and Narrative"
 GROUP_ID = "65720ee9c5a743f88659ae39228704ec"
@@ -286,12 +289,14 @@ AVA = bbox(
 )  # the extent of the 4 GIS downloads
 DESC1 = (
     ABOUT + "<p>Proposed &sect; 9.___ Hickory Sands District: paragraphs "
-    "(a)&ndash;(c) and all 104 boundary steps, TTB's published text with the "
+    f"(a)&ndash;(c) and all {STEPS} boundary steps, TTB's "
+    "published text with the "
     "proposed changes near Grit, followed by the list of changes.</p>"
 )
 DESC1C = (
     ABOUT + "<p>Proposed &sect; 9.___ Hickory Sands District as plain text "
-    "(UTF-8): paragraphs (a)&ndash;(c) and all 104 boundary steps, one step "
+    f"(UTF-8): paragraphs (a)&ndash;(c) and all {STEPS} "
+    "boundary steps, one step "
     "to a line, Notice No. 243's text with the proposed changes near Grit. "
     "The regulatory text only: the list of changes is in items 1a and 1b, "
     "and each changed step is set beside Notice No. 243's text, with why, in "
@@ -299,7 +304,7 @@ DESC1C = (
 )
 DESC1D = (
     ABOUT
-    + "<p>The 104 boundary steps of the proposed text, one row each (CSV, "
+    + f"<p>The {STEPS} boundary steps of the proposed text, one row each (CSV, "
     "UTF-8), with the columns <i>step</i> (its number), <i>text</i> (the "
     "step as proposed), <i>text_source</i> (where the wording comes from: "
     "Notice No. 243 or the petition, and the step number there), <i>"
@@ -341,7 +346,7 @@ ITEMS = [
         T.PDF,
         C1,
         (
-            "The proposed regulatory text, all 104 steps, and the changes "
+            f"The proposed regulatory text, all {STEPS} steps, and the changes "
             "from TTB's published text."
         ),
         DESC1,
@@ -354,7 +359,7 @@ ITEMS = [
         T.MICROSOFT_WORD,
         C1,
         (
-            "The proposed regulatory text, all 104 steps, and the changes "
+            f"The proposed regulatory text, all {STEPS} steps, and the changes "
             "from Notice No. 243's text, as an editable Word document."
         ),
         DESC1
@@ -378,7 +383,8 @@ ITEMS = [
         T.CSV,
         C1,
         (
-            "The 104 steps: text, source, change from TTB's published text, "
+            f"The {STEPS} steps: text, source, change from TTB's "
+            "published text, "
             "quadrangle, endpoint and length."
         ),
         DESC1D,
@@ -512,7 +518,8 @@ ITEMS = [
     (
         G4 + "EPSG4269.gpkg",
         (
-            "4c Proposed boundary - GeoPackage (AVA polygon, 104 steps, step "
+            "4c Proposed boundary - GeoPackage (AVA polygon, "
+            f"{STEPS} steps, step "
             "endpoints)"
         ),
         T.GEOPACKAGE,
@@ -524,7 +531,7 @@ ITEMS = [
         ABOUT
         + "<p>Layers: boundary_area (the AVA, "
         + SQMI
-        + " square miles), boundary_line (one feature per step, 104, each "
+        + f" square miles), boundary_line (one feature per step, {STEPS}, each "
         "with its text), boundary_points (the beginning point and the step "
         "endpoints). The hosted layer 4b is published from this file; the "
         "same layers are also downloads as shapefiles (4d-4f) and GeoJSON "
@@ -546,8 +553,8 @@ GIS_LAYERS = {
         ),
     ),
     "line": (
-        "104 boundary steps",
-        "the boundary, one feature per step (104), each with its text",
+        f"{STEPS} boundary steps",
+        f"the boundary, one feature per step ({STEPS}), each with its text",
         "boundary_line",
         (
             "each step's number, kind, endpoint, USGS quadrangle, length in "
@@ -557,7 +564,7 @@ GIS_LAYERS = {
     ),
     "points": (
         "step endpoints",
-        "the beginning point and the 104 step endpoints",
+        f"the beginning point and the {STEPS} step endpoints",
         "boundary_points",
         "each point's number, step, kind, name and USGS quadrangle",
     ),

@@ -6,7 +6,7 @@ WHAT IS IN THIS PACKAGE
 
 1_boundary-description/
    ...as-proposed-{REVISION}.pdf / .docx / .txt   Proposed section 9.___ Hickory Sands District, paragraphs (a)-(c),
-                                                 all 104 boundary steps, in the style of the proposed rule.
+                                                 all {STEPS} boundary steps, in the style of the proposed rule.
    ...as-proposed-{REVISION}-steps.csv            The same steps, one row each, with source, change, quad, endpoint, length.
 2_TTB-notice-243-with-changes-highlighted/
    TTB-Notice-243-with-proposed-Hickory-Sands-District-changes-highlighted-{REVISION}-UNOFFICIAL.pdf
@@ -29,8 +29,8 @@ WHAT IS IN THIS PACKAGE
                                                  compares the proposed text with TTB's text only.
 4_GIS/  (NAD83, EPSG:4269, TTB AVAs_Production fields)
    ...-area-EPSG4269.geojson     the AVA polygon ({AREA_SQMI} square miles)
-   ...-line-EPSG4269.geojson     the boundary, one feature per step (104), each with its regulatory text
-   ...-points-EPSG4269.geojson   the beginning point and the 104 step endpoints
+   ...-line-EPSG4269.geojson     the boundary, one feature per step ({STEPS}), each with its regulatory text
+   ...-points-EPSG4269.geojson   the beginning point and the {STEPS} step endpoints
    ...-EPSG4269.gpkg             all three layers in one GeoPackage
    shapefiles/                   the same three layers as zipped shapefiles (field names trimmed to 10 characters, with a
                                  field-name key; text over 254 characters continues in a second field)
@@ -85,7 +85,7 @@ ATTRIBUTES
    them when an AVA is established (TTB's own proposed records leave them empty too).
 
    Area is the true area in square miles on the GRS 1980 ellipsoid. (In AVAs_Production, Area appears to be computed in
-   Web Mercator, which overstates area at this latitude by about a third; that method would give about 260 square miles
+   Web Mercator, which overstates area at this latitude by about {MERCATOR_PERCENT}%; that method would give about {MERCATOR_SQMI} square miles
    for this AVA.) Shape__Area and Shape__Length are planar, in degrees, as AVAs_Production stores them.
 
    The line layer adds: step, kind, endpoint, quad, length_m, narrative (the step's text), txt_source, change.

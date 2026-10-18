@@ -14,7 +14,7 @@ group for TTB's reviewer.
   package README, so it matches the build);
 - centre: the web map 4a (quadrangles, geology, the Map Explorer polygon, the
   proposed revision, the differences);
-- right: the 104 steps, the big differences and all the differences, as lists
+- right: the steps, the big differences and all the differences, as lists
   that zoom the map, and the selected step's record; a tab on the left sets
   out the change near Grit, acre by acre, with its granite.
 Wording (Dan, 2026-10-16): the official names, Notice No. 243, the AVA Map
@@ -65,7 +65,10 @@ HERE = os.environ.get("HSD_WORK") or os.path.join(
     ROOT, "target", "work"
 )  # build work dir
 with open(os.path.join(HERE, "proposed-steps.json")) as f:
-    SQMI = f"{json.load(f)['sqmi']:.2f}"  # the AVA's area, GRS80 square miles
+    BUILT = json.load(f)
+SQMI = f"{BUILT['sqmi']:.2f}"  # the AVA's area, GRS80 square miles
+STEPS = len(BUILT["steps"])  # the boundary's steps, as the build made them
+POINTS = STEPS + 1  # the beginning point and each step's end
 with open(os.path.join(HERE, "review", "ttb-diff-stats.json")) as f:
     STATS = json.load(f)
 same = STATS["areas"][
@@ -80,7 +83,7 @@ GROUP_ID = "65720ee9c5a743f88659ae39228704ec"
 TITLE = "0 Dashboard - the proposed boundary and everything in this group"
 MAP_TITLE = "4a Proposed boundary - map over the 13 USGS quadrangles"
 LAYER_TITLE = (
-    "4b Proposed boundary - layer (AVA polygon, 104 steps, step endpoints)"
+    f"4b Proposed boundary - layer (AVA polygon, {STEPS} steps, step endpoints)"
 )
 DIFF_TITLE = (
     "4k Differences from the AVA Map Explorer polygon - layer (the big ones, "
@@ -1446,7 +1449,8 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
 
     props = {
         "snippet": "Start here: the proposed revision on the 13 USGS "
-        "quadrangles with the AVA Map Explorer polygon, the 104 steps, and "
+        "quadrangles with the AVA Map Explorer polygon, the "
+        f"{STEPS} steps, and "
         "every document, map and download in this group.",
         "description": ABOUT
         + "<p>One page for the whole group: pick a step to see it on the map "

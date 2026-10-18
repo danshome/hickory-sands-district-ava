@@ -59,7 +59,10 @@ HERE = os.environ.get("HSD_WORK") or os.path.join(
     ROOT, "target", "work"
 )  # build work dir (build.sh stages resources/ here)
 with open(os.path.join(HERE, "proposed-steps.json")) as f:
-    SQMI = f"{json.load(f)['sqmi']:.2f}"  # the AVA's area, GRS80 square miles
+    BUILT = json.load(f)
+SQMI = f"{BUILT['sqmi']:.2f}"  # the AVA's area, GRS80 square miles
+STEPS = len(BUILT["steps"])  # the boundary's steps, as the build made them
+POINTS = STEPS + 1  # the beginning point and each step's end
 PKG = os.path.join(HERE, "pkg", revision.NAME)
 FOLDER = "Hickory Sands District - Final Proposed Boundary and Narrative"
 GROUP_ID = "65720ee9c5a743f88659ae39228704ec"
@@ -370,12 +373,12 @@ ABOUT = (
     "McLaughlin, Robert Clay Vineyards (petitioner).</p>"
 )
 LAYER_TITLE = (
-    "4b Proposed boundary - layer (AVA polygon, 104 steps, step endpoints)"
+    f"4b Proposed boundary - layer (AVA polygon, {STEPS} steps, step endpoints)"
 )
 MAP_TITLE = "4a Proposed boundary - map over the 13 USGS quadrangles"
 NAMES = {
     "esriGeometryPolygon": "AVA (proposed, " + SQMI + " sq mi)",
-    "esriGeometryPolyline": "Boundary steps (104)",
+    "esriGeometryPolyline": f"Boundary steps ({STEPS})",
     "esriGeometryPoint": "Step endpoints",
 }
 ATTACH = [
@@ -429,7 +432,7 @@ def lock(lyr):
 
 props = {
     "snippet": "The proposed boundary as a hosted feature layer: the AVA "
-    "polygon, the 104 boundary steps with their text, and the step "
+    f"polygon, the {STEPS} boundary steps with their text, and the step "
     "endpoints. Exports allowed.",
     "description": ABOUT
     + "<p>Add it to ArcGIS Pro from the portal, or open it in Map Viewer. "

@@ -20,7 +20,8 @@ TTB's docket, not here: https://www.regulations.gov/docket/TTB-2026-0005.
 
 Every change, however small, goes the same way:
 
-1. **An issue** that says what should change and why. Open one, or name the one you are fixing.
+1. **An issue** that says what should change and why. Open one, or name the one you are fixing. A security fix is the
+   exception: it starts from its private report and stays private until fixed ([SECURITY.md](SECURITY.md)).
 2. **A branch off `main`**, named by kind and topic: `docs/...`, `fix/...`, `feature/...`, `qa/...`.
 3. **Commits that pass the commit hooks.** Never skip them with `--no-verify`.
 4. **A pull request to `main`** that says `Fixes #n`, what changed, why, and how you checked it. GitHub runs the hooks

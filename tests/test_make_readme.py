@@ -6,7 +6,6 @@ them; and the page has every word of README.txt.
 """
 
 import json
-import math
 import re
 
 import pytest
@@ -60,8 +59,8 @@ def test_not_a_heading(line):
     assert not make_readme.is_heading(line)
 
 
-# A one-degree square at 30-31 degrees north: about 5,316 square miles in
-# Web Mercator (the sphere's planar area), against 4,147 true.
+# A one-degree square at 30-31 degrees north: 5,553.08 square miles in Web
+# Mercator (GDAL: ogr2ogr to EPSG:3857, then its planar area), 4,109 true.
 SQUARE = {
     "type": "Polygon",
     "coordinates": [[[-100, 30], [-99, 30], [-99, 31], [-100, 31], [-100, 30]]],
@@ -71,11 +70,9 @@ SQUARE = {
 def test_web_mercator_overstates_a_square_as_expected(tmp_path):
     path = tmp_path / "square.geojson"
     path.write_text(json.dumps({"features": [{"geometry": SQUARE}]}))
-    radius = 6378137.0
-    north = math.log(math.tan(math.pi / 4 + math.radians(31) / 2))
-    south = math.log(math.tan(math.pi / 4 + math.radians(30) / 2))
-    want = radius * math.radians(1) * radius * (north - south) / 1609.344**2
-    assert make_readme.web_mercator_sqmi(str(path)) == pytest.approx(want)
+    assert make_readme.web_mercator_sqmi(str(path)) == pytest.approx(
+        5553.08, abs=0.5
+    )
 
 
 def test_readme_and_page(tmp_path, monkeypatch):

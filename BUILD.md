@@ -249,6 +249,7 @@ for Python; 2-space YAML and TOML). By hand: `.venv/bin/ruff format .` and `.ven
 - `test_compare_ttb.py`: a big difference's acres are the whole pieces its ring touches, even inside a hole in the
   ring (#26), and the helpers that find the stretches;
 - `test_make_readme.py`: README.txt's headings ("WHAT WE PROPOSE TO CHANGE IN NOTICE NO. 243 (...)") on the read-me page;
+  every placeholder filled; the Web Mercator area against GDAL's for a one-degree square;
 - `test_site_data.py`: the website's map data in `docs/data/`: every step from the Beginning point, each ending at its
   own point, around to the Beginning again; only the properties a reader needs; the README's area; a status the site can
   show; and, on a small made-up build, the generator's rounding and refusals and the check's line between a stale

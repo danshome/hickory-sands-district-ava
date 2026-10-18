@@ -65,10 +65,9 @@ HERE = os.environ.get("HSD_WORK") or os.path.join(
     ROOT, "target", "work"
 )  # build work dir
 with open(os.path.join(HERE, "proposed-steps.json")) as f:
-    BUILT = json.load(f)
-SQMI = f"{BUILT['sqmi']:.2f}"  # the AVA's area, GRS80 square miles
-STEPS = len(BUILT["steps"])  # the boundary's steps, as the build made them
-POINTS = STEPS + 1  # the beginning point and each step's end
+    PROPOSED = json.load(f)
+SQMI = f"{PROPOSED['sqmi']:.2f}"  # the AVA's area, GRS80 square miles
+STEPS = len(PROPOSED["steps"])  # the boundary's steps, as the build made them
 with open(os.path.join(HERE, "review", "ttb-diff-stats.json")) as f:
     STATS = json.load(f)
 same = STATS["areas"][
@@ -82,8 +81,10 @@ FOLDER = "Hickory Sands District - Final Proposed Boundary and Narrative"
 GROUP_ID = "65720ee9c5a743f88659ae39228704ec"
 TITLE = "0 Dashboard - the proposed boundary and everything in this group"
 MAP_TITLE = "4a Proposed boundary - map over the 13 USGS quadrangles"
+# An item's title is how ./build.sh publish finds it again: a fixed identifier
+# (like the services' names), not a figure the build derives.
 LAYER_TITLE = (
-    f"4b Proposed boundary - layer (AVA polygon, {STEPS} steps, step endpoints)"
+    "4b Proposed boundary - layer (AVA polygon, 104 steps, step endpoints)"
 )
 DIFF_TITLE = (
     "4k Differences from the AVA Map Explorer polygon - layer (the big ones, "

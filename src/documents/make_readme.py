@@ -259,7 +259,9 @@ def web_mercator_sqmi(path):
         return abs(sum(x1 * y2 - x2 * y1 for (x1, y1), (x2, y2) in pairs)) / 2
 
     with open(path, encoding="utf-8") as fh:
-        geometry = json.load(fh)["features"][0]["geometry"]
+        features = json.load(fh)["features"]
+    assert len(features) == 1, f"{path}: {len(features)} features, not one"
+    geometry = features[0]["geometry"]
     polygons = (
         geometry["coordinates"]
         if geometry["type"] == "MultiPolygon"
@@ -276,17 +278,17 @@ def main():
     """Writes README.txt and the read-me-first page into the work folder.
 
     Fills the template's {AREA_SQMI}, {STEPS}, {MERCATOR_SQMI},
-    {MERCATOR_PERCENT}, {REVISION} and {REVISION_SHORT} from the build and
+    {MERCATOR_PERCENT}, {REVISION} and {REVISION_SHORT} from the build
+    (proposed-steps.json and gis/*-area-EPSG4269.geojson) and
     src/revision.py, and stops
     (AssertionError) on a placeholder left unfilled or on a word of README.txt
     or LICENSE.txt that the page does not have.
     """
     with open(os.path.join(HERE, "proposed-steps.json")) as f:
         built = json.load(f)
-    (area_file,) = glob.glob(
-        os.path.join(HERE, "gis", "*-area-EPSG4269.geojson")
-    )
-    mercator = web_mercator_sqmi(area_file)
+    areas = glob.glob(os.path.join(HERE, "gis", "*-area-EPSG4269.geojson"))
+    assert len(areas) == 1, f"one AVA polygon in {HERE}/gis, found {areas}"
+    mercator = web_mercator_sqmi(areas[0])
     fill = {
         "AREA_SQMI": f"{built['sqmi']:.2f}",
         "STEPS": str(len(built["steps"])),

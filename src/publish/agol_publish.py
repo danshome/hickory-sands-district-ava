@@ -46,10 +46,9 @@ HERE = os.environ.get("HSD_WORK") or os.path.join(
     ROOT, "target", "work"
 )  # build work dir (build.sh stages resources/ here)
 with open(os.path.join(HERE, "proposed-steps.json")) as f:
-    BUILT = json.load(f)
-SQMI = f"{BUILT['sqmi']:.2f}"  # the AVA's area, GRS80 square miles
-STEPS = len(BUILT["steps"])  # the boundary's steps, as the build made them
-POINTS = STEPS + 1  # the beginning point and each step's end
+    PROPOSED = json.load(f)
+SQMI = f"{PROPOSED['sqmi']:.2f}"  # the AVA's area, GRS80 square miles
+STEPS = len(PROPOSED["steps"])  # the boundary's steps, as the build made them
 PKG = os.path.join(HERE, "pkg", revision.NAME)
 FOLDER = "Hickory Sands District - Final Proposed Boundary and Narrative"
 GROUP_ID = "65720ee9c5a743f88659ae39228704ec"
@@ -517,9 +516,9 @@ ITEMS = [
     ),
     (
         G4 + "EPSG4269.gpkg",
+        # The title: a fixed identifier (see agol_layer.LAYER_TITLE).
         (
-            "4c Proposed boundary - GeoPackage (AVA polygon, "
-            f"{STEPS} steps, step "
+            "4c Proposed boundary - GeoPackage (AVA polygon, 104 steps, step "
             "endpoints)"
         ),
         T.GEOPACKAGE,

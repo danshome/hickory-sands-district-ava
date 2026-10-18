@@ -1,7 +1,8 @@
 /* The maps: Explore (explore.html) and Walk the line (walk.html). The text works without JavaScript; the maps are added by it. */
 arcgis-map{display:block;width:100%;height:100%;--calcite-font-family:var(--sans)}
 html:not(.js) .walk-map,html:not(.js) .explore-map{display:none}
-.map-nojs{max-width:40rem;color:var(--muted)}
+/* Shown when there is no map: no JavaScript, or Esri's service or the data failed (maps.js takes the js class away). */
+.map-nojs{max-width:40rem;color:var(--muted);font-size:.875rem;line-height:1.55}
 .js .map-nojs{display:none}
 
 /* Walk the line: the steps scroll; the map stays in view and follows them (above them on a phone, beside them on a wide screen). */

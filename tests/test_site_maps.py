@@ -14,6 +14,8 @@ import re
 
 import pytest
 
+from src.site import make_site_data as msd
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DOCS = os.path.join(ROOT, "docs")
 SDK = "https://js.arcgis.com/5.1/"
@@ -83,3 +85,42 @@ def test_explore_page_figures_are_the_build_s():
     assert (
         f"{area} square miles inside {steps} steps and {points} points" in page
     )
+
+
+def test_walk_page_is_what_its_template_and_the_data_give():
+    files = {
+        name: read("docs", "data", name)
+        for name in ("boundary.geojson", "steps.geojson", "points.geojson")
+    }
+    files["status.json"] = read("docs", "data", "status.json")
+    page = msd.walk_page(files, read("src", "site", "walk.template.html"))
+    assert read("docs", "walk.html") == page, "run ./build.sh site-data"
+
+
+@pytest.mark.parametrize(
+    ("page", "selectors"),
+    [
+        (
+            "explore.html",
+            [
+                ".explore-map",
+                "arcgis-map",
+                "map-basemaps",
+                'data-basemap="map"',
+                'data-basemap="imagery"',
+            ],
+        ),
+        ("walk.html", [".walk-map", "arcgis-map", 'class="walk-step"']),
+    ],
+)
+def test_the_elements_the_scripts_use_are_on_the_page(page, selectors):
+    text = read("docs", page)
+    for selector in selectors:
+        assert selector.lstrip(".") in text, f"{page} lacks {selector}"
+
+
+@pytest.mark.parametrize("page", MAP_PAGES)
+def test_a_page_says_so_when_its_map_cannot_load(page):
+    text = read("docs", page)
+    assert '<p class="map-nojs' in text
+    assert "<noscript>" not in text  # the note must show when the map fails too

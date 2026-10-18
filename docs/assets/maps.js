@@ -34,11 +34,13 @@ const BASEMAPS = {
 function basemap(name) {
   const chosen = new Basemap(BASEMAPS[name]);
   if (name === "imagery") {
-    chosen.when(() => {
-      chosen.baseLayers.forEach((layer) => {
-        layer.effect = "grayscale(100%) brightness(80%)";
-      });
-    });
+    chosen
+      .when(() => {
+        chosen.baseLayers.forEach((layer) => {
+          layer.effect = "grayscale(100%) brightness(80%)";
+        });
+      })
+      .catch((error) => console.error("the imagery basemap failed", error));
   }
   return chosen;
 }
@@ -152,10 +154,10 @@ export async function boundaryMap(element, { popups = true, quiet = false } = {}
     basemap: hasBasemap ? basemap("map") : null,
     layers: [boundary, steps, marked, points],
   });
-  if (!hasBasemap) {
-    element.spatialReference = { wkid: 3857 };
-    element.background = { color: [...INK, 1] };
-  }
+  // Web Mercator, as Esri's basemaps are, on the site's ink: a basemap that is
+  // missing or refused leaves the line on the page's own background.
+  element.spatialReference = { wkid: 3857 };
+  element.background = { color: [...INK, 1] };
   element.constraints = { minScale: 1500000, snapToZoom: false };
   await element.viewOnReady();
   // A selected step or point is outlined in sand, not the SDK's cyan.
@@ -170,6 +172,16 @@ export async function boundaryMap(element, { popups = true, quiet = false } = {}
   await element.goTo(extent, { animate: false });
   return { element, layers: { boundary, steps, points, marked }, extent };
 }
+
+// When a map cannot be made (Esri's service or the data did not load), the page
+// hides it and shows its note instead; the page's text is untouched.
+export function mapFailed(error) {
+  console.error("the map could not be drawn", error);
+  document.documentElement.classList.remove("js");
+}
+
+// The error a goTo gives when a newer move takes over: nothing went wrong.
+export const interrupted = (error) => error?.name === "AbortError";
 
 export function setBasemap(element, name) {
   element.map.basemap = basemap(name);

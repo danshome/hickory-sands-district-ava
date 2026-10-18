@@ -598,8 +598,9 @@ def walk_page(files, template):
 
     The page is the story map's text, so it reads in full without
     JavaScript; the map follows it when JavaScript runs. Lengths are shown
-    to a tenth of a mile, so the small drift between machines (#116) never
-    changes the page.
+    to a tenth of a mile. The check makes the page from the committed data
+    (check_page), so the small drift between machines (#116) cannot make it
+    stale even where a length sits on a rounding edge.
 
     Args:
         files: The data files from site_data().
@@ -648,6 +649,33 @@ def walk_page(files, template):
     )
 
 
+def check_page(files, out_dir, template, page_path):
+    """Returns how the walk page differs from the one the data should give.
+
+    The page is made from the committed data, once compare() has accepted it:
+    the build's own data may differ from it within MAX_DRIFT_M (#116), and a
+    length that drifts across a rounding edge must not make the page stale.
+
+    Args:
+        files: The build's data files, which out_dir matched.
+        out_dir: The site's data folder.
+        template: The walk page's template text.
+        page_path: The committed walk page.
+
+    Returns:
+        "missing", "differs from the build", or None when it matches.
+    """
+    committed = {}
+    for name in files:
+        with open(os.path.join(out_dir, name), encoding="utf-8") as fh:
+            committed[name] = fh.read()
+    if not os.path.exists(page_path):
+        return "missing"
+    if not same_text(page_path, walk_page(committed, template)):
+        return "differs from the build"
+    return None
+
+
 def main():
     """Writes or checks the website's map data."""
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
@@ -662,34 +690,38 @@ def main():
     ap.add_argument("--check", action="store_true", help="compare only")
     args = ap.parse_args()
     files = site_data(args.gis)
-    page = None
+    template = None
     if args.walk:
         with open(args.walk[0], encoding="utf-8") as fh:
-            page = walk_page(files, fh.read())
+            template = fh.read()
     if args.check:
         missing, differs, unexpected, notes = compare(files, args.out)
-        if page is not None and not same_text(args.walk[1], page):
-            differs.append(os.path.basename(args.walk[1]))
         for note in notes:
             print(f"note: {note} (#116; not a failure)")
-        if missing or differs or unexpected:
-            for what, names in (
-                ("missing", missing),
-                ("differs from the build", differs),
-                ("not made by the build", unexpected),
-            ):
-                if names:
-                    print(f"{args.out}: {what}: {', '.join(names)}")
+        stale = bool(missing or differs or unexpected)
+        for what, names in (
+            ("missing", missing),
+            ("differs from the build", differs),
+            ("not made by the build", unexpected),
+        ):
+            if names:
+                print(f"{args.out}: {what}: {', '.join(names)}")
+        if template is not None and not stale:
+            page = check_page(files, args.out, template, args.walk[1])
+            if page:
+                print(f"{args.walk[1]}: {page}")
+                stale = True
+        if stale:
             print(
-                "run ./build.sh site-data and commit docs/data/ (and walk.html)"
+                "run ./build.sh site-data and commit docs/data/ and walk.html"
             )
             sys.exit(STALE)
         print(f"{args.out} matches the build ({len(files)} files)")
         return
     write(files, args.out)
     print(f"wrote {len(files)} files to {args.out}")
-    if page is not None:
-        write_one(args.walk[1], page)
+    if template is not None:
+        write_one(args.walk[1], walk_page(files, template))
         print(f"wrote {args.walk[1]}")
 
 

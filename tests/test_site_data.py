@@ -483,4 +483,49 @@ def test_check_covers_the_walk_page(monkeypatch, capsys, build, tmp_path):
     with pytest.raises(SystemExit) as stop:
         run_main(monkeypatch, capsys, build, out, *walk, "--check")
     assert stop.value.code == msd.STALE
-    assert "differs from the build: walk.html" in capsys.readouterr().out
+    assert "walk.html: differs from the build" in capsys.readouterr().out
+    page.unlink()
+    with pytest.raises(SystemExit) as stop:
+        run_main(monkeypatch, capsys, build, out, *walk, "--check")
+    assert stop.value.code == msd.STALE
+    assert "walk.html: missing" in capsys.readouterr().out
+
+
+def test_a_length_drifting_across_a_rounding_edge_leaves_the_page(
+    monkeypatch, capsys, tmp_path
+):
+    # 0.75 mi is 1207.008 m: one build rounds step 3 up, the other down.
+    def length(metres):
+        return lambda s: s[2]["properties"].update(length_m=str(metres))
+
+    committed, other = tmp_path / "committed", tmp_path / "other"
+    for gis in (committed, other):
+        gis.mkdir()
+    made_up_build(str(committed), step_hook=length(1207.2))
+    made_up_build(str(other), step_hook=length(1206.9))
+    template = tmp_path / "walk.template.html"
+    template.write_text(WALK, encoding="utf-8")
+    walk = ("--walk", str(template), str(tmp_path / "walk.html"))
+    out = tmp_path / "data"
+    run_main(monkeypatch, capsys, str(committed), out, *walk)
+    assert "Step 3 · Grit · 0.8 mi" in (tmp_path / "walk.html").read_text(
+        encoding="utf-8"
+    )
+    said = run_main(monkeypatch, capsys, str(other), out, *walk, "--check")
+    assert "matches the build" in said
+
+
+def test_walk_page_escapes_every_field_and_wants_each_token_once(build):
+    def spoil(points):
+        points[3]["properties"].update(point_name="Gate <3> & 4")
+
+    made_up_build(
+        build,
+        step_hook=lambda s: s[2]["properties"].update(quad="Grit <i>"),
+        point_hook=spoil,
+    )
+    page = msd.walk_page(msd.site_data(build), WALK)
+    assert "Step 3 · Grit &lt;i&gt; · " in page
+    assert "Gate &lt;3&gt; &amp; 4" in page
+    with pytest.raises(SystemExit, match="needs @STEPS@ once"):
+        msd.walk_page(msd.site_data(build), WALK + "@STEPS@")

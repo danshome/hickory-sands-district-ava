@@ -176,8 +176,9 @@ tobedeleted/             set aside for review and deletion, used by nothing (not
    failure: zip paths longer than Windows' 260-character limit when Explorer extracts the zip under
    `C:\Users\<name>\Downloads\` (Dan: leave the names for now).
 11. **site data** - last, so it never holds back the package: the website's map data (`src/site/make_site_data.py`),
-   hard. `docs/data/` and the walk page `docs/walk.html` must match this build, so a boundary change stops the build
-   until `./build.sh site-data` refreshes them and they are committed with the change. Only the traced lines may differ, and only a little: two machines
+   hard. `docs/data/`, the walk page `docs/walk.html` and every figure marked `data-figure` in the site's pages must
+   match this build, so a boundary change stops the build until `./build.sh site-data` refreshes them and they are
+   committed with the change. Only the traced lines may differ, and only a little: two machines
    (even two of GitHub's Linux runners) can place a vertex differently along the same ink (#116), so lines within 5 m
    of each other are reported in metres, not failed.
 
@@ -342,6 +343,13 @@ pages and checked by `tests/test_site_maps.py`), on Esri's basemaps:
 - **Walk the line** (`walk.html`, #112): every step's text in order, made by the build from `src/site/walk.template.html`
   and the data (so it reads without JavaScript and cannot drift from the boundary); the map follows the step being
   read.
+
+No page types a boundary figure (#124). The area, the step and point counts, the line's length and the revision date are
+elements marked `data-figure` (`area_sqmi`, `area_whole`, `step_count`, `point_count`, `miles`, `revision_date`), such
+as `<span data-figure="area_sqmi">193.83</span>` or `<time data-figure="revision_date" datetime="…">…</time>`. The
+site-data stage writes them from `docs/data/`; the revision date is the one in the build's file names, kept in the
+boundary's record. `tests/test_site_figures.py` fails when a page types one without the mark. Dated history, such as a
+journal note or a step in the status timeline, is an event and stays as written.
 
 Their code is `docs/assets/maps.js` (shared), `explore.js`, `walk.js` and `maps.css`. Text from the data is only ever set
 as text, never parsed as HTML. The basemaps need the ArcGIS Online API key in `docs/assets/map-config.js`. It is public by

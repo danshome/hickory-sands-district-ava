@@ -248,7 +248,7 @@ def made_up_build(gis, n=10, step_hook=None, point_hook=None, areas=1):
         ("line", out_of_order(steps)),
         ("points", out_of_order(points)),
     ):
-        path = os.path.join(gis, f"x-{kind}-EPSG4269.geojson")
+        path = os.path.join(gis, f"x-2026-10-15-{kind}-EPSG4269.geojson")
         with open(path, "w", encoding="utf-8") as fh:
             json.dump({"type": "FeatureCollection", "features": feats}, fh)
 
@@ -283,6 +283,7 @@ def test_generator_keeps_rounds_and_orders(build):
         "name": "Hickory Sands District",
         "area_sqmi": 1.234,
         "counties": "Mason",
+        "revision": "2026-10-15",
     }
     assert boundary["geometry"]["coordinates"][0][1] == [-99.01, 30.01]
     assert msd.site_data(build) == files
@@ -312,7 +313,7 @@ def test_generator_refuses_a_spoiled_build(tmp_path, spoil, message):
 @pytest.mark.parametrize(("copies", "found"), [(0, "found 0"), (2, "found 2")])
 def test_one_wants_exactly_one_file(build, copies, found):
     gis = build
-    line = os.path.join(gis, "x-line-EPSG4269.geojson")
+    line = os.path.join(gis, "x-2026-10-15-line-EPSG4269.geojson")
     if copies == 0:
         os.remove(line)
     else:
@@ -447,7 +448,10 @@ def test_line_distance_ignores_where_vertices_fall():
     assert msd.apart_m(line, pieces, 5.0) is None
 
 
-WALK = "<h1>@STEP_COUNT@ steps, @MILES@ miles</h1><ol>@STEPS@</ol>"
+WALK = (
+    '<h1><span data-figure="step_count">0</span> steps, '
+    '<span data-figure="miles">0</span> miles</h1><ol>@STEPS@</ol>'
+)
 
 
 def test_walk_page_lists_the_steps_escaped_with_coarse_lengths(build):
@@ -456,7 +460,7 @@ def test_walk_page_lists_the_steps_escaped_with_coarse_lengths(build):
         step_hook=lambda s: s[1]["properties"].update(narrative="A <b> & C"),
     )
     page = msd.walk_page(msd.site_data(build), WALK)
-    assert page.startswith("<h1>10 steps, ")
+    assert page.startswith('<h1><span data-figure="step_count">10</span> steps')
     assert page.count('<li class="walk-step"') == 11
     assert 'id="beginning" data-step="0"' in page
     assert "A &lt;b&gt; &amp; C" in page
@@ -465,8 +469,8 @@ def test_walk_page_lists_the_steps_escaped_with_coarse_lengths(build):
 
 
 def test_walk_template_needs_each_token_once(build):
-    with pytest.raises(SystemExit, match="needs @MILES@ once"):
-        msd.walk_page(msd.site_data(build), "@STEP_COUNT@ @STEPS@")
+    with pytest.raises(SystemExit, match="needs @STEPS@ once"):
+        msd.walk_page(msd.site_data(build), "<h1>no list</h1>")
 
 
 def test_check_covers_the_walk_page(monkeypatch, capsys, build, tmp_path):
@@ -529,3 +533,71 @@ def test_walk_page_escapes_every_field_and_wants_each_token_once(build):
     assert "Gate &lt;3&gt; &amp; 4" in page
     with pytest.raises(SystemExit, match="needs @STEPS@ once"):
         msd.walk_page(msd.site_data(build), WALK + "@STEPS@")
+
+
+def test_figures_come_from_the_data(build):
+    figs = msd.figures(msd.site_data(build))
+    assert figs["area_sqmi"] == ("1.23", None)
+    assert figs["area_whole"] == ("1", None)
+    assert figs["step_count"] == ("10", None)
+    assert figs["point_count"] == ("11", None)
+    assert figs["revision_date"] == ("October 15, 2026", "2026-10-15")
+
+
+def test_area_whole_rounds_half_up():
+    files = {
+        "boundary.geojson": json.dumps(
+            {
+                "features": [
+                    {
+                        "properties": {
+                            "area_sqmi": 193.5,
+                            "revision": "2026-10-15",
+                        }
+                    }
+                ]
+            }
+        ),
+        "steps.geojson": json.dumps({"features": []}),
+        "points.geojson": json.dumps({"features": []}),
+    }
+    assert msd.figures(files)["area_whole"] == ("194", None)
+
+
+def test_fill_figures_writes_text_and_a_time_s_date():
+    figs = {
+        "area_sqmi": ("193.83", None),
+        "revision_date": ("October 15, 2026", "2026-10-15"),
+        "evil": ("<b>&", None),
+    }
+    page = (
+        '<p><span data-figure="area_sqmi">1.00</span> sq mi, '
+        '<time data-figure="revision_date" datetime="2020-01-01">old</time>, '
+        '<em data-figure="evil">x</em></p>'
+    )
+    filled = msd.fill_figures(page, figs, "page")
+    assert '<span data-figure="area_sqmi">193.83</span>' in filled
+    assert (
+        '<time data-figure="revision_date" datetime="2026-10-15">'
+        "October 15, 2026</time>"
+    ) in filled
+    assert '<em data-figure="evil">&lt;b&gt;&amp;</em>' in filled
+    assert msd.fill_figures(filled, figs, "page") == filled
+
+
+@pytest.mark.parametrize(
+    ("page", "message"),
+    [
+        ('<span data-figure="nope">1</span>', "no figure called nope"),
+        ('<span data-figure="area_sqmi"><b>1</b></span>', "only text"),
+    ],
+)
+def test_fill_figures_refuses_an_unknown_or_nested_figure(page, message):
+    with pytest.raises(SystemExit, match=message):
+        msd.fill_figures(page, {"area_sqmi": ("1", None)}, "page")
+
+
+def test_revision_comes_from_the_area_file_s_name(tmp_path):
+    (tmp_path / "x-area-EPSG4269.geojson").write_text("{}", encoding="utf-8")
+    with pytest.raises(SystemExit, match="no dated area file"):
+        msd.revision_of(str(tmp_path))

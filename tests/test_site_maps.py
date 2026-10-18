@@ -77,18 +77,6 @@ def test_walk_page_lists_every_step_with_its_own_text():
         assert text == html.escape(f["properties"]["narrative"])
 
 
-def test_explore_page_figures_are_the_build_s():
-    page = read("docs", "explore.html")
-    (boundary,) = data("boundary.geojson")
-    area = f"{boundary['properties']['area_sqmi']:.2f}"
-    steps, points = len(data("steps.geojson")), len(data("points.geojson"))
-    assert (
-        f"{area} square miles inside {steps} steps and {points} points" in page
-    )
-    description = re.search(r'<meta name="description" content="([^"]+)"', page)
-    assert f"{steps} steps and {points} points" in description.group(1)
-
-
 def test_walk_page_is_what_its_template_and_the_data_give():
     files = {
         name: read("docs", "data", name)

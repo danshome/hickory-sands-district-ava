@@ -66,12 +66,13 @@ Every change from here on:
 2. a commit (the hooks must pass; end the message with the Co-Authored-By line);
 3. `git push -u origin <branch>` and a PR to `main` with a detailed description: what changed, why, how it was
    verified, and what was republished to ArcGIS Online, if anything;
-4. review it twice (Dan, 2026-10-18: every PR to `main`, subagents' and other agents' included), on the PR's branch
-   (`gh pr checkout <n>`, or its worktree), since both commands find their scope from the checked-out branch:
-   `/pr-review-toolkit:review-pr` (the `pr-review-toolkit@claude-plugins-official` plugin, installed per user), naming
-   the PR and its diff (`git diff main...<branch>`) in the arguments; and Claude Code's `/security-review` (the
-   toolkit has no security review of its own). Fix each finding on the branch, or answer it in the PR, then add a PR
-   comment with both reviews' results;
+4. review it with two commands (Dan, 2026-10-18: every PR to `main`, subagents' and other agents' included), on the PR's
+   branch (`gh pr checkout <n>`, or its worktree), with `origin/main` fetched, since both find their scope from the
+   checked-out branch: `/pr-review-toolkit:review-pr` (the `pr-review-toolkit@claude-plugins-official` plugin, installed
+   per user), naming the PR and its diff (`git diff main...<branch>`) in the arguments; then Claude Code's
+   `/security-review`, which takes no arguments and reviews the branch's changes against `main` (the toolkit has no
+   security review of its own). Fix each finding on the branch, or answer it in the PR, then add a PR comment with both
+   reviews' results;
 5. once `gh pr checks <n>` passes, or fails only on a known failure with its own issue (#99), merge it
    (`gh pr merge <n> --merge --admin`); keep the branch, so each change stays on its own branch;
 6. `git switch main && git pull --ff-only`.

@@ -1,9 +1,9 @@
-"""site/: the website at hickorysandsdistrictava.org (issue #96).
+"""docs/: the website at hickorysandsdistrictava.org (issue #96).
 
-Every page in site/ is a complete HTML document (a doctype, the language, the
+Every page in docs/ is a complete HTML document (a doctype, the language, the
 character set, the phone viewport and a title), every local file a page links
-to or loads is in site/, and every link off the site is https. site.yml runs
-these before it deploys site/ to GitHub Pages. Standard library only, so the
+to or loads is in docs/, and every link off the site is https. site.yml runs
+these before it deploys docs/ to GitHub Pages. Standard library only, so the
 lint workflow runs them too.
 """
 
@@ -15,7 +15,7 @@ from urllib.parse import urlsplit
 import pytest
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SITE = os.path.join(ROOT, "site")
+SITE = os.path.join(ROOT, "docs")
 PAGES = sorted(
     os.path.relpath(os.path.join(folder, name), SITE)
     for folder, _, names in os.walk(SITE)
@@ -72,7 +72,7 @@ class Page(HTMLParser):
 
 
 def read(page):
-    """Returns the parsed page at page, a path under site/."""
+    """Returns the parsed page at page, a path under docs/."""
     p = Page()
     with open(os.path.join(SITE, page), encoding="utf-8") as fh:
         p.feed(fh.read())
@@ -81,7 +81,7 @@ def read(page):
 
 
 def target(page, ref):
-    """Returns the file under site/ that ref on page names, or None.
+    """Returns the file under docs/ that ref on page names, or None.
 
     None for a link off the site, a mail or phone link, an anchor on the
     same page or inline data.
@@ -124,7 +124,7 @@ def test_local_files_exist(page):
         inside = full.startswith(SITE + os.sep)
         if not inside or not os.path.isfile(full):
             missing.append(ref)
-    assert not missing, f"not in site/: {missing}"
+    assert not missing, f"not in docs/: {missing}"
 
 
 @pytest.mark.parametrize("page", PAGES)

@@ -1,6 +1,6 @@
-# The website, hickorysandsdistrictava.org (issue #96): site/ as it is, served by GitHub Pages. On a pull request that
-# touches site/, the site's tests (tests/test_site.py: complete pages, every local file there, https links); on a push to
-# main that touches site/, and by hand (Actions > site > Run workflow), the same tests and then site/ deployed to Pages.
+# The website, hickorysandsdistrictava.org (issue #96): docs/ as it is, served by GitHub Pages. On a pull request that
+# touches docs/, the site's tests (tests/test_site.py: complete pages, every local file there, https links); on a push to
+# main that touches docs/, and by hand (Actions > site > Run workflow), the same tests and then docs/ deployed to Pages.
 # The custom domain, its DNS (at Squarespace) and HTTPS are set on the repository's Pages settings, not here; see
 # BUILD.md. Runs on GitHub's Linux machines.
 name: site
@@ -8,13 +8,13 @@ on:
   workflow_dispatch:
   pull_request:
     paths:
-      - site/**
+      - docs/**
       - tests/test_site.py
       - .github/workflows/site.yml
   push:
     branches: [main]
     paths:
-      - site/**
+      - docs/**
       - tests/test_site.py
       - .github/workflows/site.yml
 permissions:
@@ -42,7 +42,7 @@ jobs:
       - name: Every page complete, every local file there, every link off the site https
         run: .venv/bin/python -E -s -B -m pytest -q tests/test_site.py
   deploy:
-    name: site/ to GitHub Pages
+    name: docs/ to GitHub Pages
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     needs: test
     runs-on: ubuntu-24.04
@@ -61,6 +61,6 @@ jobs:
       - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d  # v6.0.0
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9  # v5.0.0
         with:
-          path: site
+          path: docs
       - id: deployment
         uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346  # v5.0.1

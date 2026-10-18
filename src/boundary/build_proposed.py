@@ -1,6 +1,6 @@
-"""The Hickory Sands District boundary as proposed to TTB, Oct. 15, 2026.
+"""The Hickory Sands District boundary as proposed to TTB (src/revision.py).
 
-Proposed after the call with TTB that day.
+Proposed after the call with TTB on Oct. 15, 2026.
 Text: TTB's published regulatory text (Notice No. 243, 91 FR 52576) word for
 word, except the area near Grit, which uses the petition's own wording (as
 amended June 6, 2023; petition steps 11-12 and 91-98, lane wording included),
@@ -43,6 +43,11 @@ from osgeo import ogr
 from osgeo import osr
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # src/boundary
+sys.path.insert(
+    0, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+)  # src/
+import revision
+
 import ttb_record
 import ttb_schema_layers as tsl
 
@@ -714,7 +719,7 @@ OUT = os.path.join(HERE, "gis")
 os.makedirs(OUT, exist_ok=True)
 tsl.SHP_DIR = os.path.join(OUT, "shapefiles")
 os.makedirs(tsl.SHP_DIR, exist_ok=True)
-STEM = "hickory-sands-district-boundary-proposed-2026-10-15-%s-EPSG4269"
+STEM = revision.STEM + "-%s-EPSG4269"
 
 
 def write(kind, feats):
@@ -785,9 +790,7 @@ write(
         for i, p in enumerate(points)
     ],
 )
-gp = os.path.join(
-    OUT, "hickory-sands-district-boundary-proposed-2026-10-15-EPSG4269.gpkg"
-)
+gp = os.path.join(OUT, revision.STEM + "-EPSG4269.gpkg")
 if os.path.exists(gp):
     os.remove(gp)
 # GeoPackage written with explicit field types (TTB's AVAs_Production types, as

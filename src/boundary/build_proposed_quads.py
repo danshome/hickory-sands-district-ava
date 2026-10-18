@@ -16,6 +16,11 @@ from osgeo import gdal
 from osgeo import osr
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # src/boundary
+sys.path.insert(
+    0, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+)  # src/
+import revision
+
 import build_quad_sheets as q
 import ttb_record
 
@@ -27,12 +32,8 @@ HERE = os.environ.get("HSD_WORK") or os.path.join(
 )  # build work dir (build.sh stages resources/ here)
 gdal.UseExceptions()
 gdal.SetConfigOption("GDAL_PAM_ENABLED", "NO")
-LINE = (
-    "hickory-sands-district-boundary-proposed-2026-10-15-line-EPSG4269.geojson"
-)
-AREA = (
-    "hickory-sands-district-boundary-proposed-2026-10-15-area-EPSG4269.geojson"
-)
+LINE = revision.STEM + "-line-EPSG4269.geojson"
+AREA = revision.STEM + "-area-EPSG4269.geojson"
 ttb_record.CORRECTED = os.path.join(
     HERE, "gis"
 )  # so the builder embeds our line GeoJSON in each GeoPDF
@@ -41,7 +42,10 @@ os.makedirs(OUT, exist_ok=True)
 S = dict(
     src=LINE,
     display="step",
-    layer="Hickory Sands District boundary - as proposed to TTB, Oct. 15, 2026",
+    layer=(
+        "Hickory Sands District boundary - as proposed to TTB, "
+        f"{revision.SHORT}"
+    ),
 )
 with open(os.path.join(HERE, "gis", LINE)) as fh:
     line = json.load(fh)
@@ -78,7 +82,7 @@ for orig_pdf in sorted(
     ds.SetMetadataItem(
         "boundary_layer",
         f"{LINE} (NAD83, EPSG:4269): "
-        "the boundary as proposed to TTB on Oct. 15, 2026",
+        f"the boundary as proposed to TTB on {revision.SHORT}",
     )
     ds = None
     print(

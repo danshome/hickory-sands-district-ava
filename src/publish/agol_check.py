@@ -55,15 +55,18 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
+sys.path.insert(
+    0, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+)  # src/
+import revision
+
 ROOT = os.path.abspath(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
 )  # the repository root
 HERE = os.environ.get("HSD_WORK") or os.path.join(
     ROOT, "target", "work"
 )  # the build's work dir
-PKG = os.path.join(
-    HERE, "pkg", "Hickory-Sands-District-AVA_boundary-as-proposed-2026-10-15"
-)
+PKG = os.path.join(HERE, "pkg", revision.NAME)
 REVIEW = os.path.join(HERE, "review")
 GROUP_ID = "65720ee9c5a743f88659ae39228704ec"
 REST = "https://www.arcgis.com/sharing/rest/"

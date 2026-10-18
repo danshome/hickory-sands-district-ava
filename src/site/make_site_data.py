@@ -37,6 +37,11 @@ import os
 import re
 import sys
 
+sys.path.insert(
+    0, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+)  # src/
+import revision
+
 DECIMALS = 6
 STALE = 3  # --check's exit status when docs/data/ is stale
 STATUSES = ("proposed", "established")
@@ -256,17 +261,22 @@ def numbered(features, key, first=None):
 
 
 def revision_of(gis_dir):
-    """Returns the proposed revision's date, as the build names its files.
+    """Returns the proposed revision's date, checked against the build.
+
+    The date is typed once, in resources/boundary/revision-date.txt
+    (src/revision.py); the build names its files after it, so the GIS area
+    file's name must carry the same date.
 
     Args:
         gis_dir: The build's GIS folder, whose area file is named like
-            hickory-sands-district-boundary-proposed-2026-10-15-area-EPSG4269.
+            hickory-sands-district-boundary-proposed-<date>-area-EPSG4269.
 
     Returns:
         The date, YYYY-MM-DD.
 
     Raises:
-        SystemExit: When the area file's name carries no date.
+        SystemExit: When the area file's name carries no date, or another
+            date than the revision's (a build older than the date's file).
     """
     found = glob.glob(os.path.join(gis_dir, "*-area-EPSG4269.geojson"))
     dated = re.search(
@@ -275,7 +285,12 @@ def revision_of(gis_dir):
     )
     if len(found) != 1 or not dated:
         sys.exit(f"no dated area file in {gis_dir}")
-    return datetime.date.fromisoformat(dated.group(1)).isoformat()
+    if dated.group(1) != revision.ISO:
+        sys.exit(
+            f"{gis_dir} was built for {dated.group(1)}, but the revision is"
+            f" {revision.ISO} ({revision.FILE}): run ./build.sh"
+        )
+    return revision.ISO
 
 
 def compared_areas(stats_path):
@@ -328,7 +343,7 @@ def site_data(gis_dir, stats_path=None):
 
     first = kept(area[0], ("Name", "area_sqmi", "Counties"), "boundary")
     status = record_status(area[0]["properties"])
-    revision = revision_of(gis_dir)
+    revised = revision_of(gis_dir)
     boundary = [
         feature(
             area[0],
@@ -336,7 +351,7 @@ def site_data(gis_dir, stats_path=None):
                 "name": first["Name"],
                 "area_sqmi": float(first["area_sqmi"]),
                 "counties": first["Counties"],
-                "revision": revision,
+                "revision": revised,
                 **compared_areas(stats_path),
             },
         )
@@ -658,7 +673,7 @@ def figures(files):
     points = json.loads(files["points.geojson"])["features"]
     area = boundary["properties"]["area_sqmi"]
     metres = sum(f["properties"]["length_m"] for f in steps)
-    revision = datetime.date.fromisoformat(boundary["properties"]["revision"])
+    dated = datetime.date.fromisoformat(boundary["properties"]["revision"])
 
     def whole(sqmi):  # whole square miles, rounded half up
         return str(
@@ -680,8 +695,14 @@ def figures(files):
         "point_count": (str(len(points)), None),
         "miles": (f"{metres / M_PER_MILE:.0f}", None),
         "revision_date": (
-            f"{revision:%B} {revision.day}, {revision.year}",
-            revision.isoformat(),
+            " ".join(
+                (
+                    revision.LONG_MONTHS[dated.month - 1],
+                    f"{dated.day},",
+                    str(dated.year),
+                )
+            ),
+            dated.isoformat(),
         ),
     }
 

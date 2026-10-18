@@ -5,11 +5,11 @@ dan@robertclayvineyards.com, 512.633.8086. License: CC0 1.0 (see LICENSE.txt) - 
 WHAT IS IN THIS PACKAGE
 
 1_boundary-description/
-   ...as-proposed-2026-10-15.pdf / .docx / .txt   Proposed section 9.___ Hickory Sands District, paragraphs (a)-(c),
+   ...as-proposed-{REVISION}.pdf / .docx / .txt   Proposed section 9.___ Hickory Sands District, paragraphs (a)-(c),
                                                  all 104 boundary steps, in the style of the proposed rule.
-   ...as-proposed-2026-10-15-steps.csv            The same steps, one row each, with source, change, quad, endpoint, length.
+   ...as-proposed-{REVISION}-steps.csv            The same steps, one row each, with source, change, quad, endpoint, length.
 2_TTB-notice-243-with-changes-highlighted/
-   TTB-Notice-243-with-proposed-Hickory-Sands-District-changes-highlighted-2026-10-15-UNOFFICIAL.pdf
+   TTB-Notice-243-with-proposed-Hickory-Sands-District-changes-highlighted-{REVISION}-UNOFFICIAL.pdf
       TTB's own Notice No. 243 (the docket PDF) with only the changed steps set into its pages 52586, 52587 and 52588,
       in the notice's own typeface, and the changed wording highlighted in yellow. Every other page and line is TTB's,
       except that GPO's digital signature and its authentication seal on the first page are removed (the copy is
@@ -24,7 +24,7 @@ WHAT IS IN THIS PACKAGE
       The text of the two PDFs, one paragraph per line in reading order (poppler pdftotext), for a text compare (for
       example Beyond Compare): the only differences are the changed steps, (10)-(11), (49), (85) and (90)-(104).
 3_changes-side-by-side/
-   ...changes-side-by-side-2026-10-15.pdf / .docx   TTB's published text | the original petition (for reference) |
+   ...changes-side-by-side-{REVISION}.pdf / .docx   TTB's published text | the original petition (for reference) |
                                                  proposed text | why, for every step that changes. Marking
                                                  compares the proposed text with TTB's text only.
 4_GIS/  (NAD83, EPSG:4269, TTB AVAs_Production fields)
@@ -37,7 +37,7 @@ WHAT IS IN THIS PACKAGE
 5_USGS-quadrangles-with-boundary/
    The 13 USGS 1:24,000 quadrangles cited in paragraph (b), as GeoPDF and GeoTIFF, with the boundary added as a solid red
    line. The USGS files are otherwise unaltered: the GeoPDF is the USGS file with the line appended as an optional-content
-   layer ("Hickory Sands District boundary - as proposed to TTB, Oct. 15, 2026"), each step's record attached, and the line
+   layer ("Hickory Sands District boundary - as proposed to TTB, {REVISION_SHORT}"), each step's record attached, and the line
    GeoJSON embedded; in the GeoTIFF only the image tiles the line crosses are rewritten. The quads keep their NAD27 grids;
    the NAD83 line is carried onto them with the NADCON 5.0 CONUS grid.
 

@@ -43,7 +43,8 @@ zips the package into `dist/` with `SHA256SUMS.txt` and `build-report.txt`. `./b
   `work/review/`), `quads-cropped/` (neatline VRTs for QGIS). `dist/` (gitignored) the distribution.
 - `tobedeleted/` (gitignored) is where things no build uses go for Dan to review and delete. Nothing may depend on it.
 
-Change the boundary only through `resources/boundary/` and rebuild; never edit outputs. Hard checks stop the build:
+Change the boundary only through `resources/boundary/` and rebuild; never edit outputs. The revision's date is typed
+only in `resources/boundary/revision-date.txt` (`src/revision.py`); never type it, or a figure, in code or templates. Hard checks stop the build:
 quads vs manifest, every pin exactly on its two steps, no step line crossing itself, valid polygon; and, after the
 package, `src/checks/check_outputs.py` on what reaches TTB (PDF fonts, the notice copy, compare text, figures vs
 the stats, wording, quads/lengths/NAD83; zip path lengths only warn). Current build:

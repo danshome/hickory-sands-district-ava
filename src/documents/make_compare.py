@@ -17,6 +17,12 @@ import html
 import json
 import os
 import re
+import sys
+
+sys.path.insert(
+    0, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+)  # src/
+import revision
 
 ROOT = os.path.abspath(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
@@ -613,7 +619,7 @@ h.append("</body></html>")
 OUT = os.path.join(
     HERE,
     "documents",
-    "Hickory-Sands-District-boundary-changes-side-by-side-2026-10-15.html",
+    f"Hickory-Sands-District-boundary-changes-side-by-side-{revision.ISO}.html",
 )
 with open(OUT, "w", encoding="utf-8") as fh:
     fh.write("\n".join(h))

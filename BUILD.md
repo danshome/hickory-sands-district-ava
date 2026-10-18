@@ -124,7 +124,8 @@ src/
   checks/                hard checks: quads vs manifest, every pin on its line, no self-crossing, valid polygon;
                          check_outputs: what reaches TTB (PDF fonts, compare text, figures, wording, GIS, zip paths)
   package/               make_package.sh (the zip)
-  site/                  make_site_data: the website's map data (docs/data/) from the boundary build
+  site/                  make_site_data: the website's map data (docs/data/) from the boundary build; make_survey_map
+                         (with survey_frame): the quads under the boundary drawing on Home and The boundary
   publish/               ArcGIS Online: agol_publish, agol_layer, agol_dashboard, agol_org_categories, agol_share (what
                          is sent); agol_dryrun + agol_dryrun_checks (the dry run); agol_check (the live site)
 resources/
@@ -182,7 +183,9 @@ tobedeleted/             set aside for review and deletion, used by nothing (not
    match this build, so a boundary change stops the build until `./build.sh site-data` refreshes them and they are
    committed with the change. Only the traced lines may differ, and only a little: two machines
    (even two of GitHub's Linux runners) can place a vertex differently along the same ink (#116), so lines within 5 m
-   of each other are reported in metres, not failed.
+   of each other are reported in metres, not failed. The survey map under the boundary drawing
+   (`src/site/make_survey_map.py`) is checked by its record, `docs/data/survey-map.json` (its frame and quads), never
+   by its pixels.
 
 ## Python packages and security
 
@@ -257,6 +260,9 @@ for Python; 2-space YAML and TOML). By hand: `.venv/bin/ruff format .` and `.ven
 - `test_site_maps.py`: the map pages load one pinned SDK release; the basemap key is empty or an API key; no map script
   parses text as HTML; the walk page lists every step of `docs/data/` with its own text; Explore's figures are the
   build's;
+- `test_survey_map.py`: Home and The boundary draw the boundary alike; the survey image fills their viewBox at the
+  record's size; the record lists exactly the quads of both manifests; and, on made-up drawings, the frame's fit, its
+  refusal of a drawing at two scales, and what the check calls stale;
 - `test_site.py`: every page of the website in `docs/` is a complete HTML document (doctype, language, character set,
   phone viewport, title), every local file it links to or loads is in `docs/`, and every link off the site is https;
 - `test_publish_dryrun.py`: the publish dry run's checks pass on a dry run of the current build
@@ -354,6 +360,16 @@ as `<span data-figure="area_sqmi">193.83</span>` or `<time data-figure="revision
 site-data stage writes them from `docs/data/`; the revision date is the one in the build's file names, kept in the
 boundary's record. `tests/test_site_figures.py` fails when a page types one without the mark. A journal note is history
 and stays as written; a dated step in the status timeline keeps its date, but its figures are marked.
+
+The boundary drawing on Home and The boundary (an inline SVG) sits on a survey map, `docs/assets/survey-map.webp`, made
+by the site-data stage (`src/site/make_survey_map.py`). It shows the ground the drawing's viewBox covers, found by
+fitting the drawn line to `docs/data/boundary.geojson` in UTM zone 14N, on the USGS 1:24,000 historical quadrangles:
+the 13 the description names and the 17 around them that fill the frame (`resources/quads/basemap-manifest.csv`, each
+the original print of the quad's only 1:24,000 edition, checked against USGS's MD5 and downloaded to
+`resources/quads/basemap/` when the image is made). Each quad is cropped to its 7.5-minute neatline and carried from
+NAD27 to NAD83 UTM 14N through the NADCON 5.0 CONUS grid. `docs/data/survey-map.json` records the frame and the quads;
+the image is made again only when that record would change, and the check compares the record, never the pixels, so
+machines whose GDAL rounds differently agree. A frame reaching past the listed quads stops the build, naming where.
 
 Their code is `docs/assets/maps.js` (shared), `explore.js`, `walk.js` and `maps.css`. Text from the data is only ever set
 as text, never parsed as HTML. The basemaps need the ArcGIS Online API key in `docs/assets/map-config.js`. It is public by

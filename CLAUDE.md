@@ -36,7 +36,9 @@ zips the package into `dist/` with `SHA256SUMS.txt` and `build-report.txt`. `./b
   `data-figure` in its pages (never type the area, counts, length or revision date) come from the build
   (`./build.sh site-data`; the build stops if they are stale), its status from TTB's AVAs_Production record in
   `resources/ttb/`. The maps (`explore.html`, `walk.html`) use Esri's SDK and a public, basemaps-only API key in
-  `docs/assets/map-config.js`. Its DNS is at
+  `docs/assets/map-config.js`. The survey map under the boundary drawing on Home and The boundary,
+  `docs/assets/survey-map.webp`, is made by the same stage from the 13 quads and the 17 around them
+  (`resources/quads/basemap-manifest.csv`; record `docs/data/survey-map.json`). Its DNS is at
   Squarespace beside the Google Workspace mail records (MX, SPF, DKIM, DMARC `p=reject`): never touch those. The other
   Hickory Sands domains forward to it.
 - `target/` (gitignored) everything the build makes: `work/` (recreated each run; GIS in `work/gis/`, reviews in

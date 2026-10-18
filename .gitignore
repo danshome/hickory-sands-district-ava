@@ -6,6 +6,9 @@
 # The 13 USGS quads: downloaded by ./build.sh (src/quads/fetch_quads.py) and checked against resources/quads/quads-manifest.csv
 /resources/quads/geotiff/
 /resources/quads/geopdf/
+# The quads around them that fill the website's survey map: fetched by src/site/make_survey_map.py, checked against
+# resources/quads/basemap-manifest.csv
+/resources/quads/basemap/
 
 # Set aside for Dan to review and delete (holds private material)
 /tobedeleted/

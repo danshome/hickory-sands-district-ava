@@ -54,11 +54,47 @@ def download(url, dst):
             f.write(chunk)
 
 
+def fetch_geotiff(row, folder):
+    """Makes sure a quad's GeoTIFF is in FOLDER, inside its own zip.
+
+    A GeoTIFF already there whose MD5 matches is kept; otherwise it is
+    downloaded to a temporary folder, checked, then stored in its own zip.
+
+    Args:
+        row: The quad's manifest row (geotiff, geotiff_url, geotiff_md5).
+        folder: Where its <geotiff>.zip goes.
+
+    Returns:
+        True when the zip holds the GeoTIFF the manifest records.
+    """
+    tif, zpath = row["geotiff"], os.path.join(folder, row["geotiff"] + ".zip")
+    if (
+        os.path.exists(zpath)
+        and md5_of_zip_member(zpath, tif) == row["geotiff_md5"]
+    ):
+        print(f"ok    {tif}")
+        return True
+    with tempfile.TemporaryDirectory() as tmp:
+        tmpfile = os.path.join(tmp, tif)
+        print(f"fetch {tif}")
+        download(row["geotiff_url"], tmpfile)
+        got = md5_of(tmpfile)
+        if got != row["geotiff_md5"]:
+            print(
+                f"  MD5 MISMATCH {got} != {row['geotiff_md5']}",
+                file=sys.stderr,
+            )
+            return False
+        with zipfile.ZipFile(zpath, "w", zipfile.ZIP_STORED) as z:
+            z.write(tmpfile, tif)
+    return True
+
+
 def main():
     """Fetches every quad that is missing or fails its MD5; exits 1 on a miss.
 
-    A GeoTIFF is downloaded to a temporary folder, checked, then stored in its
-    own zip; a GeoPDF is downloaded in place, then checked.
+    A GeoTIFF is stored in its own zip (fetch_geotiff); a GeoPDF is downloaded
+    in place, then checked.
     """
     os.makedirs(TIF_DIR, exist_ok=True)
     os.makedirs(PDF_DIR, exist_ok=True)
@@ -69,31 +105,9 @@ def main():
     ) as f:
         rows = list(csv.DictReader(f))
     for row in rows:
-        # GeoTIFF, stored inside its own zip
-        tif, zpath = (
-            row["geotiff"],
-            os.path.join(TIF_DIR, row["geotiff"] + ".zip"),
-        )
-        if (
-            os.path.exists(zpath)
-            and md5_of_zip_member(zpath, tif) == row["geotiff_md5"]
-        ):
-            print(f"ok    {tif}")
-        else:
-            with tempfile.TemporaryDirectory() as tmp:
-                tmpfile = os.path.join(tmp, tif)
-                print(f"fetch {tif}")
-                download(row["geotiff_url"], tmpfile)
-                got = md5_of(tmpfile)
-                if got != row["geotiff_md5"]:
-                    print(
-                        f"  MD5 MISMATCH {got} != {row['geotiff_md5']}",
-                        file=sys.stderr,
-                    )
-                    failures += 1
-                    continue
-                with zipfile.ZipFile(zpath, "w", zipfile.ZIP_STORED) as z:
-                    z.write(tmpfile, tif)
+        if not fetch_geotiff(row, TIF_DIR):
+            failures += 1
+            continue
         # GeoPDF
         pdf, ppath = row["geopdf"], os.path.join(PDF_DIR, row["geopdf"])
         if os.path.exists(ppath) and md5_of(ppath) == row["geopdf_md5"]:

@@ -1,0 +1,172 @@
+{
+ "image": "assets/survey-map.webp",
+ "crs": "EPSG:26914",
+ "frame_m": {
+  "west": 454419,
+  "south": 3388381,
+  "east": 517152,
+  "north": 3443584
+ },
+ "pixels": [
+  1200,
+  1056
+ ],
+ "line_box": [
+  108.2,
+  176.79,
+  1091.79,
+  879.2
+ ],
+ "quads": [
+  {
+   "quad": "Algerita, TX",
+   "edition": "1956",
+   "geotiff": "TX_Algerita_105595_1956_24000_geo.tif"
+  },
+  {
+   "quad": "Art, TX",
+   "edition": "1967",
+   "geotiff": "TX_Art_106208_1967_24000_geo.tif"
+  },
+  {
+   "quad": "Baker Spring, TX",
+   "edition": "1955",
+   "geotiff": "TX_Baker Spring_106309_1955_24000_geo.tif"
+  },
+  {
+   "quad": "Brady Mountian, TX",
+   "edition": "1955",
+   "geotiff": "TX_Brady Mountian_106529_1955_24000_geo.tif"
+  },
+  {
+   "quad": "Brady North, TX",
+   "edition": "1960",
+   "geotiff": "TX_Brady North_106532_1960_24000_geo.tif"
+  },
+  {
+   "quad": "Brady SW, TX",
+   "edition": "1963",
+   "geotiff": "TX_Brady SW_106534_1963_24000_geo.tif"
+  },
+  {
+   "quad": "Brady South, TX",
+   "edition": "1970",
+   "geotiff": "TX_Brady South_106533_1970_24000_geo.tif"
+  },
+  {
+   "quad": "Buffalo Knob, TX",
+   "edition": "1955",
+   "geotiff": "TX_Buffalo Knob_106062_1955_24000_geo.tif"
+  },
+  {
+   "quad": "Calf Creek, TX",
+   "edition": "1970",
+   "geotiff": "TX_Calf Creek_105406_1970_24000_geo.tif"
+  },
+  {
+   "quad": "Castell, TX",
+   "edition": "1967",
+   "geotiff": "TX_Castell_106597_1967_24000_geo.tif"
+  },
+  {
+   "quad": "Fly Gap, TX",
+   "edition": "1962",
+   "geotiff": "TX_Fly Gap_108132_1962_24000_geo.tif"
+  },
+  {
+   "quad": "Fredonia, TX",
+   "edition": "1962",
+   "geotiff": "TX_Fredonia_108308_1962_24000_geo.tif"
+  },
+  {
+   "quad": "Grit, TX",
+   "edition": "1970",
+   "geotiff": "TX_Grit_110460_1970_24000_geo.tif"
+  },
+  {
+   "quad": "Katemcy, TX",
+   "edition": "1970",
+   "geotiff": "TX_Katemcy_109911_1970_24000_geo.tif"
+  },
+  {
+   "quad": "Long Mountain, TX",
+   "edition": "1970",
+   "geotiff": "TX_Long Mountain_109324_1970_24000_geo.tif"
+  },
+  {
+   "quad": "Lost Creek, TX",
+   "edition": "1963",
+   "geotiff": "TX_Lost Creek_109364_1963_24000_geo.tif"
+  },
+  {
+   "quad": "Magill Mountain, TX",
+   "edition": "1955",
+   "geotiff": "TX_Magill Mountain_109448_1955_24000_geo.tif"
+  },
+  {
+   "quad": "Mason, TX",
+   "edition": "1967",
+   "geotiff": "TX_Mason_118127_1967_24000_geo.tif"
+  },
+  {
+   "quad": "Pecan Springs, TX",
+   "edition": "1963",
+   "geotiff": "TX_Pecan Springs_117472_1963_24000_geo.tif"
+  },
+  {
+   "quad": "Pontotoc, TX",
+   "edition": "1955",
+   "geotiff": "TX_Pontotoc_116320_1955_24000_geo.tif"
+  },
+  {
+   "quad": "Purdy Hill, TX",
+   "edition": "1962",
+   "geotiff": "TX_Purdy Hill_115045_1962_24000_geo.tif"
+  },
+  {
+   "quad": "Rochelle, TX",
+   "edition": "1963",
+   "geotiff": "TX_Rochelle_115206_1963_24000_geo.tif"
+  },
+  {
+   "quad": "Scotts Crossing, TX",
+   "edition": "1960",
+   "geotiff": "TX_Scotts Crossing_111511_1960_24000_geo.tif"
+  },
+  {
+   "quad": "Sheep Run Creek, TX",
+   "edition": "1968",
+   "geotiff": "TX_Sheep Run Creek_124045_1968_24000_geo.tif"
+  },
+  {
+   "quad": "Smoothingiron Mountain, TX",
+   "edition": "1955",
+   "geotiff": "TX_Smoothingiron Mountain_121473_1955_24000_geo.tif"
+  },
+  {
+   "quad": "Spy Rock, TX",
+   "edition": "1963",
+   "geotiff": "TX_Spy Rock_122373_1963_24000_geo.tif"
+  },
+  {
+   "quad": "Turtle Creek, TX",
+   "edition": "1968",
+   "geotiff": "TX_Turtle Creek_116772_1968_24000_geo.tif"
+  },
+  {
+   "quad": "Valley Spring, TX",
+   "edition": "1955",
+   "geotiff": "TX_Valley Spring_116839_1955_24000_geo.tif"
+  },
+  {
+   "quad": "Voca, TX",
+   "edition": "1963",
+   "geotiff": "TX_Voca_116923_1963_24000_geo.tif"
+  },
+  {
+   "quad": "West Sweden, TX",
+   "edition": "1960",
+   "geotiff": "TX_West Sweden_117075_1960_24000_geo.tif"
+  }
+ ]
+}

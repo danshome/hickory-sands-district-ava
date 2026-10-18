@@ -19,6 +19,9 @@ on:
       - documents/**
       - docs/data/**
       - docs/walk.html
+      - docs/index.html
+      - docs/boundary.html
+      - docs/assets/survey-map.webp
       - resources/**
       - src/**
       - tests/fixtures/publish/**

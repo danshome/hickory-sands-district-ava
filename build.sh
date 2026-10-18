@@ -145,7 +145,7 @@ checks() {
     touch "$WORK/.checks-passed"             # ./build.sh site-data copies only a boundary that passed the hard checks
 }
 
-SITE_DATA=(src/site/make_site_data.py --gis "$WORK/gis" --out docs/data --walk src/site/walk.template.html docs/walk.html --pages docs)
+SITE_DATA=(src/site/make_site_data.py --gis "$WORK/gis" --stats "$WORK/review/grit-change-stats.json" --out docs/data --walk src/site/walk.template.html docs/walk.html --pages docs)
 
 site_data() {
     step "the website's map data (docs/data/, walk.html, figures) against this build"   # hard, after the package: a boundary change must reach the site

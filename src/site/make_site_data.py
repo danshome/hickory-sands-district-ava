@@ -59,9 +59,12 @@ WALK_TOKENS = ("@STEPS@",)
 # A figure in a page: an element marked data-figure="name" holding only text,
 # such as <span data-figure="area_sqmi">193.83</span>; the build writes it.
 FIGURE = re.compile(
-    r'<(?P<tag>[a-z]+)(?P<attrs>[^>]*\sdata-figure="(?P<name>[a-z_]+)"[^>]*)>'
-    r"(?P<text>[^<]*)</(?P=tag)>"
+    r'<(?P<tag>[a-z][a-z0-9]*)(?P<attrs>[^>]*\sdata-figure="(?P<name>[a-z_]+)"'
+    r"[^>]*)>(?P<text>[^<]*)</(?P=tag)>",
+    re.IGNORECASE,
 )
+# Any mark at all, however written, so one the build cannot fill stops it.
+ANY_MARK = re.compile(r"data-figure\s*=", re.IGNORECASE)
 NOTE = (
     "Display copy of the Hickory Sands District boundary for the website "
     "(NAD83 coordinates, rounded to 6 decimal places, shown as WGS 84). The "
@@ -275,11 +278,37 @@ def revision_of(gis_dir):
     return datetime.date.fromisoformat(dated.group(1)).isoformat()
 
 
-def site_data(gis_dir):
+def compared_areas(stats_path):
+    """Returns the other boundaries' areas the build measured, in sq mi.
+
+    Args:
+        stats_path: The review stage's grit-change-stats.json, or None.
+
+    Returns:
+        A dict with petition_sqmi and notice_243_sqmi (empty without stats).
+
+    Raises:
+        SystemExit: When the file lacks either area.
+    """
+    if not stats_path:
+        return {}
+    with open(stats_path, encoding="utf-8") as fh:
+        sqmi = json.load(fh).get("sqmi", {})
+    if not {"petition", "notice_243"} <= set(sqmi):
+        sys.exit(f"{stats_path}: no petition and notice_243 areas")
+    return {
+        "petition_sqmi": float(sqmi["petition"]),
+        "notice_243_sqmi": float(sqmi["notice_243"]),
+    }
+
+
+def site_data(gis_dir, stats_path=None):
     """Returns the website's data files, by name, as the text to write.
 
     Args:
         gis_dir: The build's GIS folder.
+        stats_path: The review stage's grit-change-stats.json, for the
+            petition's and Notice No. 243's areas, or None.
 
     Returns:
         A dict from file name to file text.
@@ -308,6 +337,7 @@ def site_data(gis_dir):
                 "area_sqmi": float(first["area_sqmi"]),
                 "counties": first["Counties"],
                 "revision": revision,
+                **compared_areas(stats_path),
             },
         )
     ]
@@ -617,21 +647,35 @@ def figures(files):
     Returns:
         A dict from figure name to (text, ISO date or None): area_sqmi
         ("193.83"), area_whole ("194", rounded half up), step_count,
-        point_count, miles (the line's length, to the mile) and
-        revision_date ("October 15, 2026", with its ISO date for a <time>).
+        point_count, miles (the line's length, to the mile),
+        revision_date ("October 15, 2026", with its ISO date for a <time>),
+        and, when the build measured them, petition_area_whole and
+        notice_243_area_whole (the petition's and Notice No. 243's areas,
+        whole square miles).
     """
     (boundary,) = json.loads(files["boundary.geojson"])["features"]
     steps = json.loads(files["steps.geojson"])["features"]
     points = json.loads(files["points.geojson"])["features"]
     area = boundary["properties"]["area_sqmi"]
-    whole = decimal.Decimal(str(area)).quantize(
-        decimal.Decimal(1), rounding=decimal.ROUND_HALF_UP
-    )
     metres = sum(f["properties"]["length_m"] for f in steps)
     revision = datetime.date.fromisoformat(boundary["properties"]["revision"])
+
+    def whole(sqmi):  # whole square miles, rounded half up
+        return str(
+            decimal.Decimal(str(sqmi)).quantize(
+                decimal.Decimal(1), rounding=decimal.ROUND_HALF_UP
+            )
+        )
+
+    compared = {
+        f"{key.removesuffix('_sqmi')}_area_whole": (whole(value), None)
+        for key, value in boundary["properties"].items()
+        if key in ("petition_sqmi", "notice_243_sqmi")
+    }
     return {
+        **compared,
         "area_sqmi": (f"{area:.2f}", None),
-        "area_whole": (str(whole), None),
+        "area_whole": (whole(area), None),
         "step_count": (str(len(steps)), None),
         "point_count": (str(len(points)), None),
         "miles": (f"{metres / M_PER_MILE:.0f}", None),
@@ -658,20 +702,40 @@ def fill_figures(text, figs, where):
         SystemExit: When a figure is unknown, or a marked element holds more
             than text.
     """
-    if text.count(' data-figure="') != len(FIGURE.findall(text)):
-        sys.exit(f"{where}: a data-figure element must hold only text")
+    if len(ANY_MARK.findall(text)) != len(FIGURE.findall(text)):
+        sys.exit(
+            f"{where}: write each figure as "
+            '<tag data-figure="name">text</tag>, with only text inside'
+        )
 
     def write_figure(m):
         if m["name"] not in figs:
             sys.exit(f"{where}: no figure called {m['name']}")
         value, iso = figs[m["name"]]
         attrs = m["attrs"]
-        if iso and m["tag"] == "time":
-            attrs = re.sub(r'\sdatetime="[^"]*"', "", attrs)
-            attrs += f' datetime="{iso}"'
+        if iso and m["tag"].lower() == "time":
+            dated = re.compile(r'(\sdatetime=")[^"]*(")', re.IGNORECASE)
+            if dated.search(attrs):
+                attrs = dated.sub(lambda d: f"{d[1]}{iso}{d[2]}", attrs)
+            else:
+                attrs += f' datetime="{iso}"'
         return f"<{m['tag']}{attrs}>{html.escape(value)}</{m['tag']}>"
 
     return FIGURE.sub(write_figure, text)
+
+
+def stale_figures(text, filled):
+    """Returns the names of the figures a page has wrong.
+
+    Args:
+        text: The page as committed.
+        filled: The page with its figures written by fill_figures().
+
+    Returns:
+        The sorted names of the marked figures that differ.
+    """
+    pairs = zip(FIGURE.finditer(text), FIGURE.finditer(filled), strict=True)
+    return sorted({a["name"] for a, b in pairs if a[0] != b[0]})
 
 
 def committed(files, out_dir):
@@ -813,6 +877,10 @@ def main():
     ap.add_argument("--gis", required=True, help="the build's GIS folder")
     ap.add_argument("--out", required=True, help="the site's data folder")
     ap.add_argument(
+        "--stats",
+        help="the review stage's grit-change-stats.json (other areas)",
+    )
+    ap.add_argument(
         "--walk",
         nargs=2,
         metavar=("TEMPLATE", "PAGE"),
@@ -825,7 +893,7 @@ def main():
     ap.add_argument("--check", action="store_true", help="compare only")
     args = ap.parse_args()
     skip = args.walk[1] if args.walk else None
-    files = site_data(args.gis)
+    files = site_data(args.gis, args.stats)
     template = None
     if args.walk:
         with open(args.walk[0], encoding="utf-8") as fh:
@@ -850,8 +918,10 @@ def main():
         if args.pages and not stale:
             figs = figures(committed(files, args.out))
             for path, text in site_pages(args.pages, skip).items():
-                if fill_figures(text, figs, path) != text:
-                    print(f"{path}: its figures differ from the build")
+                wrong = stale_figures(text, fill_figures(text, figs, path))
+                if wrong:
+                    names = ", ".join(wrong)
+                    print(f"{path}: figures differ from the build: {names}")
                     stale = True
         if stale:
             print(
@@ -860,18 +930,24 @@ def main():
             sys.exit(STALE)
         print(f"{args.out} matches the build ({len(files)} files)")
         return
-    write(files, args.out)
-    print(f"wrote {len(files)} files to {args.out}")
-    if template is not None:
-        write_one(args.walk[1], walk_page(files, template))
-        print(f"wrote {args.walk[1]}")
+    # Everything is made before anything is written, so an error in one page
+    # leaves the site as it was.
+    page = walk_page(files, template) if template is not None else None
+    pages = {}
     if args.pages:
         figs = figures(files)
         for path, text in site_pages(args.pages, skip).items():
             filled = fill_figures(text, figs, path)
             if filled != text:
-                write_one(path, filled)
-                print(f"wrote the figures in {path}")
+                pages[path] = filled
+    write(files, args.out)
+    print(f"wrote {len(files)} files to {args.out}")
+    if page is not None:
+        write_one(args.walk[1], page)
+        print(f"wrote {args.walk[1]}")
+    for path, filled in pages.items():
+        write_one(path, filled)
+        print(f"wrote the figures in {path}")
 
 
 if __name__ == "__main__":

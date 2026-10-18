@@ -601,3 +601,20 @@ def test_revision_comes_from_the_area_file_s_name(tmp_path):
     (tmp_path / "x-area-EPSG4269.geojson").write_text("{}", encoding="utf-8")
     with pytest.raises(SystemExit, match="no dated area file"):
         msd.revision_of(str(tmp_path))
+
+
+def test_compared_areas_come_from_the_review_stats(build, tmp_path):
+    stats = tmp_path / "grit-change-stats.json"
+    stats.write_text(
+        json.dumps({"sqmi": {"notice_243": 198.17, "petition": 194.03}}),
+        encoding="utf-8",
+    )
+    files = msd.site_data(build, str(stats))
+    (boundary,) = json.loads(files["boundary.geojson"])["features"]
+    assert boundary["properties"]["petition_sqmi"] == 194.03
+    figs = msd.figures(files)
+    assert figs["petition_area_whole"] == ("194", None)
+    assert figs["notice_243_area_whole"] == ("198", None)
+    stats.write_text(json.dumps({"sqmi": {}}), encoding="utf-8")
+    with pytest.raises(SystemExit, match="no petition and notice_243 areas"):
+        msd.site_data(build, str(stats))

@@ -345,11 +345,12 @@ pages and checked by `tests/test_site_maps.py`), on Esri's basemaps:
   read.
 
 No page types a boundary figure (#124). The area, the step and point counts, the line's length and the revision date are
-elements marked `data-figure` (`area_sqmi`, `area_whole`, `step_count`, `point_count`, `miles`, `revision_date`), such
+elements marked `data-figure` (`area_sqmi`, `area_whole`, `step_count`, `point_count`, `miles`, `revision_date`, and the
+petition's and Notice No. 243's areas, `petition_area_whole` and `notice_243_area_whole`, from the review stage), such
 as `<span data-figure="area_sqmi">193.83</span>` or `<time data-figure="revision_date" datetime="…">…</time>`. The
 site-data stage writes them from `docs/data/`; the revision date is the one in the build's file names, kept in the
-boundary's record. `tests/test_site_figures.py` fails when a page types one without the mark. Dated history, such as a
-journal note or a step in the status timeline, is an event and stays as written.
+boundary's record. `tests/test_site_figures.py` fails when a page types one without the mark. A journal note is history
+and stays as written; a dated step in the status timeline keeps its date, but its figures are marked.
 
 Their code is `docs/assets/maps.js` (shared), `explore.js`, `walk.js` and `maps.css`. Text from the data is only ever set
 as text, never parsed as HTML. The basemaps need the ArcGIS Online API key in `docs/assets/map-config.js`. It is public by

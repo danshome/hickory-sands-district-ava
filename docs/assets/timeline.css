@@ -1,0 +1,45 @@
+/* The land: the cited geologic timeline (issue #117). Loaded after site.css, on land.html only.
+   Every class starts with geo-, so nothing here touches site.css (its .timeline classes are the Status page's).
+   Sandstone ochre (--sand) marks the Hickory Sandstone Member and the sandy soil weathered from it; the rest is the paper's neutrals, and the aquifer's water a muted green.
+   Without JavaScript the section is an ordered list of stages and a list of sources; timeline.js adds the figure. */
+.geo{--geo-gneiss:#d5cdbd;--geo-gneiss-mark:#a89d8b;--geo-granite:#ebe5d8;--geo-granite-mark:#9c917f;--geo-riley:#cbc4b5;--geo-wilberns:#c2bbac;--geo-ellen:#b9b2a3;--geo-lime-mark:#9a917f;--geo-cret:#e0dace;--geo-cret-mark:#b4ab9b;--geo-hickory-mark:#8f6646;--geo-soil:#6f4a2f;--geo-water-mark:#a59b8a;--geo-scale:#e2dbcc;padding-top:4rem;padding-bottom:6rem;border-top:1px solid var(--paper-line)}
+.geo-head{display:grid;gap:1.5rem}.geo-head h2{margin-bottom:1.5rem}.geo-intro{max-width:30rem;font-size:1rem;color:var(--paper-muted)}
+.geo-body{margin-top:3rem}.geo-stages{list-style:none;margin:0;padding:0}
+.geo-stage{display:grid;gap:1.25rem;min-width:0;padding-block:2.25rem;border-top:1px solid var(--paper-line);scroll-margin-top:2rem}.geo-stage:last-child{border-bottom:1px solid var(--paper-line)}.geo-when,.geo-text{min-width:0}
+.geo-index{font-size:.6875rem;font-weight:500;letter-spacing:.15em;color:var(--paper-muted)}
+.geo-age{margin-top:.6rem;font-family:var(--serif);font-size:1.625rem;line-height:1.2}
+.geo-certainty{margin-top:.75rem;max-width:24rem;font-size:.875rem;line-height:1.6;color:var(--paper-muted)}
+.geo-text h3{font-size:clamp(2rem,3.4vw,2.75rem);margin-bottom:1.1rem}.geo-text p{max-width:38rem;font-size:1.0625rem;line-height:1.8}
+.geo-cite{font-size:.68em;line-height:0;letter-spacing:.02em;white-space:nowrap}.geo-cite a{padding-inline:.08em;color:var(--paper-muted);text-decoration:none}.geo-cite a:hover{color:var(--paper-ink);text-decoration:underline}
+.geo-sources{display:grid;gap:1.5rem;margin-top:4rem}.geo-sources h3{font-size:2rem}
+.geo-source-list{margin:0;padding-left:1.75rem;max-width:46rem;font-size:.875rem;line-height:1.6}.geo-source-list li{padding:.35rem .5rem .35rem .25rem;overflow-wrap:anywhere;scroll-margin-top:2rem}.geo-source-list li::marker{color:var(--paper-muted);font-variant-numeric:tabular-nums}.geo-source-list li:target{background:#e5dece}.geo-source-list cite{font-style:italic}
+.geo-sources-note{margin-top:1.5rem;max-width:40rem;font-size:.8125rem;line-height:1.6;color:var(--paper-muted)}
+
+/* The figure (timeline.js): a schematic section, a time scale, a key and the Earlier/Later steps. */
+.geo-figure{min-width:0;margin:0 0 2.5rem}.geo-svg{display:block;width:100%;height:auto;border:1px solid var(--paper-line);background:var(--bone)}
+.geo-scale{margin-top:1rem}.geo-scale-bar{position:relative;height:6px;background:var(--geo-scale)}.geo-scale-span{position:absolute;top:0;bottom:0;background:var(--paper-line)}.geo-scale-span.geo-on{z-index:1;background:var(--paper-ink)}
+.geo-scale-ticks{position:relative;height:1.3rem;margin-top:.35rem;font-size:.6875rem;color:var(--paper-muted);font-variant-numeric:tabular-nums}.geo-scale-ticks span{position:absolute;top:0;transform:translateX(-50%);white-space:nowrap}.geo-scale-ticks span:first-child{transform:none}.geo-scale-ticks span:last-child{transform:translateX(-100%)}
+.geo-scale-unit{font-size:.6875rem;letter-spacing:.04em;color:var(--paper-muted)}
+.geo-now{display:flex;flex-wrap:wrap;align-items:baseline;gap:.25rem 1rem;margin-top:1.25rem}.geo-now-title{font-family:var(--serif);font-size:1.75rem;line-height:1.1;color:var(--paper-ink)}.geo-now-age{font-size:.875rem;color:var(--paper-muted)}
+.geo-note{margin-top:.75rem}.geo-key{display:flex;flex-wrap:wrap;gap:.35rem 1.1rem;margin:.9rem 0 0;padding:0;list-style:none;font-size:.75rem;line-height:1.5;color:var(--paper-ink)}.geo-key li{display:flex;align-items:center;gap:.45rem}
+.geo-swatch{flex:0 0 auto;width:16px;height:10px;border:1px solid var(--geo-gneiss-mark)}.geo-sw-gneiss{background:var(--geo-gneiss)}.geo-sw-granite{background:var(--geo-granite)}.geo-sw-hickory{background:var(--sand)}.geo-sw-later{background:var(--geo-wilberns)}.geo-sw-cret{background:var(--geo-cret)}.geo-sw-water{background:repeating-linear-gradient(180deg,var(--bone) 0 3px,var(--geo-water-mark) 3px 4px)}.geo-sw-soil{background:radial-gradient(circle,var(--geo-soil) 0 1.4px,transparent 1.8px) 0 0/5px 5px,var(--sand)}.geo-sw-aquifer,.geo-sw-unconformity{height:0;border:0;border-top:2px dashed var(--paper-ink)}.geo-sw-fault{width:2px;height:12px;margin-inline:7px;border:0;background:var(--paper-ink)}
+.geo-controls{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-top:1.25rem;border-top:1px solid var(--paper-line)}
+.geo-step{display:inline-flex;align-items:center;gap:.5rem;min-height:44px;padding:.5rem 0;border:0;background:none;color:var(--paper-ink);font:inherit;font-size:.875rem;cursor:pointer}.geo-step:hover{text-decoration:underline;text-underline-offset:.3em}.geo-step:focus-visible{outline:2px solid var(--wine);outline-offset:4px}.geo-step[aria-disabled="true"]{color:var(--paper-muted);opacity:.55;cursor:default;text-decoration:none}
+.geo-count{font-size:.75rem;letter-spacing:.15em;color:var(--paper-muted);font-variant-numeric:tabular-nums}
+.geo-live{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
+
+/* The drawing's layers: fills and the marks of their patterns. */
+.geo-f-gneiss{fill:var(--geo-gneiss)}.geo-m-gneiss{fill:none;stroke:var(--geo-gneiss-mark);stroke-width:.8}.geo-f-granite{fill:var(--geo-granite)}.geo-m-granite{fill:none;stroke:var(--geo-granite-mark);stroke-width:.9}
+.geo-f-hickory{fill:var(--sand)}.geo-m-hickory{fill:var(--geo-hickory-mark)}.geo-f-riley{fill:var(--geo-riley)}.geo-f-wilberns{fill:var(--geo-wilberns)}.geo-f-ellen{fill:var(--geo-ellen)}.geo-m-lime{fill:none;stroke:var(--geo-lime-mark);stroke-width:.6}
+.geo-f-cret{fill:var(--geo-cret)}.geo-m-cret{fill:none;stroke:var(--geo-cret-mark);stroke-width:.6}.geo-f-water{fill:var(--bone)}.geo-m-water{fill:none;stroke:var(--geo-water-mark);stroke-width:.7}
+.geo-layer{stroke:#282b2459;stroke-width:.6;stroke-linejoin:round}.geo-sky{fill:var(--bone)}.geo-ground{fill:none;stroke:var(--paper-ink);stroke-width:1.3;stroke-linejoin:round}.geo-sea{fill:none;stroke:var(--paper-muted);stroke-width:1}
+.geo-unconformity{fill:none;stroke:var(--paper-ink);stroke-width:1;stroke-dasharray:5 3}.geo-fault{fill:none;stroke:var(--paper-ink);stroke-width:1.4}.geo-soil{fill:var(--geo-soil)}.geo-aquifer{fill:none;stroke:var(--paper-ink);stroke-width:1.4;stroke-dasharray:7 5}.geo-arrow{fill:var(--paper-ink);stroke:var(--paper-ink);stroke-width:1.2}
+
+@media(min-width:700px){.geo{padding-top:5rem;padding-bottom:7rem}.geo-head{grid-template-columns:1fr 2fr;gap:7vw}.geo-eyebrow{padding-top:.5rem}.geo-stage{grid-template-columns:1fr 2fr;column-gap:7vw;padding-block:2.75rem}.geo-sources{grid-template-columns:1fr 2fr;gap:7vw}}
+@media(min-width:1000px){.geo-body.geo-has-figure{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:5vw;align-items:start}.geo-has-figure .geo-figure{position:sticky;top:1.5rem;margin-bottom:0}.geo-has-figure .geo-stage{grid-template-columns:1fr;row-gap:1rem}.geo-has-figure .geo-certainty{max-width:34rem}.geo-has-figure .geo-current{border-top-color:var(--paper-ink)}}
+/* A new stage fades in; never when the reader asks for less motion (site.css also stops all animation then). */
+@media(prefers-reduced-motion:no-preference){.geo-art{animation:geo-in .45s ease-out both}}
+@keyframes geo-in{from{opacity:.5}to{opacity:1}}
+@media print{.geo-controls,.geo-live{display:none}.geo-has-figure .geo-figure{position:static}.geo-stage,.geo-figure{break-inside:avoid}.geo-source-list li:target{background:none}}
+/* The aquifer in its own colour, so the key tells it from the unconformity. */
+.geo-aquifer{stroke:#5b716a}.geo-sw-aquifer{border-top-color:#5b716a}

@@ -360,6 +360,14 @@ merged to `main`. The rest is set outside the repository, once:
   records beside them (MX, SPF, DKIM, DMARC, Google's verification) are Google Workspace's; leave them alone. The
   other Hickory Sands domains forward to hickorysandsdistrictava.org at Squarespace.
 
+The land page's geologic timeline (#117) is plain HTML in `docs/land.html`: eight stages, oldest first, each with its
+age, its uncertainty in words and numbered citations to the Sources list at its end. `docs/assets/timeline.js` only adds
+a schematic section to step through (the page reads the same without it); `timeline.css` styles it. Its one basis is
+the research notes in `resources/site/hickory-geology-research.md` (sources, confidence, claims to avoid): change a
+stage only from them. `tests/test_timeline.py` (run by the lint workflow with the other tests; `site.yml` runs only
+`test_site.py`) checks that every stage has an age and a citation in its text, the dates match the ages, every citation
+resolves, every source is cited, and the wording, with no claim the notes say to avoid.
+
 Publishing to ArcGIS Online is not in Actions: it stays `./build.sh publish`, run by Dan. Changes to `src/publish/` start
 a build only for its publish dry run, which signs in to nothing (that code never touches `dist/`).
 

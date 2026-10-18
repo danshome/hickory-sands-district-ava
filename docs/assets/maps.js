@@ -117,6 +117,8 @@ export async function boundaryMap(element, { popups = true, quiet = false } = {}
     outFields: ["*"],
     popupEnabled: popups,
     popupTemplate: {
+      // Built by functions, so the popup must be told to fetch every field.
+      outFields: ["*"],
       title: ({ graphic }) => `Step ${Number(graphic.attributes.step)}`,
       content: stepPopup,
     },
@@ -133,6 +135,7 @@ export async function boundaryMap(element, { popups = true, quiet = false } = {}
     outFields: ["*"],
     popupEnabled: popups,
     popupTemplate: {
+      outFields: ["*"],
       title: ({ graphic }) => graphic.attributes.point === "Beginning"
         ? "The beginning point"
         : `Point ${Number(graphic.attributes.point)}`,

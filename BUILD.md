@@ -147,6 +147,8 @@ target/                  everything the build makes (not in git): work/ (recreat
                          publish/ (the publish dry run)
 dist/                    the distribution (not in git)
 tobedeleted/             set aside for review and deletion, used by nothing (not in git)
+research/                research, audits, design proposals and prototypes until they are ready (#133); used by no
+                         build, never in git, and not wiped by ./build.sh clean
 ```
 
 ## The stages and the checks

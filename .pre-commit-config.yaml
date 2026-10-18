@@ -2,7 +2,7 @@
 # requirements-dev.txt (./build.sh env), so nothing is downloaded or installed globally at commit time.
 # Run on everything: ./build.sh lint
 default_install_hook_types: [pre-commit]
-exclude: ^(tobedeleted|target|dist|\.venv)/
+exclude: ^(tobedeleted|research|target|dist|\.venv)/
 
 repos:
   - repo: local

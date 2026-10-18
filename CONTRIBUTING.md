@@ -57,7 +57,7 @@ macOS or Linux with [Homebrew](https://brew.sh). From the repository's root:
 | Tests                                  | `tests/`                                                           |
 | GitHub Actions                         | `.github/workflows/`                                               |
 | Everything the build makes             | `target/` and `dist/` (never committed)                            |
-| Research: notes, audits, analyses, prototypes | outside the repository (never committed, and never in `target/`) |
+| Research, audits, design proposals, prototypes, until ready | `research/` (gitignored: never committed; never in `target/`) |
 
 A new top-level folder needs an issue that agrees to it first.
 

@@ -10,6 +10,9 @@
 # Set aside for Dan to review and delete (holds private material)
 /tobedeleted/
 
+# Research, audits, design proposals and prototypes until they are ready (#133; holds private material)
+/research/
+
 # Words the private-words hook blocks (the list itself is private)
 /.private-words
 

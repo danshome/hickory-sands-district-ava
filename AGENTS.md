@@ -24,7 +24,9 @@ checks). Where this file and CLAUDE.md differ, CLAUDE.md wins.
    - code under `src/<area>/`;
    - the website in `docs/`;
    - the build's inputs in `resources/`;
-   - tests in `tests/`.
+   - tests in `tests/`;
+   - research, audits, design proposals and prototypes, until they are ready, in `research/` (gitignored: never
+     committed, and never in `target/`, which `./build.sh clean` wipes).
    Don't add a new top-level folder unless an issue agrees to it first.
 5. **No secrets in the repository. It is public.** Tokens, keys, passwords and connection strings stay in your
    tool's credential store or in environment variables, never in a file, a commit message or an issue.

@@ -135,7 +135,8 @@ LICENSE.txt     CC0 1.0
 ```
 
 To report a problem or propose a change, see [CONTRIBUTING.md](CONTRIBUTING.md) and the
-[Code of Conduct](CODE_OF_CONDUCT.md). AI agents start with [AGENTS.md](AGENTS.md).
+[Code of Conduct](CODE_OF_CONDUCT.md). To report a security problem privately, see [SECURITY.md](SECURITY.md).
+AI agents start with [AGENTS.md](AGENTS.md).
 
 The USGS quadrangles themselves are downloaded by the build and not stored here.
 

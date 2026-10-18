@@ -12,8 +12,9 @@ Open a [GitHub issue](https://github.com/danshome/hickory-sands-district-ava/iss
 - what you expected;
 - what you saw (a screenshot or a link to the map helps).
 
-An issue is a claim to check, not an order: each one is checked against the source before anything changes.
-Comments on the proposal itself belong in TTB's docket, not here: https://www.regulations.gov/docket/TTB-2026-0005.
+A security problem is reported privately instead, as [SECURITY.md](SECURITY.md) explains. An issue is a claim to check,
+not an order: each one is checked against the source before anything changes. Comments on the proposal itself belong in
+TTB's docket, not here: https://www.regulations.gov/docket/TTB-2026-0005.
 
 ## Proposing a change
 

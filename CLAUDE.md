@@ -69,7 +69,10 @@ Every change from here on:
 4. merge it straight away (`gh pr merge <n> --merge --admin`); keep the branch, so each change stays on its own branch;
 5. `git switch main && git pull --ff-only`.
 
-Never force-push `main` again without Dan saying so.
+Never force-push `main` again without Dan saying so. `main` is protected by two rulesets (#98): no force pushes or
+deletion for anyone; pull requests with "pre-commit hooks" passing, which admins may bypass. Other agents (Muse, Codex,
+...) follow the same rules: AGENTS.md points them here and CONTRIBUTING.md gives people the same workflow; keep the three
+in step when a rule changes.
 
 Subagents (Dan, 2026-10-17): fixes may be delegated to subagents, each in its own git worktree and branch, one area of
 files per agent so they never edit the same file at once. A subagent commits, pushes its branch and opens a PR; it never

@@ -125,13 +125,17 @@ maintainer's saved ArcGIS sign-in and is never part of a normal build.
 
 ```
 build.sh        the build (see BUILD.md)
-.github/        GitHub Actions: lint, build, release
+.github/        GitHub Actions: lint, build, release, site
 src/            all code: quads, tracing, fixing, review, boundary, documents, checks, package, publish
 resources/      the inputs: boundary/ (step texts, proposed ring and pins, tracing inputs), ttb/ (Notice No. 243,
                 the AVAs_Production record), quads/ (manifest, VRT templates), geology/ (shifted USGS units)
 documents/      the README and read-me templates (figures filled by the build)
+docs/           the website, hickorysandsdistrictava.org (GitHub Pages)
 LICENSE.txt     CC0 1.0
 ```
+
+To report a problem or propose a change, see [CONTRIBUTING.md](CONTRIBUTING.md) and the
+[Code of Conduct](CODE_OF_CONDUCT.md). AI agents start with [AGENTS.md](AGENTS.md).
 
 The USGS quadrangles themselves are downloaded by the build and not stored here.
 

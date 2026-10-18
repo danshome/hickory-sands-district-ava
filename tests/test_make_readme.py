@@ -10,6 +10,7 @@ import re
 
 import pytest
 
+from src import revision
 from src.documents import make_readme
 
 
@@ -74,7 +75,7 @@ def test_readme_and_page(tmp_path, monkeypatch):
     page = (
         tmp_path
         / "documents"
-        / "Hickory-Sands-District-read-me-first-2026-10-15.html"
+        / f"Hickory-Sands-District-read-me-first-{revision.ISO}.html"
     ).read_text(encoding="utf-8")
     assert "123.46" in readme and not re.search(r"\{[A-Z_]+\}", readme)
     headings = [s for s in readme.splitlines()[3:] if make_readme.is_heading(s)]

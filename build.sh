@@ -1,5 +1,5 @@
 #!/bin/bash
-# Hickory Sands District AVA - the boundary as proposed to TTB (Oct. 15-16, 2026): build everything from source.
+# Hickory Sands District AVA - the boundary as proposed to TTB: build everything from source.
 #
 #   ./build.sh            set up what is missing, then build the package for TTB into dist/ (same as ./build.sh all)
 #   ./build.sh env        only set up the tools, the project's Python environment (.venv) and the git hooks
@@ -24,14 +24,18 @@
 # documents/ (README templates), LICENSE.txt. Everything made along the way: target/. The distribution: dist/.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")" && pwd)"; cd "$ROOT"
-NAME=Hickory-Sands-District-AVA_boundary-as-proposed-2026-10-15
-STEM=hickory-sands-district-boundary-proposed-2026-10-15
+# The proposed revision's date, YYYY-MM-DD: typed once, in resources/boundary/revision-date.txt (src/revision.py gives
+# the scripts the same date). The package, its files and the ArcGIS services are named after it.
+REVISION="$(tr -d '[:space:]' < resources/boundary/revision-date.txt)"
+NAME="Hickory-Sands-District-AVA_boundary-as-proposed-$REVISION"
+STEM="hickory-sands-district-boundary-proposed-$REVISION"
 TARGET="$ROOT/target"; WORK="$TARGET/work"; DIST="$ROOT/dist"; export HSD_WORK="$WORK"
 # One date for every date and time the build writes into what it makes (the PDFs' and Word files' dates, zip members'
-# times, the GeoPackage's and the .dbf headers' dates): the package's date, as in the file names, Oct. 15, 2026, 00:00
-# UTC, so two builds of the same commit give the same bytes. SOURCE_DATE_EPOCH is the reproducible-builds.org convention
+# times, the GeoPackage's and the .dbf headers' dates): the revision's date, as in the file names, at 00:00 UTC, so two
+# builds of the same commit give the same bytes. SOURCE_DATE_EPOCH is the reproducible-builds.org convention
 # (https://reproducible-builds.org/specs/source-date-epoch/); the scripts read it, and a date set in the environment wins.
-export SOURCE_DATE_EPOCH="${SOURCE_DATE_EPOCH:-1792022400}"
+REVISION_EPOCH="$(date -u -j -f '%Y-%m-%d %H:%M:%S' "$REVISION 00:00:00" +%s 2>/dev/null || date -u -d "$REVISION" +%s)"   # BSD, GNU
+export SOURCE_DATE_EPOCH="${SOURCE_DATE_EPOCH:-$REVISION_EPOCH}"
 mkdir -p "$TARGET/tmp"; export TMPDIR="$TARGET/tmp" PIP_CACHE_DIR="$TARGET/pip-cache"   # temp files and downloads stay in target/
 VENV="$ROOT/.venv"; PY="$VENV/bin/python"
 OS="$(uname -s)"                        # Darwin (Dan's Mac) or Linux (GitHub Actions); the tools come from Homebrew on both
@@ -113,9 +117,9 @@ quads() {
 
 stage() {
     step "a fresh target/work (inputs are read in place from resources/)"
-    rm -rf "$WORK"; mkdir -p "$WORK"/{documents,review,ttb-source-check-2026-10-15}
+    rm -rf "$WORK"; mkdir -p "$WORK"/{documents,review,"ttb-source-check-$REVISION"}
     # regulations.gov serves Notice 243 as regs-TTB-2026-0005-0001.pdf: the same file, kept once in resources/ttb/
-    cp resources/ttb/TTB-Notice-243-91FR52576-docket-TTB-2026-0005-0001.pdf "$WORK"/ttb-source-check-2026-10-15/regs-TTB-2026-0005-0001.pdf
+    cp resources/ttb/TTB-Notice-243-91FR52576-docket-TTB-2026-0005-0001.pdf "$WORK/ttb-source-check-$REVISION/regs-TTB-2026-0005-0001.pdf"
     cp resources/ttb/TTB-Notice-243-91FR52576-docket-TTB-2026-0005-0001.pdf "$WORK"/documents/
     cp LICENSE.txt "$WORK"/
 }
@@ -154,11 +158,12 @@ site_data() {
 
 documents() {
     step "documents"
-    local D="$WORK/documents" S1=Hickory-Sands-District-boundary-description-as-proposed-2026-10-15 S2=Hickory-Sands-District-boundary-changes-side-by-side-2026-10-15
+    local D="$WORK/documents" S1="Hickory-Sands-District-boundary-description-as-proposed-$REVISION" S2="Hickory-Sands-District-boundary-changes-side-by-side-$REVISION"
+    local LABEL; LABEL="$("$PY" -E -s -B -c 'import sys; sys.path.insert(0, "src"); import revision; print(revision.SHORT)')"   # "Oct. 15, 2026"
     run src/documents/make_readme.py
     run src/documents/make_docs.py >/dev/null
     run src/documents/make_compare.py >/dev/null
-    for S in $S1 $S2 Hickory-Sands-District-read-me-first-2026-10-15; do
+    for S in $S1 $S2 "Hickory-Sands-District-read-me-first-$REVISION"; do
         # shellcheck disable=SC2086   # HSD_CHROME_FLAGS: extra options, split on purpose (GitHub's Linux runners set them)
         # HSD_CHROME_TMPDIR: a short temp dir for Chrome's socket where target/tmp's path is too long for one (Linux: 108 bytes)
         TMPDIR="${HSD_CHROME_TMPDIR:-$TMPDIR}" "$CHROME" --headless=new --disable-gpu --no-pdf-header-footer ${HSD_CHROME_FLAGS:-} \
@@ -166,11 +171,11 @@ documents() {
         [ -s "$D/$S.pdf" ] || { echo "Chrome did not write $S.pdf:"; tail -n 20 "$WORK/chrome.log"; exit 1; }
         run src/documents/pdf_dates.py "$D/$S.pdf"   # Chrome dates it when it printed it: SOURCE_DATE_EPOCH instead
     done
-    run src/documents/html2docx.py "$D/$S1.html" "$D/$S1.docx" "Hickory Sands District AVA: regulatory text as proposed to TTB" "Dan McLaughlin" "Hickory Sands District AVA - boundary description as proposed to TTB (Oct. 15, 2026)"
-    run src/documents/html2docx.py "$D/$S2.html" "$D/$S2.docx" "Hickory Sands District AVA: changes to TTB's published boundary description" "Dan McLaughlin" "Hickory Sands District AVA - changes to TTB's published boundary description (Oct. 15, 2026)"
+    run src/documents/html2docx.py "$D/$S1.html" "$D/$S1.docx" "Hickory Sands District AVA: regulatory text as proposed to TTB" "Dan McLaughlin" "Hickory Sands District AVA - boundary description as proposed to TTB ($LABEL)"
+    run src/documents/html2docx.py "$D/$S2.html" "$D/$S2.docx" "Hickory Sands District AVA: changes to TTB's published boundary description" "Dan McLaughlin" "Hickory Sands District AVA - changes to TTB's published boundary description ($LABEL)"
     run src/documents/make_notice_copy.py | grep -E "highlighted" || true
     run src/documents/pdf_text.py "$D/TTB-Notice-243-91FR52576-docket-TTB-2026-0005-0001.pdf" "$D/compare-text_TTB-Notice-243-docket.txt"
-    run src/documents/pdf_text.py "$D/TTB-Notice-243-with-proposed-Hickory-Sands-District-changes-2026-10-15-UNOFFICIAL.pdf" "$D/compare-text_TTB-Notice-243-with-proposed-changes.txt"
+    run src/documents/pdf_text.py "$D/TTB-Notice-243-with-proposed-Hickory-Sands-District-changes-$REVISION-UNOFFICIAL.pdf" "$D/compare-text_TTB-Notice-243-with-proposed-changes.txt"
     echo "documents: $(ls "$D" | wc -l | tr -d ' ') files"
 }
 

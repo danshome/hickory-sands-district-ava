@@ -13,6 +13,12 @@ import html
 import json
 import os
 import re
+import sys
+
+sys.path.insert(
+    0, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+)  # src/
+import revision
 
 ROOT = os.path.abspath(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
@@ -224,7 +230,8 @@ def words(s):
 def main():
     """Writes README.txt and the read-me-first page into the work folder.
 
-    Fills the template's {AREA_SQMI} and {STEPS} from the build, and stops
+    Fills the template's {AREA_SQMI}, {STEPS}, {REVISION} and
+    {REVISION_SHORT} from the build and src/revision.py, and stops
     (AssertionError) on a placeholder left unfilled or on a word of README.txt
     or LICENSE.txt that the page does not have.
     """
@@ -233,6 +240,8 @@ def main():
     fill = {
         "AREA_SQMI": f"{built['sqmi']:.2f}",
         "STEPS": str(len(built["steps"])),
+        "REVISION": revision.ISO,
+        "REVISION_SHORT": revision.SHORT,
     }
     with open(os.path.join(DOC, "README.template.txt"), encoding="utf-8") as f:
         readme = f.read()
@@ -299,7 +308,7 @@ def main():
         os.path.join(
             HERE,
             "documents",
-            "Hickory-Sands-District-read-me-first-2026-10-15.html",
+            f"Hickory-Sands-District-read-me-first-{revision.ISO}.html",
         ),
         "w",
         encoding="utf-8",

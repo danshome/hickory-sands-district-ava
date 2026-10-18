@@ -12,6 +12,12 @@ import html
 import json
 import os
 import re
+import sys
+
+sys.path.insert(
+    0, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+)  # src/
+import revision
 
 ROOT = os.path.abspath(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
@@ -34,13 +40,13 @@ L = {
     for f in load_json(
         os.path.join(
             HERE,
-            "gis/hickory-sands-district-boundary-proposed-2026-10-15-line-EPSG4269.geojson",
+            f"gis/{revision.STEM}-line-EPSG4269.geojson",
         )
     )["features"]
 }
 OUT = os.path.join(HERE, "documents")
 os.makedirs(OUT, exist_ok=True)
-STEM = "Hickory-Sands-District-boundary-description-as-proposed-2026-10-15"
+STEM = f"Hickory-Sands-District-boundary-description-as-proposed-{revision.ISO}"
 
 A = (
     "(a) Name. The name of the viticultural area described in this section is "

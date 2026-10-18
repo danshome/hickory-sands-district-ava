@@ -65,6 +65,11 @@ from PIL import ImageFont
 import pymupdf
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # src/documents
+sys.path.insert(
+    0, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+)  # src/
+import revision
+
 import pdf_dates
 
 ROOT = os.path.abspath(
@@ -74,12 +79,12 @@ HERE = os.environ.get("HSD_WORK") or os.path.join(
     ROOT, "target", "work"
 )  # build work dir (build.sh stages resources/ here)
 SRC = os.path.join(
-    HERE, "ttb-source-check-2026-10-15", "regs-TTB-2026-0005-0001.pdf"
+    HERE, f"ttb-source-check-{revision.ISO}", "regs-TTB-2026-0005-0001.pdf"
 )
 OUT = os.path.join(
     HERE,
     "documents",
-    "TTB-Notice-243-with-proposed-Hickory-Sands-District-changes-2026-10-15-UNOFFICIAL.pdf",
+    f"TTB-Notice-243-with-proposed-Hickory-Sands-District-changes-{revision.ISO}-UNOFFICIAL.pdf",
 )
 with open(os.path.join(HERE, "proposed-steps.json")) as f:
     S = {s["step"]: s["text"] for s in json.load(f)["steps"]}
@@ -813,7 +818,7 @@ doc.set_metadata(
     {
         "title": (
             "Notice No. 243 (91 FR 52576) - UNOFFICIAL copy with the "
-            "proposed Hickory Sands District changes (Oct. 15, 2026)"
+            f"proposed Hickory Sands District changes ({revision.SHORT})"
         ),
         "author": (
             "Dan McLaughlin (petitioner), from TTB's docket copy "

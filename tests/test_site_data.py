@@ -17,6 +17,7 @@ import sys
 
 import pytest
 
+from src import revision
 from src.site import make_site_data as msd
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -248,7 +249,7 @@ def made_up_build(gis, n=10, step_hook=None, point_hook=None, areas=1):
         ("line", out_of_order(steps)),
         ("points", out_of_order(points)),
     ):
-        path = os.path.join(gis, f"x-2026-10-15-{kind}-EPSG4269.geojson")
+        path = os.path.join(gis, f"x-{revision.ISO}-{kind}-EPSG4269.geojson")
         with open(path, "w", encoding="utf-8") as fh:
             json.dump({"type": "FeatureCollection", "features": feats}, fh)
 
@@ -283,7 +284,7 @@ def test_generator_keeps_rounds_and_orders(build):
         "name": "Hickory Sands District",
         "area_sqmi": 1.234,
         "counties": "Mason",
-        "revision": "2026-10-15",
+        "revision": revision.ISO,
     }
     assert boundary["geometry"]["coordinates"][0][1] == [-99.01, 30.01]
     assert msd.site_data(build) == files
@@ -313,7 +314,7 @@ def test_generator_refuses_a_spoiled_build(tmp_path, spoil, message):
 @pytest.mark.parametrize(("copies", "found"), [(0, "found 0"), (2, "found 2")])
 def test_one_wants_exactly_one_file(build, copies, found):
     gis = build
-    line = os.path.join(gis, "x-2026-10-15-line-EPSG4269.geojson")
+    line = os.path.join(gis, f"x-{revision.ISO}-line-EPSG4269.geojson")
     if copies == 0:
         os.remove(line)
     else:
@@ -541,7 +542,7 @@ def test_figures_come_from_the_data(build):
     assert figs["area_whole"] == ("1", None)
     assert figs["step_count"] == ("10", None)
     assert figs["point_count"] == ("11", None)
-    assert figs["revision_date"] == ("October 15, 2026", "2026-10-15")
+    assert figs["revision_date"] == (revision.LONG, revision.ISO)
 
 
 def test_area_whole_rounds_half_up():
@@ -646,3 +647,13 @@ def test_check_and_write_cover_the_pages(monkeypatch, capsys, build, tmp_path):
     assert "matches the build" in run_main(
         monkeypatch, capsys, build, out, *pages, "--check"
     )
+
+
+def test_a_build_for_another_revision_is_refused(tmp_path):
+    other = "1999-01-02"
+    assert other != revision.ISO
+    (tmp_path / f"x-{other}-area-EPSG4269.geojson").write_text(
+        "{}", encoding="utf-8"
+    )
+    with pytest.raises(SystemExit, match=r"run \./build\.sh"):
+        msd.revision_of(str(tmp_path))

@@ -59,6 +59,11 @@ from osgeo import osr
 import pymupdf
 import pypdf
 
+sys.path.insert(
+    0, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+)  # src/
+import revision
+
 gdal.UseExceptions()
 ogr.UseExceptions()
 ROOT = os.path.abspath(
@@ -258,7 +263,7 @@ def _():
                 else []
             )
     names = ", ".join(
-        re.sub(r"^Hickory-Sands-District-|-2026-10-15.*$", "", base(p))
+        re.sub(rf"^Hickory-Sands-District-|-{revision.ISO}.*$", "", base(p))
         for p in pdfs
     )
     return (

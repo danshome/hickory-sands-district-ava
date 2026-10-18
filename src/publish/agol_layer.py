@@ -36,6 +36,7 @@ import hashlib
 import json
 import math
 import os
+import sys
 import time
 
 from arcgis.features import FeatureLayerCollection
@@ -43,6 +44,11 @@ from arcgis.gis import GIS
 from arcgis.gis import ItemProperties
 from arcgis.gis import ItemTypeEnum
 from osgeo import gdal
+
+sys.path.insert(
+    0, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+)  # src/
+import revision
 
 gdal.UseExceptions()
 
@@ -54,9 +60,7 @@ HERE = os.environ.get("HSD_WORK") or os.path.join(
 )  # build work dir (build.sh stages resources/ here)
 with open(os.path.join(HERE, "proposed-steps.json")) as f:
     SQMI = f"{json.load(f)['sqmi']:.2f}"  # the AVA's area, GRS80 square miles
-PKG = os.path.join(
-    HERE, "pkg", "Hickory-Sands-District-AVA_boundary-as-proposed-2026-10-15"
-)
+PKG = os.path.join(HERE, "pkg", revision.NAME)
 FOLDER = "Hickory Sands District - Final Proposed Boundary and Narrative"
 GROUP_ID = "65720ee9c5a743f88659ae39228704ec"
 CAT = "/Categories/4 GIS data/Map and layer"
@@ -71,7 +75,7 @@ DIFF_GPKG = os.path.join(
 # gpkg_contents), fixed so the same features always give the same bytes: then
 # hosted() sees an unchanged file and skips overwriting 4k and 4o (issue #74).
 # The proposed boundary's date, as in the file names.
-GPKG_DATE = "2026-10-15T00:00:00.000Z"
+GPKG_DATE = f"{revision.ISO}T00:00:00.000Z"
 DIFF_SRC_TITLE = (
     "4j Differences from the AVA Map Explorer polygon - GeoPackage (the big "
     "ones, and all of them)"
@@ -356,8 +360,7 @@ EXTENT = bbox(
     os.path.join(
         PKG,
         "4_GIS",
-        "hickory-sands-district-boundary-proposed-2026-10-15-area-"
-        "EPSG4269.geojson",
+        f"{revision.STEM}-area-EPSG4269.geojson",
     )
 )  # the AVA
 ABOUT = (
@@ -377,7 +380,9 @@ NAMES = {
 }
 ATTACH = [
     os.path.join(
-        HERE, "documents", "Hickory-Sands-District-read-me-first-2026-10-15.pdf"
+        HERE,
+        "documents",
+        f"Hickory-Sands-District-read-me-first-{revision.ISO}.pdf",
     ),
     os.path.join(
         PKG,
@@ -389,12 +394,12 @@ ATTACH = [
         PKG,
         "2_TTB-notice-243-with-changes-highlighted",
         "TTB-Notice-243-with-proposed-Hickory-Sands-District-changes-"
-        "highlighted-2026-10-15-UNOFFICIAL.pdf",
+        f"highlighted-{revision.ISO}-UNOFFICIAL.pdf",
     ),
     os.path.join(
         PKG,
         "3_changes-side-by-side",
-        "Hickory-Sands-District-boundary-changes-side-by-side-2026-10-15.pdf",
+        f"Hickory-Sands-District-boundary-changes-side-by-side-{revision.ISO}.pdf",
     ),
 ]
 
@@ -471,8 +476,7 @@ BUILT = {
     g: os.path.join(
         PKG,
         "4_GIS",
-        f"hickory-sands-district-boundary-proposed-2026-10-15-{k}"
-        "-EPSG4269.geojson",
+        f"{revision.STEM}-{k}-EPSG4269.geojson",
     )
     for g, k in (
         ("esriGeometryPolygon", "area"),
@@ -997,7 +1001,9 @@ dprops = {
     + "; compared with TTB's AVAs_Production polygon (the AVA Map Explorer "
     "polygon, Notice No. 243)",
 }
-DIFF_SERVICE = "Hickory_Sands_District_differences_from_TTB_2026_10_15"
+DIFF_SERVICE = (
+    f"Hickory_Sands_District_differences_from_TTB_{revision.UNDERSCORED}"
+)
 DNAMES = {
     "big": f"Big differences from the Map Explorer polygon ({NBIG})",
     "all": f"All differences between the two lines ({NPIECES} pieces)",
@@ -1184,7 +1190,7 @@ rprops = {
     + "; granite: USGS State Geologic Map Compilation (SGMC), shifted to the "
     "outcrops",
 }
-GRIT_SERVICE = "Hickory_Sands_District_change_near_Grit_2026_10_15"
+GRIT_SERVICE = f"Hickory_Sands_District_change_near_Grit_{revision.UNDERSCORED}"
 GRIT_NAMES = (
     "Lines the change near Grit swaps",
     "Areas the change near Grit moves, with their granite",
@@ -1982,7 +1988,9 @@ def main():
         pp = gis.content.analyze(item=gp, file_type="geoPackage")[
             "publishParameters"
         ]
-        pp["name"] = "Hickory_Sands_District_proposed_boundary_2026_10_15"
+        pp["name"] = (
+            f"Hickory_Sands_District_proposed_boundary_{revision.UNDERSCORED}"
+        )
         pp["maxRecordCount"] = 2000
         fl = gp.publish(publish_parameters=pp, file_type="geoPackage")
         if fl.ownerFolder != folder.properties.get("id"):

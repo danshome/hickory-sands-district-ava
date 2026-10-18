@@ -3,6 +3,13 @@
 These files are the inputs. To change the boundary, change them and run `./build.sh`; never edit the build's outputs.
 All coordinates are NAD83 (EPSG:4269), longitude first.
 
+## revision-date.txt - the proposed revision's date
+
+One line, `YYYY-MM-DD`: the date the proposed revision carries, typed only here (#127). The build names the package,
+its files and the ArcGIS Online services after it, prints it in labels ("as proposed to TTB, Oct. 15, 2026"), and dates
+everything it writes at its midnight UTC. Read by `build.sh`, `src/package/make_package.sh` and, through
+`src/revision.py`, every script. Changing it publishes new ArcGIS services (see BUILD.md, "Changing the boundary").
+
 ## description/ - the words the boundary follows
 
 | file | what it is | read by |

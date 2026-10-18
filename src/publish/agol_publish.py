@@ -32,6 +32,11 @@ from arcgis.gis import ItemTypeEnum
 from osgeo import gdal
 from osgeo import osr
 
+sys.path.insert(
+    0, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+)  # src/
+import revision
+
 gdal.UseExceptions()
 
 ROOT = os.path.abspath(
@@ -42,9 +47,7 @@ HERE = os.environ.get("HSD_WORK") or os.path.join(
 )  # build work dir (build.sh stages resources/ here)
 with open(os.path.join(HERE, "proposed-steps.json")) as f:
     SQMI = f"{json.load(f)['sqmi']:.2f}"  # the AVA's area, GRS80 square miles
-PKG = os.path.join(
-    HERE, "pkg", "Hickory-Sands-District-AVA_boundary-as-proposed-2026-10-15"
-)
+PKG = os.path.join(HERE, "pkg", revision.NAME)
 FOLDER = "Hickory Sands District - Final Proposed Boundary and Narrative"
 GROUP_ID = "65720ee9c5a743f88659ae39228704ec"
 C1, C2, C3 = (
@@ -186,7 +189,7 @@ def neatline(tif, cell=0.125):
 # ---- the 13 quadrangles, titled as paragraph (b) cites them
 D1 = (
     "1_boundary-description/Hickory-Sands-District-boundary-description-as-"
-    "proposed-2026-10-15"
+    f"proposed-{revision.ISO}"
 )
 # Paragraph (b) of the proposed text: "(10) Fly Gap, TX., 1962, photorevised
 # 1982;" -> {"Fly Gap": "1962, photorevised 1982"}.
@@ -275,9 +278,9 @@ def quad_items():
 N2 = "2_TTB-notice-243-with-changes-highlighted/"
 S3 = (
     "3_changes-side-by-side/Hickory-Sands-District-boundary-changes-side-by-"
-    "side-2026-10-15"
+    f"side-{revision.ISO}"
 )
-G4 = "4_GIS/hickory-sands-district-boundary-proposed-2026-10-15-"
+G4 = f"4_GIS/{revision.STEM}-"
 AVA = bbox(
     os.path.join(PKG, G4 + "area-EPSG4269.geojson")
 )  # the extent of the 4 GIS downloads
@@ -308,7 +311,7 @@ DESC1D = (
 )
 ITEMS = [
     (
-        "../../documents/Hickory-Sands-District-read-me-first-2026-10-15.pdf",
+        f"../../documents/Hickory-Sands-District-read-me-first-{revision.ISO}.pdf",
         "0 Read me first - what is in this group, and the license",
         T.PDF,
         None,
@@ -384,7 +387,7 @@ ITEMS = [
     ),
     (
         N2 + "TTB-Notice-243-with-proposed-Hickory-Sands-District-changes-"
-        "highlighted-2026-10-15-UNOFFICIAL.pdf",
+        f"highlighted-{revision.ISO}-UNOFFICIAL.pdf",
         (
             "2a Notice No. 243 with the proposed changes highlighted "
             "(unofficial copy, PDF)"
@@ -561,7 +564,7 @@ GIS_LAYERS = {
 }
 for i, (key, (what, n, layer, extra)) in enumerate(GIS_LAYERS.items()):
     shp, gj = "4" + "def"[i], "4" + "ghi"[i]
-    base = f"hickory-sands-district-boundary-proposed-2026-10-15-{key}-EPSG4269"
+    base = f"{revision.STEM}-{key}-EPSG4269"
     ITEMS.append(
         (
             f"4_GIS/shapefiles/{base}-shp.zip",

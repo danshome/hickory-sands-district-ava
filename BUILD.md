@@ -12,15 +12,16 @@ install against the OSV vulnerability database, creates the project's Python env
 
 | file | what it is |
 |---|---|
-| `Hickory-Sands-District-AVA_boundary-as-proposed-2026-10-15.zip` | the package to upload: description (PDF/DOCX/TXT/CSV), TTB's Notice 243 with the changes highlighted, the side-by-side, GIS (GeoPackage, GeoJSON, shapefiles), the 13 USGS quads with the boundary |
+| `Hickory-Sands-District-AVA_boundary-as-proposed-<revision date>.zip` | the package to upload: description (PDF/DOCX/TXT/CSV), TTB's Notice 243 with the changes highlighted, the side-by-side, GIS (GeoPackage, GeoJSON, shapefiles), the 13 USGS quads with the boundary |
 | `...-README.txt` | the package's README, for reading without unzipping |
 | `SHA256SUMS.txt` | checksums of the above |
 | `build-report.txt` | area, step count, check results, source commit |
 
 Two builds of the same commit on the same machine give the same bytes (issue #65). Every date and time the build writes
 into what it makes (the PDFs' CreationDate and ModDate, the times of the members of every zip, the Word files included,
-the GeoPackage's `last_change`, the shapefiles' `.dbf` headers) is the package's date, as in the file names, Oct. 15,
-2026, 00:00 UTC: `build.sh` exports it as `SOURCE_DATE_EPOCH=1792022400`, the
+the GeoPackage's `last_change`, the shapefiles' `.dbf` headers) is the revision's date
+(`resources/boundary/revision-date.txt`), as in the file names, at 00:00 UTC: `build.sh` works it out and exports it as
+`SOURCE_DATE_EPOCH` (1792022400 for 2026-10-15), the
 [reproducible-builds.org](https://reproducible-builds.org/specs/source-date-epoch/) convention, unless the environment
 already sets it, and the scripts read it from there (a script run alone without it uses the present time). Chrome cannot
 be told a date, so `src/documents/pdf_dates.py` dates its PDFs after printing; the notice copy keeps the first part of
@@ -393,9 +394,8 @@ README and the ArcGIS descriptions come from the build, so nothing else needs ed
 
 The revision's date is typed once, in `resources/boundary/revision-date.txt` (#127). `build.sh`, the package script
 and every script in `src/` (through `src/revision.py`) take from it the package's name and its files' names, the labels
-such as "as proposed to TTB, Oct. 15, 2026", the GeoPackage's date, every date the build writes into what it makes
-(`SOURCE_DATE_EPOCH`: its midnight UTC) and the ArcGIS Online service names. To date a new revision, change that file
-and rebuild. Changing it gives the next `./build.sh publish` new service names, so it publishes new services rather than
-replacing the old ones, and the dashboard and the web map then point at the new ones: keep the old items' URLs working,
-as CLAUDE.md asks. Dates of events in the documents' text (the changes discussed with TTB on Oct. 15, 2026; TTB's notice
-downloaded and checked that day) are history and stay as written.
+such as "as proposed to TTB, Oct. 15, 2026", the GeoPackage's date and every date the build writes into what it makes
+(`SOURCE_DATE_EPOCH`: its midnight UTC). To date a new revision, change that file and rebuild. Not derived from it, on
+purpose: the published ArcGIS Online services' names, which are their URLs and stay fixed so no link breaks
+(`src/publish/agol_layer.py`); and dates of events in the documents' text (the changes discussed with TTB on Oct. 15,
+2026; TTB's notice downloaded and checked that day), which are history and stay as written.

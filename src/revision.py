@@ -2,12 +2,13 @@
 
 resources/boundary/revision-date.txt holds the date (YYYY-MM-DD) the proposed
 revision carries. The package and its files are named after it, labels such as
-"as proposed to TTB, Oct. 15, 2026" print it, the ArcGIS Online services are
-named after it, and every date the build writes into what it makes
-(SOURCE_DATE_EPOCH, in build.sh) is its midnight UTC. Change the file to
-date a new revision; nothing else types the date. Dates of events (when the
-changes were discussed with TTB, when TTB's notice was downloaded) are history
-and stay in the text that tells them.
+"as proposed to TTB, Oct. 15, 2026" print it, and every date the build writes
+into what it makes (SOURCE_DATE_EPOCH, in build.sh) is its midnight UTC.
+Change the file to date a new revision; nothing else types the date. Two kinds
+of date are not the revision's: dates of events (when the changes were
+discussed with TTB, when TTB's notice was downloaded), history told in the
+text; and the published ArcGIS services' names, which are their URLs and stay
+fixed (src/publish/agol_layer.py).
 
 Scripts in src/ import it after putting src/ on sys.path:
     sys.path.insert(0, os.path.join(ROOT, "src"))
@@ -40,19 +41,30 @@ def read(path=FILE):
         The date.
 
     Raises:
-        SystemExit: When the file does not hold one date.
+        SystemExit: When the file cannot be read or does not hold one date
+            written YYYY-MM-DD.
     """
-    with open(path, encoding="utf-8") as fh:
-        text = fh.read().strip()
     try:
-        return datetime.date.fromisoformat(text)
+        with open(path, encoding="utf-8") as fh:
+            text = fh.read().strip()
+    except OSError as error:
+        raise SystemExit(
+            f"{path}: cannot read the revision date: {error}"
+        ) from None
+    try:
+        date = datetime.date.fromisoformat(text)
     except ValueError:
-        raise SystemExit(f"{path}: not a date (YYYY-MM-DD): {text!r}") from None
+        date = None
+    # Only YYYY-MM-DD, as build.sh reads it too (fromisoformat would also take
+    # 20261015 or 2026-W42-4).
+    if date is None or date.isoformat() != text:
+        raise SystemExit(f"{path}: not a date written YYYY-MM-DD: {text!r}")
+    return date
 
 
 DATE = read()
 ISO = DATE.isoformat()  # 2026-10-15, as in the file names
-UNDERSCORED = ISO.replace("-", "_")  # 2026_10_15, as in the service names
+UNDERSCORED = ISO.replace("-", "_")  # 2026_10_15
 LONG = f"{LONG_MONTHS[DATE.month - 1]} {DATE.day}, {DATE.year}"
 SHORT = f"{SHORT_MONTHS[DATE.month - 1]} {DATE.day}, {DATE.year}"
 # The package and its stems.

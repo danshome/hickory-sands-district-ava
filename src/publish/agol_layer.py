@@ -1001,9 +1001,9 @@ dprops = {
     + "; compared with TTB's AVAs_Production polygon (the AVA Map Explorer "
     "polygon, Notice No. 243)",
 }
-DIFF_SERVICE = (
-    f"Hickory_Sands_District_differences_from_TTB_{revision.UNDERSCORED}"
-)
+# The published services' names are their URLs: fixed identifiers, not the
+# revision's date, so a new date never breaks the dashboard's or anyone's links.
+DIFF_SERVICE = "Hickory_Sands_District_differences_from_TTB_2026_10_15"
 DNAMES = {
     "big": f"Big differences from the Map Explorer polygon ({NBIG})",
     "all": f"All differences between the two lines ({NPIECES} pieces)",
@@ -1190,7 +1190,7 @@ rprops = {
     + "; granite: USGS State Geologic Map Compilation (SGMC), shifted to the "
     "outcrops",
 }
-GRIT_SERVICE = f"Hickory_Sands_District_change_near_Grit_{revision.UNDERSCORED}"
+GRIT_SERVICE = "Hickory_Sands_District_change_near_Grit_2026_10_15"  # a URL
 GRIT_NAMES = (
     "Lines the change near Grit swaps",
     "Areas the change near Grit moves, with their granite",
@@ -1988,9 +1988,8 @@ def main():
         pp = gis.content.analyze(item=gp, file_type="geoPackage")[
             "publishParameters"
         ]
-        pp["name"] = (
-            f"Hickory_Sands_District_proposed_boundary_{revision.UNDERSCORED}"
-        )
+        # A URL: a fixed identifier (see DIFF_SERVICE).
+        pp["name"] = "Hickory_Sands_District_proposed_boundary_2026_10_15"
         pp["maxRecordCount"] = 2000
         fl = gp.publish(publish_parameters=pp, file_type="geoPackage")
         if fl.ownerFolder != folder.properties.get("id"):

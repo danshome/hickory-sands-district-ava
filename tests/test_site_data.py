@@ -657,3 +657,23 @@ def test_a_build_for_another_revision_is_refused(tmp_path):
     )
     with pytest.raises(SystemExit, match=r"run \./build\.sh"):
         msd.revision_of(str(tmp_path))
+
+
+@pytest.mark.parametrize(
+    ("text", "message"),
+    [
+        ("20261015", "not a date written YYYY-MM-DD"),
+        ("2026-W42-4", "not a date written YYYY-MM-DD"),
+        ("2026-02-30", "not a date written YYYY-MM-DD"),
+        ("", "not a date written YYYY-MM-DD"),
+    ],
+)
+def test_the_revision_date_must_be_written_yyyy_mm_dd(tmp_path, text, message):
+    path = tmp_path / "revision-date.txt"
+    path.write_text(text + "\n", encoding="utf-8")
+    with pytest.raises(SystemExit, match=message):
+        revision.read(str(path))
+    with pytest.raises(SystemExit, match="cannot read the revision date"):
+        revision.read(str(tmp_path / "missing.txt"))
+    path.write_text(revision.ISO + "\n", encoding="utf-8")
+    assert revision.read(str(path)) == revision.DATE

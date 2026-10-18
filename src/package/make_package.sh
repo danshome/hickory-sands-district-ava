@@ -3,6 +3,7 @@
 # The folder is generated entirely by this script; run it after any rebuild. Usage: ./make_package.sh
 set -euo pipefail
 REVISION="$(tr -d '[:space:]' < "$(dirname "$0")/../../resources/boundary/revision-date.txt")"   # the one place it is typed
+[[ $REVISION =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] || { echo "revision-date.txt: not a date written YYYY-MM-DD" >&2; exit 1; }
 cd "${HSD_WORK:?set HSD_WORK to the build work dir (build.sh does)}"
 NAME="Hickory-Sands-District-AVA_boundary-as-proposed-$REVISION"
 P=pkg/$NAME; D=documents
@@ -18,7 +19,7 @@ cp "$D/Hickory-Sands-District-boundary-changes-side-by-side-$REVISION"{.pdf,.doc
 cp gis/*.geojson gis/*.gpkg "$P"/4_GIS/
 cp gis/shapefiles/*.zip "$P"/4_GIS/shapefiles/
 cp quads/*_geo.pdf quads/*_geo.tif "$P"/5_USGS-quadrangles-with-boundary/
-cmp -s "$D"/TTB-Notice-243-91FR52576-docket-TTB-2026-0005-0001.pdf "ttb-source-check-$REVISION/regs-TTB-2026-0005-0001.pdf"   # TTB's file, unchanged
+cmp -s "$D"/TTB-Notice-243-91FR52576-docket-TTB-2026-0005-0001.pdf ttb-source-check/regs-TTB-2026-0005-0001.pdf   # TTB's file, unchanged
 # Every file and folder in the zip dated SOURCE_DATE_EPOCH (build.sh sets it to the package's date; the present time
 # when it is not set), not the time it was copied, so the same files give the same zip. A zip holds local times, so
 # touch and zip run in UTC; -X leaves out the other times (and owners) zip would add.

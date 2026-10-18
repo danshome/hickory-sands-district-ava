@@ -25,8 +25,9 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")" && pwd)"; cd "$ROOT"
 # The proposed revision's date, YYYY-MM-DD: typed once, in resources/boundary/revision-date.txt (src/revision.py gives
-# the scripts the same date). The package, its files and the ArcGIS services are named after it.
+# the scripts the same date). The package and its files are named after it.
 REVISION="$(tr -d '[:space:]' < resources/boundary/revision-date.txt)"
+[[ $REVISION =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] || { echo "resources/boundary/revision-date.txt: not a date written YYYY-MM-DD" >&2; exit 1; }
 NAME="Hickory-Sands-District-AVA_boundary-as-proposed-$REVISION"
 STEM="hickory-sands-district-boundary-proposed-$REVISION"
 TARGET="$ROOT/target"; WORK="$TARGET/work"; DIST="$ROOT/dist"; export HSD_WORK="$WORK"
@@ -117,9 +118,9 @@ quads() {
 
 stage() {
     step "a fresh target/work (inputs are read in place from resources/)"
-    rm -rf "$WORK"; mkdir -p "$WORK"/{documents,review,"ttb-source-check-$REVISION"}
+    rm -rf "$WORK"; mkdir -p "$WORK"/{documents,review,ttb-source-check}
     # regulations.gov serves Notice 243 as regs-TTB-2026-0005-0001.pdf: the same file, kept once in resources/ttb/
-    cp resources/ttb/TTB-Notice-243-91FR52576-docket-TTB-2026-0005-0001.pdf "$WORK/ttb-source-check-$REVISION/regs-TTB-2026-0005-0001.pdf"
+    cp resources/ttb/TTB-Notice-243-91FR52576-docket-TTB-2026-0005-0001.pdf "$WORK/ttb-source-check/regs-TTB-2026-0005-0001.pdf"
     cp resources/ttb/TTB-Notice-243-91FR52576-docket-TTB-2026-0005-0001.pdf "$WORK"/documents/
     cp LICENSE.txt "$WORK"/
 }

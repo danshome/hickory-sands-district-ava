@@ -78,9 +78,7 @@ ROOT = os.path.abspath(
 HERE = os.environ.get("HSD_WORK") or os.path.join(
     ROOT, "target", "work"
 )  # build work dir (build.sh stages resources/ here)
-SRC = os.path.join(
-    HERE, f"ttb-source-check-{revision.ISO}", "regs-TTB-2026-0005-0001.pdf"
-)
+SRC = os.path.join(HERE, "ttb-source-check", "regs-TTB-2026-0005-0001.pdf")
 OUT = os.path.join(
     HERE,
     "documents",

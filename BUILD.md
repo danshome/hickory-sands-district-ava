@@ -347,8 +347,8 @@ Their code is `docs/assets/maps.js` (shared), `explore.js`, `walk.js` and `maps.
 as text, never parsed as HTML. The basemaps need the ArcGIS Online API key in `docs/assets/map-config.js`. It is public by
 design and limited to the basemap styles service and to the referrers `https://hickorysandsdistrictava.org` and
 `http://localhost:8765` (for previews: `python3 -m http.server 8765 -d docs`). Stored geocoding and other credit-consuming
-services are refused to it. It lasts up to a year: renew it in ArcGIS Online (Content > the API key item) and replace it
-there. With the key empty, the maps draw the line on a plain background. A
+services are refused to it. It lasts up to a year: renew it in ArcGIS Online (Content > the API key item) and replace the string
+in `map-config.js`. With the key empty, the maps draw the line on a plain background. A
 change to the site is a pull request like any other: `site.yml` tests it on the pull request and deploys it when it is
 merged to `main`. The rest is set outside the repository, once:
 

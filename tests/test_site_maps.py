@@ -85,6 +85,8 @@ def test_explore_page_figures_are_the_build_s():
     assert (
         f"{area} square miles inside {steps} steps and {points} points" in page
     )
+    description = re.search(r'<meta name="description" content="([^"]+)"', page)
+    assert f"{steps} steps and {points} points" in description.group(1)
 
 
 def test_walk_page_is_what_its_template_and_the_data_give():

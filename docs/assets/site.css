@@ -13,3 +13,6 @@
 /* Contrast and small-screen diagram refinements. */
 .documents{--paper-muted:#635a51}.navigation a:focus-visible{outline-color:var(--sand)}.map-furniture{font-size:48px}.section-key{display:block;margin-bottom:.75rem;max-width:35rem;font-size:.875rem;color:var(--paper-ink)}
 @media(max-width:699px){.geologic-section svg text{display:none}}
+
+/* The boundary page's links to the maps, one under the other. */
+.boundary-explanation .text-link{display:flex;max-width:26rem}

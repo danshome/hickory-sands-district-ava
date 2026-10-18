@@ -148,7 +148,7 @@ checks() {
 SITE_DATA=(src/site/make_site_data.py --gis "$WORK/gis" --out docs/data --walk src/site/walk.template.html docs/walk.html)
 
 site_data() {
-    step "the website's map data (docs/data/) against this build"   # hard, after the package: a boundary change must reach the site
+    step "the website's map data (docs/data/, walk.html) against this build"   # hard, after the package: a boundary change must reach the site
     run "${SITE_DATA[@]}" --check            # exits 3 when docs/data/ is stale, and says how to refresh it
 }
 
@@ -233,7 +233,7 @@ case "${1:-all}" in
     publish-dry-run) env_setup; dry_run ;;
     check-live) env_setup; check_live ;;
     site-data) env_setup; [ -f "$WORK/.checks-passed" ] || { echo "no checked build: run ./build.sh first"; exit 1; }
-               step "the website's map data (docs/data/) from the last build"; run "${SITE_DATA[@]}" ;;
+               step "the website's map data (docs/data/) and walk page from the last build"; run "${SITE_DATA[@]}" ;;
     audit)     env_setup; audit ;;
     upgrade)   upgrade ;;
     lint)      env_setup; step "pre-commit hooks on every file"; PRE_COMMIT_HOME="$TARGET/pre-commit" "$VENV/bin/pre-commit" run --all-files ;;

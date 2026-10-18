@@ -159,6 +159,9 @@ export async function boundaryMap(element, { popups = true, quiet = false } = {}
   element.spatialReference = { wkid: 3857 };
   element.background = { color: [...INK, 1] };
   element.constraints = { minScale: 1500000, snapToZoom: false };
+  // The map's own focusable container takes its name from this property, not
+  // from the element's aria-label attribute.
+  element.aria = { label: element.getAttribute("aria-label") };
   await element.viewOnReady();
   // A selected step or point is outlined in sand, not the SDK's cyan.
   const selected = element.view?.highlights?.find((h) => h.name === "default");

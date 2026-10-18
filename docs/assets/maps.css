@@ -7,7 +7,7 @@ html:not(.js) .walk-map,html:not(.js) .explore-map{display:none}
 
 /* Walk the line: the steps scroll; the map stays in view and follows them (above them on a phone, beside them on a wide screen). */
 .walk-map{position:sticky;top:0;z-index:2;height:42svh;margin-inline:-7vw;background:var(--ink);border-bottom:1px solid var(--line)}
-.walk-map arcgis-map{pointer-events:none}
+.walk-map arcgis-map{pointer-events:none} /* and inert in the page: the map follows the text; the list is what a reader moves through */
 .walk-steps{list-style:none;margin:0;padding:0 0 45svh;max-width:38rem}
 .walk-step{padding:2.25rem 0 2.5rem;border-top:1px solid var(--line);scroll-margin-top:45svh}
 .walk-step.is-current{border-top-color:var(--sand)}
@@ -37,6 +37,8 @@ html:not(.js) .walk-map,html:not(.js) .explore-map{display:none}
 .map-basemaps button:focus-visible{outline:2px solid var(--sand);outline-offset:2px}
 @media(min-width:1000px){.explore-map{height:78svh;margin-inline:0;border:1px solid var(--line)}}
 
-/* The notes under each map. */
+/* The notes under each map, and the link lists on these dark pages (site.css colours them for paper). */
+.dark .document-list small{color:var(--muted)}
+.dark .document-list>a{border-color:var(--line)}
 .map-notes{max-width:44rem;margin-block:3rem 5rem;color:var(--muted)}
 .map-notes .document-list{display:flex;flex-direction:column}

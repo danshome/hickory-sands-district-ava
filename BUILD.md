@@ -136,6 +136,7 @@ resources/
   quads/                 quads-manifest.csv, cropped/ (neatline VRT templates); geotiff/ and geopdf/ are downloaded
 documents/               hand-written texts: README.template.txt ({AREA_SQMI} filled by the build),
                          read-me-first.template.html
+docs/                    the website, hickorysandsdistrictava.org, as GitHub Pages serves it (site.yml deploys it)
 LICENSE.txt              CC0 1.0 (also copied into the package)
 .venv/                   the project's Python environment (made by build.sh; not in git)
 target/                  everything the build makes (not in git): work/ (recreated on every run), quads-cropped/,
@@ -237,6 +238,8 @@ for Python; 2-space YAML and TOML). By hand: `.venv/bin/ruff format .` and `.ven
 - `test_compare_ttb.py`: a big difference's acres are the whole pieces its ring touches, even inside a hole in the
   ring (#26), and the helpers that find the stretches;
 - `test_make_readme.py`: README.txt's headings ("WHAT WE PROPOSE TO CHANGE IN NOTICE NO. 243 (...)") on the read-me page;
+- `test_site.py`: every page of the website in `docs/` is a complete HTML document (doctype, language, character set,
+  phone viewport, title), every local file it links to or loads is in `docs/`, and every link off the site is https;
 - `test_publish_dryrun.py`: the publish dry run's checks pass on a dry run of the current build
   (`tests/fixtures/publish/dry-run/`, a copy of `target/publish/`: copy it there again after changing what the publish
   sends) and each fails on a fault planted in it (a layer left editable, plain CC0 on TTB's text, a phone element
@@ -282,7 +285,7 @@ The figures (area, steps, reworded steps, big differences, acres, the corrected 
 
 ## GitHub Actions and releases
 
-Three workflows in `.github/workflows/`, every action pinned to a commit:
+Four workflows in `.github/workflows/`, every action pinned to a commit:
 
 - **lint** (`lint.yml`, GitHub's Linux machines): every pre-commit hook on every file, then the unit tests that need
   only the lint tools, on every pull request and every push to `main`. The lint tools come from `requirements-dev.txt`,
@@ -303,6 +306,24 @@ Three workflows in `.github/workflows/`, every action pinned to a commit:
 ```
 git tag v2026.10.20 && git push origin v2026.10.20
 ```
+
+- **site** (`site.yml`, Linux): the website. On pull requests that touch `docs/`, its tests (`tests/test_site.py`); on
+  a push to `main` that touches `docs/`, and by hand, the same tests and then `docs/` deployed to GitHub Pages as it
+  is (no build step: what is in `docs/` is what is served).
+
+### The website
+
+hickorysandsdistrictava.org is GitHub Pages serving `docs/` (issue #96). A change to the site is a pull request like
+any other: `site.yml` tests it on the pull request and deploys it when it is merged to `main`. The rest is set outside
+the repository, once:
+
+- the repository's Pages settings: source GitHub Actions, custom domain hickorysandsdistrictava.org, HTTPS enforced;
+- the danshome account's verified domains (Settings > Pages): hickorysandsdistrictava.org, by the TXT record
+  `_github-pages-challenge-danshome`, so no other account can serve it;
+- its DNS at Squarespace: A records 185.199.108.153 to 185.199.111.153, AAAA records 2606:50c0:8000::153 to
+  2606:50c0:8003::153, and `www` a CNAME to danshome.github.io (GitHub redirects it to the bare domain). The mail
+  records beside them (MX, SPF, DKIM, DMARC, Google's verification) are Google Workspace's; leave them alone. The
+  other Hickory Sands domains forward to hickorysandsdistrictava.org at Squarespace.
 
 Publishing to ArcGIS Online is not in Actions: it stays `./build.sh publish`, run by Dan. Changes to `src/publish/` start
 a build only for its publish dry run, which signs in to nothing (that code never touches `dist/`).

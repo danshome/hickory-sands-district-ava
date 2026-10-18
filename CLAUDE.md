@@ -31,6 +31,9 @@ zips the package into `dist/` with `SHA256SUMS.txt` and `build-report.txt`. `./b
   the outcrops, map context only), `quads/` (`quads-manifest.csv`, `cropped/`
   VRT templates; `geotiff/` zips and `geopdf/` are downloaded, gitignored; keep each GeoTIFF inside its zip).
 - `documents/` README and read-me-first templates (figures filled by the build); `LICENSE.txt` (CC0) at the root.
+- `docs/` the website, hickorysandsdistrictava.org (GitHub Pages; #96). Dan builds it; `site.yml` tests it on a PR and
+  deploys it on merge to `main`. Its DNS is at Squarespace beside the Google Workspace mail records (MX, SPF, DKIM,
+  DMARC `p=reject`): never touch those. The other Hickory Sands domains forward to it.
 - `target/` (gitignored) everything the build makes: `work/` (recreated each run; GIS in `work/gis/`, reviews in
   `work/review/`), `quads-cropped/` (neatline VRTs for QGIS). `dist/` (gitignored) the distribution.
 - `tobedeleted/` (gitignored) is where things no build uses go for Dan to review and delete. Nothing may depend on it.
@@ -55,7 +58,7 @@ It then runs `tests/live` (marked `live`; not in `./build.sh test` or lint): Pla
 
 ## Git workflow (Dan, 2026-10-16)
 
-The repository is github.com/danshome/hickory-sands-district-ava, private for now. Its history starts with commit
+The repository is github.com/danshome/hickory-sands-district-ava, public. Its history starts with commit
 1af80f4 (Oct. 16, 2026); the filed Oct. 13 public-comment version is kept as the tag `public-comment-2026-10-13`.
 Every change from here on:
 
@@ -76,6 +79,7 @@ session reviews each PR's diff, checks the result, and merges it to `main` (or s
 GitHub Actions (`.github/workflows/`, see BUILD.md), all on GitHub's Linux runners (Dan, 2026-10-17: never Mac runners,
 they cost 10x): `lint` for every PR; `build` (the whole `./build.sh`, Homebrew on Linux) for PRs that change the build's
 inputs; `release` on a pushed `v...` tag attaches `dist/` to a GitHub release. Tag a release only on Dan's say-so.
+`site` tests `docs/` on PRs that touch it and deploys it to GitHub Pages on merge.
 ArcGIS publishing stays local (`./build.sh publish`). Fonts: the PDFs ask for Times New Roman / Arial / Courier New
 (Liberation Serif / Sans / Mono on Linux, same widths); never a Mac-only font (Helvetica Neue, Menlo).
 

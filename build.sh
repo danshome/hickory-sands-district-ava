@@ -142,13 +142,14 @@ checks() {
     run src/review/grit_change.py --line "$WORK/gis/$STEM-line-EPSG4269.geojson" \
         --oct14 "$ROOT/resources/boundary/proposed/step-lines-2026-10-14-EPSG4269.geojson" \
         --geology "$ROOT/resources/geology/usgs-sgmc-geology-shifted-to-naip-EPSG4269.gpkg" --out-dir "$WORK/review"   # report
+    touch "$WORK/.checks-passed"             # ./build.sh site-data copies only a boundary that passed the hard checks
 }
 
-SITE_DATA=(src/site/make_site_data.py --gis "$WORK/gis" --status resources/site/status.json --out docs/data)
+SITE_DATA=(src/site/make_site_data.py --gis "$WORK/gis" --out docs/data)
 
 site_data() {
-    step "the website's map data (docs/data/) against this build"   # hard: a boundary change must reach the site's maps
-    run "${SITE_DATA[@]}" --check || { echo "run ./build.sh site-data and commit docs/data/ with the change"; exit 1; }
+    step "the website's map data (docs/data/) against this build"   # hard, after the package: a boundary change must reach the site
+    run "${SITE_DATA[@]}" --check            # exits 3 when docs/data/ is stale, and says how to refresh it
 }
 
 documents() {
@@ -224,14 +225,14 @@ check_live() {
 }
 
 case "${1:-all}" in
-    all)       env_setup; quads; stage; linework; checks; site_data; documents; quadsheets; package ;;
+    all)       env_setup; quads; stage; linework; checks; documents; quadsheets; package; site_data ;;
     env)       env_setup ;;
     clean)     rm -rf "$TARGET" "$DIST"; echo "removed target/ and dist/" ;;
     distclean) rm -rf "$TARGET" "$DIST" "$VENV"; echo "removed target/, dist/ and .venv/" ;;
     publish)   env_setup; if [ "${2:-}" = --dry-run ]; then dry_run; else publish; fi ;;
     publish-dry-run) env_setup; dry_run ;;
     check-live) env_setup; check_live ;;
-    site-data) env_setup; [ -d "$WORK/gis" ] || { echo "nothing built yet: run ./build.sh first"; exit 1; }
+    site-data) env_setup; [ -f "$WORK/.checks-passed" ] || { echo "no checked build: run ./build.sh first"; exit 1; }
                step "the website's map data (docs/data/) from the last build"; run "${SITE_DATA[@]}" ;;
     audit)     env_setup; audit ;;
     upgrade)   upgrade ;;

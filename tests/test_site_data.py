@@ -3,14 +3,17 @@
 The committed data is the boundary as the build draws it: 104 steps that run
 from the Beginning point, each ending at its own point, around to the
 Beginning again; only the properties a reader needs; the area the README
-gives; a status the site can show. The generator rounds, keeps and flags
-stale files as it should, on a small made-up build. Standard library only,
-so the lint workflow runs these.
+gives; a status the site can show. The generator rounds, keeps and refuses
+as it should, and the check tells stale files from platform drift (#116), on
+a small made-up build. Standard library only, so the lint workflow runs
+these.
 """
 
 import json
 import math
 import os
+import re
+import sys
 
 import pytest
 
@@ -33,9 +36,10 @@ def same(a, b):
 def test_steps_and_points_are_complete():
     steps = load("steps.geojson")["features"]
     points = load("points.geojson")["features"]
-    assert [f["properties"]["step"] for f in steps] == list(range(1, 105))
+    n = len(steps)
+    assert [f["properties"]["step"] for f in steps] == list(range(1, n + 1))
     assert [f["properties"]["point"] for f in points] == ["Beginning"] + [
-        str(n) for n in range(1, 105)
+        str(k) for k in range(1, n + 1)
     ]
     assert all(f["geometry"]["type"] == "LineString" for f in steps)
     assert all(tuple(f["properties"]) == msd.STEP_KEYS for f in steps)
@@ -62,24 +66,67 @@ def test_boundary_area_is_the_readme_figure():
     assert boundary["geometry"]["type"] == "Polygon"
     area = f"{boundary['properties']['area_sqmi']:.2f}"
     with open(os.path.join(ROOT, "README.md"), encoding="utf-8") as fh:
-        assert area in fh.read(), f"{area} sq mi is not the README's figure"
+        readme = fh.read()
+    assert re.search(rf"\b{re.escape(area)}\b", readme), f"{area} not in README"
 
 
 def test_status_is_one_the_site_can_show():
-    assert msd.check_status(load("status.json"))["status"] in msd.STATUSES
+    status = load("status.json")
+    assert set(status) == {"name", "status", "established_on", "cfr_section"}
+    assert status["status"] in msd.STATUSES
+
+
+PROPOSED = {"Name": "Hickory Sands District", "Status": "Proposed"}
 
 
 @pytest.mark.parametrize(
-    "status",
+    ("record", "message"),
     [
-        {"status": "approved"},
-        {"status": "established", "established_on": None, "cfr_section": None},
-        {"status": "established", "established_on": "2027-01-01"},
+        ({**PROPOSED, "Status": "Approved"}, "Status must be one of"),
+        ({**PROPOSED, "Status": None}, "Status must be one of"),
+        (
+            {
+                **PROPOSED,
+                "Status": "Established",
+                "CFR_Section": "27 CFR 9.300",
+            },
+            "needs its Established date and CFR_Section",
+        ),
+        (
+            {
+                **PROPOSED,
+                "Status": "Established",
+                "Established": "2027-01-01",
+                "CFR_Section": "27 CFR 9.XXX",
+            },
+            "needs its Established date and CFR_Section",
+        ),
     ],
 )
-def test_bad_status_is_refused(status):
-    with pytest.raises(SystemExit):
-        msd.check_status(status)
+def test_a_status_the_site_cannot_show_is_refused(record, message):
+    with pytest.raises(SystemExit, match=message):
+        msd.record_status(record)
+
+
+def test_the_status_follows_the_record():
+    assert msd.record_status({**PROPOSED, "CFR_Section": "27 CFR 9.XXX"}) == {
+        "name": "Hickory Sands District",
+        "status": "proposed",
+        "established_on": None,
+        "cfr_section": None,
+    }
+    established = {
+        **PROPOSED,
+        "Status": "Established",
+        "Established": "2027-01-01",
+        "CFR_Section": "27 CFR 9.300",
+    }
+    assert msd.record_status(established) == {
+        "name": "Hickory Sands District",
+        "status": "established",
+        "established_on": "2027-01-01",
+        "cfr_section": "27 CFR 9.300",
+    }
 
 
 def test_files_fit_the_commit_hook():
@@ -87,98 +134,269 @@ def test_files_fit_the_commit_hook():
         assert os.path.getsize(os.path.join(DATA, name)) < MAX_BYTES, name
 
 
-def made_up_build(gis, status):
-    common = {"Name": "Hickory Sands District", "Counties": "Mason"}
+COMMON = {"Name": "Hickory Sands District", "Counties": "Mason"}
+
+
+def chain(n):
+    """A made-up boundary of n steps: positions 0..n, closing at the start."""
+    xy = [
+        [-99.0 - 0.01 * k - 0.0000004, 30.0 + 0.01 * (k % 3)] for k in range(n)
+    ]
+    return [*xy, xy[0]]
+
+
+def out_of_order(features):
+    """The features shuffled: every second one first, then the rest."""
+    return features[1::2] + features[::2]
+
+
+def made_up_build(gis, n=10, step_hook=None, point_hook=None, areas=1):
+    """Writes a made-up build's GIS files; the hooks may spoil one feature."""
+    xy = chain(n)
     area = {
         "type": "FeatureCollection",
         "features": [
             {
                 "type": "Feature",
-                "properties": {**common, "area_sqmi": "1.234"},
-                "geometry": {
-                    "type": "Polygon",
-                    "coordinates": [
-                        [[-99.1234567, 30.1], [-99.2, 30.2], [-99.1, 30.3]]
-                    ],
-                },
-            }
-        ],
-    }
-    line = {
-        "type": "FeatureCollection",
-        "features": [
-            {
-                "type": "Feature",
                 "properties": {
-                    **common,
-                    "step": 1,
-                    "kind": "straight line",
-                    "endpoint": "a mark",
-                    "quad": "Grit",
-                    "length_m": "1234.5678",
-                    "narrative": "(1) Proceed east.",
-                    "change": "unchanged",
-                    "txt_source": "TTB",
+                    **COMMON,
+                    "area_sqmi": "1.234",
+                    "Status": "Proposed",
+                    "Established": None,
+                    "CFR_Section": "27 CFR 9.XXX",
+                    "source": "x",
                 },
-                "geometry": {
-                    "type": "LineString",
-                    "coordinates": [[-99.12345678, 30.1, 500.0], [-99.2, 30.2]],
-                },
+                "geometry": {"type": "Polygon", "coordinates": [xy]},
             }
-        ],
+        ]
+        * areas,
     }
-    points = {
-        "type": "FeatureCollection",
-        "features": [
-            {
-                "type": "Feature",
-                "properties": {
-                    **common,
-                    "point": p,
-                    "step": s,
-                    "kind": k,
-                    "point_name": "a mark",
-                    "quad": "Grit",
-                },
-                "geometry": {"type": "Point", "coordinates": xy},
-            }
-            for p, s, k, xy in (
-                ("1", 1, "End of step", [-99.2, 30.2]),
-                ("Beginning", 0, "Beginning point", [-99.12345678, 30.1]),
-            )
-        ],
-    }
-    for kind, data in (("area", area), ("line", line), ("points", points)):
+    steps = [
+        {
+            "type": "Feature",
+            "properties": {
+                **COMMON,
+                "step": k,
+                "kind": "straight line",
+                "endpoint": f"mark {k}",
+                "quad": "Grit",
+                "length_m": "1234.5678",
+                "narrative": f"({k}) Proceed.",
+                "change": "unchanged",
+                "txt_source": "TTB",
+            },
+            "geometry": {
+                "type": "LineString",
+                "coordinates": [
+                    [*xy[k - 1], 500.0],
+                    [(xy[k - 1][0] + xy[k][0]) / 2, xy[k - 1][1] + 0.001],
+                    xy[k],
+                ],
+            },
+        }
+        for k in range(1, n + 1)
+    ]
+    points = [
+        {
+            "type": "Feature",
+            "properties": {
+                **COMMON,
+                "point": "Beginning" if k == 0 else str(k),
+                "step": k,
+                "kind": "Beginning point" if k == 0 else "End of step",
+                "point_name": f"mark {k}",
+                "quad": "Grit",
+            },
+            "geometry": {"type": "Point", "coordinates": xy[k]},
+        }
+        for k in range(n + 1)
+    ]
+    if step_hook:
+        step_hook(steps)
+    if point_hook:
+        point_hook(points)
+    for kind, feats in (
+        ("area", area["features"]),
+        ("line", out_of_order(steps)),
+        ("points", out_of_order(points)),
+    ):
         path = os.path.join(gis, f"x-{kind}-EPSG4269.geojson")
         with open(path, "w", encoding="utf-8") as fh:
-            json.dump(data, fh)
-    with open(status, "w", encoding="utf-8") as fh:
-        json.dump({"status": "proposed"}, fh)
+            json.dump({"type": "FeatureCollection", "features": feats}, fh)
 
 
-def test_generator_rounds_keeps_and_orders(tmp_path):
-    status = tmp_path / "status.json"
-    made_up_build(str(tmp_path), str(status))
-    files = msd.site_data(str(tmp_path), str(status))
-    step = json.loads(files["steps.geojson"])["features"][0]
-    assert step["properties"] == {
+@pytest.fixture
+def build(tmp_path):
+    gis = tmp_path / "gis"
+    gis.mkdir()
+    made_up_build(str(gis))
+    return str(gis)
+
+
+def test_generator_keeps_rounds_and_orders(build):
+    files = msd.site_data(build)
+    steps = json.loads(files["steps.geojson"])["features"]
+    assert [s["properties"]["step"] for s in steps] == list(range(1, 11))
+    assert steps[0]["properties"] == {
         "step": 1,
         "kind": "straight line",
-        "endpoint": "a mark",
+        "endpoint": "mark 1",
         "quad": "Grit",
         "length_m": 1234.6,
-        "narrative": "(1) Proceed east.",
+        "narrative": "(1) Proceed.",
     }
-    assert step["geometry"]["coordinates"][0] == [-99.123457, 30.1]
+    assert steps[0]["geometry"]["coordinates"][0] == [-99.0, 30.0]
     points = json.loads(files["points.geojson"])["features"]
-    assert [p["properties"]["point"] for p in points] == ["Beginning", "1"]
-    assert msd.site_data(str(tmp_path), str(status)) == files
+    assert [p["properties"]["point"] for p in points] == ["Beginning"] + [
+        str(k) for k in range(1, 11)
+    ]
+    (boundary,) = json.loads(files["boundary.geojson"])["features"]
+    assert boundary["properties"] == {
+        "name": "Hickory Sands District",
+        "area_sqmi": 1.234,
+        "counties": "Mason",
+    }
+    assert boundary["geometry"]["coordinates"][0][1] == [-99.01, 30.01]
+    assert msd.site_data(build) == files
 
 
-def test_stale_names_missing_and_changed_files(tmp_path):
-    out = tmp_path / "out"
-    out.mkdir()
-    (out / "a.json").write_text("old\n", encoding="utf-8")
-    (out / "b.json").write_text("same\n", encoding="utf-8")
-    want = {"a.json": "new\n", "b.json": "same\n", "c.json": "x\n"}
-    assert msd.stale(want, str(out)) == ["a.json", "c.json"]
+@pytest.mark.parametrize(
+    ("spoil", "message"),
+    [
+        (
+            {"step_hook": lambda s: s[3]["properties"].update(quad="")},
+            "step 4: quad",
+        ),
+        (
+            {"step_hook": lambda s: s[4]["properties"].update(step=4)},
+            "steps are not",
+        ),
+        ({"point_hook": lambda p: p.pop()}, "need 11 points"),
+        ({"areas": 2}, "one boundary polygon, found 2"),
+    ],
+)
+def test_generator_refuses_a_spoiled_build(tmp_path, spoil, message):
+    made_up_build(str(tmp_path), **spoil)
+    with pytest.raises(SystemExit, match=message):
+        msd.site_data(str(tmp_path))
+
+
+@pytest.mark.parametrize(("copies", "found"), [(0, "found 0"), (2, "found 2")])
+def test_one_wants_exactly_one_file(build, copies, found):
+    gis = build
+    line = os.path.join(gis, "x-line-EPSG4269.geojson")
+    if copies == 0:
+        os.remove(line)
+    else:
+        with open(line, encoding="utf-8") as fh:
+            text = fh.read()
+        with open(os.path.join(gis, "y-line-EPSG4269.geojson"), "w") as fh:
+            fh.write(text)
+    with pytest.raises(SystemExit, match=found):
+        msd.one(gis, "-line-EPSG4269.geojson")
+
+
+def run_main(monkeypatch, capsys, build, out, *extra):
+    argv = ["make_site_data.py", "--gis", build, "--out", str(out), *extra]
+    monkeypatch.setattr(sys, "argv", argv)
+    msd.main()
+    return capsys.readouterr().out
+
+
+def test_check_exits_stale_and_write_fixes_it(
+    monkeypatch, capsys, build, tmp_path
+):
+    out = tmp_path / "data"
+    with pytest.raises(SystemExit) as stop:
+        run_main(monkeypatch, capsys, build, out, "--check")
+    assert stop.value.code == msd.STALE
+    assert "missing: boundary.geojson, points.geojson, status.json" in (
+        capsys.readouterr().out
+    )
+    run_main(monkeypatch, capsys, build, out)
+    (out / "extra.json").write_text("{}\n", encoding="utf-8")
+    (out / "steps.geojson").write_text("{}\n", encoding="utf-8")
+    with pytest.raises(SystemExit) as stop:
+        run_main(monkeypatch, capsys, build, out, "--check")
+    said = capsys.readouterr().out
+    assert stop.value.code == msd.STALE
+    assert "differs from the build: steps.geojson" in said
+    assert "not made by the build: extra.json" in said
+    run_main(monkeypatch, capsys, build, out)
+    assert sorted(os.listdir(out)) == sorted(msd.site_data(build))
+    assert "matches the build" in run_main(
+        monkeypatch, capsys, build, out, "--check"
+    )
+
+
+def nudge(degrees):
+    """Moves the middle vertex of step 3 (not a pin) north by degrees."""
+
+    def spoil(steps):
+        steps[2]["geometry"]["coordinates"][1][1] += degrees
+
+    return spoil
+
+
+def on_the_line(fraction):
+    """Adds a vertex on step 3's first segment, fraction of the way along."""
+
+    def spoil(steps):
+        (x1, y1, *_), (x2, y2), _ = steps[2]["geometry"]["coordinates"]
+        at = [x1 + (x2 - x1) * fraction, y1 + (y2 - y1) * fraction]
+        steps[2]["geometry"]["coordinates"].insert(1, at)
+
+    return spoil
+
+
+def drop_middle(steps):
+    """Takes out step 3's middle vertex, straightening it by about 110 m."""
+    del steps[2]["geometry"]["coordinates"][1]
+
+
+@pytest.mark.parametrize(
+    ("before", "after", "stale"),
+    [
+        # #116: a vertex slides along the line; the line does not move.
+        (on_the_line(0.25), on_the_line(0.75), False),
+        (None, on_the_line(0.5), False),  # one more vertex, on the line
+        (None, nudge(0.00002), False),  # the line moves about 2 m
+        (None, nudge(0.0001), True),  # about 11 m: more than drift
+        (None, drop_middle, True),
+        (
+            None,
+            lambda s: s[2]["properties"].update(narrative="(3) Elsewhere."),
+            True,
+        ),
+    ],
+)
+def test_check_tells_drift_from_a_changed_boundary(
+    monkeypatch, capsys, tmp_path, before, after, stale
+):
+    committed, other = tmp_path / "committed", tmp_path / "other"
+    for gis in (committed, other):
+        gis.mkdir()
+    made_up_build(str(committed), step_hook=before)
+    made_up_build(str(other), step_hook=after)
+    out = tmp_path / "data"
+    run_main(monkeypatch, capsys, str(committed), out)
+    if stale:
+        with pytest.raises(SystemExit) as stop:
+            run_main(monkeypatch, capsys, str(other), out, "--check")
+        assert stop.value.code == msd.STALE
+        said = capsys.readouterr().out
+        assert "differs from the build: steps.geojson" in said
+    else:
+        said = run_main(monkeypatch, capsys, str(other), out, "--check")
+        apart = re.search(r"steps.geojson: lines up to ([0-9.]+) m apart", said)
+        assert apart and float(apart.group(1)) < msd.MAX_DRIFT_M
+        assert "matches the build" in said
+
+
+def test_line_distance_ignores_where_vertices_fall():
+    line = [[-99.0, 30.0], [-99.0, 30.01]]
+    more = [[-99.0, 30.0], [-99.0, 30.004], [-99.0, 30.01]]
+    assert msd.apart_m(line, more, 5.0) == 0.0
+    beside = [[-99.0, 30.0], [-99.00003, 30.005], [-99.0, 30.01]]
+    assert 2.5 < msd.apart_m(line, beside, 5.0) < 3.0  # 0.00003 deg east
+    assert msd.apart_m(line, [[-99.001, 30.0], [-99.0, 30.01]], 5.0) is None

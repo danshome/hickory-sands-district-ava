@@ -108,7 +108,7 @@ project's own `.venv`.
 ```
 
 The result is in `dist/`: the package zip, its README, `SHA256SUMS.txt` and `build-report.txt` (area, step count, check
-results, source commit). The build is deterministic: two runs give identical lines.
+results, source commit). The build is deterministic: two runs on one machine give identical lines (#116).
 
 To change the boundary, change only the inputs in `resources/boundary/` (a pin, a hand patch, a route hint, or the step
 texts) and run `./build.sh`; every figure in the documents and the ArcGIS descriptions comes from the build.

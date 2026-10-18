@@ -17,6 +17,7 @@ on:
       - requirements.txt
       - requirements-dev.txt
       - documents/**
+      - docs/data/**
       - resources/**
       - src/**
       - tests/fixtures/publish/**

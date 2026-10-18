@@ -20,7 +20,7 @@ every pinned Python package against OSV before installing anything (`src/setup/p
 from the hash-pinned lock `requirements.txt` (compiled from `requirements.in` by `./build.sh upgrade`; never edit the
 `.txt` by hand; all Python runs in `.venv`, `-E -s -B`; nothing global), downloads/verifies the
 13 quads, then stages, traces, splices patches, builds the boundary, checks, makes the documents and quad sheets, and
-zips the package into `dist/` with `SHA256SUMS.txt` and `build-report.txt`. `./build.sh clean | distclean | env | lint | audit | upgrade | publish | publish-dry-run | check-live`.
+zips the package into `dist/` with `SHA256SUMS.txt` and `build-report.txt`. `./build.sh clean | distclean | env | lint | audit | upgrade | site-data | publish | publish-dry-run | check-live`.
 
 - `src/` all code: `quads/`, `tracing/` (the ink tracer), `fixing/` (patchlib, apply_patches), `review/` (tipcheck,
   compare_ttb), `boundary/` (ink_centerline, build_proposed, quad sheets, TTB record), `documents/`, `checks/`,
@@ -33,7 +33,7 @@ zips the package into `dist/` with `SHA256SUMS.txt` and `build-report.txt`. `./b
 - `documents/` README and read-me-first templates (figures filled by the build); `LICENSE.txt` (CC0) at the root.
 - `docs/` the website, hickorysandsdistrictava.org (GitHub Pages; #96). Dan builds it; `site.yml` tests it on a PR and
   deploys it on merge to `main`. Its map data, `docs/data/`, comes from the build (`./build.sh site-data`; the build
-  stops if it is stale), and `resources/site/status.json` switches the site from proposed to established. Its DNS is at
+  stops if it is stale), its status from TTB's AVAs_Production record in `resources/ttb/`. Its DNS is at
   Squarespace beside the Google Workspace mail records (MX, SPF, DKIM, DMARC `p=reject`): never touch those. The other
   Hickory Sands domains forward to it.
 - `target/` (gitignored) everything the build makes: `work/` (recreated each run; GIS in `work/gis/`, reviews in

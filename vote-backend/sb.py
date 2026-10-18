@@ -2,29 +2,52 @@
 """Supabase Management API helper for the custom.supabase connector.
 
 Usage:
-  sb.py req METHOD PATH [--json '<body>'] [--file-body <path>] [--out <path>]
+  sb.py req METHOD PATH [--json '<body>'] [--file-body <path>]
 PATH is appended to https://api.supabase.com. Prints status and response body.
 The Management API access token is supplied by the connector credential
 surrogate; it is never read from a file or printed here.
 """
+
 import json
 import sys
-import urllib.request
 import urllib.error
+import urllib.request
 
 sys.path.insert(0, "/opt/muse/skills/custom-connector-setup/bin")
-from dynamic_credentials import add_surrogate_to_request, read_json_response
+from dynamic_credentials import add_surrogate_to_request
 
 BASE = "https://api.supabase.com"
 HOSTS = ["api.supabase.com"]
 
 
 class NoRedirect(urllib.request.HTTPRedirectHandler):
+    """Refuses every redirect, so the token goes only to the API's own host."""
+
     def redirect_request(self, *args):
+        """Raises instead of following a redirect.
+
+        Args:
+            *args: The redirect's request, response and headers (unused).
+
+        Raises:
+            RuntimeError: Always.
+        """
         raise RuntimeError("redirect refused, verify the endpoint")
 
 
 def do(method, path, body=None, raw=False):
+    """Sends one request to the Management API.
+
+    Args:
+        method: The HTTP method, such as GET or POST.
+        path: The path after https://api.supabase.com.
+        body: The request body: an object to send as JSON, bytes to send as
+            they are, or None for no body.
+        raw: True to send body as it is, with no Content-Type header.
+
+    Returns:
+        The HTTP status code and the response body (bytes).
+    """
     url = BASE + path
     data = None
     headers = {}
@@ -46,6 +69,15 @@ def do(method, path, body=None, raw=False):
 
 
 def main(argv):
+    """Runs the command line in argv.
+
+    Args:
+        argv: The command line, as sys.argv.
+
+    Returns:
+        The exit status: 0 for an HTTP status below 400, 1 for an error
+        status, 2 for a usage error.
+    """
     if len(argv) < 4 or argv[1] != "req":
         print(__doc__)
         return 2
@@ -64,14 +96,14 @@ def main(argv):
         else:
             i += 1
     raw = isinstance(body, bytes)
-    # --file-body content is sent as-is with JSON content type set by caller need;
-    # for database query etc. prefer --json.
+    # A --file-body body is sent as its bytes, with no Content-Type header;
+    # use --json for a JSON body (a database query, for example).
     status, payload = do(method, path, body=body, raw=raw)
-    sys.stdout.write("HTTP %d\n" % status)
+    sys.stdout.write(f"HTTP {status}\n")
     try:
         sys.stdout.write(payload.decode("utf-8") + "\n")
-    except Exception:
-        sys.stdout.write("<binary %d bytes>\n" % len(payload))
+    except UnicodeDecodeError:
+        sys.stdout.write(f"<binary {len(payload)} bytes>\n")
     return 0 if status < 400 else 1
 
 

@@ -10,7 +10,8 @@ checks). Where this file and CLAUDE.md differ, CLAUDE.md wins.
 
 1. **Never push to `main`.** Not a commit, not a merge, not a force push. `main` is protected, and a push to it is
    refused. Only Dan, or the Claude Code session he runs, merges pull requests into it.
-2. **Every change goes issue, branch, pull request.** Open or name a GitHub issue first. Branch off `main`, named by
+2. **Every change goes issue, branch, pull request.** Open or name a GitHub issue first (a security fix instead starts
+   from its private report and stays private until fixed; see SECURITY.md). Branch off `main`, named by
    kind and topic (`docs/...`, `fix/...`, `feature/...`). Commit, push the branch, and open a pull request to `main`
    that says `Fixes #n` and what changed, why, and how you checked it. Then stop, and don't merge it. Dan's Claude Code
    session reviews every pull request to `main` with the `pr-review-toolkit` plugin's `/pr-review-toolkit:review-pr` and

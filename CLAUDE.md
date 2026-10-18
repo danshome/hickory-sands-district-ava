@@ -77,6 +77,9 @@ Every change from here on:
    (`gh pr merge <n> --merge --admin`); keep the branch, so each change stays on its own branch;
 6. `git switch main && git pull --ff-only`.
 
+A security fix is the exception to step 1: it starts from its private report (SECURITY.md) and is made in the
+advisory's temporary private fork, with no public issue until the advisory is published.
+
 Never force-push `main` again without Dan saying so. `main` is protected by two rulesets (#98, #102): no force pushes or
 deletion for anyone; and changes only by pull request with "pre-commit hooks" passing, which admins may bypass only
 when merging a PR (`--admin`), never by pushing to `main`. Other agents (Muse, Codex,

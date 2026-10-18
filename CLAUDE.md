@@ -32,8 +32,10 @@ zips the package into `dist/` with `SHA256SUMS.txt` and `build-report.txt`. `./b
   VRT templates; `geotiff/` zips and `geopdf/` are downloaded, gitignored; keep each GeoTIFF inside its zip).
 - `documents/` README and read-me-first templates (figures filled by the build); `LICENSE.txt` (CC0) at the root.
 - `docs/` the website, hickorysandsdistrictava.org (GitHub Pages; #96). Dan builds it; `site.yml` tests it on a PR and
-  deploys it on merge to `main`. Its DNS is at Squarespace beside the Google Workspace mail records (MX, SPF, DKIM,
-  DMARC `p=reject`): never touch those. The other Hickory Sands domains forward to it.
+  deploys it on merge to `main`. Its map data, `docs/data/`, comes from the build (`./build.sh site-data`; the build
+  stops if it is stale), and `resources/site/status.json` switches the site from proposed to established. Its DNS is at
+  Squarespace beside the Google Workspace mail records (MX, SPF, DKIM, DMARC `p=reject`): never touch those. The other
+  Hickory Sands domains forward to it.
 - `target/` (gitignored) everything the build makes: `work/` (recreated each run; GIS in `work/gis/`, reviews in
   `work/review/`), `quads-cropped/` (neatline VRTs for QGIS). `dist/` (gitignored) the distribution.
 - `tobedeleted/` (gitignored) is where things no build uses go for Dan to review and delete. Nothing may depend on it.

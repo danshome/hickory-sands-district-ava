@@ -66,8 +66,10 @@ Every change from here on:
 2. a commit (the hooks must pass; end the message with the Co-Authored-By line);
 3. `git push -u origin <branch>` and a PR to `main` with a detailed description: what changed, why, how it was
    verified, and what was republished to ArcGIS Online, if anything;
-4. merge it straight away (`gh pr merge <n> --merge --admin`); keep the branch, so each change stays on its own branch;
-5. `git switch main && git pull --ff-only`.
+4. review it with `/pr-review-toolkit:review-pr` (Dan, 2026-10-18: on every PR, subagents' and other agents' included).
+   Fix each finding on the branch, or answer it in the PR, then add a PR comment with the review's result;
+5. merge it (`gh pr merge <n> --merge --admin`); keep the branch, so each change stays on its own branch;
+6. `git switch main && git pull --ff-only`.
 
 Never force-push `main` again without Dan saying so. `main` is protected by two rulesets (#98): no force pushes or
 deletion for anyone; pull requests with "pre-commit hooks" passing, which admins may bypass. Other agents (Muse, Codex,
@@ -77,7 +79,8 @@ in step when a rule changes.
 Subagents (Dan, 2026-10-17): fixes may be delegated to subagents, each in its own git worktree and branch, one area of
 files per agent so they never edit the same file at once. A subagent commits, pushes its branch and opens a PR; it never
 merges, never pushes to `main`, never publishes to ArcGIS Online and never comments on or closes issues. Only the main
-session reviews each PR's diff, checks the result, and merges it to `main` (or sends it back).
+session reviews each PR (its diff, the result, and `/pr-review-toolkit:review-pr`) and merges it to `main` (or sends
+it back).
 
 GitHub Actions (`.github/workflows/`, see BUILD.md), all on GitHub's Linux runners (Dan, 2026-10-17: never Mac runners,
 they cost 10x): `lint` for every PR; `build` (the whole `./build.sh`, Homebrew on Linux) for PRs that change the build's

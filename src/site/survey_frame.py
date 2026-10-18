@@ -1,10 +1,11 @@
 """The ground under the boundary drawing on Home and The boundary.
 
 Both pages draw the proposed revision as an inline SVG over a survey map,
-docs/assets/survey-map.webp. These read the drawing from a page, find the ground
-its viewBox covers by fitting the drawn line to the boundary in UTM zone 14N,
-and compare the record docs/data/survey-map.json keeps of that frame and of the
-quads the image was made from. src/site/make_survey_map.py makes the image.
+docs/assets/survey-map.webp. These read the drawing from a page, find the
+ground its viewBox covers by fitting the drawn line to the boundary in UTM zone
+14N, and compare the record docs/assets/survey-map.json keeps beside the image
+of that frame and of the quads the image was made from.
+src/site/make_survey_map.py makes the image.
 Standard library only, so the lint workflow tests it.
 """
 
@@ -19,6 +20,9 @@ IMAGE = re.compile(
 )
 LINE = re.compile(r'<path class="boundary-line"[^>]*\sd="(?P<d>[^"]+)"')
 POINT = re.compile(r"(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)")
+# The drawn line holds only absolute moves and lines between x,y pairs (and
+# closes): anything else (relative, H, V, curves) would be misread as points.
+PLAIN_PATH = re.compile(r"[MLZ\d.,\s-]+")
 # The drawing is north-up at one scale: its axes' scales may differ by no more
 # than this share.
 MAX_SKEW = 0.001
@@ -38,8 +42,9 @@ def drawing(text):
         image's href; the drawn boundary line's points in viewBox units.
 
     Raises:
-        ValueError: The page has no drawing, or its image does not fill the
-            viewBox from its origin.
+        ValueError: The page has no drawing, its image does not fill the
+            viewBox from its origin, or its line is not plain absolute M and L
+            commands.
     """
     box, image, line = (r.search(text) for r in (VIEWBOX, IMAGE, LINE))
     if not (box and image and line):
@@ -47,6 +52,8 @@ def drawing(text):
     size = (float(box["w"]), float(box["h"]))
     if (float(image["w"]), float(image["h"])) != size:
         raise ValueError(f"the survey image does not fill the viewBox {size}")
+    if not PLAIN_PATH.fullmatch(line["d"]):
+        raise ValueError("the boundary line is not plain absolute M/L/Z")
     points = [(float(x), float(y)) for x, y in POINT.findall(line["d"])]
     return size, image["href"], points
 
@@ -82,20 +89,24 @@ def fit(points, ground, size):
     return (west, north - size[1] / sy, west + size[0] / sx, north)
 
 
-def record(frame, size, href, quads):
+def record(frame, size, href, quads, points=()):
     """The record of what the survey image shows and was made from.
 
     Args:
         frame: (west, south, east, north) in metres, UTM zone 14N (NAD83).
-        size: The image's (width, height) in pixels.
+        size: The viewBox's (width, height); the image has one pixel per unit.
         href: The image's path, relative to the pages.
         quads: Manifest rows (quad, edition, geotiff), any order; the
             GeoTIFF's file name holds USGS's scan number, so it names the
             print.
+        points: The drawn line's points; their bounding box is recorded, so
+            a line moved or redrawn in the pages makes the record stale even
+            where the fitted frame would not show it.
 
     Returns:
-        A dict for docs/data/survey-map.json.
+        A dict for docs/assets/survey-map.json.
     """
+    xs, ys = zip(*points, strict=True) if points else ((), ())
     return {
         "image": href,
         "crs": "EPSG:26914",
@@ -107,6 +118,9 @@ def record(frame, size, href, quads):
             )
         ),
         "pixels": [round(v) for v in size],
+        "line_box": [round(v, 2) for v in (min(xs), min(ys), max(xs), max(ys))]
+        if points
+        else None,
         "quads": sorted(
             ({k: q[k] for k in ("quad", "edition", "geotiff")} for q in quads),
             key=lambda q: q["quad"],
@@ -128,7 +142,7 @@ def differences(old, new):
         return ["no record"]
     out = [
         key
-        for key in ("image", "crs", "pixels", "quads")
+        for key in ("image", "crs", "pixels", "line_box", "quads")
         if old.get(key) != new[key]
     ]
     edges = old.get("frame_m") or {}

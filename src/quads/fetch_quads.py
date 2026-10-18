@@ -57,8 +57,10 @@ def download(url, dst):
 def fetch_geotiff(row, folder):
     """Makes sure a quad's GeoTIFF is in FOLDER, inside its own zip.
 
-    A GeoTIFF already there whose MD5 matches is kept; otherwise it is
-    downloaded to a temporary folder, checked, then stored in its own zip.
+    A GeoTIFF already there whose MD5 matches is kept; otherwise (missing,
+    altered, or a zip left broken by an interrupted run) it is downloaded to a
+    temporary folder, checked, then stored in its own zip, written whole and
+    renamed into place.
 
     Args:
         row: The quad's manifest row (geotiff, geotiff_url, geotiff_md5).
@@ -68,12 +70,12 @@ def fetch_geotiff(row, folder):
         True when the zip holds the GeoTIFF the manifest records.
     """
     tif, zpath = row["geotiff"], os.path.join(folder, row["geotiff"] + ".zip")
-    if (
-        os.path.exists(zpath)
-        and md5_of_zip_member(zpath, tif) == row["geotiff_md5"]
-    ):
-        print(f"ok    {tif}")
-        return True
+    try:
+        if md5_of_zip_member(zpath, tif) == row["geotiff_md5"]:
+            print(f"ok    {tif}")
+            return True
+    except OSError, zipfile.BadZipFile, KeyError:
+        pass  # missing, broken or without the GeoTIFF: fetched again
     with tempfile.TemporaryDirectory() as tmp:
         tmpfile = os.path.join(tmp, tif)
         print(f"fetch {tif}")
@@ -85,8 +87,9 @@ def fetch_geotiff(row, folder):
                 file=sys.stderr,
             )
             return False
-        with zipfile.ZipFile(zpath, "w", zipfile.ZIP_STORED) as z:
+        with zipfile.ZipFile(zpath + ".part", "w", zipfile.ZIP_STORED) as z:
             z.write(tmpfile, tif)
+        os.replace(zpath + ".part", zpath)
     return True
 
 

@@ -156,7 +156,7 @@ SURVEY_MAP=(src/site/make_survey_map.py --pages docs)   # the quads under the bo
 site_data() {
     step "the website's map data (docs/data/, walk.html, figures) against this build"   # hard, after the package: a boundary change must reach the site
     run "${SITE_DATA[@]}" --check            # exits 3 when docs/data/ is stale, and says how to refresh it
-    run "${SURVEY_MAP[@]}" --check           # exits 3 when the survey map's frame or quads changed (never its pixels)
+    run "${SURVEY_MAP[@]}" --check           # exits 3 when the survey map's frame, line or quads changed (never on pixel values)
 }
 
 documents() {

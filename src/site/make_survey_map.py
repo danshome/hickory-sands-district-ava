@@ -10,10 +10,11 @@ neatline and carried from its NAD27 polyconic projection to NAD83 UTM zone 14N
 through the NADCON 5.0 CONUS grid, averaged onto a grid four times finer than
 the image, then reduced to the image's size.
 
-docs/data/survey-map.json records the frame and the quads. The image is made
-again only when that record would change, so builds on machines whose GDAL
+docs/assets/survey-map.json records the frame, the drawn line's box and the
+quads. The image is made again only when that record would change, or the
+image is missing or not the record's size, so builds on machines whose GDAL
 rounds differently do not rewrite it. With --check nothing is written, and the
-exit status is 3 when the record is stale.
+exit status is 3 in those cases.
 
 Usage:
     make_survey_map.py --pages docs [--check]
@@ -23,6 +24,7 @@ import argparse
 import csv
 import json
 import os
+import pathlib
 import sys
 
 import numpy as np
@@ -238,11 +240,28 @@ def render(frame, pixels, zips):
 
 
 def image_pixels(path):
-    """An image's (width, height), or None when there is no image."""
-    if not os.path.exists(path):
+    """An image's (width, height), or None when it is missing or unreadable."""
+    try:
+        with Image.open(path) as image:
+            return list(image.size)
+    except OSError:  # missing, truncated or not an image: made again
         return None
-    with Image.open(path) as image:
-        return list(image.size)
+
+
+def read_record(path):
+    """The committed record, or None when it is missing or unreadable."""
+    try:
+        with open(path, encoding="utf-8") as f:
+            return json.load(f)
+    except OSError, ValueError:  # missing or half written: made again
+        return None
+
+
+def replace(path, write):
+    """Writes a file whole: WRITE(temporary path), then a rename over PATH."""
+    part = path + ".part"
+    write(part)
+    os.replace(part, path)
 
 
 def main():
@@ -261,14 +280,12 @@ def main():
         ground = utm_points(f.read())
     frame = survey_frame.fit(points, ground, size)
     rows = manifest_rows()
-    new = survey_frame.record(frame, size, href, [row for row, _ in rows])
-    record_path = os.path.join(docs, "data", "survey-map.json")
+    new = survey_frame.record(
+        frame, size, href, [row for row, _ in rows], points
+    )
     image_path = os.path.join(docs, href)
-    old = None
-    if os.path.exists(record_path):
-        with open(record_path, encoding="utf-8") as f:
-            old = json.load(f)
-    stale = survey_frame.differences(old, new)
+    record_path = os.path.splitext(image_path)[0] + ".json"  # beside it
+    stale = survey_frame.differences(read_record(record_path), new)
     if image_pixels(image_path) != new["pixels"]:
         stale.append(f"{href} is missing or not {new['pixels']} pixels")
     if not stale:
@@ -287,10 +304,12 @@ def main():
             raise SystemExit(f"cannot fetch {row['geotiff']}")
         zips.append(os.path.join(folder, row["geotiff"] + ".zip"))
     image = render(frame, new["pixels"], zips)
-    image.save(image_path, "WEBP", quality=QUALITY, method=6)
-    with open(record_path, "w", encoding="utf-8") as f:
-        json.dump(new, f, indent=1)
-        f.write("\n")
+    replace(
+        image_path,
+        lambda p: image.save(p, "WEBP", quality=QUALITY, method=6),
+    )
+    text = json.dumps(new, indent=1) + "\n"
+    replace(record_path, lambda p: pathlib.Path(p).write_text(text, "utf-8"))
     print(f"survey map: {href} ({', '.join(stale)}), {len(rows)} quads")
     return 0
 

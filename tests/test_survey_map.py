@@ -2,19 +2,23 @@
 
 The drawing's image, docs/assets/survey-map.webp, is made by the build
 (src/site/make_survey_map.py) from the quads both manifests list, onto the
-ground the drawing's viewBox covers; docs/data/survey-map.json records that
+ground the drawing's viewBox covers; docs/assets/survey-map.json records that
 frame and those quads. These check the committed image and record against the
 pages and the manifests, and the frame's fit and the staleness rule on made-up
-drawings. Standard library only, so the lint workflow runs these.
+drawings, and the fetching of a quad's GeoTIFF with the download stubbed.
+Standard library only, so the lint workflow runs these.
 """
 
 import csv
+import hashlib
 import json
 import os
 import struct
+import zipfile
 
 import pytest
 
+from src.quads import fetch_quads
 from src.site import survey_frame as sf
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -49,7 +53,7 @@ def webp_size(path):
 
 @pytest.fixture(scope="module")
 def committed():
-    return json.loads(read(DOCS, "data", "survey-map.json"))
+    return json.loads(read(DOCS, "assets", "survey-map.json"))
 
 
 def test_home_and_the_boundary_draw_alike():
@@ -63,6 +67,13 @@ def test_the_image_fills_the_drawing_at_the_records_size(committed):
     assert committed["image"] == href
     assert committed["pixels"] == [round(v) for v in size]
     assert webp_size(os.path.join(DOCS, href)) == committed["pixels"]
+
+
+def test_the_record_holds_the_pages_drawn_line(committed):
+    _, _, points = sf.drawing(read(DOCS, "index.html"))
+    xs, ys = zip(*points, strict=True)
+    box = [round(v, 2) for v in (min(xs), min(ys), max(xs), max(ys))]
+    assert committed["line_box"] == box
 
 
 def test_the_record_lists_exactly_the_manifests_quads(committed):
@@ -112,6 +123,17 @@ def test_fit_refuses_a_drawing_at_two_scales():
         sf.fit(points, GROUND, (600.0, 500.0))
 
 
+@pytest.mark.parametrize("d", ["M1,2 l3,4", "M1,2 H5", "M1,2 C3,4 5,6 7,8"])
+def test_drawing_refuses_a_line_that_is_not_plain_absolute(d):
+    page = (
+        '<svg class="boundary-map" viewBox="0 0 100 80">'
+        '<image class="survey-layer" href="a.webp" width="100" height="80"/>'
+        f'<path class="boundary-line" d="{d}"/>'
+    )
+    with pytest.raises(ValueError, match="plain absolute"):
+        sf.drawing(page)
+
+
 def test_drawing_refuses_an_image_that_does_not_fill_the_viewbox():
     page = (
         '<svg class="boundary-map" viewBox="0 0 100 80">'
@@ -150,3 +172,57 @@ def test_a_moved_frame_or_changed_quad_is_stale():
     changed = sf.record((1000, 2000, 3000, 4000), (10, 8), "x.webp", reprinted)
     assert sf.differences(old, changed) == ["quads"]
     assert sf.differences(None, old) == ["no record"]
+
+
+def test_a_redrawn_line_is_stale():
+    old = sf.record((0, 0, 9, 9), (10, 8), "x.webp", ROWS, [(1, 2), (5, 6)])
+    new = sf.record((0, 0, 9, 9), (10, 8), "x.webp", ROWS, [(1, 2), (5, 7)])
+    assert sf.differences(old, new) == ["line_box"]
+
+
+TIF = b"a GeoTIFF's bytes"
+
+
+def quad_row():
+    return {
+        "geotiff": "TX_Test_1_1960_24000_geo.tif",
+        "geotiff_url": "https://example.invalid/TX_Test_1_1960_24000_geo.tif",
+        "geotiff_md5": hashlib.md5(TIF, usedforsecurity=False).hexdigest(),
+    }
+
+
+def stub_download(monkeypatch, body, calls):
+    def download(url, dst):
+        calls.append(url)
+        with open(dst, "wb") as fh:
+            fh.write(body)
+
+    monkeypatch.setattr(fetch_quads, "download", download)
+
+
+def test_fetch_stores_a_checked_geotiff_in_its_own_zip(tmp_path, monkeypatch):
+    calls = []
+    stub_download(monkeypatch, TIF, calls)
+    row = quad_row()
+    assert fetch_quads.fetch_geotiff(row, str(tmp_path))
+    with zipfile.ZipFile(tmp_path / (row["geotiff"] + ".zip")) as z:
+        assert z.namelist() == [row["geotiff"]]
+        assert z.read(row["geotiff"]) == TIF
+    assert fetch_quads.fetch_geotiff(row, str(tmp_path))  # kept, not fetched
+    assert len(calls) == 1
+    assert not list(tmp_path.glob("*.part"))
+
+
+def test_fetch_refuses_a_download_that_fails_its_md5(tmp_path, monkeypatch):
+    stub_download(monkeypatch, b"something else", [])
+    assert not fetch_quads.fetch_geotiff(quad_row(), str(tmp_path))
+    assert not list(tmp_path.iterdir())
+
+
+def test_fetch_replaces_a_broken_zip(tmp_path, monkeypatch):
+    calls = []
+    stub_download(monkeypatch, TIF, calls)
+    row = quad_row()
+    (tmp_path / (row["geotiff"] + ".zip")).write_bytes(b"half a zip")
+    assert fetch_quads.fetch_geotiff(row, str(tmp_path))
+    assert len(calls) == 1

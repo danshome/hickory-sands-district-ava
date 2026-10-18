@@ -184,8 +184,8 @@ tobedeleted/             set aside for review and deletion, used by nothing (not
    committed with the change. Only the traced lines may differ, and only a little: two machines
    (even two of GitHub's Linux runners) can place a vertex differently along the same ink (#116), so lines within 5 m
    of each other are reported in metres, not failed. The survey map under the boundary drawing
-   (`src/site/make_survey_map.py`) is checked by its record, `docs/data/survey-map.json` (its frame and quads), never
-   by its pixels.
+   (`src/site/make_survey_map.py`) is checked by its record, `docs/assets/survey-map.json` (its frame, the drawn line's
+   box and its quads) and the image's size, never by its pixel values.
 
 ## Python packages and security
 
@@ -365,11 +365,12 @@ The boundary drawing on Home and The boundary (an inline SVG) sits on a survey m
 by the site-data stage (`src/site/make_survey_map.py`). It shows the ground the drawing's viewBox covers, found by
 fitting the drawn line to `docs/data/boundary.geojson` in UTM zone 14N, on the USGS 1:24,000 historical quadrangles:
 the 13 the description names and the 17 around them that fill the frame (`resources/quads/basemap-manifest.csv`, each
-the original print of the quad's only 1:24,000 edition, checked against USGS's MD5 and downloaded to
+the earliest print of the quad's only 1:24,000 edition, the lowest scan number on a tie, checked against USGS's MD5 and downloaded to
 `resources/quads/basemap/` when the image is made). Each quad is cropped to its 7.5-minute neatline and carried from
-NAD27 to NAD83 UTM 14N through the NADCON 5.0 CONUS grid. `docs/data/survey-map.json` records the frame and the quads;
-the image is made again only when that record would change, and the check compares the record, never the pixels, so
-machines whose GDAL rounds differently agree. A frame reaching past the listed quads stops the build, naming where.
+NAD27 to NAD83 UTM 14N through the NADCON 5.0 CONUS grid. `docs/assets/survey-map.json` records the frame, the drawn
+line's bounding box and the quads; the image is made again only when that record would change or the image is missing
+or the wrong size, and the check compares the record and the image's size, never its pixel values, so machines whose
+GDAL rounds differently agree. A frame reaching past the listed quads stops `./build.sh site-data`, naming where.
 
 Their code is `docs/assets/maps.js` (shared), `explore.js`, `walk.js` and `maps.css`. Text from the data is only ever set
 as text, never parsed as HTML. The basemaps need the ArcGIS Online API key in `docs/assets/map-config.js`. It is public by

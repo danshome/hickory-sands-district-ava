@@ -132,7 +132,7 @@ def test_every_popup_fetches_its_fields():
     # Popups built by functions get only what they ask for: without outFields
     # a point's popup read "Point NaN" (#122).
     text = read("docs", "assets", "maps.js")
-    templates = text.count("popupTemplate: {")
-    assert (
-        templates and text.count('outFields: ["*"],\n      title:') == templates
-    )
+    blocks = re.findall(r"popupTemplate:\s*\{(.*?)\n\s*\},", text, re.S)
+    assert blocks
+    for block in blocks:
+        assert re.search(r'outFields:\s*\[\s*"\*"\s*\]', block), block

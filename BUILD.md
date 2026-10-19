@@ -461,6 +461,13 @@ merged to `main`. The rest is set outside the repository, once:
   records beside them (MX, SPF, DKIM, DMARC, Google's verification) are Google Workspace's; leave them alone. The
   other Hickory Sands domains forward to hickorysandsdistrictava.org at Squarespace.
 
+The vineyards page's "Not listed?" form lets an owner send a vineyard's details to the district: it opens an email in
+the visitor's own email app (a `mailto:` URL) and the page sends and keeps nothing. Without JavaScript it is a plain
+`mailto:` form; `docs/assets/vineyards.js` checks it, `vineyard-email.js` builds the email (no page code, so node runs
+it in the tests), a message whose URL would pass 1,900 characters goes by the clipboard, and the pin map loads Esri's
+SDK only when asked; `forms.css` styles only that section. `tests/test_vineyards_form.py` checks the form, its county
+list against `docs/data/boundary.geojson`, the scripts, and (with node) the email.
+
 The 3D aquifer page's data is made by `src/site/make_aquifer_3d.py` (with `src/site/aquifer/`) from the downloads
 `resources/aquifer/inputs.csv` pins (TWDB's model archive, 364 MB, its 2017 aquifer outlines, its two well databases,
 the Census counties and places) and committed inputs (`resources/vineyards/`, TWDB's fault lines in

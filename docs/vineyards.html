@@ -7,6 +7,89 @@
 <a class="skip" href="#main">Skip to content</a>
 <header class="site-header"><a class="identity" href="index.html" aria-label="Hickory Sands District home"><img src="assets/mark.svg" width="30" height="32" alt=""><span>Hickory Sands<br><span class="identity-small">District</span></span></a>
 <span class="header-place">Llano Uplift · Texas Hill Country</span><details class="navigation"><summary aria-label="Menu"><span class="menu-icon" aria-hidden="true"></span></summary><nav aria-label="Main navigation"><a href="boundary.html">The boundary</a><a href="land.html">The land</a><a href="aquifer.html">The water</a><a href="vineyards.html" aria-current="page">The vineyards</a><a href="status.html">Status</a><a href="journal.html">Journal</a><a href="about.html">About & contact</a></nav></details></header>
-<main id="main"><section class="page-heading section-pad"><p class="eyebrow">The vineyards</p><h1>A register<br>of growers.</h1><p class="standfirst">Nine commercial vineyards.<br>About 190 acres at the time of the petition.</p></section><section class="journal-list section-pad"><p class="quiet-empty">The register of growers will be published here, one entry for each vineyard, as each owner approves it.</p></section></main>
+<main id="main"><section class="page-heading section-pad"><p class="eyebrow">The vineyards</p><h1>A register<br>of growers.</h1><p class="standfirst">Nine commercial vineyards.<br>About 190 acres at the time of the petition.</p></section><section class="journal-list section-pad"><p class="quiet-empty">The register of growers will be published here, one entry for each vineyard, as each owner approves it.</p></section>
+<section class="reading add-vineyard section-pad" id="add" aria-labelledby="add-title"><link rel="stylesheet" href="assets/forms.css"><p class="eyebrow">Not listed?</p><div class="reading-body"><h2 id="add-title">Add your<br>vineyard.</h2><p>If you grow grapes in the proposed Hickory Sands District, or once did, and your vineyard is not in the register, send its details to the district. The district writes back before anything is shown on this site.</p>
+<details class="submit" id="add-form"><summary><span>Add a vineyard to the register</span><span class="submit-plus" aria-hidden="true">+</span></summary>
+<form class="submit-form" id="vineyard-form" action="mailto:district@hickorysandsdistrictava.org?subject=Vineyard%20submission" method="post" enctype="text/plain">
+<p class="form-key" id="form-key">Fields marked <span class="req" aria-hidden="true">*</span><span class="visually-hidden">with a star, and read out as required,</span> are needed. Everything else helps.</p>
+
+<fieldset class="group"><legend class="eyebrow">The vineyard</legend>
+<div class="field"><label for="v-name">Vineyard name<span class="req" aria-hidden="true">*</span></label><input id="v-name" name="Vineyard name" type="text" maxlength="120" autocomplete="off" enterkeyhint="next" required aria-describedby="v-name-error"><p class="field-error" id="v-name-error" hidden></p></div>
+<div class="field"><label for="v-business">Business name, if different</label><input id="v-business" name="Business name" type="text" maxlength="120" autocomplete="organization" enterkeyhint="next"></div>
+<fieldset class="choice" id="v-status"><legend>Status<span class="req" aria-hidden="true">*</span></legend><div class="options">
+<label class="option"><input type="radio" name="Status" value="Producing" id="v-status-producing" required aria-describedby="v-status-error"><span>Producing<small>Bearing fruit that is picked</small></span></label>
+<label class="option"><input type="radio" name="Status" value="Under development" id="v-status-developing" required aria-describedby="v-status-error"><span>Under development<small>Planted or being planted, not yet bearing</small></span></label>
+<label class="option"><input type="radio" name="Status" value="Historical" id="v-status-historical" required aria-describedby="v-status-error"><span>Historical<small>No longer planted</small></span></label>
+</div><p class="field-error" id="v-status-error" hidden></p></fieldset>
+<div class="field"><label for="v-website">Website or public page</label><p class="field-hint" id="v-website-hint">A website, or a public page such as Facebook or Instagram.</p><input id="v-website" name="Website" type="text" inputmode="url" autocomplete="url" maxlength="200" spellcheck="false" autocapitalize="off" enterkeyhint="next" aria-describedby="v-website-hint v-website-error"><p class="field-error" id="v-website-error" hidden></p></div>
+</fieldset>
+
+<fieldset class="group" id="v-where" aria-describedby="v-where-hint"><legend class="eyebrow">Where it is<span class="req" aria-hidden="true">*</span></legend>
+<p class="group-hint" id="v-where-hint">A point in the vineyard, or the nearest road. Either is enough.</p>
+<p class="field-error" id="v-where-error" hidden></p>
+<div class="pin" id="pin" hidden>
+<button type="button" class="button-quiet" id="pin-open" aria-controls="pin-map" aria-expanded="false">Find it on the map</button>
+<div class="pin-map" id="pin-map" hidden><arcgis-map aria-label="Map for placing the vineyard. The cross marks the centre: drag the map, or use the arrow keys, to move the vineyard under it."><arcgis-zoom slot="top-left"></arcgis-zoom></arcgis-map><svg class="pin-cross" viewBox="0 0 44 44" aria-hidden="true"><g fill="none" stroke-linecap="round"><g stroke="#141512" stroke-width="4" opacity=".85"><path d="M22 3v13M22 28v13M3 22h13M28 22h13"/><circle cx="22" cy="22" r="3.5"/></g><g stroke="#eee8db" stroke-width="1.6"><path d="M22 3v13M22 28v13M3 22h13M28 22h13"/><circle cx="22" cy="22" r="3.5"/></g></g></svg><p class="pin-loading" id="pin-loading">Loading the map</p></div>
+<div class="pin-tools" id="pin-tools" hidden><button type="button" class="button" id="pin-use">Use the centre of the map</button><span class="pin-basemaps" id="pin-basemaps" hidden><button type="button" data-basemap="imagery" aria-pressed="true">Imagery</button><button type="button" data-basemap="map" aria-pressed="false">Map</button></span></div>
+<p class="pin-note" id="pin-note" hidden>Drag the map, or use the arrow keys and + and −, until the cross is on the vines, then use the centre. A tap or a click moves that spot under the cross. The proposed boundary is the sand line. The map comes from Esri, as on the Explore page; nothing you type here is sent to it.</p>
+<p class="pin-failed" id="pin-failed" role="alert" hidden>The map could not load. Type the coordinates or the nearest road instead.</p>
+</div>
+<div class="pair">
+<div class="field"><label for="v-lat">Latitude</label><input id="v-lat" name="Latitude" type="text" inputmode="decimal" maxlength="40" autocomplete="off" spellcheck="false" enterkeyhint="next" aria-describedby="v-coords-hint v-where-error v-lat-error"><p class="field-error" id="v-lat-error" hidden></p></div>
+<div class="field"><label for="v-lon">Longitude</label><input id="v-lon" name="Longitude" type="text" inputmode="decimal" maxlength="40" autocomplete="off" spellcheck="false" enterkeyhint="next" aria-describedby="v-coords-hint v-where-error v-lon-error"><p class="field-error" id="v-lon-error" hidden></p></div>
+</div>
+<p class="field-hint coords-hint" id="v-coords-hint">Decimal degrees. Longitude here is west, so 99.4107 is read as −99.4107. A pair copied from a map app can be pasted into either box.</p>
+<div class="field"><label for="v-road">Nearest road</label><input id="v-road" name="Nearest road" type="text" maxlength="120" autocomplete="off" enterkeyhint="next" aria-describedby="v-where-error"></div>
+<div class="field"><label for="v-directions">How to find it</label><p class="field-hint" id="v-directions-hint">Which side of the road, how far from a crossroads or a town.</p><textarea id="v-directions" name="How to find it" rows="3" maxlength="300" aria-describedby="v-directions-hint"></textarea></div>
+<div class="field"><label for="v-county">County<span class="req" aria-hidden="true">*</span></label><select id="v-county" name="County" required aria-describedby="v-county-error"><option value="">Choose</option><option>Llano</option><option>Mason</option><option>McCulloch</option><option>San Saba</option><option value="Not sure">Not sure</option></select><p class="field-error" id="v-county-error" hidden></p></div>
+</fieldset>
+
+<fieldset class="group"><legend class="eyebrow">The planting</legend>
+<div class="pair">
+<div class="field"><label for="v-acres">Acres planted</label><p class="field-hint" id="v-acres-hint">Vines, not the whole property.</p><input id="v-acres" name="Acres planted" type="text" inputmode="decimal" maxlength="8" autocomplete="off" enterkeyhint="next" aria-describedby="v-acres-hint v-acres-error"><p class="field-error" id="v-acres-error" hidden></p></div>
+<div class="field"><label for="v-year">Year first planted</label><p class="field-hint" id="v-year-hint">Or the year planned.</p><input id="v-year" name="Year first planted" type="text" inputmode="numeric" maxlength="4" autocomplete="off" enterkeyhint="next" aria-describedby="v-year-hint v-year-error"><p class="field-error" id="v-year-error" hidden></p></div>
+</div>
+<div class="field"><label for="v-varieties">Varieties</label><p class="field-hint" id="v-varieties-hint">With acres, if you know them.</p><textarea id="v-varieties" name="Varieties" rows="2" maxlength="300" aria-describedby="v-varieties-hint"></textarea></div>
+<fieldset class="choice"><legend>Grapes and wine</legend><div class="options inline">
+<label class="option"><input type="checkbox" name="Sells grapes" value="Yes" id="v-sells"><span>Sells grapes</span></label>
+<label class="option"><input type="checkbox" name="Makes wine" value="Yes" id="v-makes"><span>Makes wine</span></label>
+</div></fieldset>
+</fieldset>
+
+<fieldset class="group"><legend class="eyebrow">For replies only</legend>
+<p class="group-hint" id="v-contact-hint">Your name and email are for the district’s reply. They are never published and never on the map.</p>
+<div class="pair">
+<div class="field"><label for="v-contact">Your name<span class="req" aria-hidden="true">*</span></label><input id="v-contact" name="Contact person" type="text" maxlength="100" autocomplete="name" enterkeyhint="next" required aria-describedby="v-contact-hint v-contact-error"><p class="field-error" id="v-contact-error" hidden></p></div>
+<div class="field"><label for="v-email">Your email<span class="req" aria-hidden="true">*</span></label><input id="v-email" name="Contact email" type="email" maxlength="120" autocomplete="email" spellcheck="false" autocapitalize="off" enterkeyhint="next" required aria-describedby="v-contact-hint v-email-error"><p class="field-error" id="v-email-error" hidden></p></div>
+</div>
+</fieldset>
+
+<fieldset class="group consent"><legend class="eyebrow">Permission</legend>
+<label class="option"><input type="checkbox" name="Consent" value="Yes" id="v-consent" required aria-describedby="v-consent-hint v-consent-error"><span><span id="v-consent-text">I own or manage this vineyard, or have the owner's permission, and agree that its name, outline and the details above (not the contact details) may be shown on this site and its maps.</span><span class="req" aria-hidden="true">*</span></span></label>
+<p class="group-hint" id="v-consent-hint">Your name and email are for the reply only and are never published. The outline is drawn afterwards from aerial imagery and sent to you to approve before the entry is shown.</p>
+<p class="field-error" id="v-consent-error" hidden></p>
+<div class="field"><label for="v-note">A note</label><textarea id="v-note" name="Note" rows="3" maxlength="600"></textarea></div>
+</fieldset>
+
+<div class="error-summary" id="error-summary" role="group" aria-labelledby="error-summary-title" tabindex="-1" hidden><h3 id="error-summary-title"></h3><ul id="error-list"></ul></div>
+<div class="submit-actions">
+<button type="submit" class="button">Open in your email app</button>
+<button type="button" class="button-quiet" id="copy" hidden>Copy the details</button>
+<p class="submit-hint">Your email app opens with everything filled in, addressed to the district. Nothing is sent until you press Send there, and this site keeps nothing. Or write to <a href="mailto:district@hickorysandsdistrictava.org">district@hickorysandsdistrictava.org</a>.</p>
+<p class="status" id="status" role="status" aria-live="polite"></p>
+</div>
+</form>
+
+<div class="submit-ready" id="ready" role="region" aria-labelledby="ready-title" tabindex="-1" hidden><h3 id="ready-title">Your email is ready.</h3>
+<p class="ready-text" id="ready-opened">Your email app should have opened with this message. Check it, attach an outline of the blocks if you have one, and press Send. If nothing opened, copy the details and send them from any email account to <a href="mailto:district@hickorysandsdistrictava.org">district@hickorysandsdistrictava.org</a>.</p>
+<p class="ready-text" id="ready-long" hidden>The message is too long for some email apps to take in one piece, so the email that opened has only its subject and one line. Paste the details over that line, attach an outline of the blocks if you have one, and press Send. If nothing opened, paste them into a new email to <a href="mailto:district@hickorysandsdistrictava.org">district@hickorysandsdistrictava.org</a>, with the subject below.</p>
+<p class="ready-text" id="ready-long-failed" hidden>The email that opened has no details, because your browser would not copy them. Copy them from below and paste them over its one line, then press Send. If nothing opened, send them from any email account to <a href="mailto:district@hickorysandsdistrictava.org">district@hickorysandsdistrictava.org</a>, with the subject below.</p>
+<p class="ready-text" id="ready-copied" hidden>Paste them into a new email to <a href="mailto:district@hickorysandsdistrictava.org">district@hickorysandsdistrictava.org</a>, with the subject below, and attach an outline of the blocks if you have one.</p>
+<dl class="ready-headers"><dt>To</dt><dd>district@hickorysandsdistrictava.org</dd><dt>Subject</dt><dd id="ready-subject"></dd></dl>
+<pre class="ready-body" id="ready-body" role="region" aria-label="The message" tabindex="0"></pre>
+<div class="ready-actions"><button type="button" class="button" id="ready-copy">Copy the details</button><a class="button-quiet" id="ready-open" href="mailto:district@hickorysandsdistrictava.org">Open the email again</a><button type="button" class="button-quiet" id="ready-edit">Change the details</button></div>
+</div>
+</details></div><script type="module" src="assets/vineyards.js"></script></section>
+</main>
 <footer class="site-footer"><a class="footer-wordmark" href="index.html">Hickory Sands <span>District</span></a><div class="footer-links"><a href="status.html">Status</a><a href="https://www.regulations.gov/docket/TTB-2026-0005">Public docket</a><a href="about.html#contact">Contact</a><a href="#top">Back to top <span aria-hidden="true">↑</span></a></div><p>A site by the petitioners.<br>Independent of the Alcohol and Tobacco Tax and Trade Bureau.</p><a class="colophon-link" href="colophon.html">Sources & photography</a></footer>
 </body></html>

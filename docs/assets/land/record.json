@@ -1,0 +1,200 @@
+{
+ "about": "What docs/assets/land/ was made from, by src/site/make_land.py: ./build.sh checks it and ./build.sh site-data makes the data again when it changes",
+ "inputs": {
+  "usgs-3dep-1-n31w100": {
+   "file": "USGS_1_n31w100.tif",
+   "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1/TIFF/current/n31w100/USGS_1_n31w100.tif",
+   "snapshot": "2022-08-30",
+   "fetched": "2026-10-19",
+   "bytes": 53386164,
+   "sha256": "sha256:4bcbad9fccba369ab8e525c23b62f14b7f60cea55b1579b325bb208031d84d94"
+  },
+  "usgs-3dep-1-n32w100": {
+   "file": "USGS_1_n32w100.tif",
+   "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1/TIFF/current/n32w100/USGS_1_n32w100.tif",
+   "snapshot": "2022-08-30",
+   "fetched": "2026-10-19",
+   "bytes": 51193290,
+   "sha256": "sha256:e645713ed5c949c3284f4e56bf25a3eace55b2440d6940fa551fef807f154769"
+  },
+  "usgs-3dep-1-n31w099": {
+   "file": "USGS_1_n31w099.tif",
+   "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1/TIFF/current/n31w099/USGS_1_n31w099.tif",
+   "snapshot": "2025-05-12",
+   "fetched": "2026-10-19",
+   "bytes": 54655786,
+   "sha256": "sha256:0b2c4954144ea1e2ffec682a6fbed64de20a6f7330717115ce4e84cfecfedf1c"
+  },
+  "usgs-3dep-1-n32w099": {
+   "file": "USGS_1_n32w099.tif",
+   "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1/TIFF/current/n32w099/USGS_1_n32w099.tif",
+   "snapshot": "2025-05-12",
+   "fetched": "2026-10-19",
+   "bytes": 54032055,
+   "sha256": "sha256:f9b01fd4736847d304ee10182e08af233c436afb302b0b665d8197ef43a9d2bd"
+  },
+  "twdb-gam": {
+   "file": "lnup_v101.7z",
+   "url": "https://gw-models.s3.amazonaws.com/GAM_Properties/lnup_v101.7z",
+   "snapshot": "2026-07-16",
+   "fetched": "2026-10-18",
+   "bytes": 364031857,
+   "sha256": "sha256:27a8525f10a682ccf855877b94ba0017167d300cdc5e5e42f4f2d9ec3a487bb8"
+  }
+ },
+ "local": {
+  "twdb-gam-row239": {
+   "file": "resources/aquifer/twdb-gam-row239-EPSG4269.geojson",
+   "sha256": "sha256:8d960c62b9216cfe81ea743dbc1dbf0fcd371ea528219992c8d64c6d2720c127"
+  },
+  "twdb-gam-faults": {
+   "file": "resources/aquifer/twdb-gam-faults-EPSG4269.geojson",
+   "sha256": "sha256:8b5a3a2023fee334425d8c7d7e5699d7eb6b756dfcb03e2f99a743440051d5a4"
+  },
+  "usgs-sgmc-shifted": {
+   "file": "resources/geology/usgs-sgmc-geology-shifted-to-naip-EPSG4269.gpkg",
+   "sha256": "sha256:0b849c51fd2aca2c6773e67f709649b8662de6e6897a58685e6656d70115002f"
+  },
+  "site-boundary": {
+   "file": "docs/data/boundary.geojson",
+   "sha256": "sha256:c1f0674fff129984884fe13f8ba269fb5407f7d3d0de25529e1bcf8f19802b1a"
+  },
+  "aquifer-precambrian": {
+   "file": "docs/assets/aquifer/precambrian.geojson",
+   "sha256": "sha256:ac6e4e35d5731a5539994108db4589f1dfa74ece55151bc8f652192f46c8a17b"
+  },
+  "aquifer-stats": {
+   "file": "docs/assets/aquifer/stats.json",
+   "sha256": "sha256:2f5e6f58b7f3a62309cdbbc7827097fdca38dd1f90188f51a7c4b03cd9683c55"
+  },
+  "aquifer-wells": {
+   "file": "docs/assets/aquifer/wells/ (heads, and the frame's reports)",
+   "files": 155,
+   "sha256": "sha256:d2f48036f2af4907ed1f2c7ea0e5096e45fc5a84179f149a84a422ebbc71c12d"
+  }
+ },
+ "parameters": {
+  "cell_ft": 1320,
+  "classes": [
+   "granite",
+   "metamorphic",
+   "sandstone",
+   "limestone",
+   "other",
+   "unlogged",
+   "sand"
+  ],
+  "class_colours": [
+   "#b5485e",
+   "#7b5ea7",
+   "#a8820f",
+   "#5b8a57",
+   "#a3906f",
+   "#9a958c",
+   "#d8bd55"
+  ],
+  "class_rules": [
+   [
+    "granite",
+    "granit"
+   ],
+   [
+    "metamorphic",
+    "gneiss|schist|metamorph|marble"
+   ],
+   [
+    "sandstone",
+    "sand\\s?stone|hickory"
+   ],
+   [
+    "sand",
+    "\\bsands?\\b"
+   ],
+   [
+    "limestone",
+    "lime\\s?stone|limerock|lime\\b|dolomit"
+   ],
+   [
+    "other",
+    "\\bshale\\b|\\bclay\\b|caliche|\\bgravel\\b|soil|dirt|\\bsilt\\b|conglomerate|chert|overburden|surface|\\brock\\b"
+   ]
+  ],
+  "col_nw": 150,
+  "col_se": 290,
+  "dem_step": 0.0005,
+  "dem_tiles": [
+   "usgs-3dep-1-n31w100",
+   "usgs-3dep-1-n32w100",
+   "usgs-3dep-1-n31w099",
+   "usgs-3dep-1-n32w099"
+  ],
+  "depth_round_ft": 10,
+  "detail_deg": 0.05,
+  "frame": [
+   -99.47,
+   30.67,
+   -98.84,
+   31.17
+  ],
+  "ft_per_mi": 5280,
+  "geology_layer": "Hickory_Sandstone_Member_formation",
+  "ground_keep": 2,
+  "ground_step_ft": 100,
+  "hickory_layer": 7,
+  "join_ft": 2,
+  "km_per_deg_lat": 111.32,
+  "last_stretch_words": {
+   "1": "a quarter-mile",
+   "2": "half a mile",
+   "3": "three quarters of a mile"
+  },
+  "line_tiles": [
+   "usgs-3dep-1-n31w100",
+   "usgs-3dep-1-n32w100"
+  ],
+  "map_dot_r": 2.6,
+  "map_draw_order": [
+   "other",
+   "limestone",
+   "metamorphic",
+   "granite",
+   "sand",
+   "sandstone"
+  ],
+  "map_w": 540,
+  "max_file_bytes": 2097152,
+  "max_map_bytes": 200000,
+  "m_per_ft": 0.3048,
+  "m_per_us_ft": 0.304800609601219,
+  "precambrian_layer": 8,
+  "row": 239,
+  "rule_ft": 1500,
+  "scale_km": 10,
+  "section_svg_w": 960,
+  "simplify": {
+   "district": 0.0003,
+   "hickory": 0.0004,
+   "precambrian": 0.0004,
+   "high": 0.0006,
+   "together": 0.0004
+  },
+  "ve": 40,
+  "version": 2,
+  "well_buffer_m": 800,
+  "well_every_mi": 1,
+  "z_above_ft": 150,
+  "z_below_ft": 250,
+  "z_round_ft": 100,
+  "privacy_rules": "sha256:f50ee1b54df7dbf0aefedcfb026bea21706a9b399403021f01f8b3c6e84fbd77"
+ },
+ "outputs": {
+  "locator.svg": 30532,
+  "map-elevation.svg": 53438,
+  "map-sand.svg": 30019,
+  "map-together.svg": 86942,
+  "map-water.svg": 129726,
+  "section.json": 25664,
+  "section.svg": 102826,
+  "stats.json": 2170
+ }
+}

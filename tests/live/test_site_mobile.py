@@ -1,16 +1,17 @@
 """The website in Google Chrome at phone sizes, as a reader sees it.
 
 Every page in docs/ at three phones held upright and one desktop screen,
-anonymously and read-only. Marked live, like test_dashboard.py: ./build.sh
-test and the lint workflow leave it out; ./build.sh check-live runs it with
-the rest of tests/live, or alone:
-    .venv/bin/python -m pytest -m live tests/live/test_site_mobile.py
-Every website change is tested at phone sizes before it is merged (against a
-local server of its branch) and live after it is deployed.
+anonymously and read-only. Marked live, like test_dashboard.py, but run apart
+from it: ./build.sh test and the lint workflow leave it out, and so does
+./build.sh check-live (a publish's last step), so the website never fails an
+ArcGIS publish. Every website change is tested at phone sizes before it is
+merged, against a local server of its branch, and live after it is deployed:
+    ./build.sh check-site --local    (this checkout's docs/ on 127.0.0.1)
+    ./build.sh check-site            (https://hickorysandsdistrictava.org)
 
 The site is https://hickorysandsdistrictava.org, or HSD_SITE_URL, such as a
-local server of a branch:
-    python3 -m http.server 8790 -d docs
+local server started by hand:
+    python3 -m http.server 8790 --bind 127.0.0.1 -d docs
     export HSD_SITE_URL=http://127.0.0.1:8790
     .venv/bin/python -m pytest -m live tests/live/test_site_mobile.py
 The basemap key in docs/assets/map-config.js serves only the live site's
@@ -39,8 +40,9 @@ Every menu link, tapped on a phone and clicked on the desktop, opens its
 page, which marks it as the current one (The water: aquifer.html). The place
 line also fits at 700 px, the narrowest screen that shows it.
 On the phones:
-- Explore: tapping steps 30, 60 and 90 opens each one's popup, docked along
-  the map's bottom, and the place tapped stays in view, near the middle of
+- Explore: tapping three steps, a quarter, a half and three quarters of the
+  way along the line (docs/data/steps.geojson), opens each one's popup, docked
+  along the map's bottom, and the place tapped stays in view, near the middle of
   the map left above the popup (it was covered before); closing it takes the
   view's padding away; the popup has no undock button, and the map's zoom and
   Home buttons are 44 px;
@@ -56,6 +58,7 @@ load.
 
 import contextlib
 import functools
+import json
 import os
 from pathlib import Path
 from urllib.parse import urldefrag
@@ -102,10 +105,25 @@ MAPS = {
     "explore.html": ".explore-map arcgis-map",
     "walk.html": ".walk-map arcgis-map",
 }
+
+
+def quarter_steps():
+    """Returns the steps a quarter, a half and three quarters along the line.
+
+    From the site's own data (docs/data/steps.geojson), so they follow the
+    boundary when its step count changes.
+    """
+    with open(ROOT / "docs" / "data" / "steps.geojson", encoding="utf-8") as fh:
+        steps = sorted(
+            int(f["properties"]["step"]) for f in json.load(fh)["features"]
+        )
+    return tuple(steps[len(steps) * k // 4] for k in (1, 2, 3))
+
+
 # Explore's steps to tap; the tapped place's height in the map left above
 # the docked popup (0 its top, 1 the popup's top) must fall in this range:
 # the fix centres it (0.5); covered it was over 1
-STEPS = (30, 60, 90)
+STEPS = quarter_steps()
 MIDDLE = (0.25, 0.75)
 # the buttons and action links of the header, the menu, the footer and the
 # pages (links inside sentences are not counted)
@@ -216,7 +234,9 @@ MAP_STATE = """(sel) => {
           right: r.right, scale: v.scale,
           center: [v.center.longitude, v.center.latitude]}; }"""
 
-# zooms to a step and returns where its middle vertex is on the screen
+# zooms to a step and returns where the middle of its middle segment is on
+# the screen (never a vertex: a straight step's are its ends, where the next
+# step and a point begin)
 STEP_AT = """async ([sel, step]) => {
   const m = document.querySelector(sel); const v = m.view;
   const layer = m.map.layers.find(l => l.title === 'Steps');
@@ -224,7 +244,10 @@ STEP_AT = """async ([sel, step]) => {
     {where: `step = ${step}`, returnGeometry: true});
   const g = q.features[0].geometry;
   await v.goTo(g.extent.clone().expand(3), {animate: false});
-  const pt = g.getPoint(0, Math.floor(g.paths[0].length / 2));
+  const path = g.paths[0]; const k = Math.floor((path.length - 1) / 2);
+  const pt = g.getPoint(0, k);
+  pt.x = (path[k][0] + path[k + 1][0]) / 2;
+  pt.y = (path[k][1] + path[k + 1][1]) / 2;
   window.__hsdTapped = pt;
   const s = v.toScreen(pt); const r = m.getBoundingClientRect();
   return {x: r.left + s.x, y: r.top + s.y}; }"""
@@ -667,9 +690,20 @@ def test_explore_popup_leaves_the_tapped_step_in_view(site_page):
         " scrollTo(0, m.getBoundingClientRect().top + scrollY - 40); }"
     )
     settle(view, sel)
-    problems = [
+    controls = page.evaluate(CONTROLS)
+    # zoom in, zoom out and Home, each a calcite-button in its shadow root:
+    # none found means the SDK has changed, not that they are big enough
+    hosts = sorted({c["host"] for c in controls})
+    problems = []
+    if len(controls) < 3 or hosts != ["arcgis-home", "arcgis-zoom"]:
+        problems.append(
+            f"the map's zoom and Home buttons are not found as calcite-buttons "
+            f"in their shadow roots ({len(controls)} found in {hosts}): has "
+            "the SDK changed?"
+        )
+    problems += [
         f"map button under {TARGET} px: {c['host']} {c['w']:.0f}x{c['h']:.0f}"
-        for c in page.evaluate(CONTROLS)
+        for c in controls
         if c["w"] < TARGET - SUBPIXEL or c["h"] < TARGET - SUBPIXEL
     ]
     for step in STEPS:

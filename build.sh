@@ -14,6 +14,9 @@
 #   ./build.sh publish-dry-run  (or publish --dry-run) build everything publish would send, without signing in, into
 #                         target/publish/ as JSON, and check it (src/publish/agol_dryrun.py)
 #   ./build.sh check-live check the public ArcGIS Online site anonymously, as TTB sees it, against the build (read-only)
+#   ./build.sh check-site the website in Google Chrome on three phones and a desktop (tests/live/test_site_mobile.py):
+#                         the live site, or HSD_SITE_URL; --local serves this checkout's docs/ on 127.0.0.1 for the run
+#                         (before a website change is merged); after a deploy, run it without --local (read-only)
 #   ./build.sh site-data  refresh the website's map data (docs/data/, walk.html, the pages' figures, the survey map, the 3D
 #                         aquifer page's data in docs/assets/aquifer/) from the last build; commit it
 #
@@ -232,7 +235,22 @@ publish() {
 check_live() {
     step "the public site, checked anonymously against the build (security, sharing, links, figures, files)"
     run src/publish/agol_check.py
-    run -m pytest -v -m live tests/live      # the dashboard in Google Chrome: two phones, four screens (#68; target/browser-tests/)
+    run -m pytest -v -m live tests/live/test_dashboard.py  # the dashboard in Chrome: two phones, four screens (#68)
+}
+
+SITE_SERVER=""
+check_site() {   # the website in Google Chrome (tests/live/test_site_mobile.py; screenshots in target/browser-tests/site/)
+    if [ "${1:-}" = --local ]; then  # this checkout's docs/, on the loopback address only, for this run
+        local port="${HSD_SITE_PORT:-8790}"
+        "$PY" -E -s -B -m http.server "$port" --bind 127.0.0.1 -d docs >/dev/null 2>&1 &
+        SITE_SERVER=$!
+        trap 'kill "$SITE_SERVER" 2>/dev/null || true' EXIT
+        sleep 1
+        kill -0 "$SITE_SERVER" 2>/dev/null || { echo "no local server on port $port: set HSD_SITE_PORT to a free one"; exit 1; }
+        export HSD_SITE_URL="http://127.0.0.1:$port"
+    fi
+    step "the website at phone sizes and on a desktop: ${HSD_SITE_URL:-https://hickorysandsdistrictava.org}"
+    run -m pytest -v -m live tests/live/test_site_mobile.py
 }
 
 case "${1:-all}" in
@@ -243,6 +261,7 @@ case "${1:-all}" in
     publish)   env_setup; if [ "${2:-}" = --dry-run ]; then dry_run; else publish; fi ;;
     publish-dry-run) env_setup; dry_run ;;
     check-live) env_setup; check_live ;;
+    check-site) env_setup; check_site "${2:-}" ;;
     site-data) env_setup; [ -f "$WORK/.checks-passed" ] || { echo "no checked build: run ./build.sh first"; exit 1; }
                step "the website's map data (docs/data/), walk page and figures from the last build"; run "${SITE_DATA[@]}"; run "${SURVEY_MAP[@]}"
                run "${AQUIFER_3D[@]}" ;;            # made again only when stale: fetches missing inputs into resources/aquifer/cache/
@@ -250,5 +269,5 @@ case "${1:-all}" in
     upgrade)   upgrade ;;
     lint)      env_setup; step "pre-commit hooks on every file"; PRE_COMMIT_HOME="$TARGET/pre-commit" "$VENV/bin/pre-commit" run --all-files ;;
     test)      env_setup; step "unit tests (tests/, pytest)"; run -m pytest -q tests ;;
-    *)         echo "usage: ./build.sh [all|env|lint|test|audit|upgrade|clean|distclean|publish [--dry-run]|publish-dry-run|check-live]"; exit 2 ;;
+    *)         echo "usage: ./build.sh [all|env|lint|test|audit|upgrade|clean|distclean|publish [--dry-run]|publish-dry-run|check-live|check-site [--local]]"; exit 2 ;;
 esac

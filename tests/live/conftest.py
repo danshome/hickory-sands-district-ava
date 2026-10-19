@@ -1,6 +1,8 @@
-"""Fixtures for the browser tests of the published dashboard (issue #68).
+"""Fixtures for the browser tests in tests/live, marked live.
 
-The tests are in tests/live, marked live.
+Two sets, run apart: test_dashboard.py, the published ArcGIS dashboard (issue
+#68; ./build.sh check-live), and test_site_mobile.py, the website at phone
+sizes (./build.sh check-site), which uses chrome and View from here.
 - site: the public group's items and the dashboard's URL, read anonymously
   (src/publish/agol_check.py's REST helper);
 - chrome: one Google Chrome for the session, through Playwright: the installed

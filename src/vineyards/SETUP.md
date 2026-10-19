@@ -89,11 +89,26 @@ request, and your own merges with `--admin` would go on as now. Settings > Rules
 
    Before every approval, the approve Action checks that only `main` may use this environment. If any branch may, it
    comments "may be used from any branch" on the issue and opens nothing.
-3. **The private words** (optional, recommended). Set them in **both** places or in **neither**: here and in Supabase
-   (step 6). With them in only one place, the form and the check disagree about what is refused. Here: **Settings** >
-   **Secrets and variables** > **Actions** > **New repository secret:** name `PRIVATE_WORDS`; value: your
-   `.private-words` list (`pbcopy < .private-words` from the main checkout). The Actions then refuse a public field
-   that holds one of the words, and never print them.
+3. **The private words** (optional). What they are: `.private-words` is a short list of words, one per line, kept
+   only on your Mac (git never takes it: it is in `.gitignore`). It holds names that must never appear in this public
+   repository, its issues or the site, such as people's names. The commit hooks already refuse any commit that holds
+   one; the website's data generators refuse them too. Setting this secret is optional: it lets the vineyard form
+   check a grower's public text against the same list, so a person's name typed as a vineyard's name or a variety is
+   not posted on GitHub. Without it, the form still refuses titles, email addresses, telephone numbers and the words
+   in its own rules, and you check each issue before approving anything.
+
+   If you set it, set it in **both** places or in **neither**: here and in Supabase (step 6). With it in only one
+   place, the form and the check disagree about what is refused. Here: **Settings** > **Secrets and variables** >
+   **Actions** > **New repository secret:** name `PRIVATE_WORDS`; value: your `.private-words` list
+   (`pbcopy < .private-words` from the main checkout). The Actions then refuse a public field that holds one of the
+   words, and never print them.
+
+   What a grower sees when their text holds one of the words is your choice, made when you set it up:
+   - **Refused (as built):** "The register can't show this name as written. Change the wording, or email the
+     petitioners." It names no word. But someone could try word after word and learn which words are on the list.
+   - **Held quietly:** the grower is thanked as usual (with no reference number), nothing is posted, and the row in
+     Supabase's Table Editor is marked `held` for you to read and answer. To choose this, also add the Supabase secret
+     `PRIVATE_WORDS_SILENT` with the value `1` (step 6). See "A private word, silently" below.
 4. Once the second key is pasted, put that `.pem` file in the Trash and empty it. GitHub can make a new key at any time.
 5. **Optional, recommended: only you may make `v*` tags.** The PR App can push branches and tags. `release.yml`
    refuses a tag on a commit that is not on `main`'s history, but it runs as it is in the tagged commit, so a tag on a

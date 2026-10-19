@@ -363,7 +363,7 @@ def test_the_vineyards_name_no_one(path):
 def test_every_vineyard_field_keeps_one_type(path):
     # The page's GeoJSONLayer takes a field's type from its values: a block
     # number among the block names would make the field a number and blank
-    # every name (Paisano Vineyards' "Streeter Lane frontage").
+    # every name (Paisano Vineyards' "Streeter Road frontage").
     features = json.loads(read(path))["features"]
     kinds = {}
     for f in features:

@@ -26,11 +26,11 @@ Sources (each block's `source` says which):
   petitioner;
 - Heart of Art Vineyard: the heart-shaped fenced plot outlined in the petitioners' response to Comment 8 (Comment 9,
   TTB-2026-0005-0018, Oct. 15, 2026) on USGS NAIP Plus imagery, about ±15 m;
-- Paisano Vineyards: its two planned blocks, the Streeter Lane frontage and the east side along the pipeline easement,
+- Paisano Vineyards: its two planned blocks, the Streeter Road frontage and the east side along the pipeline easement,
   approximate: traced along the centre of their outlines on the owners' preliminary planting plan (October 2026),
   whose aerial image was fitted to NAIP 2022 by matching it at about 2,000 points (a projective fit, within about
-  0.8 m RMS); the vineyard named by the petitioner. Site preparation is in progress for planting about 6 acres in
-  2027 and 2028. Only the two blocks are kept, never the plan or the tract's boundary. The blocks' `source` says
+  0.8 m RMS); the vineyard named by the petitioner. It is being planted: site preparation is under way for about 6
+  acres, to be planted in 2027 and 2028. Only the two blocks are kept, never the plan or the tract's boundary. The blocks' `source` says
   "the vineyard's preliminary planting plan", because the generator refuses the word "owner" in the vineyard data.
 
 Left out: the 2022 outlines of the vineyards outlined again here (each is replaced by its blocks); the west Peters

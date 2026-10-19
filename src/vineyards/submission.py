@@ -164,6 +164,11 @@ HEADER = (
 FOOTER = "\n]}\n"
 
 
+# What code() puts for the three characters that could end a code span or a
+# table's cell, or escape something (public text never holds them).
+LOOKALIKES = str.maketrans({"\\": "∖", "`": "ˋ", "|": "｜"})
+
+
 class SubmissionError(Exception):
     """The submission cannot be read at all (not JSON, wrong shape)."""
 
@@ -784,7 +789,8 @@ def code(text):
     """Text a stranger typed, safe in a Markdown table cell.
 
     A code span, so nothing in it is a link, a mention, HTML or formatting;
-    backslashes and backticks become lookalikes, pipes are escaped.
+    a backslash, a backtick and a pipe become lookalikes, so nothing is
+    escaped and nothing can end the span or the cell.
 
     Args:
         text: The text.
@@ -792,7 +798,7 @@ def code(text):
     Returns:
         The cell's Markdown.
     """
-    text = clean(text).replace("\\", "∖").replace("`", "ˋ").replace("|", "\\|")
+    text = clean(text).translate(LOOKALIKES)
     return f"`{text}`" if text else "_not given_"
 
 

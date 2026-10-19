@@ -429,9 +429,10 @@ export function check(raw, { llano, district = null, year = new Date().getUTCFul
 // --- the issue (the function writes it; the contact is never in it) ---------
 
 export function code(text) {
-  // A backslash (which the rules already refuse in public text) becomes a
-  // lookalike, as a backtick does, so no escape reaches the table.
-  const t = clean(text).replace(/\\/g, "∖").replace(/`/g, "ˋ").replace(/\|/g, "\\|");
+  // A backslash, a backtick and a pipe (which the rules already refuse in
+  // public text) each become a lookalike: nothing is escaped, so nothing
+  // can end the code span or the table's cell, or escape anything.
+  const t = clean(text).replace(/[\\`|]/g, (c) => ({ "\\": "∖", "`": "ˋ", "|": "｜" })[c]);
   return t ? `\`${t}\`` : "_not given_";
 }
 

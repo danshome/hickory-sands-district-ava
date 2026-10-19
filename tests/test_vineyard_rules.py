@@ -549,11 +549,11 @@ def test_a_cell_is_one_inert_code_span_in_both():
         inner = cell[1:-1]
         assert cell.startswith("`") and cell.endswith("`"), cell
         assert "`" not in inner, cell
-        assert "\\" not in inner.replace("\\|", ""), cell
-        assert "|" not in inner.replace("\\|", ""), cell
+        assert "\\" not in inner, cell
+        assert "|" not in inner, cell
 
 
 def test_a_table_cell_holds_no_escape_or_fence():
     # Public text refuses these characters already; the cell is safe anyway.
-    assert vs.code("a\\b|c`d") == "`a∖b\\|cˋd`"
+    assert vs.code("a\\b|c`d") == "`a\u2216b\uff5cc\u02cbd`"
     assert vs.code("  ") == "_not given_"

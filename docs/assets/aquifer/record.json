@@ -65,7 +65,7 @@
   },
   "vineyards": {
    "file": "resources/vineyards/vineyards-EPSG4269.geojson",
-   "sha256": "sha256:ddd63e41a7af212b320cacfcafa147a176264447834d850e78f666ecfeebff41"
+   "sha256": "sha256:7a102a3fdc86cb1aa88f5af466fc386064095e0cbdeaad0e687f3ac814faaf05"
   }
  },
  "parameters": {
@@ -195,7 +195,7 @@
   "precambrian.geojson": 21126,
   "stats.json": 3924,
   "vineyard-wells.json": 200708,
-  "vineyards.geojson": 31752,
+  "vineyards.geojson": 31800,
   "wells/detail--1958_615.json": 9203,
   "wells/detail--1958_616.json": 96057,
   "wells/detail--1958_617.json": 36624,

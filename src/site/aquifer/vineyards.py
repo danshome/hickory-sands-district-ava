@@ -9,7 +9,7 @@ writes into the page's data folder:
 
     vineyards.geojson
         The blocks, each with a vid, its name, category, the category's
-        label, block number, acres and source; the page draws one layer per
+        label, block name, acres and source; the page draws one layer per
         category.
     vineyard-wells.json
         For each block (by its vid), every well within

@@ -272,13 +272,20 @@ form.addEventListener("keydown", (event) => {
   nextField(field)?.focus();
 });
 
-// A pair copied from a map app, pasted into either box, is split between them.
+// A pair copied from a map app, pasted into either box, is split between them:
+// at once when pasted, and a pair typed by hand only when the box is left
+// (change), never part way through ("30.76468, -9" is a pair too).
+function split(id) {
+  const both = pair($(id).value);
+  if (both) [$("v-lat").value, $("v-lon").value] = both;
+}
+const PASTED = new Set(["insertFromPaste", "insertFromDrop"]);
 for (const id of ["v-lat", "v-lon"]) {
-  $(id).addEventListener("input", () => {
-    const both = pair($(id).value);
-    if (both) [$("v-lat").value, $("v-lon").value] = both;
+  $(id).addEventListener("input", (event) => {
     source = "typed";
+    if (PASTED.has(event.inputType)) split(id);
   });
+  $(id).addEventListener("change", () => split(id));
 }
 
 // Copy never blocks: it copies whatever is filled in, for the visitor to send

@@ -311,6 +311,25 @@ def test_a_pasted_pair_fits_a_coordinate_box(page):
         assert by_id(page, ident)["attrs"].get("maxlength") == "40"
 
 
+def test_a_pair_is_split_when_pasted_never_while_typed(js):
+    # "30.76468, -9", typed on the way to "-99.41073", is a pair already, so
+    # the boxes split one only when it is pasted or the box is left.
+    assert js("pair", "30.76468, -9") == ["30.76468", "-9"]
+    script = read(SCRIPT)
+    handler = re.search(
+        r'\$\(id\)\.addEventListener\("input", \(event\) => \{(.*?)\n  \}\);',
+        script,
+        re.S,
+    )
+    assert handler, "the coordinate boxes' input handler"
+    assert "if (PASTED.has(event.inputType)) split(id);" in handler.group(1)
+    assert handler.group(1).count("split(") == 1
+    assert 'const PASTED = new Set(["insertFromPaste", "insertFromDrop"]);' in (
+        script
+    )
+    assert '$(id).addEventListener("change", () => split(id));' in script
+
+
 def test_the_counties_are_the_district_s(page):
     # R10: the choices are the counties the district lies in, as the build's
     # data gives them, then "Not sure".

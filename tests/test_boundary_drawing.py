@@ -10,6 +10,7 @@ Standard library only, so the lint workflow runs these; the one marked build
 compares the projection with GDAL's for every point of the boundary.
 """
 
+import json
 import math
 import os
 import re
@@ -62,6 +63,19 @@ def test_the_drawn_line_is_the_marked_one(page):
     assert 'data-figure-path="boundary"' in line
     fill = re.search(r'<path class="boundary-fill"[^>]*>', text)[0]
     assert 'data-figure-path="boundary"' in fill
+
+
+def test_the_caption_names_the_drawing_s_coordinate_system():
+    # The drawing and the survey map under it are NAD83 / UTM zone 14N; The
+    # boundary's caption says so, and no page names another UTM system.
+    crs = f"EPSG:{bd.EPSG}"
+    assert json.loads(read(DOCS, "assets", "survey-map.json"))["crs"] == crs
+    caption = re.search(r"<figcaption>.*?</figcaption>", read(DOCS, PAGES[1]))
+    assert f"{bd.CRS_NAME} ({crs})" in caption[0]
+    for page in sorted(os.listdir(DOCS)):
+        if page.endswith(".html"):
+            named = set(re.findall(r"EPSG:\d+", read(DOCS, page)))
+            assert named <= {crs}, f"{page} names {named}"
 
 
 # PROJ's own values (EPSG:4269 to EPSG:26914), to 0.1 mm: on the zone's

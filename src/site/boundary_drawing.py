@@ -22,6 +22,10 @@ boundary (tests/test_boundary_drawing.py).
 import json
 import math
 
+# The drawing's coordinate system, as The boundary's caption names it and
+# docs/assets/survey-map.json records it (tests/test_boundary_drawing.py).
+EPSG = 26914
+CRS_NAME = "NAD83 / UTM zone 14N"
 # GRS 1980, NAD83's ellipsoid, and UTM zone 14N.
 SEMI_MAJOR_M = 6378137.0
 FLATTENING = 1 / 298.257222101

@@ -274,7 +274,9 @@ for Python; 2-space YAML and TOML). By hand: `.venv/bin/ruff format .` and `.ven
   show; and, on a small made-up build, the generator's rounding and refusals and the check's line between a stale
   folder and platform drift, and the drawn paths written, checked and refused;
 - `test_boundary_drawing.py`: Home and The boundary carry exactly the drawing (the line, its fill and the scale bar)
-  that `docs/data/boundary.geojson` gives; the projection agrees with PROJ's values (and, marked `build`, with GDAL's
+  that `docs/data/boundary.geojson` gives; The boundary's caption names the drawing's coordinate system, NAD83 / UTM
+  zone 14N (EPSG:26914), as `docs/assets/survey-map.json` records it, and no page names another; the projection agrees
+  with PROJ's values (and, marked `build`, with GDAL's
   for every point of the boundary, within a millimetre); the simplification keeps what lies beyond 12 m and a ring's
   first point; the fit centres the box with its margin on the tighter side; the paths are plain closed rings;
 - `test_site_figures.py`: every page's figures and drawn paths are what the committed data gives, and no page types

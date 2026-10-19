@@ -9,7 +9,9 @@ the site's wording: "the Hickory Sandstone Member", never a bare "Hickory
 Sandstone" (a source's own title, in <cite>, keeps its own wording); "Hickory
 Sands" only as "Hickory Sands District"; never "agreed". timeline.js, an
 enhancement only, makes every element and sets every text itself, never from
-an HTML string, and timeline.css styles only its own geo- classes.
+an HTML string, and timeline.css styles only its own geo- classes; the two
+agree on when a phone is held upright (the figure stuck to the top of the
+screen, stepped by scrolling).
 
 Every stage rests on the published sources its Sources list cites.
 Standard library only, so the lint workflow runs these.
@@ -300,3 +302,20 @@ def test_styles_use_only_their_own_classes():
     names = set(re.findall(r"\.(-?[A-Za-z_][\w-]*)", css))
     assert names
     assert all(n == "geo" or n.startswith("geo-") for n in names), names
+
+
+def test_script_and_styles_agree_on_a_phone_held_upright():
+    # timeline.js steps the drawing as the list scrolls where timeline.css
+    # sticks the figure to the top of the screen: one query, in both
+    with open(SCRIPT, encoding="utf-8") as fh:
+        js = fh.read()
+    with open(STYLES, encoding="utf-8") as fh:
+        css = re.sub(r"/\*.*?\*/", "", fh.read(), flags=re.DOTALL)
+    found = re.search(r'var tall = window\.matchMedia\(\s*"([^"]+)"\s*\)', js)
+    assert found, "no query for a phone held upright in timeline.js"
+    query = re.sub(r"\s+", "", found.group(1))
+    sticky = {
+        re.sub(r"\s+", "", q)
+        for q in re.findall(r"@media([^{]*max-width:999px[^{]*)\{", css)
+    }
+    assert sticky == {query}, (sticky, query)

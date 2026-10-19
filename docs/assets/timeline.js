@@ -3,12 +3,17 @@
  * An enhancement only. The eight stages, their ages and their sources are the
  * page's own HTML (docs/land.html) and read the same without this file. With
  * it, a schematic cross-section of the uplift, not to scale, is drawn for one
- * stage at a time, with a time scale and a key. The reader steps through the
- * stages with the Earlier and Later buttons (or the arrow keys, Home and End
- * on them); on wide screens, where the figure stays beside the list,
- * scrolling the list moves the figure too. Every text is set with textContent
- * and every element made with createElement or createElementNS: nothing is
- * parsed as HTML. Smooth scrolling and the fade follow prefers-reduced-motion.
+ * stage at a time, with a time scale, a key and eight progress marks. The
+ * reader steps through the stages with the Earlier and Later buttons (or the
+ * arrow keys, Home and End on them). Where the figure stays in view, scrolling
+ * the list moves the figure too: on wide screens it stays beside the list; on
+ * a phone held upright it becomes a short panel stuck to the top of the
+ * screen, the stages scroll under it, and each stage carries its own key. A
+ * short screen (a phone on its side) keeps the figure in the flow, stepped
+ * with the buttons. One line made here says which. Every text is set with
+ * textContent and every element made with createElement or createElementNS:
+ * nothing is parsed as HTML. Smooth scrolling and the fade follow
+ * prefers-reduced-motion.
  */
 (function () {
   "use strict";
@@ -30,6 +35,16 @@
   }
   var reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
   var wide = window.matchMedia("(min-width: 1000px)");
+  // A phone held upright: narrow, and tall enough to keep a stuck figure and
+  // still read under it. The height is low enough that a small phone with
+  // its browser's toolbars showing (an iPhone SE in Safari) still counts, and
+  // high enough that no phone on its side does. On screens only: a printed
+  // page keeps the figure in the flow. timeline.css has the same query.
+  var tall = window.matchMedia(
+    "screen and (max-width: 999px) and (min-height: 520px)");
+  function follows() {
+    return wide.matches || tall.matches;
+  }
 
   /* The section as functions of x; y grows downward. */
 
@@ -336,6 +351,21 @@
     };
   });
 
+  // Each stage carries its own key, shown on a phone held upright only: it
+  // arrives just under the stuck figure together with its stage, so the
+  // figure itself stays short.
+  var stageKeys = stages.map(function (s, i) {
+    var stageKey = el("ul", "geo-key geo-stage-key");
+    stageKey.setAttribute("aria-hidden", "true"); // as the drawing is
+    KEYS[i + 1].forEach(function (k) {
+      var item = el("li");
+      item.appendChild(el("span", "geo-swatch geo-sw-" + k));
+      item.appendChild(document.createTextNode(KEY[k]));
+      stageKey.appendChild(item);
+    });
+    return stageKey;
+  });
+
   var figure = el("figure", "geo-figure");
   var art = svg("svg", {
     "class": "geo-svg", viewBox: "0 0 " + W + " " + H, "aria-hidden": "true",
@@ -343,6 +373,15 @@
   });
   defs(art);
   figure.appendChild(art);
+
+  // Eight equal marks under the drawing, one per stage: they say at a glance
+  // that this drawing is one of a series, and which one.
+  var progress = el("ol", "geo-progress");
+  progress.setAttribute("aria-hidden", "true");
+  var marks = stages.map(function () {
+    return progress.appendChild(el("li"));
+  });
+  figure.appendChild(progress);
 
   var scale = el("div", "geo-scale");
   scale.setAttribute("aria-hidden", "true");
@@ -456,6 +495,10 @@
     spans.forEach(function (span, i) {
       span.classList.toggle("geo-on", i === n - 1);
     });
+    marks.forEach(function (mark, i) {
+      mark.classList.toggle("geo-on", i === n - 1);
+      mark.classList.toggle("geo-past", i < n - 1);
+    });
     items.forEach(function (li, i) {
       li.classList.toggle("geo-current", i === n - 1);
     });
@@ -468,24 +511,73 @@
   }
 
   function go(n) {
-    if (!show(n, true) || !wide.matches) {
+    if (!show(n, true) || !follows()) {
       return;
     }
     hold = Date.now() + 1200;
-    stages[n - 1].li.scrollIntoView({
-      block: "center", behavior: reduce.matches ? "auto" : "smooth"
+    var li = stages[n - 1].li;
+    var behavior = reduce.matches ? "auto" : "smooth";
+    if (n === 1 && !wide.matches) {
+      // On a phone the first stage follows the figure directly: the figure
+      // goes to the top of the screen, where the later stages keep it, so
+      // the buttons do not move.
+      window.scrollTo({
+        top: li.getBoundingClientRect().top + window.pageYOffset -
+          figure.getBoundingClientRect().height,
+        behavior: behavior
+      });
+      return;
+    }
+    li.scrollIntoView({
+      // On a phone the stage's top lands just under the stuck figure (its
+      // scroll-margin-top is the figure's height).
+      block: wide.matches ? "center" : "start",
+      behavior: behavior
     });
   }
 
   // Drawn before it goes in, so a failure leaves the list as it was.
   show(1, false);
+  // One quiet line that says how the drawing moves; made here, so the page
+  // without JavaScript (no drawing) never mentions it.
+  var hint = el("p", "geo-hint");
+  body.insertBefore(hint, list);
   body.insertBefore(figure, list);
+  stages.forEach(function (s, i) {
+    var when = s.li.querySelector(".geo-when");
+    if (when) {
+      when.appendChild(stageKeys[i]);
+    }
+  });
   body.classList.add("geo-has-figure");
 
-  // Beside the list, the figure follows the stage at the middle of the screen.
-  if ("IntersectionObserver" in window) {
-    var watch = new IntersectionObserver(function (entries) {
-      if (!wide.matches || Date.now() < hold) {
+  // Beside the list (wide) or above it (a phone held upright), the figure
+  // follows the stage that crosses a reading line: the middle of a wide
+  // screen; on a phone, a third of the way down the space left under the
+  // stuck figure. The line moves with the figure's height, so it is measured
+  // again when the window changes (rotation, Safari's toolbars).
+  var watch = null;
+  function observe() {
+    var panel = Math.ceil(figure.getBoundingClientRect().height);
+    body.style.setProperty("--geo-panel", panel + "px");
+    var scrolls = "IntersectionObserver" in window;
+    hint.textContent = follows() && scrolls ?
+      "The drawing changes as you scroll" :
+      "Press Later to change the drawing";
+    if (!scrolls) {
+      return;
+    }
+    if (watch) {
+      watch.disconnect();
+    }
+    var margin = "-45% 0px -54% 0px";
+    if (!wide.matches && tall.matches) {
+      var vh = window.innerHeight;
+      var at = Math.round(panel + (vh - panel) / 3);
+      margin = -at + "px 0px " + -(vh - at - 1) + "px 0px";
+    }
+    watch = new IntersectionObserver(function (entries) {
+      if (!follows() || Date.now() < hold) {
         return;
       }
       entries.forEach(function (entry) {
@@ -493,9 +585,15 @@
           show(items.indexOf(entry.target) + 1, false);
         }
       });
-    }, { rootMargin: "-45% 0px -54% 0px" });
+    }, { rootMargin: margin });
     items.forEach(function (li) {
       watch.observe(li);
     });
   }
+  observe();
+  var again = 0;
+  window.addEventListener("resize", function () {
+    clearTimeout(again);
+    again = setTimeout(observe, 150);
+  });
 })();

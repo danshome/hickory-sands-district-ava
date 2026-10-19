@@ -37,20 +37,32 @@ hasTouch); and a 1440x900 desktop. On every page at every viewport:
 - the header's, the footer's and the page's own buttons and action links are
   at least 44 px each way (links inside sentences are not counted).
 Every menu link, tapped on a phone and clicked on the desktop, opens its
-page, which marks it as the current one (The water: aquifer.html). The place
-line also fits at 700 px, the narrowest screen that shows it.
-On the phones:
-- Explore: tapping three steps, a quarter, a half and three quarters of the
-  way along the line (docs/data/steps.geojson), opens each one's popup, docked
-  along the map's bottom, and the place tapped stays in view, near the middle of
-  the map left above the popup (it was covered before); closing it takes the
-  view's padding away; the popup has no undock button, and the map's zoom and
-  Home buttons are 44 px;
-- Explore: a one-finger swipe beside the map (the page's margin) and on it
-  scrolls the page and leaves the map still; two fingers move the map; Home
-  goes back to the whole boundary;
-- The land: the drawing steps to the stage on the reading line as the page
-  scrolls, and still does when the reader scrolls right after tapping Later.
+page, which marks it as the current one (The water: the map as the water,
+map.html?layers=aquifer,vineyards,places). The place line also fits at
+700 px, the narrowest screen that shows it. A page that has moved
+(explore.html, aquifer.html) is not a page of its own: it sends the reader on
+to the map.
+The map (map.html), on the phones:
+- tapping three steps, a quarter, a half and three quarters of the way along
+  the line (docs/data/steps.geojson), opens each one's popup, docked along the
+  map's bottom, and the place tapped stays in view, near the middle of the map
+  left above the popup; closing it takes the view's padding away; the popup
+  has no undock button;
+- the Layers sheet opens and closes, and a popup and the sheet never show
+  together; 3D tilts the map and 2D brings it back north up and straight
+  down; Home goes back to where the page opened; the map's buttons (zoom,
+  Home, compass, 3D) and the sheet's are 44 px.
+The map, on two phones and the desktop: it opens on the district alone and
+loads none of the aquifer's data but its figures; the wells, turned on, load
+and start at the script's DEFAULT_FILTER (irrigation wells that tested at
+25 gpm or more), and Reset comes back to it; ?layers=all turns on every group
+without an error; The water draws the aquifer and is headed and marked as the
+water; ?step= opens that step's popup; and the old addresses, explore.html and
+aquifer.html, go to the map with their query and #fragment (and, without
+JavaScript, by their meta refresh).
+The land, on the phones: the drawing steps to the stage on the reading line
+as the page scrolls, and still does when the reader scrolls right after
+tapping Later.
 Screenshots: target/browser-tests/site/<page>-<viewport>-<test>.png
 (-FAILED.png when it failed), and <page>-<viewport>-loaded.png after each
 load.
@@ -61,6 +73,7 @@ import functools
 import json
 import os
 from pathlib import Path
+import re
 from urllib.parse import urldefrag
 from urllib.parse import urljoin
 from urllib.parse import urlsplit
@@ -86,7 +99,12 @@ BASE = os.environ.get(
 ).rstrip("/")
 ORIGIN = "{0.scheme}://{0.netloc}".format(urlsplit(BASE))
 LOCAL = urlsplit(BASE).hostname in {"localhost", "127.0.0.1", "::1"}
-PAGES = sorted(p.name for p in (ROOT / "docs").glob("*.html"))
+WATER = "map.html?layers=aquifer,vineyards,places"
+# The pages that have moved (a meta refresh): where each sends the reader.
+MOVED = {"explore.html": "map.html", "aquifer.html": WATER}
+PAGES = sorted(
+    p.name for p in (ROOT / "docs").glob("*.html") if p.name not in MOVED
+)
 # name: (width, height, Playwright's device for the user agent, pixel ratio);
 # no device: a desktop window
 PHONES = {
@@ -102,9 +120,10 @@ SUBPIXEL = 0.5  # px a box may fall short of TARGET by rounding
 LOAD_S = 120  # s a page may take to load (the maps load Esri's SDK)
 SHOTS_DIR = SHOTS / "site"
 MAPS = {
-    "explore.html": ".explore-map arcgis-map",
+    "map.html": ".aq-stage arcgis-scene",
     "walk.html": ".walk-map arcgis-map",
 }
+SCENE = MAPS["map.html"]
 
 
 def quarter_steps():
@@ -120,7 +139,7 @@ def quarter_steps():
     return tuple(steps[len(steps) * k // 4] for k in (1, 2, 3))
 
 
-# Explore's steps to tap; the tapped place's height in the map left above
+# The map's steps to tap; the tapped place's height in the map left above
 # the docked popup (0 its top, 1 the popup's top) must fall in this range:
 # the fix centres it (0.5); covered it was over 1
 STEPS = quarter_steps()
@@ -133,7 +152,7 @@ MENU = (".site-header details.navigation nav a",)
 MENU_LINKS = (
     ("The boundary", "boundary.html"),
     ("The land", "land.html"),
-    ("The water", "aquifer.html"),
+    ("The water", WATER),
     ("The vineyards", "vineyards.html"),
     ("Status", "status.html"),
     ("Journal", "journal.html"),
@@ -143,7 +162,7 @@ PLACE_LINE = "Llano Uplift · Texas Hill Country"
 FOOTER = (".site-footer a",)
 ACTIONS = (
     "main .text-link",
-    "main .map-basemaps button",
+    "main .lp-sheet-toggle",
     "main .geo-step",
     "main .way-list>a",
     "main .arrival-foot a",
@@ -152,6 +171,10 @@ ACTIONS = (
 # ---------------------------------------------------------------- in the page
 READY = """(sel) => { const m = document.querySelector(sel);
   return !!(m && m.view && m.view.ready && !m.view.updating); }"""
+
+# the map (map3d.js): opened as its address says, and drawn
+SCENE_READY = """() => document.documentElement.dataset.map === 'ready' &&
+  !!(window.mapView && window.mapView.ready && !window.mapView.updating)"""
 
 # scrolls to the bottom a screen at a time (lazy images, the walk's map) and
 # back to the top
@@ -217,22 +240,19 @@ PLACE = """() => {
           place: box('.header-place'), identity: box('.identity'),
           menu: box('details.navigation > summary')}; }"""
 
-# the map's buttons (zoom in and out, Home) in their shadow roots
+# the map's buttons (zoom in and out, Home, the compass) in their shadow
+# roots, and the map's own 3D button
 CONTROLS = """() => { const out = [];
-  for (const host of document.querySelectorAll('arcgis-zoom, arcgis-home')) {
+  const box = (host, b) => { const r = b.getBoundingClientRect();
+    if (r.width) out.push({host, w: r.width, h: r.height,
+      x: r.left + r.width / 2, y: r.top + r.height / 2}); };
+  for (const host of document.querySelectorAll(
+      'arcgis-zoom, arcgis-home, arcgis-compass')) {
     for (const b of host.shadowRoot.querySelectorAll('calcite-button')) {
-      const r = b.getBoundingClientRect();
-      if (r.width) out.push({host: host.localName, w: r.width, h: r.height,
-                             x: r.left + r.width / 2, y: r.top + r.height / 2});
-    } }
+      box(host.localName, b); } }
+  const look = document.getElementById('map-look');
+  if (look) box('map-look', look);
   return out; }"""
-
-MAP_STATE = """(sel) => {
-  const m = document.querySelector(sel); const v = m.view;
-  const r = m.getBoundingClientRect();
-  return {y: scrollY, top: r.top, bottom: r.bottom, left: r.left,
-          right: r.right, scale: v.scale,
-          center: [v.center.longitude, v.center.latitude]}; }"""
 
 # zooms to a step and returns where the middle of its middle segment is on
 # the screen (never a vertex: a straight step's are its ends, where the next
@@ -271,13 +291,55 @@ POPUP = """(sel) => {
 CLOSE_POPUP = """(sel) => {
   document.querySelector(sel).querySelector('arcgis-popup').open = false; }"""
 
-HOME_STATE = """(sel) => {
-  const m = document.querySelector(sel); const v = m.view;
-  const b = m.map.layers.find(l => l.title === 'Proposed revision');
-  return {whole: v.extent.contains(b.fullExtent), scale: v.scale}; }"""
-
 AWAY = """async (sel) => { const v = document.querySelector(sel).view;
   await v.goTo({center: [-98.9, 30.9], scale: 300000}, {animate: false}); }"""
+
+# the map's state: its camera, groups, layers, the sheet and the popup
+MAP3D = """() => { const v = window.mapView; const c = v.camera;
+  const on = [...document.querySelectorAll('[data-group-switch]')]
+    .filter(b => b.checked).map(b => b.dataset.groupSwitch);
+  const look = document.getElementById('map-look');
+  const panel = document.getElementById('aq-panel');
+  return {tilt: c.tilt, heading: c.heading, scale: v.scale,
+    center: [v.center.longitude, v.center.latitude], groups: on,
+    ground: v.map.ground.opacity,
+    meshes: v.graphics.filter(g => !!g.geometry).length,
+    layers: v.map.layers.filter(l => l.visible).map(l => l.title).toArray(),
+    look: look.textContent.trim(), pressed: look.getAttribute('aria-pressed'),
+    sheet: panel.classList.contains('is-open'),
+    popup: document.querySelector('arcgis-popup').open,
+    title: document.getElementById('aq-title').textContent,
+    docTitle: document.title,
+    current: [...document.querySelectorAll(
+      '.site-header nav a[aria-current="page"]')].map(a => a.textContent),
+    url: location.pathname.split('/').pop() + location.search + location.hash};
+  }"""
+
+# opens a step's popup as a tap does, through the scene's own popup
+OPEN_STEP = """async (step) => {
+  const s = document.querySelector('.aq-stage arcgis-scene');
+  const layer = s.map.layers.find(l => l.title === 'Steps');
+  const q = await layer.queryFeatures(
+    {where: `step = ${step}`, outFields: ['*'], returnGeometry: true});
+  await s.openPopup({features: q.features,
+                     location: q.features[0].geometry.extent.center}); }"""
+
+# the wells' filters as the panel shows them
+WELLS = """() => { const w = window.aquiferWells;
+  return {shown: w.counts().shown, total: w.index.filter_keys.length,
+    uses: [...document.querySelectorAll('#aq-uses input')].filter(i =>
+      i.checked).map(i => i.parentElement.querySelector('span').textContent),
+    yield: document.getElementById('aq-yield-out').textContent,
+    noYield: document.getElementById('aq-yield-none').checked,
+    depth: document.getElementById('aq-depth-out').textContent,
+    filters: document.getElementById('aq-filters-state').textContent,
+    shownText: document.getElementById('aq-wells-shown').textContent}; }"""
+
+# scrolls the panel (not the page) so an element is at its top
+PANEL_TO = """(sel) => { const b = document.getElementById('aq-panel-body');
+  const el = document.querySelector(sel);
+  b.scrollTop += el.getBoundingClientRect().top
+    - b.getBoundingClientRect().top - 4; }"""
 
 # The land: the stage the drawing shows, and the stage on its reading line
 # (a third of the way down the screen left under the stuck panel, as
@@ -312,7 +374,9 @@ class SiteView(View):
         self.response = None  # the page's own HTTP response
         self.errors = []
         self.refused = []  # Esri's refusals of the basemap key (401, 403)
+        self.requested = []  # the site's own files asked for, by path
         page.on("console", self._console)
+        page.on("request", self._request)
         page.on("pageerror", self._pageerror)
         page.on("requestfailed", self._requestfailed)
         page.on("response", self._response)
@@ -339,6 +403,10 @@ class SiteView(View):
     def _pageerror(self, error):
         if ORIGIN in (error.stack or "") or "://" not in (error.stack or ""):
             self.errors.append(f"uncaught error: {error}"[:400])
+
+    def _request(self, request):
+        if own(request.url):
+            self.requested.append(urlsplit(request.url).path.lstrip("/"))
 
     def _requestfailed(self, request):
         failure = request.failure or ""
@@ -403,7 +471,7 @@ def site_page(request, chrome):
     )
     if device:
         options["user_agent"] = p.devices[device]["user_agent"]
-    name = f"{page_name.removesuffix('.html')}-{viewport}"
+    name = f"{slug(page_name)}-{viewport}"
     view = None
     for attempt in (1, 2):
         context = browser.new_context(**options)
@@ -416,7 +484,9 @@ def site_page(request, chrome):
             )
             with contextlib.suppress(PlaywrightTimeout):
                 view.page.wait_for_load_state("networkidle", timeout=15_000)
-            if page_name in MAPS:
+            if page_name.startswith("map.html"):
+                view.page.wait_for_function(SCENE_READY, timeout=LOAD_S * 1000)
+            elif page_name in MAPS:
                 view.page.wait_for_function(
                     READY, arg=MAPS[page_name], timeout=LOAD_S * 1000
                 )
@@ -435,10 +505,19 @@ def site_page(request, chrome):
     view.close()
 
 
+def slug(page):
+    """Returns a page's address as a name for a test or a screenshot."""
+    path, _, query = page.partition("?")
+    name = path.removesuffix(".html")
+    if not query:
+        return name
+    return f"{name}-{query.replace('=', '-').replace(',', '-')}"
+
+
 def cells(pages, viewports):
     """Returns the (page, viewport) pairs to load, for indirect parameters."""
     return [
-        pytest.param((p, v), id=f"{p.removesuffix('.html')}-{v}")
+        pytest.param((p, v), id=f"{slug(p)}-{v}")
         for p in pages
         for v in viewports
     ]
@@ -450,40 +529,6 @@ def tap(view, locator):
         locator.tap()
     else:
         locator.click()
-
-
-def swipe(view, start, end, steps=12):
-    """Drags fingers across the screen, through Chrome's touch input.
-
-    Args:
-        view: The phone's page.
-        start: Each finger's (x, y) where it touches.
-        end: Each finger's (x, y) where it lifts.
-        steps: How many moves the drag takes.
-    """
-    cdp = view.page.context.new_cdp_session(view.page)
-
-    def points(t):
-        return [
-            {"x": x0 + (x1 - x0) * t, "y": y0 + (y1 - y0) * t, "id": i}
-            for i, ((x0, y0), (x1, y1)) in enumerate(
-                zip(start, end, strict=True)
-            )
-        ]
-
-    cdp.send(
-        "Input.dispatchTouchEvent",
-        {"type": "touchStart", "touchPoints": points(0)},
-    )
-    for s in range(1, steps + 1):
-        cdp.send(
-            "Input.dispatchTouchEvent",
-            {"type": "touchMove", "touchPoints": points(s / steps)},
-        )
-    cdp.send(
-        "Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []}
-    )
-    cdp.detach()
 
 
 def settle(view, sel):
@@ -657,7 +702,10 @@ def test_every_menu_link_opens_its_page(site_page):
         except PlaywrightError as e:
             problems.append(f"{text}: no page opened ({type(e).__name__})")
             continue
-        landed = urlsplit(page.url).path.rsplit("/", 1)[-1]
+        url = urlsplit(page.url)
+        landed = url.path.rsplit("/", 1)[-1]
+        if url.query:
+            landed += f"?{url.query}"
         marked = page.evaluate(MENU_SHAPE)["links"]
         current = [link["text"] for link in marked if link["current"] == "page"]
         if landed != href or current != [text]:
@@ -680,32 +728,12 @@ def test_place_line_fits_at_700px(site_page):
 
 
 @pytest.mark.parametrize(
-    "site_page", cells(["explore.html"], PHONES), indirect=True
+    "site_page", cells(["map.html"], PHONES), indirect=True
 )
-def test_explore_popup_leaves_the_tapped_step_in_view(site_page):
+def test_map_popup_leaves_the_tapped_step_in_view(site_page):
     view, page = site_page, site_page.page
-    sel = MAPS["explore.html"]
-    page.evaluate(
-        "() => { const m = document.querySelector('.explore-map');"
-        " scrollTo(0, m.getBoundingClientRect().top + scrollY - 40); }"
-    )
-    settle(view, sel)
-    controls = page.evaluate(CONTROLS)
-    # zoom in, zoom out and Home, each a calcite-button in its shadow root:
-    # none found means the SDK has changed, not that they are big enough
-    hosts = sorted({c["host"] for c in controls})
+    sel = SCENE
     problems = []
-    if len(controls) < 3 or hosts != ["arcgis-home", "arcgis-zoom"]:
-        problems.append(
-            f"the map's zoom and Home buttons are not found as calcite-buttons "
-            f"in their shadow roots ({len(controls)} found in {hosts}): has "
-            "the SDK changed?"
-        )
-    problems += [
-        f"map button under {TARGET} px: {c['host']} {c['w']:.0f}x{c['h']:.0f}"
-        for c in controls
-        if c["w"] < TARGET - SUBPIXEL or c["h"] < TARGET - SUBPIXEL
-    ]
     for step in STEPS:
         at = page.evaluate(STEP_AT, [sel, step])
         settle(view, sel)
@@ -752,82 +780,426 @@ def test_explore_popup_leaves_the_tapped_step_in_view(site_page):
     assert not problems, f"{view.name}:\n  " + "\n  ".join(problems)
 
 
+def north(heading):
+    """Degrees between a heading and north."""
+    h = heading % 360
+    return min(h, 360 - h)
+
+
+def turn_on(view, group, on=True):
+    """Turns a group on (or off) by its switch, in the sheet on a phone."""
+    page = view.page
+    if view.phone and not page.evaluate(MAP3D)["sheet"]:
+        tap(view, page.locator("#aq-sheet-toggle"))
+        page.wait_for_timeout(700)
+    page.evaluate(PANEL_TO, f'[data-group="{group}"]')
+    page.wait_for_timeout(300)
+    box = page.locator(f'[data-group-switch="{group}"]')
+    if box.is_checked() != on:
+        tap(
+            view,
+            page.locator(f'label.lp-swhit:has([data-group-switch="{group}"])'),
+        )
+    if view.phone:
+        page.wait_for_timeout(300)
+        tap(view, page.locator("#aq-sheet-toggle"))
+        page.wait_for_timeout(700)
+
+
+def default_filter():
+    """The wells' first filter, (use group, lowest yield), from the script."""
+    text = (ROOT / "docs" / "assets" / "aquifer-wells.js").read_text(
+        encoding="utf-8"
+    )
+    found = re.search(
+        r'export const DEFAULT_FILTER = \{ use: "(\w+)", yieldLo: (\d+), '
+        r"noYield: false \};",
+        text,
+    )
+    assert found, "aquifer-wells.js has no DEFAULT_FILTER"
+    return found.group(1), int(found.group(2))
+
+
+def default_wells():
+    """How many wells pass the first filter, counted from the data."""
+    use, low = default_filter()
+    with open(
+        ROOT / "docs" / "assets" / "aquifer" / "wells" / "index.json",
+        encoding="utf-8",
+    ) as fh:
+        index = json.load(fh)
+    group = index["use_groups"].index(use)
+    return sum(
+        1
+        for u, _, gpm, _ in index["filter_keys"]
+        if u == group and gpm is not None and gpm >= low
+    )
+
+
+THREE = ["phone-390x844", "phone-360x780", "desktop-1440x900"]
+
+
 @pytest.mark.parametrize(
-    "site_page", cells(["explore.html"], PHONES), indirect=True
+    "site_page", cells(["map.html"], PHONES), indirect=True
 )
-def test_explore_scrolls_by_one_finger_and_goes_home(site_page):
+def test_map_on_a_phone(site_page):
     view, page = site_page, site_page.page
-    sel = MAPS["explore.html"]
-    width, height = page.viewport_size["width"], page.viewport_size["height"]
     problems = []
-
-    def to_map():
-        page.evaluate(
-            "() => { const m = document.querySelector('.explore-map');"
-            " scrollTo(0, m.getBoundingClientRect().top + scrollY"
-            " - innerHeight * 0.15); }"
-        )
-        settle(view, sel)
-        return page.evaluate(MAP_STATE, sel)
-
-    before = to_map()
-    if before["left"] < 12 or before["right"] > width - 12:
+    opened = page.evaluate(MAP3D)
+    if opened["tilt"] > 1 or north(opened["heading"]) > 1:
+        problems.append(f"the map does not open straight down: {opened}")
+    controls = page.evaluate(CONTROLS)
+    # zoom in, zoom out, Home and the compass, each a calcite-button in its
+    # shadow root, and the 3D button: none found means the SDK has changed,
+    # not that they are big enough
+    hosts = sorted({c["host"] for c in controls})
+    if len(controls) < 5 or hosts != [
+        "arcgis-compass",
+        "arcgis-home",
+        "arcgis-zoom",
+        "map-look",
+    ]:
         problems.append(
-            f"no page margin beside the map: {before['left']:.0f} to "
-            f"{before['right']:.0f} of {width}"
+            "the map's zoom, Home, compass and 3D buttons are not found "
+            f"({len(controls)} found in {hosts}): has the SDK changed?"
         )
-    y = min(
-        before["top"] + 0.7 * (before["bottom"] - before["top"]), height - 60
-    )
-    for where, x in (
-        ("beside the map", before["left"] / 2),
-        ("on the map", width / 2),
-    ):
-        before = to_map()
-        swipe(view, [(x, y)], [(x, y - 300)])
-        page.wait_for_timeout(1200)
-        after = page.evaluate(MAP_STATE, sel)
-        if after["y"] - before["y"] < 100:
-            problems.append(
-                f"a one-finger swipe {where} did not scroll the page "
-                f"({after['y'] - before['y']:.0f} px)"
-            )
-        if after["center"] != before["center"]:
-            problems.append(f"a one-finger swipe {where} moved the map")
+    problems += [
+        f"map button under {TARGET} px: {c['host']} {c['w']:.0f}x{c['h']:.0f}"
+        for c in controls
+        if c["w"] < TARGET - SUBPIXEL or c["h"] < TARGET - SUBPIXEL
+    ]
 
-    before = to_map()
-    middle = (before["top"] + before["bottom"]) / 2
-    x = width / 2
-    swipe(
-        view,
-        [(x - 40, middle), (x + 40, middle)],
-        [(x - 40, middle - 120), (x + 40, middle - 120)],
-    )
-    page.wait_for_timeout(1200)
-    settle(view, sel)
-    after = page.evaluate(MAP_STATE, sel)
-    if after["center"] == before["center"]:
-        problems.append("a two-finger drag did not move the map")
+    # the Layers sheet, and a popup: never both
+    toggle = page.locator("#aq-sheet-toggle")
+    tap(view, toggle)
+    page.wait_for_timeout(800)
+    if not page.evaluate(MAP3D)["sheet"]:
+        problems.append("the Layers button did not open the sheet")
+    sheet = (".lp-sheet-toggle", ".seg button", ".lp-gt", ".lp-swhit")
+    problems += [
+        f"under {TARGET} px in the sheet: {s}"
+        for s in small(page.evaluate(BOXES, list(sheet)))
+    ]
+    view.shot("sheet")
+    page.evaluate(OPEN_STEP, STEPS[1])
 
-    page.evaluate(AWAY, sel)
-    settle(view, sel)
+    def popup_alone():
+        got = page.evaluate(MAP3D)
+        assert got["popup"] and not got["sheet"], f"popup and sheet: {got}"
+
+    def sheet_alone():
+        got = page.evaluate(MAP3D)
+        assert got["sheet"] and not got["popup"], f"sheet and popup: {got}"
+
+    try:
+        view.wait(popup_alone, timeout=10)
+    except AssertionError as e:
+        problems.append(f"a popup opened: {e}")
+    tap(view, toggle)
+    try:
+        view.wait(sheet_alone, timeout=10)
+    except AssertionError as e:
+        problems.append(f"the sheet opened: {e}")
+    tap(view, toggle)
+    page.wait_for_timeout(800)
+    if page.evaluate(MAP3D)["sheet"]:
+        problems.append("the Layers button did not close the sheet")
+
+    # 3D tilts the map; 2D brings it back north up and straight down
+    look = page.locator("#map-look")
+    tap(view, look)
+
+    def tilted():
+        got = page.evaluate(MAP3D)
+        assert got["tilt"] > 30, f"3D did not tilt the map: {got}"
+        assert (got["look"], got["pressed"]) == ("2D", "true"), got
+        return got
+
+    def flat():
+        got = page.evaluate(MAP3D)
+        assert got["tilt"] < 1, f"2D did not bring the map down: {got}"
+        assert north(got["heading"]) < 1, f"2D is not north up: {got}"
+        assert (got["look"], got["pressed"]) == ("3D", "false"), got
+        return got
+
+    try:
+        view.wait(tilted, timeout=15)
+        view.shot("3d")
+        tap(view, look)
+        view.wait(flat, timeout=15)
+    except AssertionError as e:
+        problems.append(str(e))
+
+    # Home goes back to where the page opened
+    page.evaluate(AWAY, SCENE)
+    settle(view, SCENE)
     home = [c for c in page.evaluate(CONTROLS) if c["host"] == "arcgis-home"]
     if not home:
         problems.append("no Home button on the map")
     else:
         page.touchscreen.tap(home[0]["x"], home[0]["y"])
 
-        def whole():
-            got = page.evaluate(HOME_STATE, sel)
-            assert got["whole"], f"Home did not show the whole line: {got}"
-            return got
+        def back():
+            got = page.evaluate(MAP3D)
+            off = abs(got["scale"] - opened["scale"]) / opened["scale"]
+            assert off < 0.05, f"Home: scale {got['scale']:.0f}, {opened}"
+            assert (
+                max(
+                    abs(a - b)
+                    for a, b in zip(
+                        got["center"], opened["center"], strict=True
+                    )
+                )
+                < 0.01
+            ), f"Home: centre {got['center']}, {opened['center']}"
 
         try:
-            view.wait(whole, timeout=15)
+            view.wait(back, timeout=15)
         except AssertionError as e:
             problems.append(str(e))
     problems += view.problems()
     assert not problems, f"{view.name}:\n  " + "\n  ".join(problems)
+
+
+@pytest.mark.parametrize("site_page", cells(["map.html"], THREE), indirect=True)
+def test_the_map_loads_only_the_district_and_the_wells_start_at_the_default(
+    site_page,
+):
+    view, page = site_page, site_page.page
+    problems = []
+    data = sorted(u for u in view.requested if u.startswith("data/"))
+    if data != [
+        "data/boundary.geojson",
+        "data/points.geojson",
+        "data/steps.geojson",
+    ]:
+        problems.append(f"the map loaded {data} from data/")
+    others = [
+        u
+        for u in view.requested
+        if u.startswith("assets/aquifer/") and u != "assets/aquifer/stats.json"
+    ]
+    if others:
+        problems.append(f"the map loaded the aquifer's {others} at once")
+    opened = page.evaluate(MAP3D)
+    if opened["groups"] != ["district"] or opened["layers"] != [
+        "Proposed revision",
+        "Steps",
+        "Points",
+    ]:
+        problems.append(f"the map opens with more than the district: {opened}")
+
+    turn_on(view, "wells")
+    try:
+        page.wait_for_function("!!window.aquiferWells", timeout=LOAD_S * 1000)
+    except PlaywrightTimeout:
+        problems.append("the wells did not load when turned on")
+        problems += view.problems()
+        pytest.fail(f"{view.name}:\n  " + "\n  ".join(problems), pytrace=False)
+    if "assets/aquifer/wells/index.json" not in view.requested:
+        problems.append("turning on the wells did not load wells/index.json")
+    settle(view, SCENE)
+    got = page.evaluate(MAP3D)
+    if got["tilt"] < 30 or got["ground"] != 0.4:
+        problems.append(
+            f"the wells did not tilt the view or clear the ground: {got}"
+        )
+    # the basemap is kept too: with the wells on, a bare address opens dark
+    if got["url"] != "map.html?layers=wells&basemap=imagery":
+        problems.append(f"the address did not keep the wells: {got['url']}")
+    view.shot("wells")
+
+    use, low = default_filter()
+    first = page.evaluate(WELLS)
+    want = default_wells()
+    if first["uses"] != [use] or first["shown"] != want:
+        problems.append(
+            f"the wells start with {first}, not {use} ({want} wells)"
+        )
+    if not first["yield"].startswith(f"{low:,}–") or first["noYield"]:
+        problems.append(f"the wells' yield starts at {first}, not {low} gpm")
+    if (first["filters"], first["depth"]) != ("2 on", "all"):
+        problems.append(f"the wells' filters start as {first}")
+    if first["shownText"] != f"{want:,}":
+        problems.append(f"the panel says {first['shownText']} wells match")
+    page.locator("#aq-uses-all").dispatch_event("click")
+    page.wait_for_timeout(500)
+    wider = page.evaluate(WELLS)
+    if wider["shown"] <= first["shown"]:
+        problems.append(f"All uses did not widen the wells: {wider}")
+    page.locator("#aq-wells-reset").dispatch_event("click")
+    page.wait_for_timeout(500)
+    if (reset := page.evaluate(WELLS)) != first:
+        problems.append(f"Reset gave {reset}, not the first filter {first}")
+    wide = page.evaluate(SIDEWAYS)
+    if max(wide["page"], wide["body"]) > wide["screen"] + 1:
+        problems.append(f"scrolls sideways: {wide}")
+    problems += view.problems()
+    assert not problems, f"{view.name}:\n  " + "\n  ".join(problems)
+
+
+@pytest.mark.parametrize(
+    "site_page", cells(["map.html?layers=all"], THREE), indirect=True
+)
+def test_every_group_turns_on(site_page):
+    view, page = site_page, site_page.page
+    problems = []
+    groups = ["district", "places", "wells", "vineyards", "boundaries"]
+    groups += ["geology", "aquifer"]
+
+    def drawn():
+        got = page.evaluate(MAP3D)
+        assert got["groups"] == groups, got
+        assert got["meshes"] == 4, f"the aquifer is not drawn: {got}"
+        assert page.evaluate("!!window.aquiferWells"), "no wells"
+        for title in (
+            "Towns (Census 2023)",
+            "Hickory Sands District vineyards",
+            "Llano Uplift AVA (proposed, TTB)",
+            "County lines (Census 2023)",
+            "Hickory Sandstone Member formation (USGS geologic map, shifted)",
+            "Precambrian rock at the surface (TWDB model layer 8)",
+        ):
+            assert title in got["layers"], f"{title} is not drawn: {got}"
+        return got
+
+    try:
+        view.wait(drawn, timeout=LOAD_S)
+    except AssertionError as e:
+        problems.append(str(e))
+    settle(view, SCENE)
+    view.shot("all")
+    turn_on(view, "aquifer", on=False)
+    got = page.evaluate(MAP3D)
+    want = "map.html?layers=places,wells,vineyards,boundaries,geology"
+    if got["url"] != want:
+        problems.append(f"the address reads {got['url']}, not {want}")
+    if page.evaluate(
+        "() => window.mapView.graphics.some(g => g.visible && g.geometry)"
+    ):
+        problems.append("the aquifer still shows when turned off")
+    wide = page.evaluate(SIDEWAYS)
+    if max(wide["page"], wide["body"]) > wide["screen"] + 1:
+        problems.append(f"scrolls sideways: {wide}")
+    problems += view.problems()
+    assert not problems, f"{view.name}:\n  " + "\n  ".join(problems)
+
+
+@pytest.mark.parametrize("site_page", cells([WATER], THREE), indirect=True)
+def test_the_water(site_page):
+    view, page = site_page, site_page.page
+    problems = []
+
+    def water():
+        got = page.evaluate(MAP3D)
+        assert got["groups"] == ["district", "places", "vineyards", "aquifer"]
+        assert got["meshes"] == 4, f"the aquifer is not drawn: {got}"
+        return got
+
+    try:
+        got = view.wait(water, timeout=LOAD_S)
+    except AssertionError as e:
+        problems.append(str(e))
+        got = page.evaluate(MAP3D)
+    if got["title"] != "The Hickory Aquifer" or not got["docTitle"].startswith(
+        "The Hickory Aquifer in 3D"
+    ):
+        problems.append(f"The water is not headed as the aquifer: {got}")
+    if got["current"] != ["The water"]:
+        problems.append(f"the menu marks {got['current']}, not The water")
+    if got["tilt"] < 30 or got["ground"] != 0.4:
+        problems.append(f"The water does not open tilted, see-through: {got}")
+    dark = page.get_attribute('button[data-basemap="dark"]', "aria-pressed")
+    if dark != "true":
+        problems.append("The water does not open on the dark basemap")
+    settle(view, SCENE)
+    view.shot("water")
+    problems += view.problems()
+    assert not problems, f"{view.name}:\n  " + "\n  ".join(problems)
+
+
+@pytest.mark.parametrize(
+    "site_page",
+    cells(
+        [f"map.html?step={STEPS[1]}", "map.html?point=beginning"],
+        ["phone-390x844", "desktop-1440x900"],
+    ),
+    indirect=True,
+)
+def test_a_step_or_point_in_the_address_opens_its_popup(site_page):
+    view, page = site_page, site_page.page
+    want = ("step", STEPS[1]) if "step=" in page.url else ("point", "Beginning")
+
+    def opened():
+        got = page.evaluate(
+            "() => { const p = document.querySelector('arcgis-popup');"
+            " const f = p.selectedFeature;"
+            " return {open: p.open, a: f && f.attributes}; }"
+        )
+        assert got["open"] and got["a"], f"no popup: {got}"
+        assert got["a"].get(want[0]) == want[1], got
+        return got
+
+    problems = []
+    try:
+        view.wait(opened, timeout=30)
+    except AssertionError as e:
+        problems.append(str(e))
+    view.shot("popup")
+    problems += view.problems()
+    assert not problems, f"{view.name}:\n  " + "\n  ".join(problems)
+
+
+def test_old_addresses_go_to_the_map(chrome):
+    p, browser = chrome
+    step = STEPS[1]
+    rows = [
+        ("explore.html", "map.html", True),
+        (f"explore.html?step={step}#map", f"map.html?step={step}#map", True),
+        ("aquifer.html", WATER, True),
+        ("aquifer.html?view=district", f"{WATER}&view=district", True),
+        ("aquifer.html?view=district", WATER, False),
+    ]
+    problems = []
+    for old, new, js in rows:
+        context = browser.new_context(
+            viewport={"width": 390, "height": 844},
+            is_mobile=True,
+            has_touch=True,
+            java_script_enabled=js,
+            user_agent=p.devices["iPhone 13"]["user_agent"],
+        )
+        view = SiteView(
+            f"moved-{slug(old)}-{'js' if js else 'nojs'}",
+            context.new_page(),
+            True,
+        )
+        page = view.page
+        try:
+            page.goto(f"{BASE}/{old}", wait_until="commit")
+            page.wait_for_url("**/map.html*", timeout=30_000)
+            landed = page.url.removeprefix(f"{BASE}/")
+            if landed != new:
+                problems.append(f"{old} (JavaScript {js}): {landed}, not {new}")
+            if js and "step=" in old:
+                page.wait_for_function(SCENE_READY, timeout=LOAD_S * 1000)
+                page.wait_for_function(
+                    "(s) => { const p = document.querySelector('arcgis-popup');"
+                    " return p.open && p.selectedFeature &&"
+                    " p.selectedFeature.attributes.step === s; }",
+                    arg=step,
+                    timeout=30_000,
+                )
+            if js:
+                page.go_back(wait_until="commit")
+                if "explore.html" in page.url or "aquifer.html" in page.url:
+                    problems.append(f"{old}: Back returns to the moved page")
+        except PlaywrightError as e:
+            problems.append(f"{old} (JavaScript {js}): {type(e).__name__}: {e}")
+            view.shot("FAILED")
+        finally:
+            view.close()
+    assert not problems, "\n  ".join(problems)
 
 
 @pytest.mark.parametrize(

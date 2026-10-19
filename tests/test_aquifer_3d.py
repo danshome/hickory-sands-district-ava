@@ -1,16 +1,17 @@
-"""The Hickory Aquifer in 3D (#135): docs/aquifer.html and its data.
+"""The Hickory Aquifer in 3D (#135): the map's aquifer data.
 
-The page's data, docs/assets/aquifer/, is made by src/site/make_aquifer_3d.py
-from the downloads resources/aquifer/inputs.csv pins and committed inputs.
-These check, on the committed files: that the data is up to date with its
-record (the build's own check, which needs no download); that the page and
-its scripts read only files that exist; that the page loads the site's one
-pinned SDK release; that no well report holds a removed field, or free text
-with a title, a company's name, a phone number, an e-mail or street address,
-or (in a note about people) a role word or initials; that stats.json holds
-every figure the page shows; that every file is under the hooks' 2 MB; and
-the wording. And, on made-up records, what the check calls stale.
-Standard library only, so the lint workflow runs these.
+The data the map (docs/map.html) draws below the ground and beside the
+district, docs/assets/aquifer/, is made by src/site/make_aquifer_3d.py from the
+downloads resources/aquifer/inputs.csv pins and committed inputs. These check,
+on the committed files: that the data is up to date with its record (the
+build's own check, which needs no download); that every well has a head, and
+every tile and report cell exists; that no well report holds a removed field,
+or free text with a title, a company's name, a phone number, an e-mail or
+street address, or (in a note about people) a role word or initials; that the
+vineyards name no one and keep the petition's names; and that every file is
+under the hooks' 2 MB. And, on made-up records, what the check calls stale.
+The page and its scripts are test_map3d.py's. Standard library only, so the
+lint workflow runs these.
 """
 
 import json
@@ -28,9 +29,6 @@ from src.site.aquifer import vineyards
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DOCS = os.path.join(ROOT, "docs")
 DATA = os.path.join(DOCS, "assets", "aquifer")
-SCRIPTS = ("aquifer3d.js", "aquifer-wells.js")
-SDK = "https://js.arcgis.com/5.1/"
-FORMATS = ("int", "pct", "num", "deg", "date", "scale")
 
 
 def read(*parts):
@@ -40,16 +38,6 @@ def read(*parts):
 
 def load(*parts):
     return json.loads(read(DATA, *parts))
-
-
-@pytest.fixture(scope="module")
-def page():
-    return read(DOCS, "aquifer.html")
-
-
-@pytest.fixture(scope="module")
-def scripts():
-    return {name: read(DOCS, "assets", name) for name in SCRIPTS}
 
 
 @pytest.fixture(scope="module")
@@ -73,54 +61,6 @@ def test_the_manifest_pins_https_downloads():
         assert row["url"].startswith("https://"), row["name"]
         assert re.fullmatch(r"\d{4}-\d{2}-\d{2}", row["snapshot"]), row
         assert re.fullmatch(r"\d{4}-\d{2}-\d{2}", row["fetched"]), row
-
-
-def test_the_page_loads_the_pinned_sdk_then_its_script(page):
-    found = re.findall(r'<script type="module" src="([^"]+)"', page)
-    assert found == [SDK, "assets/aquifer3d.js"]
-    assert not re.findall(r"js\.arcgis\.com/(?!5\.1/)", page)
-
-
-def test_the_page_stays_out_of_search_engines(page):
-    assert '<meta name="robots" content="noindex">' in page
-
-
-def test_the_page_says_so_when_its_view_cannot_load(page):
-    assert '<p class="map-nojs' in page
-    assert "<noscript>" not in page
-
-
-def test_the_land_page_links_here():
-    assert 'href="aquifer.html"' in read(DOCS, "land.html")
-
-
-@pytest.mark.parametrize("name", SCRIPTS)
-def test_scripts_never_parse_text_as_html(scripts, name):
-    for sink in ("innerHTML", "outerHTML", "insertAdjacentHTML", "write("):
-        assert sink not in scripts[name], f"{name} uses {sink}"
-
-
-def test_every_file_the_scripts_name_exists(scripts):
-    # Each script names its files after its own DATA folder; the tiles and
-    # the reports, named by key, are the next test's.
-    named = set()
-    for name, folder in (("aquifer3d.js", ""), ("aquifer-wells.js", "wells/")):
-        found = re.findall(
-            r'(?:\$\{DATA\}|")([\w.-]+\.(?:json|geojson|bin))\b', scripts[name]
-        )
-        named |= {folder + f for f in found}
-    assert {
-        "stats.json",
-        "hickory-k2.json",
-        "hickory-k4.json",
-        "drill-grid.bin",
-        "vineyard-wells.json",
-        "wells/index.json",
-    } <= named
-    for name in named:
-        assert os.path.isfile(os.path.join(DATA, name)), name
-    assert '"data/boundary.geojson"' in scripts["aquifer3d.js"]
-    assert os.path.isfile(os.path.join(DOCS, "data", "boundary.geojson"))
 
 
 def test_every_well_has_a_head_in_the_heads_files(index):
@@ -149,74 +89,6 @@ def test_every_tile_and_report_cell_exists(index):
         assert os.path.isfile(os.path.join(wells, f"detail-{cell}.json")), cell
     drawn = sum(t["count"] for t in index["tiles"].values())
     assert drawn == len(index["filter_keys"])
-
-
-def test_every_figure_the_page_shows_is_in_the_stats(page):
-    figures = load("stats.json")["figures"]
-    marks = re.findall(
-        r'data-stat="([a-z0-9_]+)"(?: data-format="(\w+)")?', page
-    )
-    assert marks
-    for name, form in marks:
-        assert name in figures, f"stats.json has no {name}"
-        assert (form or "int") in FORMATS, form
-        assert figures[name] is not None, name
-    assert page.count("data-stat") == len(marks), (
-        "write data-stat, then data-format"
-    )
-
-
-def test_the_wells_scales_come_from_the_stats(scripts):
-    # Every well's head from about the district's scale in, the lines closer
-    # in (#135): the page reads both scales from stats.json, never types them.
-    figures = load("stats.json")["figures"]
-    assert figures["wells_all_scale"] > figures["wells_lines_scale"] > 0
-    main = scripts["aquifer3d.js"]
-    assert "allScale: stats.wells_all_scale" in main
-    assert "linesScale: stats.wells_lines_scale" in main
-    assert "detailScale" not in main
-    wells = scripts["aquifer-wells.js"].replace("_", "")
-    for name in ("wells_all_scale", "wells_lines_scale"):
-        assert f"{figures[name]:.0f}" not in wells, name
-
-
-def test_the_wells_group_has_the_controls_asked_for(page):
-    for label in (
-        ">Show wells<",
-        ">Well use (the report's WellUse)<",
-        ">Water volume, highest tested yield (gpm)<",
-        ">Reported depth<",
-        ">Hickory Aquifer only<",
-        ">Water levels<",
-    ):
-        assert label in page, label
-    assert page.count(">Include wells with no value<") == 2
-    # Water levels start off; "Show wells" and the group's switch start on.
-    assert '<input type="checkbox" data-switch="wells-water">' in page
-    assert 'id="aq-wells-show" checked' in page
-    assert 'data-switch="wells" data-group-switch="wells" checked' in page
-
-
-def test_the_panel_lists_the_groups_in_drawing_order(page):
-    groups = re.findall(r'<section class="lp-group" data-group="(\w+)"', page)
-    assert groups == [
-        "view",
-        "places",
-        "wells",
-        "vineyards",
-        "boundaries",
-        "geology",
-        "aquifer",
-    ]
-
-
-def test_no_figure_is_typed_in_the_page(page):
-    figures = load("stats.json")["figures"]
-    text = re.sub(r"<[^>]+>", " ", page)
-    for name in ("wells_drawn", "official_sqmi", "layer7_sqmi", "k2_blocks"):
-        value = figures[name]
-        typed = (f"{round(value):,}", f"{round(value)}")
-        assert not any(t in text for t in typed), (name, value)
 
 
 def test_no_well_report_keeps_a_name_or_contact():
@@ -411,17 +283,6 @@ def test_the_vineyard_check_refuses_a_name():
     assert not vineyards.named('{"name": "Robert Clay Vineyards"}')
 
 
-def test_every_vineyard_has_a_category_and_a_layer(page, scripts):
-    categories = [c for c, _ in params.VINEYARD_CATEGORIES]
-    features = json.loads(read(VINEYARDS))["features"]
-    assert {f["properties"]["category"] for f in features} <= set(categories)
-    for f in features:
-        assert f["properties"]["source"], f["properties"]["name"]
-    for category in categories:
-        assert f'vineyardLayer("{category}"' in scripts["aquifer3d.js"]
-    assert page.count('data-switch="vineyards-') == len(categories)
-
-
 def test_every_file_is_under_the_hooks_limit():
     big = {
         path: size
@@ -429,15 +290,6 @@ def test_every_file_is_under_the_hooks_limit():
         if size >= params.MAX_FILE_BYTES
     }
     assert not big
-
-
-def test_the_wording():
-    text = re.sub(r"<[^>]+>", " ", read(DOCS, "aquifer.html"))
-    text += read(DOCS, "assets", "aquifer3d.js")
-    assert "agreed" not in text.lower()
-    assert not re.search(r"Hickory Sandstone(?! Member)", text)
-    assert not re.search(r"\bDan\b(?! McLaughlin)", text)
-    assert "proposed" in text
 
 
 # ---- What the check calls stale, on made-up records.

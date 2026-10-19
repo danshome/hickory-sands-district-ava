@@ -1,4 +1,5 @@
-/* The Hickory Aquifer in 3D (aquifer.html, #135): the stage, the layer panel (lp-) and "About this map".
+/* The map (map.html; design research/design-the-map-2026-10-19), made from the Hickory Aquifer in 3D (#135):
+   the stage, the layer panel (lp-), the map's buttons and "About this map".
    Only site.css's tokens, plus the scene's own colours for the swatches. The panel's design:
    research/design-3d-panel-2026-10-18 (#135). */
 .aq{--panel:rgba(20,21,18,.9);--hair:#3b3d34;--soft:#ddd5c6;--peek:64px;
@@ -186,3 +187,31 @@ html:not(.js) .about-close{display:none}
   .about-toc,.about-body{padding-inline:16px}
 }
 @media(max-width:640px) and (prefers-reduced-motion:reduce){.lp{transition:none}}
+
+/* ---- The map (map.html): what the one map adds to the aquifer page. */
+/* View's rows for a layer below the ground (Go to, From, Exaggeration) show only while one is on. */
+.aq:not(.is-underground) .lp-under{display:none}
+/* The district: its figures (data-figure, written by the build), Walk the line and the downloads. */
+.lp-figs{margin:.4rem 0 .15rem!important;font-size:.8125rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.lp-docs{display:grid;gap:.1rem;margin-top:.2rem}
+.lp-dl{display:flex;flex-wrap:wrap;align-items:center;gap:.1rem 1rem;font-size:.8125rem;color:var(--muted)}
+.lp-dl a{display:inline-flex;align-items:center;min-height:32px;color:var(--bone);text-decoration:underline;text-underline-offset:3px}
+.lp-dl a:hover{color:var(--sand)}
+.sw-step{height:12px;background:radial-gradient(circle at 11px 6px,var(--bone) 0 3px,transparent 3.5px),linear-gradient(var(--sand),var(--sand)) 0 5px/100% 2px no-repeat}
+.lp-wells-ui[hidden]{display:none}
+.lp-wells-off{margin-top:.2rem!important}
+.about-docs{display:flex;flex-direction:column;margin-top:1rem}
+.about-docs small{color:var(--muted)}
+.about-docs>a{border-color:var(--line)}
+/* 2D / 3D: a button on the map with the zoom, Home and compass buttons, in the SDK's dark look. */
+.map-look{display:grid;place-items:center;width:32px;height:32px;padding:0;font:600 .75rem/1 var(--sans);letter-spacing:.04em;color:#d6d6d6;background:#2b2b2b;border:0;box-shadow:0 1px 2px rgba(0,0,0,.3);cursor:pointer}
+.map-look:hover{color:var(--sand)}
+.map-look[aria-pressed="true"]{color:var(--sand)}
+.map-look:focus-visible{outline:2px solid var(--sand);outline-offset:2px}
+@media(max-width:699px),(pointer:coarse){.map-look{width:44px;height:44px;font-size:.875rem}}
+/* A phone: the status line sits at the top, clear of the map's buttons on the right. */
+@media(max-width:640px){
+  .aq-status{left:10px;right:auto;max-width:calc(100% - 84px)}
+  .lp-dl a{min-height:44px}
+  .seg button{min-width:44px}
+}

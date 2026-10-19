@@ -12,7 +12,7 @@ that does.
 
 | category | the page's layer | vineyards |
 |---|---|---|
-| `hsd` | Hickory Sands District vineyards | the confirmed blocks inside the proposed district: Blackmon, Certenburg, Parr, Peters Prairie, Pontotoc, Robert Clay, Tallent and Verasion Hills (formerly Two Tales Vineyards, in the petition's Exhibit 3; the same vineyard under a new owner and name) |
+| `hsd` | Hickory Sands District vineyards | the confirmed blocks inside the proposed district: Blackmon, Certenburg, Parr, Peters Prairie, Pontotoc, Robert Clay, Tallent and Two Tales (the petition's Exhibit 3 name; near Pontotoc. The petitioners' 2022 layer called it "Verasion Hills", which is another vineyard, near Fredericksburg) |
 | `llano-uplift` | Llano Uplift vineyards | outside the district, inside TTB's proposed Llano Uplift AVA: 1900 Vineyard, Castell, Loyal Valley, Fall Creek, Perissos, Uplift, Torr Na Lochs, Purple Calf, and Heart of Art Vineyard |
 | `under-development` | Under development | I Don't Know Vineyard (its 2022 outline) and Paisano Vineyards (two planned blocks, approximate, from its planting plan) |
 | `historical` | Historical | Spiller Mine and Akashic (their 2022 outlines) |

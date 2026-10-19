@@ -3,7 +3,7 @@
 It opens on the proposed revision alone, straight down, with a popup for every
 step and point; every other group (places, wells, vineyards, boundaries,
 geology, the Hickory Aquifer) is off until it is turned on, and loads its data
-only then. The menu's "The water" opens it with the aquifer, the vineyards and
+only then. The menu's "The aquifer" opens it with the aquifer, the vineyards and
 the places on (map.html?layers=aquifer,vineyards,places). These check, on the
 committed files: that the page loads the site's one pinned SDK release and its
 script; that its scripts read only files that exist; that only the district's
@@ -90,8 +90,9 @@ def test_the_page_says_so_when_its_view_cannot_load(page):
     assert 'href="walk.html"' in note.group(1)
 
 
-def test_every_menu_opens_the_water():
-    # The menu keeps its seven entries; "The water" is the map as the water.
+def test_every_menu_lists_the_maps():
+    # "The maps" (#179): The map, The aquifer (the map with the aquifer on)
+    # and Walk the line, in that order, on every page.
     pages = [
         name
         for name in sorted(os.listdir(DOCS))
@@ -102,12 +103,19 @@ def test_every_menu_opens_the_water():
         text = read(DOCS, name)
         nav = re.search(r'<nav aria-label="Main navigation">(.*?)</nav>', text)
         assert nav, name
-        water = re.findall(r'<a href="(/?)([^"]+)"[^>]*>The water</a>', nav[1])
-        assert water == [("/" if name == "404.html" else "", WATER)], name
-        # No page marks it in its HTML: the map marks it from its address.
-        assert 'aria-current="page">The water<' not in text, name
+        group = re.search(r'<div class="nav-group"[^>]*>(.*?)</div>', nav[1])
+        assert group and ">The maps<" in group[1], name
+        maps = re.findall(r'<a href="(/?)([^"]+)"[^>]*>([^<]+)</a>', group[1])
+        root = "/" if name == "404.html" else ""
+        assert maps == [
+            (root, "map.html", "The map"),
+            (root, WATER, "The aquifer"),
+            (root, "walk.html", "Walk the line"),
+        ], name
+        # The aquifer is marked by the map's script, from its address.
+        assert 'aria-current="page">The aquifer<' not in text, name
     template = read(ROOT, "src", "site", "walk.template.html")
-    assert f'<a href="{WATER}">The water</a>' in template
+    assert f'<a href="{WATER}">The aquifer</a>' in template
 
 
 def test_the_land_page_links_the_water():

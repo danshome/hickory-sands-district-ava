@@ -35,7 +35,8 @@ hasTouch); and a 1440x900 desktop. On every page at every viewport:
 - the menu: a hamburger named "Menu" that opens by a tap (a click on the
   desktop) and by the keyboard, turns into a cross while open and closes the
   same ways; inside the screen; its links in order (The boundary, The land,
-  The water, The vineyards, Status, Journal, About & contact), the page's
+  The maps: The map, The aquifer, Walk the line; The vineyards, Status,
+  Journal, About & contact), the page's
   own marked aria-current, and every one answers 200;
 - the header's place line reads "Llano Uplift · Texas Hill Country" and,
   where it shows, sits on one line between the home link and the menu;
@@ -50,9 +51,9 @@ hasTouch); and a 1440x900 desktop. On every page at every viewport:
   <details> or <dialog>). Every other one is, so a box collapsed to 1.5 px
   or less fails as too small.
 Every menu link, tapped on a phone and clicked on the desktop, opens its
-page, which marks it as the current one (The water: the map as the water,
-map.html?layers=aquifer,vineyards,places). The place line also fits at
-700 px, the narrowest screen that shows it. A page that has moved
+page, which marks it as the current one (The aquifer: the map with the
+aquifer on, map.html?layers=aquifer,vineyards,places). The place line also
+fits at 700 px, the narrowest screen that shows it. A page that has moved
 (explore.html, aquifer.html) is not a page of its own: it sends the reader on
 to the map.
 The map (map.html), at every viewport: its panel's links (on a phone, with
@@ -73,7 +74,7 @@ The map, on two phones and the desktop: it opens on the district alone and
 loads none of the aquifer's data but its figures; the wells, turned on, load
 and start at the script's DEFAULT_FILTER (irrigation wells that tested at
 25 gpm or more), and Reset comes back to it; ?layers=all turns on every group
-without an error; The water draws the aquifer and is headed and marked as the
+without an error; The aquifer draws the aquifer and is headed and marked as the
 water; ?step= opens that step's popup; and the old addresses, explore.html and
 aquifer.html, go to the map with their query and #fragment (and, without
 JavaScript, by their meta refresh).
@@ -186,7 +187,9 @@ MENU = (".site-header details.navigation nav a",)
 MENU_LINKS = (
     ("The boundary", "boundary.html"),
     ("The land", "land.html"),
-    ("The water", WATER),
+    ("The map", "map.html"),
+    ("The aquifer", WATER),
+    ("Walk the line", "walk.html"),
     ("The vineyards", "vineyards.html"),
     ("Status", "status.html"),
     ("Journal", "journal.html"),
@@ -1315,14 +1318,14 @@ def test_the_water(site_page):
     if got["title"] != "The Hickory Aquifer" or not got["docTitle"].startswith(
         "The Hickory Aquifer in 3D"
     ):
-        problems.append(f"The water is not headed as the aquifer: {got}")
-    if got["current"] != ["The water"]:
-        problems.append(f"the menu marks {got['current']}, not The water")
+        problems.append(f"The aquifer is not headed as the aquifer: {got}")
+    if got["current"] != ["The aquifer"]:
+        problems.append(f"the menu marks {got['current']}, not The aquifer")
     if got["tilt"] < 30 or got["ground"] != 0.4:
-        problems.append(f"The water does not open tilted, see-through: {got}")
+        problems.append(f"The aquifer does not open tilted, see-through: {got}")
     dark = page.get_attribute('button[data-basemap="dark"]', "aria-pressed")
     if dark != "true":
-        problems.append("The water does not open on the dark basemap")
+        problems.append("The aquifer does not open on the dark basemap")
     settle(view, SCENE)
     view.shot("water")
     problems += view.problems()
@@ -1775,7 +1778,7 @@ def test_the_wells_start_filtered_and_follow_the_filters(site_page):
     view, page = site_page, site_page.page
     turn_on(view, "wells")
     page.wait_for_function("!!window.aquiferWells", timeout=LOAD_S * 1000)
-    # as The water opened before the map: the whole aquifer, from above
+    # as The aquifer opened before the map: the whole aquifer, from above
     page.locator('button[data-place="whole"]').dispatch_event("click")
     page.wait_for_timeout(2500)
     settle(view, SCENE)

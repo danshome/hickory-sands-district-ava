@@ -40,12 +40,14 @@ const setText = (id, text) => {
 // aquifer page was; otherwise no menu link is this page: the map is reached
 // from The boundary, Walk the line and the step links, as Explore was.
 const opened = readState(location.search);
+// The menu's The map (map.html) or The aquifer (with a query), by the address.
+for (const a of document.querySelectorAll(".site-header nav a")) {
+  const href = a.getAttribute("href") || "";
+  if (!href.replace(/^\//, "").startsWith("map.html")) continue;
+  if (href.includes("?") === Boolean(opened.water)) a.setAttribute("aria-current", "page");
+  else a.removeAttribute("aria-current");
+}
 if (opened.water) {
-  for (const a of document.querySelectorAll(".site-header nav a")) {
-    if ((a.getAttribute("href") || "").startsWith("map.html")) {
-      a.setAttribute("aria-current", "page");
-    }
-  }
   setText("aq-eyebrow", "The Llano Uplift in 3D");
   setText("aq-title", "The Hickory Aquifer");
   setText("aq-lede", "The ground is see-through. Drag to turn; go below to look up.");
@@ -1205,8 +1207,20 @@ if (toggle) {
     if (event.key === "Escape" && phone.matches && panel.classList.contains("is-open")) sheet(false);
   });
 }
+// Wider than a phone, the panel minimizes to its title, so the view is
+// clear on a tablet or an unfolded phone (#179); a phone has its sheet.
+const minimize = document.getElementById("aq-min");
+function minimized(min) {
+  if (!panel || !minimize) return;
+  panel.classList.toggle("is-min", min);
+  minimize.setAttribute("aria-expanded", String(!min));
+  minimize.setAttribute("aria-label", min ? "Show the panel" : "Minimize the panel");
+  pad();
+}
+minimize?.addEventListener("click", () => minimized(!panel.classList.contains("is-min")));
 const fit = () => {
   if (phone.matches) {
+    if (panel.classList.contains("is-min")) minimized(false);
     sheet(false, false);
   } else {
     panel.classList.remove("is-open");

@@ -6,6 +6,11 @@ For every AI coding agent working in this repository: Claude Code, Codex, Muse, 
 [CONTRIBUTING.md](CONTRIBUTING.md) (the same workflow, for people) and [BUILD.md](BUILD.md) (the layout and the
 checks). Where this file and CLAUDE.md differ, CLAUDE.md wins.
 
+> **This repository is public.** Everything in it, and every issue, pull request, comment, commit message and
+> branch name, can be read by anyone. Never write about private conversations (emails, calls or meetings with
+> TTB, the growers or anyone else), and never include personal information: people's names (beyond the public
+> credits), contact details, addresses or anything said in confidence. Keep those with Dan, privately.
+
 ## The rules no agent may break
 
 1. **Never push to `main`.** Not a commit, not a merge, not a force push. `main` is protected, and a push to it is

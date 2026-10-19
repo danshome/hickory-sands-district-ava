@@ -2,6 +2,11 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+> **This repository is public.** Everything in it, and every issue, pull request, comment, commit message and
+> branch name, can be read by anyone. Never write about private conversations (emails, calls or meetings with
+> TTB, the growers or anyone else), and never include personal information: people's names (beyond the public
+> credits), contact details, addresses or anything said in confidence. Keep those with Dan, privately.
+
 ## What this repo is
 
 The Hickory Sands District AVA boundary as proposed to TTB (Docket TTB-2026-0005, Notice No. 243, 91 FR 52576): TTB's

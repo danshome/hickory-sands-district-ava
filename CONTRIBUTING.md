@@ -5,6 +5,12 @@ This repository holds the Hickory Sands District AVA boundary as proposed to TTB
 and its maintainer is Dan McLaughlin, for the petitioners. The same rules apply to people and to AI agents. Agents also
 read [AGENTS.md](AGENTS.md) and [CLAUDE.md](CLAUDE.md).
 
+
+> **This repository is public.** Everything in it, and every issue, pull request, comment, commit message and
+> branch name, can be read by anyone. Never write about private conversations (emails, calls or meetings with
+> TTB, the growers or anyone else), and never include personal information: people's names (beyond the public
+> credits), contact details, addresses or anything said in confidence. Keep those with Dan, privately.
+
 ## Reporting a problem
 
 Open a [GitHub issue](https://github.com/danshome/hickory-sands-district-ava/issues). Say what is wrong and where:

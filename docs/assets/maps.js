@@ -5,15 +5,17 @@
 import { apiKey } from "./map-config.js";
 
 const load = (name) => $arcgis.import(`@arcgis/core/${name}.js`);
-const [config, Map, Basemap, GeoJSONLayer, GraphicsLayer, Graphic] =
+const [config, Map, Basemap, GeoJSONLayer, GraphicsLayer, Graphic, Viewpoint] =
   await Promise.all(
     ["config", "Map", "Basemap", "layers/GeoJSONLayer", "layers/GraphicsLayer",
-      "Graphic"].map(load),
+      "Graphic", "Viewpoint"].map(load),
   );
 
 export const reducedMotion =
   matchMedia("(prefers-reduced-motion: reduce)").matches;
 export const hasBasemap = apiKey !== "";
+// A phone, or any touch screen: the map's buttons at the SDK's large size.
+const touchSized = matchMedia("(max-width: 699px), (pointer: coarse)");
 
 const SAND = [199, 151, 111];
 const BONE = [238, 232, 219];
@@ -48,7 +50,7 @@ function basemap(name) {
 // A popup's content: rows of a label and a value, then the step's text. The
 // popup draws inside its own shadow DOM, where the site's stylesheet does not
 // reach, so the few styles are set here.
-const LABEL = "font-size:.625rem;letter-spacing:.12em;text-transform:uppercase;" +
+const LABEL = "font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;" +
   "opacity:.7;margin-right:.4rem";
 const ROW = "margin:.15rem 0;font-size:.8125rem;line-height:1.45";
 const TEXT = "margin:.8rem 0 0;font-family:'Cormorant Garamond',Georgia,serif;" +
@@ -176,7 +178,107 @@ export async function boundaryMap(element, { popups = true, quiet = false } = {}
   await boundary.load();
   const extent = boundary.fullExtent.clone().expand(1.08);
   await element.goTo(extent, { animate: false });
+  // Home goes back to the whole line, whatever the map's size by then.
+  const home = element.querySelector("arcgis-home");
+  if (home) {
+    home.viewpoint = new Viewpoint({ targetGeometry: extent });
+  }
+  sizeControls(element);
+  touchSized.addEventListener("change", () => sizeControls(element));
+  const popup = element.querySelector("arcgis-popup");
+  if (popups && popup) {
+    keepSelectedInView(element, popup);
+  }
   return { element, layers: { boundary, steps, points, marked }, extent };
+}
+
+// On a phone or a touch screen the map's buttons are the SDK's large ones,
+// and the popup has no button to undock it (it docks along the bottom of a
+// narrow map).
+function sizeControls(element) {
+  const large = touchSized.matches;
+  for (const control of element.querySelectorAll("arcgis-zoom, arcgis-home")) {
+    control.visualScale = large ? "l" : "m";
+  }
+  const popup = element.querySelector("arcgis-popup");
+  if (popup) {
+    popup.dockOptions = { ...popup.dockOptions, buttonEnabled: !large };
+  }
+}
+
+// On a narrow map the popup docks along the bottom, over the step just
+// tapped. While it is docked there, the view's bottom is padded by its
+// height, so the map's centre (and the popup's own "Zoom to") is the part of
+// the map left above it, and the place tapped moves to the middle of that
+// part. Closed, the padding goes again. The picture never jumps when the
+// padding changes.
+function keepSelectedInView(element, popup) {
+  let box = null; // the popup's visible part, in its shadow DOM
+  let shown = null; // the place last moved to, and the padding then
+  let moving = null;
+  const resized = new ResizeObserver(() => fit());
+
+  function dockedHeight() {
+    const found = popup.shadowRoot?.querySelector(".main-container") ?? null;
+    if (found !== box) {
+      resized.disconnect();
+      box = found;
+      if (box) {
+        resized.observe(box);
+      }
+    }
+    const docked = popup.open && popup.dockEnabled &&
+      String(popup.currentDockPosition ?? "").startsWith("bottom");
+    return docked && box ? Math.ceil(box.getBoundingClientRect().height) : 0;
+  }
+
+  // Padding moves the view's centre into the part left; the point drawn at
+  // that part's middle becomes the centre, so the picture stays put.
+  function pad(bottom) {
+    const { view } = element;
+    const still = view.toMap({ x: view.width / 2, y: (view.height - bottom) / 2 });
+    element.padding = { bottom };
+    if (still) {
+      view.center = still;
+    }
+  }
+
+  async function fit() {
+    // The popup draws its content a frame or two after it opens.
+    await new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done)));
+    const bottom = dockedHeight();
+    if ((element.padding?.bottom ?? 0) !== bottom) {
+      pad(bottom);
+    }
+    const place = bottom ? popup.location : null;
+    if (!place) {
+      shown = null;
+      return;
+    }
+    if (shown?.place === place && shown.bottom === bottom) {
+      return;
+    }
+    shown = { place, bottom };
+    moving?.abort();
+    moving = new AbortController();
+    element
+      .goTo({ center: place }, {
+        animate: !reducedMotion,
+        duration: 450,
+        signal: moving.signal,
+      })
+      .catch((error) => {
+        if (!interrupted(error)) {
+          console.error("the map could not show the selected step", error);
+        }
+      });
+  }
+
+  popup.addEventListener("arcgisPropertyChange", (event) => {
+    if (["open", "selectedFeature", "collapsed"].includes(event.detail?.name)) {
+      fit();
+    }
+  });
 }
 
 // When a map cannot be made (Esri's service or the data did not load), the page

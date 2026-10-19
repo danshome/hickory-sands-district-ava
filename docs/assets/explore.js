@@ -7,6 +7,9 @@ try {
   const element = document.querySelector(".explore-map arcgis-map");
   const { layers } = await boundaryMap(element);
   layers.points.minScale = 400000;
+  // On a touch screen one finger scrolls the page and two move the map, so
+  // the map never holds the page still; a mouse drags it as before.
+  element.view.navigation.browserTouchPanEnabled = false;
 
   const switcher = document.querySelector(".map-basemaps");
   if (hasBasemap && switcher) {

@@ -423,6 +423,8 @@
 
   var current = 0;
   var hold = 0; // until then, scrolling the list does not move the figure
+  var holdEnds = 0; // the timer that ends the hold
+  var onLine = null; // the stage on the reading line, kept during a hold too
 
   function stepper(label, arrow, by) {
     var button = el("button", "geo-step");
@@ -512,11 +514,23 @@
     return true;
   }
 
+  // The hold is over: the drawing shows the stage on the reading line, which
+  // the reader may have scrolled to while the hold lasted.
+  function release() {
+    hold = 0;
+    clearTimeout(holdEnds);
+    if (onLine && follows()) {
+      show(items.indexOf(onLine) + 1, false);
+    }
+  }
+
   function go(n) {
     if (!show(n, true) || !follows()) {
       return;
     }
     hold = Date.now() + 1200;
+    clearTimeout(holdEnds);
+    holdEnds = setTimeout(release, 1200);
     var li = stages[n - 1].li;
     var behavior = reduce.matches ? "auto" : "smooth";
     if (n === 1 && !wide.matches) {
@@ -579,20 +593,32 @@
       margin = -at + "px 0px " + -(vh - at - 1) + "px 0px";
     }
     watch = new IntersectionObserver(function (entries) {
-      if (!follows() || Date.now() < hold) {
-        return;
-      }
       entries.forEach(function (entry) {
         if (entry.isIntersecting) {
-          show(items.indexOf(entry.target) + 1, false);
+          onLine = entry.target;
+        } else if (entry.target === onLine) {
+          onLine = null;
         }
       });
+      if (!follows() || Date.now() < hold || !onLine) {
+        return;
+      }
+      show(items.indexOf(onLine) + 1, false);
     }, { rootMargin: margin });
     items.forEach(function (li) {
       watch.observe(li);
     });
   }
   observe();
+  // The reader's own touch or wheel ends a hold at once (a tap on the
+  // buttons is theirs to hold), so the drawing follows the scroll it starts.
+  function reader(event) {
+    if (hold && !controls.contains(event.target)) {
+      release();
+    }
+  }
+  window.addEventListener("touchstart", reader, { passive: true });
+  window.addEventListener("wheel", reader, { passive: true });
   var again = 0;
   window.addEventListener("resize", function () {
     clearTimeout(again);

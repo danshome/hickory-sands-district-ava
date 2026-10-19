@@ -74,6 +74,10 @@ Other commands:
   - quadrangle titles: a GeoPDF and a GeoTIFF for each quadrangle of paragraph (b), titled with its edition (#44);
   - wording: no "agreed", "ours", "our boundary", "TTB's published polygon", "final text" or bare "Hickory Sandstone";
   - group: public, its tags, its description linking the dashboard and the read-me.
+- `./build.sh check-site` drives Google Chrome over every page of the website at phone sizes and on a desktop
+  (`tests/live/test_site_mobile.py`, see Tests below): the live site, or `HSD_SITE_URL`; `./build.sh check-site --local`
+  serves this checkout's `docs/` on 127.0.0.1 (port 8790, or `HSD_SITE_PORT`) for the run. Run it with `--local` before
+  a website change is merged, and without it after the deploy.
 - `./build.sh check-live` checks the public site the way TTB sees it, without signing in (`src/publish/agol_check.py`,
   anonymous read-only requests; it changes nothing, so it is safe to run any time). One line per check, and every failure
   names the item and what is wrong; it exits 1 on any failure:
@@ -94,7 +98,8 @@ Other commands:
     and the documents attached to the AVA polygon match the build's.
 
   Without build outputs the figures and files are skipped with a note. Then it runs the browser tests of the published
-  dashboard (`tests/live`, see Tests below). Right after a publish ArcGIS can take a minute to show a change to anonymous
+  dashboard (`tests/live/test_dashboard.py`, see Tests below), and only those: the website's have their own command,
+  so a GitHub Pages delay or a fault on the website never fails an ArcGIS publish after its layers are uploaded. Right after a publish ArcGIS can take a minute to show a change to anonymous
   users: run `./build.sh check-live` again before chasing a failure.
 
 The only prerequisites are Homebrew (https://brew.sh, on macOS or Linux), Google Chrome on Linux, and network access the
@@ -109,7 +114,8 @@ requirements.txt         compiled from it: every package and indirect dependency
 requirements-dev.in/.txt the same for the lint, audit and lock tools, pytest and Playwright
 .pre-commit-config.yaml  the hooks; .githooks/pre-commit runs them; ruff.toml, .codespellrc, .secrets.baseline;
                          .editorconfig: the same rules for editors
-pytest.ini, tests/       the unit tests (./build.sh test); tests/live/: the browser tests of the dashboard (check-live);
+pytest.ini, tests/       the unit tests (./build.sh test); tests/live/: the browser tests of the dashboard
+                         (check-live) and of the website (check-site);
                          tests/fixtures/publish/: the publish dry run's item list and a dry run
 README.md, BUILD.md      this documentation; CLAUDE.md: notes for Claude Code; LICENSE.txt
 src/
@@ -304,7 +310,7 @@ network access, Google Chrome and the published site, so `./build.sh test` and t
 (`pytest.ini`: `-m "not live"`); `./build.sh check-live` (and so every publish) runs them after `agol_check.py`. Alone:
 
 ```
-.venv/bin/python -m pytest -v -m live tests/live
+.venv/bin/python -m pytest -v -m live tests/live/test_dashboard.py
 ```
 
 - two phones, emulated as Esri requires for its phone layout (Playwright's iPhone 14 and Pixel 7: their user agent,
@@ -326,6 +332,49 @@ The figures (area, steps, reworded steps, big differences, acres, the corrected 
 `target/work` (or `HSD_WORK`), else from the publish of Oct. 17, 2026. Every test leaves a screenshot,
 `target/browser-tests/<viewport>-<test>.png` (`-FAILED.png` when it failed, named in the failure's report), and
 `<viewport>-loaded.png` shows each page as it first loaded. A page that does not load in two minutes is tried once more.
+
+### Browser tests of the website at phone sizes
+
+Every change to the website is tested at phone sizes before it is merged, against a local server of its branch, and
+live after it is deployed (Dan, 2026-10-18: mobile is always tested). `tests/live/test_site_mobile.py` (marked `live`)
+opens every page in `docs/` in Google Chrome, as the dashboard's tests do, on three phones held upright, emulated with
+their user agent, touch and pixel ratio (390x844, 360x780 and 375x667), and on a 1440x900 desktop:
+
+```
+./build.sh check-site --local    # before the merge: this checkout's docs/ on http://127.0.0.1:8790 (or HSD_SITE_PORT)
+./build.sh check-site            # after the deploy: https://hickorysandsdistrictava.org
+```
+
+or by hand, against a server you started:
+
+```
+python3 -m http.server 8790 --bind 127.0.0.1 -d docs
+HSD_SITE_URL=http://127.0.0.1:8790 .venv/bin/python -m pytest -v -m live tests/live/test_site_mobile.py
+```
+
+- every page at every size: no console error, uncaught error or failed request from the site's own files; no sideways
+  scrolling, with the menu shut or open; the menu is a hamburger named "Menu" that opens and closes by a tap (a click
+  on the desktop) and by the keyboard (Enter, Space), a cross while open, inside the screen, with its links in order
+  (The boundary, The land, The water, The vineyards, Status, Journal, About & contact), the page's own marked
+  `aria-current`, each answering 200; the header's place line reads "Llano Uplift · Texas Hill Country", on one line
+  between the home link and the menu where it shows (also checked at 700 px, the narrowest screen that shows it); the
+  header's, the menu's, the footer's and the pages' own buttons and action links are at least 44 px each way (a link
+  inside a sentence is not counted);
+- every menu link, tapped on a phone and clicked on the desktop from Home, opens its page, which marks it current;
+- Explore, on the phones: tapping three steps, a quarter, a half and three quarters of the way along the line (from
+  `docs/data/steps.geojson`), opens each step's popup, docked along the map's bottom, with the
+  place tapped near the middle of the map left above it (the view's bottom is padded by the popup's height); the popup
+  has no undock button, and the zoom and Home buttons are 44 px; a one-finger swipe beside the map (the page's margin)
+  or on it scrolls the page and leaves the map still; two fingers move the map; Home shows the whole boundary again;
+- The land, on the phones: the drawing shows the stage on its reading line as the page scrolls, and does so too when
+  the reader scrolls right after tapping Later.
+
+The site is https://hickorysandsdistrictava.org unless `HSD_SITE_URL` names another. The basemap key serves only the
+live site and `http://localhost:8765`, so on any other local address Esri refuses the basemaps (HTTP 401) and the maps
+draw the line alone: on a loopback address the test allows those refusals and the SDK's console lines about them; on
+the live site they fail it (the key has expired or lost its referrer). `./build.sh check-live` does not run it: a
+Pages delay or a fault on the website must never fail an ArcGIS publish. Screenshots: `target/browser-tests/site/<page>-<viewport>-<test>.png` (`-FAILED.png` when it
+failed), with `-loaded.png` after each load and `-menu-open.png` with the menu open.
 
 ## GitHub Actions and releases
 

@@ -20,7 +20,7 @@ every pinned Python package against OSV before installing anything (`src/setup/p
 from the hash-pinned lock `requirements.txt` (compiled from `requirements.in` by `./build.sh upgrade`; never edit the
 `.txt` by hand; all Python runs in `.venv`, `-E -s -B`; nothing global), downloads/verifies the
 13 quads, then stages, traces, splices patches, builds the boundary, checks, makes the documents and quad sheets, and
-zips the package into `dist/` with `SHA256SUMS.txt` and `build-report.txt`. `./build.sh clean | distclean | env | lint | audit | upgrade | site-data | publish | publish-dry-run | check-live`.
+zips the package into `dist/` with `SHA256SUMS.txt` and `build-report.txt`. `./build.sh clean | distclean | env | lint | audit | upgrade | site-data | publish | publish-dry-run | check-live | check-site [--local]`.
 
 - `src/` all code: `quads/`, `tracing/` (the ink tracer), `fixing/` (patchlib, apply_patches), `review/` (tipcheck,
   compare_ttb), `boundary/` (ink_centerline, build_proposed, quad sheets, TTB record), `documents/`, `checks/`,
@@ -41,8 +41,11 @@ zips the package into `dist/` with `SHA256SUMS.txt` and `build-report.txt`. `./b
   `stats.json`) come from `src/site/make_aquifer_3d.py` the same way (`--check` against its `record.json`, no
   download; a hard check stops it if a person's name or address survives in the well reports).
   The maps (`explore.html`, `walk.html`, `aquifer.html`) use Esri's SDK and a public, basemaps-only API key in
-  `docs/assets/map-config.js`. The survey map under the boundary drawing on Home and The boundary,
-  `docs/assets/survey-map.webp`, is made by the same stage from the 13 quads and the 17 around them
+  `docs/assets/map-config.js`. Every website change is tested at phone sizes before merge, against a local server of
+  its branch (`./build.sh check-site --local`), and live after deploy (`./build.sh check-site`); both run
+  `tests/live/test_site_mobile.py` (BUILD.md). The survey map
+  under the boundary drawing on Home and The boundary, `docs/assets/survey-map.webp`, is made by the same stage from
+  the 13 quads and the 17 around them
   (`resources/quads/basemap-manifest.csv`; record `docs/assets/survey-map.json`). Its DNS is at
   Squarespace beside the Google Workspace mail records (MX, SPF, DKIM, DMARC `p=reject`): never touch those. The other
   Hickory Sands domains forward to it.
@@ -70,7 +73,7 @@ Rules: `./build.sh publish` (ArcGIS Online) is outward-facing, only on Dan's exp
 or private material. `./build.sh check-live` (`src/publish/agol_check.py`, publish's last step) checks the public site
 anonymously against the build (locked layers, public items, links, dashboard, figures, file sizes); read-only, run it any time.
 `./build.sh publish-dry-run` (`agol_dryrun.py`, #58; publish's first step) builds what publish would send, without signing in, into `target/publish/` and checks it: keep building apart from sending (`main()`).
-It then runs `tests/live` (marked `live`; not in `./build.sh test` or lint): Playwright drives Google Chrome over the dashboard as two phones and four screens (#68); screenshots in `target/browser-tests/`.
+`check-live` then runs `tests/live/test_dashboard.py` only (marked `live`; not in `./build.sh test` or lint): Playwright drives Google Chrome over the dashboard as two phones and four screens (#68); screenshots in `target/browser-tests/`. The website's browser tests are `./build.sh check-site`, never part of a publish.
 
 ## Git workflow (Dan, 2026-10-16)
 

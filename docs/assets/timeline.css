@@ -10,7 +10,8 @@
 .geo-age{margin-top:.6rem;font-family:var(--serif);font-size:1.625rem;line-height:1.2}
 .geo-certainty{margin-top:.75rem;max-width:24rem;font-size:.875rem;line-height:1.6;color:var(--paper-muted)}
 .geo-text h3{font-size:clamp(2rem,3.4vw,2.75rem);margin-bottom:1.1rem}.geo-text p{max-width:38rem;font-size:1.0625rem;line-height:1.8}
-.geo-cite{font-size:.68em;line-height:0;letter-spacing:.02em;white-space:nowrap}.geo-cite a{padding-inline:.08em;color:var(--paper-muted);text-decoration:none}.geo-cite a:hover{color:var(--paper-ink);text-decoration:underline}
+/* A citation's number is a larger target than it looks: padded around, with the padding's width given back as margin, so neither the line nor the spacing moves. */
+.geo-cite{font-size:.68em;line-height:0;letter-spacing:.02em;white-space:nowrap}.geo-cite a{padding:.35em .3em;margin-inline:-.22em;color:var(--paper-muted);text-decoration:none}.geo-cite a:hover{color:var(--paper-ink);text-decoration:underline}
 .geo-sources{display:grid;gap:1.5rem;margin-top:4rem}.geo-sources h3{font-size:2rem}
 .geo-source-list{margin:0;padding-left:1.75rem;max-width:46rem;font-size:.875rem;line-height:1.6}.geo-source-list li{padding:.35rem .5rem .35rem .25rem;overflow-wrap:anywhere;scroll-margin-top:2rem}.geo-source-list li::marker{color:var(--paper-muted);font-variant-numeric:tabular-nums}.geo-source-list li:target{background:#e5dece}.geo-source-list cite{font-style:italic}
 .geo-sources-note{margin-top:1.5rem;max-width:40rem;font-size:.8125rem;line-height:1.6;color:var(--paper-muted)}

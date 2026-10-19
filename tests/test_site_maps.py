@@ -49,7 +49,15 @@ def test_the_basemap_key_is_empty_or_an_api_key():
 
 
 @pytest.mark.parametrize(
-    "script", ["maps.js", "explore.js", "walk.js", "map-config.js"]
+    "script",
+    [
+        "maps.js",
+        "explore.js",
+        "walk.js",
+        "map-config.js",
+        "aquifer3d.js",
+        "aquifer-wells.js",
+    ],
 )
 def test_scripts_never_parse_text_as_html(script):
     text = read("docs", "assets", script)

@@ -1,6 +1,8 @@
 # codespell: common misspellings in code and docs (pre-commit hook). The Federal Register's XML is its text, not ours.
+# docs/assets/aquifer/: TWDB's well reports as drillers wrote them (their logs and remarks are misspelt, and are kept
+# verbatim), made by src/site/make_aquifer_3d.py
 [codespell]
-skip = *.geojson,*.vrt.in,*.pdf,*.csv,.secrets.baseline,resources/ttb/federal-register-*.xml
+skip = *.geojson,*.vrt.in,*.pdf,*.csv,.secrets.baseline,resources/ttb/federal-register-*.xml,docs/assets/aquifer/*
 # erly: part of a regex for "southeasterly"; iif: Arcade's IIf(); froms: a variable name; mountian: USGS's own
 # spelling of the Brady Mountain quad ("Brady Mountian, TX"), as its file is named
 ignore-words-list = erly,iif,froms,mountian

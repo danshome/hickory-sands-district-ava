@@ -1,0 +1,7 @@
+name,file,url,snapshot,fetched,bytes,sha256
+twdb-gam,lnup_v101.7z,https://gw-models.s3.amazonaws.com/GAM_Properties/lnup_v101.7z,2026-07-16,2026-10-18,364031857,27a8525f10a682ccf855877b94ba0017167d300cdc5e5e42f4f2d9ec3a487bb8
+twdb-minor-aquifers,minor_aquifers.zip,https://www.twdb.texas.gov/mapping/gisdata/doc/minor_aquifers.zip,2017-12-15,2026-10-18,7863821,2c75e522b79ac24aab9fef1dfd45a3fb8adc58b5e2e721fdb1f9c5b88bdf1541
+twdb-sdr,SDRDownload.zip,https://www.twdb.texas.gov/groundwater/data/SDRDownload.zip,2026-10-16,2026-10-18,151956817,e4a67c82abdd063d1d36893bbc6b219d0e6e591683013e680654ab882641e2c2
+twdb-gwdb,GWDBDownload.zip,https://www.twdb.texas.gov/groundwater/data/GWDBDownload.zip,2026-10-16,2026-10-18,83384161,c400be94fe327acb730abd9386f6d766a23322ff2bd6e2259dbd0e7d986bbaf0
+census-counties,cb_2023_us_county_500k.zip,https://www2.census.gov/geo/tiger/GENZ2023/shp/cb_2023_us_county_500k.zip,2024-04-16,2026-10-18,11630077,99d6597b1fc7767deef62e01d28d8b5dcbd578e151855f7dc0d173cbf5bf0868
+census-places,2023_gaz_place_48.txt,https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2023_Gazetteer/2023_gaz_place_48.txt,2023-09-26,2026-10-18,374659,f3ade9bf889e99ed1a5e62d5619f0477580c6764a4b9f612e8e6093593abea20

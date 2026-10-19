@@ -8,7 +8,7 @@
 // - it reads each POST's answer ("ok", "slow down", ...) and says so plainly;
 // - votes that fail to send wait on this phone and go when the signal is back;
 // - no person's name is asked for or shown, and all text goes in as text.
-import * as config from "./vote-config.js?v=f3229ff";
+import * as config from "./vote-config.js?v=012d667";
 
 const ENDPOINT = config.endpoint;
 const IMG_PREFIX = ENDPOINT + "/img/";

@@ -366,6 +366,12 @@ for Python; 2-space YAML and TOML). By hand: `.venv/bin/ruff format .` and `.ven
   `reconcile.py`, the daily check, against a stand-in for the function (one issue for Dan when it fails);
 - `test_vineyard_submission.py`: the review, and the vineyard file's writer (byte for byte, sorted, clockwise, the file's
   own block numbers, the year and varieties kept, a private word refused); a pin's outline drawn by the petitioners;
+- `test_vineyard_form.py`: the vineyards page: the old email form gone; every field labelled and every message tied to
+  its field; the counties and varieties the rules'; the config empty or well formed, and Send ending at the email while it
+  is empty; no script that parses text as HTML, and no catch block that does nothing (a block of comments alone counts
+  as empty); one pinned SDK, loaded when needed; every tap target's size in the form's styles, at least 44 px; the
+  wording (a pin's place said to be public); and, in node, the fallback's email (every line in order, never a URL past
+  1,900 characters, nothing typed able to add a header, an emoji never cut in half);
 - `test_workflows.py`: every workflow's actions pinned to a commit, Linux only, no event text in a shell; the vineyard
   workflows' permissions and gates as reviewed, one bot and one label everywhere; a release only of `main`'s history;
 - `test_site.py`: every page of the website in `docs/` is a complete HTML document (doctype, language, character set,
@@ -644,7 +650,8 @@ The map's code is `docs/assets/map3d.js` (the scene, the panel, the aquifer), `m
 layers and popups), `map-url.js` (the address), `aquifer-wells.js` and `map3d.css`; Walk the line's is `maps.js` (the
 2D map it shares with the vineyard form's pin map), `walk.js` and `maps.css`. Text from the data is only ever set
 as text, never parsed as HTML. The basemaps need the ArcGIS Online API key in `docs/assets/map-config.js`. It is public by
-design and limited to the basemap styles service and to the referrers `https://hickorysandsdistrictava.org` and
+design and limited to the basemap styles service and Esri's geocoding (not stored), which the vineyard form's search
+uses (checked on 2026-10-19), and to the referrers `https://hickorysandsdistrictava.org` and
 `http://localhost:8765` (for previews: `python3 -m http.server 8765 -d docs`). Stored geocoding and other credit-consuming
 services are refused to it. It lasts up to a year: renew it in ArcGIS Online (Content > the API key item), replace the string
 in `map-config.js` and run `./build.sh stamp`. With the key empty, the maps draw the line on a plain background. A
@@ -694,12 +701,27 @@ sends the page view and what the stream's enhanced measurement collects, whose f
 destination, never what is typed. The colophon says so. `tests/test_analytics.py` checks the pages and the script and
 runs it in node against made-up browsers; `tests/live/test_site_mobile.py` fails on any request to Google Analytics.
 
-The vineyards page's "Not listed?" form lets an owner send a vineyard's details to the district: it opens an email in
-the visitor's own email app (a `mailto:` URL) and the page sends and keeps nothing. Without JavaScript it is a plain
-`mailto:` form; `docs/assets/vineyards.js` checks it, `vineyard-email.js` builds the email (no page code, so node runs
-it in the tests), a message whose URL would pass 1,900 characters goes by the clipboard, and the pin map loads Esri's
-SDK only when asked; `forms.css` styles only that section. `tests/test_vineyards_form.py` checks the form, its county
-list against `docs/data/boundary.geojson`, the scripts, and (with node) the email.
+The vineyards page (`vineyards.html`) lists every vineyard of the site's data, grouped as on The water, with a map
+(`assets/vineyard-list.js`, from `assets/vineyards/register.json` and `vineyards.geojson`; Esri's SDK loads when the map
+comes near the screen). Its "Not listed?" section opens "Add your vineyard", five steps over the whole screen
+(`assets/vineyard-wizard.js`, `vineyard-form.css`): where the vineyard is (the phone's location or Esri's search), its
+blocks tapped corner by corner on Esri World Imagery (or a pin), what it is, how to reach the sender, and a last check.
+The rules are `assets/vineyard-blocks.js`, the module the Supabase function also runs. What the grower enters is kept on
+the device as a draft (never the name, phone or email) until it is sent. It sends to the function named in
+`assets/vineyard-config.js` (with the Turnstile site key; both public). While either is empty, or when the function does
+not answer, the last screen offers to send the details by email (`assets/vineyard-email.js`, which node runs in the
+tests) or to copy them; there is no email form beside it. `tests/test_vineyard_form.py` checks the page and the email;
+`tests/live/test_vineyard_wizard.py` (marked live) drives the whole form in Chrome at 390x844 and 360x780 by touch and at
+1440x900 by mouse and by touch, measuring every tap target in the form at each step; then a pin, the function
+unreachable, GitHub failing, the function not set up, its refusals (a name refused, the person check refused, a send
+still under way, the day's limit), Cloudflare's script blocked and then loaded on Try again, a person check that never
+passes, the draft kept across a reload and Back one step at a time, a browser that keeps nothing, and Esri's search
+(a road found; an error never shown as "nothing found"). It runs against the real function served with stand-ins
+(`tests/vineyard_standin.mjs`), on `http://localhost:8765` for the real map (port 8765 must be free for the run):
+
+```
+.venv/bin/python -m pytest -v -m live tests/live/test_vineyard_wizard.py
+```
 
 The 3D aquifer page's data is made by `src/site/make_aquifer_3d.py` (with `src/site/aquifer/`) from the downloads
 `resources/aquifer/inputs.csv` pins (TWDB's model archive, 364 MB, its 2017 aquifer outlines, its two well databases,

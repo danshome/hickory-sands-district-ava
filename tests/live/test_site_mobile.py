@@ -202,6 +202,9 @@ ACTIONS = (
     "main .arrival-foot a",
     "main .lp-link",  # the map's panel: About this map, Walk the line, Sources
     "main .about-toc a",  # its About panel's contents (rendered when open)
+    "main .w-button",  # The vineyards: the form's start
+    "main .w-link",
+    "main .vy-show",  # its list's Show on the map
 )
 # The map: the panel's links, and the About panel's contents and Close
 MAP_LINKS = ("main .lp-link",)

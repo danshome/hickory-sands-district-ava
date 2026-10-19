@@ -1,8 +1,8 @@
-// The email a vineyard's owner sends the district from vineyards.html: what the
-// form's values mean, what needs fixing, and the message, as "Field: value"
-// lines, with the mailto: URL that opens it in the visitor's own email app.
-// No page here (vineyards.js wires it to the form), so the tests run it in node
-// (tests/test_vineyards_form.py).
+// The email a grower can send the petitioners from vineyards.html when the form
+// could not send: the details as "Field: value" lines, and the mailto: URL that
+// opens them in the grower's own email app. Only the failure screen offers it.
+// No page code here (vineyard-wizard.js wires it in), so the tests run it in
+// node (tests/test_vineyard_form.py).
 
 export const ADDRESS = "district@hickorysandsdistrictava.org";
 // Some email apps cut a mailto: URL short near 2,000 characters (older Outlook,
@@ -37,156 +37,43 @@ export function cut(text, n) {
 // One line: runs of white space, line breaks among them, become one space.
 export const oneLine = (text) => wellFormed(text).replace(/\s+/g, " ").trim();
 
-// Several lines, each line break the email's CRLF.
-export const lines = (text) =>
-  wellFormed(text).replace(/\r\n?/g, "\n").trim().split("\n")
-    .map((line) => line.trim()).join("\r\n");
+// A point as latitude, longitude (what map apps take), 5 decimal places
+// (about a metre).
+const where = ([lon, lat]) => `${lat.toFixed(5)}, ${lon.toFixed(5)}`;
 
-// Up to 6 decimal places (about 0.1 m), as typed when shorter.
-export const decimal = (value, places = 6) => String(Number(value.toFixed(places)));
-
-// A coordinate typed or pasted: "30.7647", "30.7647° N", "99.4107 W",
-// "−99.4107" (a minus sign, as the page's own hint writes it). Null when it is
-// not one.
-export function coordinate(text) {
-  const plain = oneLine(text).replace(/[°º]/g, "").replace(/[−–]/g, "-");
-  const m = plain.match(/^(-?\d+(?:\.\d+)?)\s*([NSEW])?$/i);
-  if (!m) return null;
-  const value = Number(m[1]);
-  return /[SW]/i.test(m[2] || "") ? -Math.abs(value) : value;
-}
-
-// A pair copied from a map app, "30.76468, -99.41073" or
-// "30.764680° N, 99.410730° W": [latitude text, longitude text], or null.
-export function pair(text) {
-  const m = oneLine(text).match(
-    /^([-−]?[\d.]+°?\s*[NS]?)\s*[,;\s]\s*([-−]?[\d.]+°?\s*[EW]?)$/i,
-  );
-  if (!m || coordinate(m[1]) === null || coordinate(m[2]) === null) return null;
-  return [m[1].trim(), m[2].trim()];
-}
-
-// The form's values, as typed (strings, and true or false for the boxes), made
-// ready for the checks and the email. source says where a point came from:
-// "typed", or "from a pin on the map".
-export function normalize(raw) {
-  const lat = coordinate(raw.lat ?? "");
-  let lon = coordinate(raw.lon ?? "");
-  if (lon !== null && lon > 0) lon = -lon; // west of Greenwich, here
-  let website = oneLine(raw.website ?? "");
-  if (website && !/^https?:\/\//i.test(website)) website = `https://${website}`;
-  return {
-    name: oneLine(raw.name ?? ""),
-    business: oneLine(raw.business ?? ""),
-    status: oneLine(raw.status ?? ""),
-    website,
-    latText: oneLine(raw.lat ?? ""),
-    lonText: oneLine(raw.lon ?? ""),
-    lat,
-    lon,
-    source: raw.source === "pin" ? "from a pin on the map" : "typed",
-    road: oneLine(raw.road ?? ""),
-    directions: oneLine(raw.directions ?? ""),
-    county: oneLine(raw.county ?? ""),
-    acres: oneLine(raw.acres ?? "").replace(/,/g, ""),
-    year: oneLine(raw.year ?? ""),
-    varieties: oneLine(raw.varieties ?? ""),
-    sells: Boolean(raw.sells),
-    makes: Boolean(raw.makes),
-    contact: oneLine(raw.contact ?? ""),
-    email: oneLine(raw.email ?? ""),
-    consent: Boolean(raw.consent),
-    note: lines(raw.note ?? ""),
-  };
-}
-
-// What needs fixing, as [field id, message] in the order of the form. year is
-// this year (the latest year planted it accepts is five years on).
-export function problems(d, year) {
-  const found = [];
-  if (!d.name) found.push(["v-name", "Enter the vineyard’s name."]);
-  if (!d.status) found.push(["v-status", "Choose the vineyard’s status."]);
-  if (d.website) {
-    let ok = false;
-    try {
-      ok = new URL(d.website).hostname.includes(".");
-    } catch {
-      ok = false;
-    }
-    if (!ok) found.push(["v-website", "Enter a web address, such as example.com."]);
-  }
-  const hasLat = d.latText !== "";
-  const hasLon = d.lonText !== "";
-  if (!hasLat && !hasLon && !d.road) {
-    found.push([
-      "v-where",
-      "Give a point in the vineyard (a pin, or latitude and longitude) or the nearest road.",
-    ]);
-  }
-  if (hasLat && (d.lat === null || d.lat < 25 || d.lat > 37)) {
-    found.push(["v-lat", "Latitude in Texas is a number between 25 and 37, such as 30.7647."]);
-  }
-  if (hasLon && (d.lon === null || d.lon > -93 || d.lon < -107)) {
-    found.push(["v-lon", "Longitude in Texas is between −93 and −107, such as −99.4107."]);
-  }
-  if (hasLat !== hasLon) {
-    found.push([hasLat ? "v-lon" : "v-lat", "Give both latitude and longitude, or neither."]);
-  }
-  if (!d.county) found.push(["v-county", "Choose the county, or Not sure."]);
-  if (d.acres && !(/^\d+(\.\d+)?$/.test(d.acres) && Number(d.acres) <= 10000)) {
-    found.push(["v-acres", "Enter the acres as a number, such as 12 or 4.5."]);
-  }
-  const planted = Number(d.year);
-  if (d.year && !(/^\d{4}$/.test(d.year) && planted >= 1800 && planted <= year + 5)) {
-    found.push(["v-year", `Enter a year from 1800 to ${year + 5}.`]);
-  }
-  if (!d.contact) found.push(["v-contact", "Enter your name, for the reply."]);
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.email)) {
-    found.push(["v-email", "Enter an email address, such as name@example.com."]);
-  }
-  if (!d.consent) found.push(["v-consent", "Tick the box to give permission."]);
-  return found;
-}
-
-// The email: the subject names the vineyard; the body is "Field: value" lines,
-// every one always there (blank when not given) and in the same order, so each
-// message reads, and parses, the same. consent is the permission's own words,
-// as the page's label gives them; the note comes last, as it may run to
-// several lines.
-export function message(d, consent) {
-  const point = d.lat !== null && d.lon !== null
-    ? `${decimal(d.lat)}, ${decimal(d.lon)} (WGS 84, ${d.source})`
-    : "";
+// The email from the form's submission (vineyard-wizard.js's payload()): the
+// subject names the vineyard; the body is "Field: value" lines, every one
+// always there (blank when not given) and in the same order. Each block is
+// its corners, latitude and longitude, one corner a line.
+export function message(p) {
+  const v = p.vineyard || {};
+  const contact = p.contact || {};
+  const blocks = (p.blocks || []).flatMap((ring, i) => [
+    `Block ${i + 1}:`,
+    ...ring.map(where),
+  ]);
   const body = [
-    `Vineyard name: ${d.name}`,
-    `Business name: ${d.business}`,
-    `Status: ${d.status}`,
-    `Website: ${d.website}`,
+    `Vineyard: ${oneLine(v.name)}`,
+    `County: ${oneLine(v.county)}`,
+    `Planted or planned: ${oneLine(v.planted)}`,
+    `Acres planted: ${v.acres ?? ""}`,
+    `Year first planted: ${v.year ?? ""}`,
+    `Varieties: ${(v.varieties || []).map(oneLine).join(", ")}`,
     "",
-    `Point: ${point}`,
-    `Nearest road: ${d.road}`,
-    `How to find it: ${d.directions}`,
-    `County: ${d.county}`,
+    `Pin: ${p.pin ? where(p.pin) : ""}`,
+    ...blocks,
     "",
-    `Acres planted: ${d.acres}`,
-    `Year first planted: ${d.year}`,
-    `Varieties: ${d.varieties}`,
-    `Sells grapes: ${d.sells ? "Yes" : "No"}`,
-    `Makes wine: ${d.makes ? "Yes" : "No"}`,
-    "",
-    "Contact (for replies only, not to be published)",
-    `Name: ${d.contact}`,
-    `Email: ${d.email}`,
-    "",
-    `Consent: ${d.consent ? `Yes. ${oneLine(consent)}` : "No"}`,
-    `Note: ${d.note}`,
+    "Contact (for the petitioners only, never published)",
+    `Name: ${oneLine(contact.name)}`,
+    `Phone: ${oneLine(contact.phone)}`,
+    `Email: ${oneLine(contact.email)}`,
   ].map(wellFormed).join("\r\n");
-  const subject = cut(oneLine(`${SUBJECT}: ${d.name || "(no name given)"}`), SUBJECT_MAX);
+  const subject = cut(oneLine(`${SUBJECT}: ${oneLine(v.name) || "(no name given)"}`), SUBJECT_MAX);
   return { subject, body };
 }
 
 // The mailto: URL. encodeURIComponent leaves no raw "&", "?", "#" or line
-// break, so nothing a visitor types can add a header (a cc or a bcc).
+// break, so nothing a grower types can add a header (a cc or a bcc).
 export const mailto = (subject, body) =>
   `mailto:${ADDRESS}?subject=${encodeURIComponent(wellFormed(subject))}` +
   `&body=${encodeURIComponent(wellFormed(body))}`;
@@ -201,5 +88,5 @@ export function plan(built) {
     const url = mailto(subject, COPIED_BODY);
     if (url.length <= LONG_URL) return { url, subject, long: true };
   }
-  return { url: `mailto:${ADDRESS}`, subject: SUBJECT, long: true };
+  return { url: mailto(SUBJECT, COPIED_BODY), subject: SUBJECT, long: true };
 }

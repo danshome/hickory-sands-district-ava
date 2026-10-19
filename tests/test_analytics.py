@@ -300,7 +300,13 @@ def test_no_script_writes_the_address_bar(path):
     # ever opened: the page's own address keeps nothing a visitor typed.
     name = os.path.basename(path)
     allowed = ADDRESS_WRITERS.get(name, ())
-    text = read(path)
+    # A history entry with no address (the vineyard form's steps, so that
+    # the phone's Back goes back one) leaves the address as it is.
+    text = re.sub(
+        r'history\.(?:push|replace)State\(\s*[\w.]+\s*,\s*""\s*\)',
+        "",
+        read(path),
+    )
     for sink in (
         "pushState",
         "replaceState",

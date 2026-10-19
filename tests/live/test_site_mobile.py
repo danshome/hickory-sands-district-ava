@@ -278,7 +278,7 @@ class SiteView(View):
             return
         if own(response.url):
             self.errors.append(f"HTTP {response.status}: {response.url}")
-        elif "arcgis.com" in response.url and response.status in {401, 403}:
+        elif esri(response.url) and response.status in {401, 403}:
             self.refused.append(f"HTTP {response.status}: {response.url}")
 
     def problems(self):
@@ -296,6 +296,12 @@ class SiteView(View):
 def own(url):
     """True when url is one of the site's own files."""
     return url.startswith(ORIGIN + "/") or url == ORIGIN
+
+
+def esri(url):
+    """True when url is on Esri's ArcGIS services (arcgis.com)."""
+    host = urlsplit(url).hostname or ""
+    return host == "arcgis.com" or host.endswith(".arcgis.com")
 
 
 @pytest.fixture(scope="module", autouse=True)

@@ -196,9 +196,10 @@ def libm_exp(x):
     centres, so the first road-centring pass reads the ink exactly on cell
     edges, and that last bit decides which cell is read. Two of GitHub's
     Linux runners placed step 13 0.34 m apart that way (issue #116). The C
-    library's exp (math.exp) does not depend on the CPU's vector units, and
-    on the Mac it is the very function NumPy calls, so the lines built there
-    are unchanged to the bit.
+    library's exp (math.exp) does not take NumPy's CPU-chosen path (a C
+    library may still pick its own build by CPU, as glibc can, but every
+    runner gives the same results here), and on the Mac it is the very
+    function NumPy calls, so the lines built there are unchanged to the bit.
 
     Args:
         x: A number or an array of numbers.
@@ -238,7 +239,8 @@ def smooth(pts, sigma):
 
     Each point is averaged over the same number of points either side, as
     many as lie within 3 sigma of arc, with Gaussian weights by their distance
-    along the path (from libm_exp: the same on every CPU); sigma is in the
+    along the path (from libm_exp, independent of NumPy's CPU-chosen exp);
+    sigma is in the
     path's units (m).
     """
     s = np.concatenate([[0], np.cumsum(np.hypot(*np.diff(pts, axis=0).T))])
@@ -949,7 +951,8 @@ def robust_offsets(m, sigma, med_size=41, tol=2.5):
     readings, leaving the line on the inside casing of every curve. Readings
     more than tol m from the trend (junctions, lettering) are dropped, the
     rest interpolated over the gaps and Gaussian-smoothed over sigma (both
-    smoothings by gaussian_filter1d: the same on every CPU).
+    smoothings by gaussian_filter1d, independent of NumPy's CPU-chosen
+    exp).
 
     Returns:
         The smoothed offsets, one per reading (zeros when there are none).

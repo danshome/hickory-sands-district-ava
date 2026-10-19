@@ -1,4 +1,4 @@
-"""src/tracing/centerline.py: the tracer gives the same line on every CPU.
+"""src/tracing/centerline.py: the tracer no longer depends on NumPy's exp.
 
 Issue #116: two of GitHub's Linux runners placed step 13's vertices 0.34 m
 apart along the same road. NumPy picks its float64 exp by the CPU (an AVX-512

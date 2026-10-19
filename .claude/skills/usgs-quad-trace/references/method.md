@@ -159,7 +159,7 @@ highways dropped 30-50 points. Gate on the background; the paper rules were alre
 - **Process.** Every rule change runs all 27 steps and is compared with a FIXED reference (not the previous run);
   snapshot the code first (the skill is not under git). Checking a change on one spot is what broke this morning.
 
-## Oct. 19, 2026: the same line on every CPU (#116)
+## Oct. 19, 2026: independent of NumPy's CPU-chosen exp (#116)
 
 - **Never NumPy's exp in the tracer.** NumPy picks its float64 `exp` by the CPU (an AVX-512 kernel where there is one,
   the C library's elsewhere) and the two differ in the last bit of some values. On a straight north-south or east-west

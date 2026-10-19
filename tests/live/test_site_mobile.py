@@ -69,6 +69,12 @@ On the phones:
   stopped so that only the reader can end the hold, a touch outside the
   drawing's buttons or a turn of the wheel ends it at once, while a touch on
   the buttons does not (timeline.js, reader()).
+On a phone (390x844) and the desktop, The water's wells (aquifer.html,
+through the page's window.aquiferWells): at first the default filters'
+wells (irrigation, the default yield and up, counted here from the data),
+every one's head drawn zoomed out; "All" uses thins them to the overview;
+filters widened in quick steps leave one heads layer on the map, in step with
+the filters and the Wells switch; Reset comes back to the first count.
 Explore's map must settle (ready, not updating) within 30 s of each move,
 or the test fails there.
 Screenshots: target/browser-tests/site/<page>-<viewport>-<test>.png
@@ -333,6 +339,45 @@ JUMP_TO_STAGE = """(n) => { document.querySelectorAll('.geo-stage')[n - 1]
 # The water: whether the page's script has wired its panel and About links
 # (it does so once the 3D view is up, and marks the page ready at the end)
 AQUIFER_READY = """() => document.documentElement.dataset.aquifer === 'ready'"""
+
+# The water: the wells as drawn and counted, through the page's own hooks;
+# the default's counts are counted here from the data the page loaded
+WELLS = """async () => {
+  const w = window.aquiferWells; const v = window.aquiferView;
+  if (!w || !v || document.documentElement.dataset.aquifer !== 'ready')
+    return null;
+  const d = w.defaults; const keys = w.index.filter_keys;
+  const tested = (gpm) => gpm !== null && gpm >= d.yieldLo;
+  const onMap = v.map.allLayers.toArray()
+    .filter(l => l.title === 'Well heads (TWDB reports)');
+  const tracked = w.headLayers();
+  const layer = w.heads();
+  let held = null; let drawn = null;
+  if (layer && layer.visible) {
+    held = await layer.queryFeatureCount();
+    drawn = await (await v.whenLayerView(layer)).queryFeatureCount(); }
+  return {note: w.note(), held, drawn, updating: v.updating,
+    irrigation: d.uses.size === 1 &&
+      d.uses.has(w.index.use_groups.indexOf('Irrigation')),
+    first: keys.filter(([u, , g]) => d.uses.has(u) && tested(g)).length,
+    allUses: keys.filter(([, , g]) => tested(g)).length,
+    anyYield: keys.filter(([u]) => d.uses.has(u)).length,
+    farMax: Number(document.getElementById('aq-wells-far-max')
+      .textContent.replace(/,/g, '')),
+    shown: document.getElementById('aq-wells-shown').textContent,
+    filters: document.getElementById('aq-filters-state').textContent,
+    orphans: onMap.filter(l => !tracked.includes(l)).length,
+    visibleHeads: onMap.filter(l => l.visible).length}; }"""
+
+# widens the yield filter to everything in quick steps, each a new heads
+# layer, some replaced before they are drawn
+WIDEN = """async () => {
+  const lo = document.getElementById('aq-yield-lo');
+  for (const at of ['2', '1', '0']) {
+    lo.value = at; lo.dispatchEvent(new Event('input'));
+    await new Promise(r => setTimeout(r, 40)); }
+  const none = document.getElementById('aq-yield-none');
+  none.checked = true; none.dispatchEvent(new Event('change')); }"""
 
 
 # --------------------------------------------------------------- the browser
@@ -1041,5 +1086,106 @@ def test_aquifer_panel_and_about_links_are_44px(site_page):
         page.wait_for_timeout(300)
         if page.locator("#aq-about[open]").count():
             problems.append("Close did not close the About panel")
+    problems += view.problems()
+    assert not problems, f"{view.name}:\n  " + "\n  ".join(problems)
+
+
+WELLS_VIEWS = {v: VIEWPORTS[v] for v in ("phone-390x844", "desktop-1440x900")}
+
+
+def open_wells_filters(view):
+    """Opens the panel (a bottom sheet on a phone), Wells and its Filters."""
+    page = view.page
+    sheet = page.locator("#aq-sheet-toggle")
+    if sheet.is_visible() and sheet.get_attribute("aria-expanded") != "true":
+        tap(view, sheet)
+    for target in ("g-wells", "aq-filters"):
+        button = page.locator(f'button[aria-controls="{target}"]')
+        if button.get_attribute("aria-expanded") != "true":
+            tap(view, button)
+
+
+def wells_drawn(page, label, key, filters):
+    """Checks that the wells settled as the filters say.
+
+    Args:
+        page: The 3D page.
+        label: What was done, for the message.
+        key: Which count of WELLS's must pass ("first", "allUses", ...).
+        filters: What the Filters heading must say ("2 on", ...).
+
+    Returns:
+        WELLS's answer.
+    """
+    got = page.evaluate(WELLS)
+    assert got and not got["updating"], f"{label}: still drawing"
+    assert got["irrigation"], f"the default is not irrigation: {got}"
+    count = got[key]
+    mode = "overview" if count > got["farMax"] else "heads"
+    assert got["shown"] == f"{count:,}", f"{label}: {got}"
+    assert got["filters"] == filters, f"{label}: {got}"
+    note = got["note"]
+    assert note["mode"] == mode, f"{label}: {got}"
+    assert not note.get("loading") and not note.get("failed"), f"{label}: {got}"
+    assert got["orphans"] == 0, f"{label}: a heads layer left behind: {got}"
+    if mode == "heads":
+        assert got["visibleHeads"] == 1, f"{label}: {got}"
+        # its layer holds every one; the view draws those on the screen,
+        # all but a few at its edges (not one per cell)
+        assert got["held"] == count, f"{label}: heads held: {got}"
+        assert 0.9 * count <= got["drawn"] <= count, f"{label}: {got}"
+    else:
+        assert got["visibleHeads"] == 0, f"{label}: {got}"
+    return got
+
+
+def wells_hidden(page):
+    """Checks that no wells' heads layer shows with the Wells switch off."""
+    got = page.evaluate(WELLS)
+    assert got["visibleHeads"] == 0 and got["orphans"] == 0, got
+
+
+@pytest.mark.parametrize(
+    "site_page", cells(["aquifer.html"], WELLS_VIEWS), indirect=True
+)
+def test_aquifer_wells_start_filtered_and_follow_the_filters(site_page):
+    view, page = site_page, site_page.page
+    page.wait_for_function(
+        "document.documentElement.dataset.aquifer === 'ready'",
+        timeout=LOAD_S * 1000,
+    )
+    problems = []
+    steps = (
+        ("at first", "first", "2 on", None),
+        ("all uses", "allUses", "1 on", "#aq-uses-all"),
+        ("reset", "first", "2 on", "#aq-wells-reset"),
+        ("widened in quick steps", "anyYield", "1 on", WIDEN),
+    )
+    try:
+        for label, key, filters, action in steps:
+            if action == WIDEN:
+                page.evaluate(WIDEN)
+            elif action:
+                open_wells_filters(view)
+                tap(view, page.locator(action))
+            view.wait(
+                functools.partial(wells_drawn, page, label, key, filters),
+                timeout=60,
+            )
+            if label == "at first":
+                view.shot("wells-first")
+        show = page.locator("#aq-wells-show")
+        show.evaluate("(box) => box.click()")
+        view.wait(functools.partial(wells_hidden, page), timeout=15)
+        show.evaluate("(box) => box.click()")
+        tap(view, page.locator("#aq-wells-reset"))
+        view.wait(
+            functools.partial(
+                wells_drawn, page, "reset again", "first", "2 on"
+            ),
+            timeout=60,
+        )
+    except AssertionError as e:
+        problems.append(f"{e}; screenshot: {view.shot('wells-FAILED')}")
     problems += view.problems()
     assert not problems, f"{view.name}:\n  " + "\n  ".join(problems)

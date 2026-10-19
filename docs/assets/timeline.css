@@ -53,8 +53,8 @@
 .geo-stage-key{display:none}
 /* A tapped button keeps no hover underline on a touch screen. */
 @media(hover:none){.geo-step:hover{text-decoration:none}}
-/* A phone held upright: the same query as timeline.js's "tall". Screens only, so a printed page keeps the figure in the flow. */
-@media screen and (max-width:999px) and (min-height:520px){
+/* A phone held upright: the same query as timeline.js's "tall". Screens only, and taller than wide, so a printed page and a phone on its side keep the figure in the flow. */
+@media screen and (max-width:999px) and (min-height:520px) and (orientation:portrait){
   .geo-has-figure .geo-figure{position:sticky;top:0;z-index:3;margin:0 -7vw;padding:.6rem 7vw .35rem;background:var(--bone);border-bottom:1px solid var(--paper-line);box-shadow:0 6px 14px -12px #282b2466}.geo-has-figure .geo-svg{border-color:#b1a79799}
   /* The panel keeps only what is read while the stage text scrolls under it. */
   .geo-has-figure .geo-scale,.geo-has-figure .geo-figure .geo-key,.geo-has-figure .geo-note,.geo-has-figure .geo-now-age{display:none}
@@ -62,7 +62,9 @@
   .geo-has-figure .geo-controls{gap:.15rem;margin:0;border:0}.geo-has-figure .geo-step{justify-content:center;gap:0;width:44px;height:44px;padding:0;font-size:0}.geo-has-figure .geo-step span{font-size:1.25rem;line-height:1}.geo-has-figure .geo-count{min-width:3.6em;text-align:center;font-size:.6875rem;letter-spacing:.12em}
   /* The stage's top lands just under the panel when a button scrolls to it; timeline.js measures the panel into --geo-panel. */
   .geo-has-figure .geo-stage{scroll-margin-top:calc(var(--geo-panel,240px) + .5rem)}.geo-has-figure .geo-stage-key{display:flex;margin-top:1rem}.geo-has-figure .geo-current .geo-index{color:var(--paper-ink)}
+  /* The citation links the keyboard focuses in the list, and the stage headings, stop just under the panel when scrolled into view (WCAG 2.4.11). */
+  .geo-has-figure .geo-stages a,.geo-has-figure .geo-stages h3{scroll-margin-top:calc(var(--geo-panel,240px) + 1rem)}
 }
-/* On a wide screen the time scale shows the stage, and the hint spans the grid, above the figure and the list. */
-@media(min-width:1000px){.geo-progress{display:none}.geo-has-figure .geo-hint{grid-column:1/-1;margin-bottom:0}}
+/* On a wide screen the time scale shows the stage, and the hint spans the grid, just above the figure and the list. */
+@media(min-width:1000px){.geo-progress{display:none}.geo-body.geo-has-figure{row-gap:1rem}.geo-has-figure .geo-hint{grid-column:1/-1;margin-bottom:0}}
 @media print{.geo-hint,.geo-progress{display:none}.geo-has-figure .geo-figure{position:static;box-shadow:none}}

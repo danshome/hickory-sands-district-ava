@@ -9,11 +9,11 @@
  * the list moves the figure too: on wide screens it stays beside the list; on
  * a phone held upright it becomes a short panel stuck to the top of the
  * screen, the stages scroll under it, and each stage carries its own key. A
- * short screen (a phone on its side) keeps the figure in the flow, stepped
- * with the buttons. One line made here says which. Every text is set with
- * textContent and every element made with createElement or createElementNS:
- * nothing is parsed as HTML. Smooth scrolling and the fade follow
- * prefers-reduced-motion.
+ * narrow screen wider than tall (a phone on its side) keeps the figure in the
+ * flow, stepped with the buttons. One line made here says which. Every text
+ * is set with textContent and every element made with createElement or
+ * createElementNS: nothing is parsed as HTML. Smooth scrolling and the fade
+ * follow prefers-reduced-motion.
  */
 (function () {
   "use strict";
@@ -35,13 +35,15 @@
   }
   var reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
   var wide = window.matchMedia("(min-width: 1000px)");
-  // A phone held upright: narrow, and tall enough to keep a stuck figure and
-  // still read under it. The height is low enough that a small phone with
-  // its browser's toolbars showing (an iPhone SE in Safari) still counts, and
-  // high enough that no phone on its side does. On screens only: a printed
-  // page keeps the figure in the flow. timeline.css has the same query.
+  // A phone held upright: narrow, taller than wide, and tall enough to keep a
+  // stuck figure and still read under it. The height is low enough that a
+  // small phone with its browser's toolbars showing (an iPhone SE in Safari)
+  // still counts. A narrow screen wider than tall (a phone on its side, a
+  // small window) and a printed page keep the figure in the flow.
+  // timeline.css has the same query.
   var tall = window.matchMedia(
-    "screen and (max-width: 999px) and (min-height: 520px)");
+    "screen and (max-width: 999px) and (min-height: 520px) and " +
+    "(orientation: portrait)");
   function follows() {
     return wide.matches || tall.matches;
   }

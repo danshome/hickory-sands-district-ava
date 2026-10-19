@@ -311,9 +311,13 @@ def test_script_and_styles_agree_on_a_phone_held_upright():
         js = fh.read()
     with open(STYLES, encoding="utf-8") as fh:
         css = re.sub(r"/\*.*?\*/", "", fh.read(), flags=re.DOTALL)
-    found = re.search(r'var tall = window\.matchMedia\(\s*"([^"]+)"\s*\)', js)
+    found = re.search(r"var tall = window\.matchMedia\(([^;]*)\);", js)
     assert found, "no query for a phone held upright in timeline.js"
-    query = re.sub(r"\s+", "", found.group(1))
+    # the query may be split into string literals joined with +
+    parts = re.findall(r'"([^"]*)"', found.group(1))
+    assert parts, found.group(0)
+    query = re.sub(r"\s+", "", "".join(parts))
+    assert "orientation:portrait" in query, "a phone on its side counts"
     sticky = {
         re.sub(r"\s+", "", q)
         for q in re.findall(r"@media([^{]*max-width:999px[^{]*)\{", css)

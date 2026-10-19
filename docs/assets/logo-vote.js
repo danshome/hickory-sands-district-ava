@@ -554,7 +554,11 @@ $("file").addEventListener("change", () => {
   const probe = new Image();
   probe.onload = () => {
     chosenFile = f;
-    $("preview-img").src = previewUrl;
+    // The loaded photo becomes the preview itself (a blob: address, made by
+    // the browser from the chosen file; never text from the page).
+    probe.id = "preview-img";
+    probe.alt = "The photo you chose";
+    $("preview-img").replaceWith(probe);
     $("preview").hidden = false;
     $("pick-text").textContent = "Choose a different photo";
   };

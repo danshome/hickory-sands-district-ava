@@ -18,10 +18,10 @@
 // loaded, the layers are drawn on the page's background. Every figure the
 // page shows is read from assets/aquifer/stats.json or marked data-figure.
 // Text from the data is only ever set as text, never parsed as HTML.
-import { apiKey } from "./map-config.js";
-import { setupWells, wellAttributes, CLASS_NAMES, DEFAULT_FILTER, FAR_HEADS_MAX } from "./aquifer-wells.js";
-import { readState, writeState, GROUPS } from "./map-url.js";
-import { districtLayers, keepSelectedInView, openFeature } from "./map3d-district.js";
+import { apiKey } from "./map-config.js?v=999720b";
+import { setupWells, wellAttributes, CLASS_NAMES, DEFAULT_FILTER, FAR_HEADS_MAX } from "./aquifer-wells.js?v=9ee9e18";
+import { readState, writeState, GROUPS } from "./map-url.js?v=61d142f";
+import { districtLayers, keepSelectedInView, openFeature } from "./map3d-district.js?v=6eeaf52";
 
 const DATA = "assets/aquifer/";
 document.documentElement.classList.add("js");

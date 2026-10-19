@@ -2,12 +2,16 @@
 
 Every page in docs/ is a complete HTML document (a doctype, the language, the
 character set, the phone viewport and a title), every local file a page links
-to or loads is in docs/, and every link off the site is https. A page that has
-moved (explore.html and aquifer.html, now the map) is a small page that sends
-the reader on, with and without JavaScript, and no page links it. Walk the
-line is the site's only story map: no page names or links the 2023 ArcGIS
-StoryMap (Dan, 2026-10-19). site.yml runs these before it deploys docs/ to
-GitHub Pages. Standard library only, so the lint workflow runs them too.
+to or loads is in docs/ (a script's or stylesheet's version stamp aside), every
+link off the site is https, and every local script and stylesheet a page loads,
+and every module a script imports, carries the stamp of the file as it is now
+(src/site/stamp_assets.py, #138), so a pull request that changes a script
+without stamping it again fails. A page that has moved (explore.html and
+aquifer.html, now the map) is a small page that sends the reader on, with and
+without JavaScript, and no page links it. Walk the line is the site's only
+story map: no page names or links the 2023 ArcGIS StoryMap (Dan, 2026-10-19).
+site.yml runs these before it deploys docs/ to GitHub Pages. Standard library
+only, so the lint workflow runs them too.
 """
 
 from html.parser import HTMLParser
@@ -18,8 +22,12 @@ from urllib.parse import urlsplit
 
 import pytest
 
+from src.site import stamp_assets
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SITE = os.path.join(ROOT, "docs")
+# Pages made from a template elsewhere, stamped like the pages (build.sh).
+TEMPLATES = (os.path.join(ROOT, "src", "site", "walk.template.html"),)
 PAGES = sorted(
     os.path.relpath(os.path.join(folder, name), SITE)
     for folder, _, names in os.walk(SITE)
@@ -71,7 +79,9 @@ class Page(HTMLParser):
                 self.robots = a.get("content")
         elif tag == "link" and a.get("rel") == "canonical":
             self.canonical = a.get("href")
-        elif tag == "script" and a.get("src") == "assets/moved.js":
+        elif tag == "script" and (a.get("src") or "").split("?v=")[0] == (
+            "assets/moved.js"
+        ):
             self.moved_to = a.get("data-to")
         elif tag == "title":
             self._in_title = True
@@ -147,6 +157,23 @@ def test_local_files_exist(page):
         if not inside or not os.path.isfile(full):
             missing.append(ref)
     assert not missing, f"not in docs/: {missing}"
+
+
+def test_a_stamped_url_names_its_file():
+    want = os.path.join(SITE, "assets", "site.css")
+    assert target("index.html", "assets/site.css?v=3f2a91c") == want
+    assert target("404.html", "/assets/site.css?v=3f2a91c") == want
+
+
+def test_every_script_and_stylesheet_carries_its_stamp():
+    stale = stamp_assets.Site(SITE, TEMPLATES).stale
+    shown = [
+        f"{os.path.relpath(p, ROOT)}: {have} -> {want}"
+        for p, have, want in stale
+    ]
+    assert not stale, (
+        "run ./build.sh stamp and commit what it changes:\n" + "\n".join(shown)
+    )
 
 
 @pytest.mark.parametrize("page", PAGES)

@@ -8,7 +8,7 @@ import {
   markStep,
   reducedMotion,
   walkedTo,
-} from "./maps.js";
+} from "./maps.js?v=722b7c5";
 
 document.documentElement.classList.add("js");
 try {

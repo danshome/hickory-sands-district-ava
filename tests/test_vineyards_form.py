@@ -25,6 +25,8 @@ from urllib.parse import parse_qs
 
 import pytest
 
+from src.site.stamp_assets import without_stamps
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DOCS = os.path.join(ROOT, "docs")
 ASSETS = os.path.join(DOCS, "assets")
@@ -151,12 +153,12 @@ def address():
 
 
 def test_the_section_s_files_are_there_and_loaded():
-    text = read(PAGE)
+    text = without_stamps(read(PAGE))  # the URLs' versions aside (#138)
     assert '<link rel="stylesheet" href="assets/forms.css">' in text
     assert '<script type="module" src="assets/vineyards.js"></script>' in text
     for path in (SCRIPT, EMAIL, STYLES):
         assert os.path.isfile(path), path
-    script = read(SCRIPT)
+    script = without_stamps(read(SCRIPT))
     assert 'from "./vineyard-email.js"' in script
     assert 'const MAPS = "./maps.js"' in script
     assert os.path.isfile(os.path.join(ASSETS, "maps.js"))

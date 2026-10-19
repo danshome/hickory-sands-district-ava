@@ -73,7 +73,8 @@ def data_to(page):
     """The address a moved page's script sends the reader to."""
     with open(os.path.join(DOCS, page), encoding="utf-8") as fh:
         found = re.search(
-            r'src="assets/moved\.js" data-to="([^"]+)"', fh.read()
+            r'src="assets/moved\.js(?:\?v=[0-9a-f]+)?" data-to="([^"]+)"',
+            fh.read(),
         )
     assert found, page
     return found.group(1)

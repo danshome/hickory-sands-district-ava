@@ -69,7 +69,8 @@ def scripts():
 
 def test_the_page_loads_the_pinned_sdk_then_its_script(page):
     found = re.findall(r'<script type="module" src="([^"]+)"', page)
-    assert found == [SDK, "assets/map3d.js"]
+    # Its own script carries a version stamp (#138).
+    assert [u.split("?v=")[0] for u in found] == [SDK, "assets/map3d.js"]
     assert not re.findall(r"js\.arcgis\.com/(?!5\.1/)", page)
 
 

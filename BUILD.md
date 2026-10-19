@@ -361,12 +361,13 @@ python3 -m http.server 8790 --bind 127.0.0.1 -d docs
 HSD_SITE_URL=http://127.0.0.1:8790 .venv/bin/python -m pytest -v -m live tests/live/test_site_mobile.py
 ```
 
-- every page at every size: no console error from the site's own files, uncaught error from them or failed request for
-  one; no sideways scrolling, with the menu shut or open; the menu is a hamburger named "Menu" that opens and closes by
-  a tap (a click on the desktop) and by the keyboard (Enter, Space), a cross while open, inside the screen, with its
-  links in order (The boundary, The land, The water, The vineyards, Status, Journal, About & contact), the page's own
-  marked `aria-current`, each answering 200; the header's place line reads "Llano Uplift · Texas Hill Country", on one
-  line between the home link and the menu where it shows (also checked at 700 px, the narrowest screen that shows it);
+- every page at every size: no console error from the site's own files, uncaught error from them (or from no file) or
+  failed request for one; no sideways scrolling, with the menu shut or open; the menu is a hamburger named "Menu" that
+  opens and closes by a tap (a click on the desktop) and by the keyboard (Enter, Space), a cross while open, inside the
+  screen, with its links in order (The boundary, The land, The water, The vineyards, Status, Journal, About & contact),
+  the page's own marked `aria-current`, each answering 200; the header's place line reads "Llano Uplift · Texas Hill
+  Country", on one line between the home link and the menu where it shows (also checked at 700 px, the narrowest screen
+  that shows it);
   these buttons and action links are at least 44 px each way: the header's home link and menu button, the open menu's
   links, the footer's links, and on the pages those in the test's `ACTIONS` (`.text-link`, Explore's basemap
   buttons, The land's Earlier and Later, Home's ways in and arrival links, The water's panel links and About contents);

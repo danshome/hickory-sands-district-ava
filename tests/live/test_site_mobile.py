@@ -26,8 +26,9 @@ expired or lost its referrer).
 The viewports: phones 390x844 (iPhone), 360x780 (Android) and 375x667 (iPhone
 SE), emulated with their user agent, touch and pixel ratio (isMobile,
 hasTouch); and a 1440x900 desktop. On every page at every viewport:
-- no console error from the site's own files, uncaught error from them or
-  failed request for one (a request the browser aborts is not a failure);
+- no console error from the site's own files, uncaught error from them (or
+  from no file) or failed request for one (a request the browser aborts is
+  not a failure);
 - no sideways scrolling, with the menu shut or open;
 - the menu: a hamburger named "Menu" that opens by a tap (a click on the
   desktop) and by the keyboard, turns into a cross while open and closes the

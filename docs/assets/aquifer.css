@@ -31,6 +31,7 @@ html:not(.js) .aq-stage{display:none}
    back the 6 px it gained above and below, so nothing else moves. */
 .lp-link{display:inline-flex;align-items:center;gap:.5rem;min-height:44px;margin:calc(.35rem - 6px) 0 -6px;padding-bottom:1px;font-size:.8125rem;color:var(--bone);text-decoration:none;background:linear-gradient(currentColor,currentColor) 0 calc(100% - 6px)/100% 1px no-repeat}
 .lp-link:hover{color:var(--sand)}
+@media(forced-colors:active){.lp-link{border-bottom:1px solid}}  /* forced colours drop the gradient: a border instead */
 
 /* Groups: a hairline, a serif name, a chevron; the switch sits beside the name, never inside it. */
 .lp-group{border-top:1px solid var(--hair)}

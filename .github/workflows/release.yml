@@ -4,7 +4,7 @@
 # rebuild a tag; the release's files are then replaced. The guard below refuses a tag on a commit that is not on
 # main's history, such as a branch the vineyard pull request App made. It runs as this file is in the tagged commit,
 # so a tag on a commit of main from before the guard is not stopped by it; only a tag ruleset that lets Dan alone
-# create v* tags stops that (src/vineyards/SETUP.md, step 3.5). Publishing to ArcGIS Online stays `./build.sh
+# create v* tags stops that (src/vineyards/SETUP.md, step A.3). Publishing to ArcGIS Online stays `./build.sh
 # publish`, by Dan.
 name: release
 on:

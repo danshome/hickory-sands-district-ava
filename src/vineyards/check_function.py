@@ -1,15 +1,20 @@
 """Checks the deployed vineyard function from outside, as the site sees it.
 
-Five checks, each with its own pass or fail line; no secret is needed or
-sent, and nothing is stored or posted (src/vineyards/SETUP.md, step 8):
+Five checks, each with its own PASS, FAIL or SKIP line; no secret is needed
+or sent, and nothing is stored or posted (src/vineyards/SETUP.md, step 6):
 
-1. GET .../health: the function answers, and every secret is set ("ready");
-   it also says which address headers reach it (never their values);
+1. GET .../health: the function answers, and every secret it needs is set
+   ("ready"); it also says which address headers reach it (never their
+   values) and whether the person check (Turnstile) is on;
 2. OPTIONS from https://hickorysandsdistrictava.org: 204, and the site
    allowed (CORS);
 3. OPTIONS from another site: 403;
-4. POST from the site without a Turnstile token: 403 "turnstile" (the check
-   that a person sent it runs before anything else is done);
+4. only when the function reports the person check on: POST from the site
+   without a Turnstile token: 403 "turnstile" (the check runs before
+   anything else is done). With it off (TURNSTILE_SECRET unset; Dan,
+   2026-10-19: added only if bots show up) this check is SKIP and nothing
+   is sent. A function that does not say (one older than the switch) is
+   taken as on, as it was;
 5. two health checks that claim other addresses (forged cf-connecting-ip,
    x-real-ip and x-forwarded-for): the digest of the address the limits use
    must not change with them, or one connection could send without limit.
@@ -19,7 +24,8 @@ sent, and nothing is stored or posted (src/vineyards/SETUP.md, step 8):
     .venv/bin/python -E -s -B src/vineyards/check_function.py [URL]
 
 The URL defaults to the function in the project yayebhncbagmebwgmezd.
-Exit status 0 when all five pass. Standard library only.
+The first line says which mode the function reported. Exit status 0 when
+none fails (a SKIP is not a failure). Standard library only.
 """
 
 import argparse
@@ -59,6 +65,19 @@ def call(url, method="GET", origin=None, body=None, extra=None):
     return status, headers, parsed
 
 
+def person_check_on(body):
+    """Whether the health answer says the person check is on.
+
+    Args:
+        body: The health check's parsed answer (or None).
+
+    Returns:
+        True or False as the function says; True when it does not say (a
+        function older than the switch always checked).
+    """
+    return (body or {}).get("person_check") is not False
+
+
 def checks(url):
     """Runs the five checks.
 
@@ -66,10 +85,13 @@ def checks(url):
         url: The function's URL.
 
     Returns:
-        A list of (passed, what, detail).
+        A pair: whether the person check is on (as the function reported
+        it), and a list of (result, what, detail), where result is True
+        (pass), False (fail) or None (skipped).
     """
     out = []
     status, _, body = call(url.rstrip("/") + "/health")
+    check_on = person_check_on(body)
     if status == 401:
         out.append(
             (
@@ -103,16 +125,25 @@ def checks(url):
     out.append(
         (status == 403, "another site may not", f"{status} (403 expected)")
     )
-    status, _, body = call(
-        url, "POST", SITE, {"form": "hsd-vineyard", "version": 1}
-    )
-    out.append(
-        (
-            status == 403 and (body or {}).get("error") == "turnstile",
-            "a send without the person check is refused",
-            f"{status} {body}",
+    if check_on:
+        status, _, body = call(
+            url, "POST", SITE, {"form": "hsd-vineyard", "version": 1}
         )
-    )
+        out.append(
+            (
+                status == 403 and (body or {}).get("error") == "turnstile",
+                "a send without the person check is refused",
+                f"{status} {body}",
+            )
+        )
+    else:
+        out.append(
+            (
+                None,
+                "a send without the person check is refused",
+                "person check off (TURNSTILE_SECRET not set): nothing sent",
+            )
+        )
     digests = []
     for forged in ("203.0.113.7", "198.51.100.9"):
         _, _, body = call(
@@ -133,7 +164,7 @@ def checks(url):
             else f"{digests}: tell Claude, the limits must use another header",
         )
     )
-    return out
+    return check_on, out
 
 
 def main(argv=None):
@@ -143,7 +174,7 @@ def main(argv=None):
         argv: The command line's arguments (sys.argv[1:] when None).
 
     Returns:
-        0 when every check passed, else 1.
+        0 when no check failed (a skipped one is not a failure), else 1.
     """
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     parser.add_argument("url", nargs="?", default=URL, help="the function")
@@ -151,11 +182,22 @@ def main(argv=None):
     local = args.url.startswith(("http://127.0.0.1:", "http://localhost:"))
     if not (args.url.startswith("https://") or local):
         parser.error("the URL must be https (or a local stand-in)")
-    results = checks(args.url)
-    for passed, what, detail in results:
-        print(f"{'PASS' if passed else 'FAIL'}  {what}: {detail}")
-    good = all(passed for passed, _, _ in results)
-    print("All five checks passed." if good else "Not yet: see FAIL above.")
+    check_on, results = checks(args.url)
+    print(
+        "Person check (Turnstile): "
+        + ("on" if check_on else "off (TURNSTILE_SECRET not set)")
+    )
+    words = {True: "PASS", False: "FAIL", None: "SKIP"}
+    for result, what, detail in results:
+        print(f"{words[result]}  {what}: {detail}")
+    good = all(result is not False for result, _, _ in results)
+    skipped = sum(result is None for result, _, _ in results)
+    if not good:
+        print("Not yet: see FAIL above.")
+    elif skipped:
+        print(f"All checks passed ({skipped} skipped: person check off).")
+    else:
+        print("All five checks passed.")
     return 0 if good else 1
 
 

@@ -74,7 +74,7 @@ def report(gh, why):
         f"The vineyard function's daily check failed: {why}\n\n"
         f"The run: {run}\n\n"
         "Until it passes, a contact may be kept past its year, or a closing "
-        "missed. src/vineyards/SETUP.md, step 8, has the checks; the "
+        "missed. src/vineyards/SETUP.md, step 6, has the checks; the "
         "function's logs are in Supabase (Edge Functions > vineyard-submit > "
         "Logs). Close this issue once the check passes again."
     )

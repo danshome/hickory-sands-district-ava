@@ -20,6 +20,7 @@ import re
 import shutil
 import socket
 import subprocess
+import urllib.request
 
 import pytest
 
@@ -173,11 +174,33 @@ def test_missing_secrets_and_the_health_check(out):
     assert out["notReady"]["status"] == 503
     health = out["health"]["body"]
     assert health["ready"] is False
-    assert health["missing"] == ["TURNSTILE_SECRET", "IP_SALT"]
+    # TURNSTILE_SECRET is optional: never a reason for "not ready"
+    assert health["missing"] == ["IP_SALT"]
+    assert health["person_check"] is False
     assert health["address_headers"] == ["cf-connecting-ip", "x-forwarded-for"]
     assert health["forwarded_entries"] == 2
     assert "198.51.100.1" not in json.dumps(health)
     assert out["healthReady"]["body"]["ready"] is True
+    assert out["healthReady"]["body"]["person_check"] is True
+
+
+def test_without_turnstile_the_rest_still_holds(out):
+    # TURNSTILE_SECRET unset (Dan, 2026-10-19: no Cloudflare for now): the
+    # function is ready, Cloudflare is never asked and a token is ignored;
+    # the trap, the rules and the limits per address stay.
+    health = out["offHealth"]["body"]
+    assert health["ready"] is True
+    assert health["missing"] == []
+    assert health["person_check"] is False
+    assert out["offSent"]["status"] == 200
+    assert out["offSent"]["body"]["ok"] is True
+    assert isinstance(out["offSent"]["body"]["reference"], int)
+    assert out["offFailToken"]["status"] == 200
+    assert out["offTrap"]["body"] == {"ok": True, "reference": None}
+    assert out["offInvalid"]["status"] == 422
+    assert out["afterOff"] == {"rows": 2, "issues": 2}
+    assert out["offPerIp"] == [200] * 5 + [429]
+    assert out["offSiteverify"] == 0
 
 
 @pytest.mark.parametrize(
@@ -244,9 +267,12 @@ def free_port():
         return s.getsockname()[1]
 
 
-def test_dans_check_passes_on_a_ready_function(bundle, capsys):
-    # src/vineyards/check_function.py, the four checks of SETUP.md, against
-    # the function served by the stand-in (every secret set).
+@pytest.mark.parametrize("person_check", [True, False])
+def test_dans_check_passes_on_a_ready_function(bundle, capsys, person_check):
+    # src/vineyards/check_function.py, the five checks of SETUP.md, against
+    # the function served by the stand-in: every secret set, or every one
+    # but the optional TURNSTILE_SECRET (then the person check is SKIP, and
+    # the check says which mode it found).
     if node_major() < 22:
         pytest.skip("node 22 or later is not installed")
     port = free_port()
@@ -264,11 +290,29 @@ def test_dans_check_passes_on_a_ready_function(bundle, capsys):
     )
     try:
         assert "stand-in on" in server.stdout.readline()
+        if not person_check:
+            body = json.dumps({"env": {"TURNSTILE_SECRET": ""}}).encode()
+            req = urllib.request.Request(
+                f"http://127.0.0.1:{port}/standin", data=body, method="POST"
+            )
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                resp.read()
         url = f"http://127.0.0.1:{port}/vineyard-submit"
         assert check_function.main([url]) == 0
         printed = capsys.readouterr().out
-        assert printed.count("PASS") == 5
-        assert "All five checks passed." in printed
+        assert "FAIL" not in printed
+        if person_check:
+            assert "Person check (Turnstile): on" in printed
+            assert printed.count("PASS") == 5
+            assert "SKIP" not in printed
+            assert "All five checks passed." in printed
+        else:
+            assert "Person check (Turnstile): off" in printed
+            assert printed.count("PASS") == 4
+            assert "SKIP  a send without the person check is refused" in (
+                printed
+            )
+            assert "All checks passed (1 skipped" in printed
     finally:
         server.terminate()
         server.wait(timeout=10)

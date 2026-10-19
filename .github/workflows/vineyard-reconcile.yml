@@ -3,7 +3,7 @@
 # missed, since GitHub never sends one again; a contact deleted a year after its issue was closed, and a row never tied
 # to an issue after a day; labels GitHub dropped put back). When that fails, it opens or comments on one issue for Dan,
 # and the run fails. It runs only once Dan has set the repository variable VINEYARD_FUNCTION_URL
-# (src/vineyards/SETUP.md, step 3). GitHub's Linux machines only.
+# (src/vineyards/SETUP.md, step 6.2). GitHub's Linux machines only.
 name: vineyard-reconcile
 on:
   schedule:

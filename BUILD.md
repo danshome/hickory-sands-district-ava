@@ -342,9 +342,14 @@ HSD_SITE_URL=http://127.0.0.1:8790 .venv/bin/python -m pytest -v -m live tests/l
 ```
 
 - every page at every size: no console error, uncaught error or failed request from the site's own files; no sideways
-  scrolling, with the menu shut or open; the menu opens by a tap (a click on the desktop), inside the screen, and each
-  of its links answers 200; the header's, the menu's, the footer's and the pages' own buttons and action links are at
-  least 44 px each way (a link inside a sentence is not counted);
+  scrolling, with the menu shut or open; the menu is a hamburger named "Menu" that opens and closes by a tap (a click
+  on the desktop) and by the keyboard (Enter, Space), a cross while open, inside the screen, with its links in order
+  (The boundary, The land, The water, The vineyards, Status, Journal, About & contact), the page's own marked
+  `aria-current`, each answering 200; the header's place line reads "Llano Uplift · Texas Hill Country", on one line
+  between the home link and the menu where it shows (also checked at 700 px, the narrowest screen that shows it); the
+  header's, the menu's, the footer's and the pages' own buttons and action links are at least 44 px each way (a link
+  inside a sentence is not counted);
+- every menu link, tapped on a phone and clicked on the desktop from Home, opens its page, which marks it current;
 - Explore, on the phones: tapping steps 30, 60 and 90 opens each step's popup, docked along the map's bottom, with the
   place tapped near the middle of the map left above it (the view's bottom is padded by the popup's height); the popup
   has no undock button, and the zoom and Home buttons are 44 px; a one-finger swipe beside the map (the page's margin)

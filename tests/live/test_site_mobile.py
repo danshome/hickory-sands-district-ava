@@ -26,10 +26,18 @@ hasTouch); and a 1440x900 desktop. On every page at every viewport:
 - no console error, uncaught error or failed request from the site's own
   files (a request the browser aborts is not a failure);
 - no sideways scrolling, with the menu shut or open;
-- the menu opens by a tap (a click on the desktop), inside the screen, and
-  every link in it answers 200;
+- the menu: a hamburger named "Menu" that opens by a tap (a click on the
+  desktop) and by the keyboard, turns into a cross while open and closes the
+  same ways; inside the screen; its links in order (The boundary, The land,
+  The water, The vineyards, Status, Journal, About & contact), the page's
+  own marked aria-current, and every one answers 200;
+- the header's place line reads "Llano Uplift · Texas Hill Country" and,
+  where it shows, sits on one line between the home link and the menu;
 - the header's, the footer's and the page's own buttons and action links are
   at least 44 px each way (links inside sentences are not counted).
+Every menu link, tapped on a phone and clicked on the desktop, opens its
+page, which marks it as the current one (The water: aquifer.html). The place
+line also fits at 700 px, the narrowest screen that shows it.
 On the phones:
 - Explore: tapping steps 30, 60 and 90 opens each one's popup, docked along
   the map's bottom, and the place tapped stays in view, near the middle of
@@ -84,6 +92,8 @@ PHONES = {
     "phone-375x667": (375, 667, "iPhone SE", 2),
 }
 VIEWPORTS = {**PHONES, "desktop-1440x900": (1440, 900, None, 1)}
+# the narrowest screen that shows the header's place line
+NARROW = {"desktop-700x900": (700, 900, None, 1)}
 TARGET = 44  # px: the smallest button or action link, each way
 SUBPIXEL = 0.5  # px a box may fall short of TARGET by rounding
 LOAD_S = 120  # s a page may take to load (the maps load Esri's SDK)
@@ -101,6 +111,17 @@ MIDDLE = (0.25, 0.75)
 # pages (links inside sentences are not counted)
 HEADER = (".site-header .identity", ".site-header details.navigation>summary")
 MENU = (".site-header details.navigation nav a",)
+# the menu's links in order: (text, page)
+MENU_LINKS = (
+    ("The boundary", "boundary.html"),
+    ("The land", "land.html"),
+    ("The water", "aquifer.html"),
+    ("The vineyards", "vineyards.html"),
+    ("Status", "status.html"),
+    ("Journal", "journal.html"),
+    ("About & contact", "about.html"),
+)
+PLACE_LINE = "Llano Uplift · Texas Hill Country"
 FOOTER = (".site-footer a",)
 ACTIONS = (
     "main .text-link",
@@ -149,6 +170,34 @@ BOXES = """(sels) => {
 MENU_STATE = """() => {
   const d = document.querySelector('.site-header details.navigation');
   return d ? d.open : null; }"""
+
+# the hamburger and the menu's links: a cross when open (the top line
+# turned, the middle one gone)
+MENU_SHAPE = """() => {
+  const d = document.querySelector('.site-header details.navigation');
+  const s = d.querySelector('summary');
+  const icon = s.querySelector('.menu-icon');
+  const turned = icon ? getComputedStyle(icon, '::before').transform : null;
+  return {open: d.open, label: s.getAttribute('aria-label'),
+          text: s.textContent.trim(), icon: !!icon,
+          cross: !!turned && turned !== 'none' &&
+            getComputedStyle(icon).borderTopColor === 'rgba(0, 0, 0, 0)',
+          links: [...d.querySelectorAll('nav a')].map(a => ({
+            text: a.textContent.trim(), href: a.getAttribute('href'),
+            current: a.getAttribute('aria-current')}))}; }"""
+
+# the header's place line, and the home link and the menu beside it
+PLACE = """() => {
+  const h = document.querySelector('.site-header');
+  const box = (sel) => { const e = h.querySelector(sel);
+    const r = e.getBoundingClientRect();
+    return {left: r.left, right: r.right, height: r.height,
+            shown: r.width > 0 && getComputedStyle(e).display !== 'none'}; };
+  const place = h.querySelector('.header-place');
+  return {text: place.textContent.trim(),
+          line: parseFloat(getComputedStyle(place).lineHeight),
+          place: box('.header-place'), identity: box('.identity'),
+          menu: box('details.navigation > summary')}; }"""
 
 # the map's buttons (zoom in and out, Home) in their shadow roots
 CONTROLS = """() => { const out = [];
@@ -321,7 +370,7 @@ def site_page(request, chrome):
     """
     page_name, viewport = request.param
     p, browser = chrome
-    width, height, device, ratio = VIEWPORTS[viewport]
+    width, height, device, ratio = {**VIEWPORTS, **NARROW}[viewport]
     options = dict(
         viewport={"width": width, "height": height},
         device_scale_factor=ratio,
@@ -459,38 +508,150 @@ def test_page_reads_and_its_menu_works(site_page):
         for s in small(page.evaluate(BOXES, [*HEADER, *FOOTER, *ACTIONS]))
     ]
 
+    problems += place_problems(page)
+    problems += menu_problems(view)
+    problems += view.problems()
+    assert not problems, f"{view.name}:\n  " + "\n  ".join(problems)
+
+
+def place_problems(page):
+    """The header's place line: its words, and one line where it shows."""
+    got = page.evaluate(PLACE)
+    problems = []
+    if got["text"] != PLACE_LINE:
+        problems.append(f"the place line reads {got['text']!r}")
+    place = got["place"]
+    if place["shown"]:
+        if place["height"] > 1.5 * got["line"]:
+            problems.append(
+                f"the place line takes {place['height']:.0f} px, more than "
+                f"one line ({got['line']:.0f} px)"
+            )
+        if (
+            place["left"] < got["identity"]["right"]
+            or place["right"] > got["menu"]["left"]
+        ):
+            problems.append(
+                f"the place line overlaps the home link or menu: {got}"
+            )
+    return problems
+
+
+def menu_problems(view):
+    """The hamburger by tap (click) and keyboard, and the menu's links."""
+    page = view.page
+    problems = []
     summary = page.locator(".site-header details.navigation > summary")
     if summary.count() != 1:
-        problems.append("no menu in the header")
-    else:
-        tap(view, summary)
-        page.wait_for_timeout(400)
-        if page.evaluate(MENU_STATE) is not True:
-            problems.append("the menu did not open")
-        links = page.evaluate(BOXES, list(MENU))
-        if not links:
-            problems.append("the open menu shows no links")
-        screen = page.evaluate(SIDEWAYS)["screen"]
-        problems += [
-            f"menu link {b['text']!r} outside the screen ({b['left']:.0f} "
-            f"to {b['right']:.0f} of {screen})"
-            for b in links
-            if b["left"] < -1 or b["right"] > screen + 1
-        ]
-        problems += [f"under {TARGET} px: {s}" for s in small(links)]
-        wide = page.evaluate(SIDEWAYS)
-        if max(wide["page"], wide["body"]) > wide["screen"] + 1:
-            problems.append(f"scrolls sideways (menu open): {wide}")
-        view.shot("menu-open")
-        for b in links:
-            url = urldefrag(urljoin(page.url, b["href"] or "")).url
-            if own(url) and (code := answers(page.request, url)) != 200:
-                problems.append(f"menu link {b['href']} answers HTTP {code}")
-        tap(view, summary)
-        page.wait_for_timeout(400)
-        if page.evaluate(MENU_STATE) is not False:
-            problems.append("the menu did not close")
+        return ["no menu in the header"]
+    shape = page.evaluate(MENU_SHAPE)
+    if shape["label"] != "Menu" or shape["text"] or not shape["icon"]:
+        problems.append(
+            "the menu's button is not a hamburger named Menu: "
+            f"label {shape['label']!r}, text {shape['text']!r}, "
+            f"icon {shape['icon']}"
+        )
+    links = [
+        (link["text"], link["href"].rsplit("/", 1)[-1])
+        for link in shape["links"]
+    ]
+    if links != list(MENU_LINKS):
+        problems.append(f"the menu's links are {links}, not {MENU_LINKS}")
+    current = [
+        link["text"] for link in shape["links"] if link["current"] == "page"
+    ]
+    mine = [text for text, href in MENU_LINKS if href == view.page_name]
+    if current != mine:
+        problems.append(f"the menu marks {current} as this page, not {mine}")
 
+    tap(view, summary)
+    page.wait_for_timeout(400)
+    shape = page.evaluate(MENU_SHAPE)
+    if not shape["open"]:
+        problems.append("the menu did not open by a tap or click")
+    elif not shape["cross"]:
+        problems.append("the open menu's button is not a cross")
+    boxes = page.evaluate(BOXES, list(MENU))
+    if len(boxes) != len(MENU_LINKS):
+        problems.append(f"the open menu shows {len(boxes)} links")
+    screen = page.evaluate(SIDEWAYS)["screen"]
+    problems += [
+        f"menu link {b['text']!r} outside the screen ({b['left']:.0f} "
+        f"to {b['right']:.0f} of {screen})"
+        for b in boxes
+        if b["left"] < -1 or b["right"] > screen + 1
+    ]
+    problems += [f"under {TARGET} px: {s}" for s in small(boxes)]
+    wide = page.evaluate(SIDEWAYS)
+    if max(wide["page"], wide["body"]) > wide["screen"] + 1:
+        problems.append(f"scrolls sideways (menu open): {wide}")
+    view.shot("menu-open")
+    for b in boxes:
+        url = urldefrag(urljoin(page.url, b["href"] or "")).url
+        if own(url) and (code := answers(page.request, url)) != 200:
+            problems.append(f"menu link {b['href']} answers HTTP {code}")
+    tap(view, summary)
+    page.wait_for_timeout(400)
+    shape = page.evaluate(MENU_SHAPE)
+    if shape["open"]:
+        problems.append("the menu did not close by a tap or click")
+    elif shape["cross"]:
+        problems.append("the shut menu's button is still a cross")
+
+    # the keyboard: Enter opens it, Space closes it
+    summary.focus()
+    for key, opens in (("Enter", True), ("Space", False)):
+        page.keyboard.press(key)
+        page.wait_for_timeout(300)
+        if page.evaluate(MENU_STATE) is not opens:
+            what = "open" if opens else "close"
+            problems.append(f"the menu did not {what} by the {key} key")
+    return problems
+
+
+@pytest.mark.parametrize(
+    "site_page",
+    cells(["index.html"], ["phone-390x844", "desktop-1440x900"]),
+    indirect=True,
+)
+def test_every_menu_link_opens_its_page(site_page):
+    view, page = site_page, site_page.page
+    problems = []
+    start = page.url
+    for text, href in MENU_LINKS:
+        page.goto(start, wait_until="domcontentloaded")
+        tap(view, page.locator(".site-header details.navigation > summary"))
+        page.wait_for_timeout(300)
+        link = page.locator(".site-header details.navigation nav a").filter(
+            has_text=text
+        )
+        if link.count() != 1:
+            problems.append(f"{text}: {link.count()} such links in the menu")
+            continue
+        try:
+            with page.expect_navigation(wait_until="domcontentloaded"):
+                tap(view, link.first)
+        except PlaywrightError as e:
+            problems.append(f"{text}: no page opened ({type(e).__name__})")
+            continue
+        landed = urlsplit(page.url).path.rsplit("/", 1)[-1]
+        marked = page.evaluate(MENU_SHAPE)["links"]
+        current = [link["text"] for link in marked if link["current"] == "page"]
+        if landed != href or current != [text]:
+            problems.append(
+                f"{text}: opened {page.url}, which marks {current} as the "
+                f"current page (expected {href}, marking {text!r})"
+            )
+    problems += view.problems()
+    assert not problems, f"{view.name}:\n  " + "\n  ".join(problems)
+
+
+@pytest.mark.parametrize("site_page", cells(PAGES, NARROW), indirect=True)
+def test_place_line_fits_at_700px(site_page):
+    view = site_page
+    problems = place_problems(view.page)
+    if not view.page.evaluate(PLACE)["place"]["shown"]:
+        problems.append("the place line is hidden at 700 px")
     problems += view.problems()
     assert not problems, f"{view.name}:\n  " + "\n  ".join(problems)
 

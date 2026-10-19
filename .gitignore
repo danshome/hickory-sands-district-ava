@@ -10,6 +10,10 @@
 # resources/quads/basemap-manifest.csv
 /resources/quads/basemap/
 
+# The 3D aquifer page's downloads (TWDB's model and well databases, Census files): fetched by src/site/make_aquifer_3d.py
+# when the page's data is made again and checked against the SHA-256s in resources/aquifer/inputs.csv
+/resources/aquifer/cache/
+
 # Set aside for Dan to review and delete (holds private material)
 /tobedeleted/
 

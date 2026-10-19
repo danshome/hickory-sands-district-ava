@@ -125,7 +125,8 @@ src/
                          check_outputs: what reaches TTB (PDF fonts, compare text, figures, wording, GIS, zip paths)
   package/               make_package.sh (the zip)
   site/                  make_site_data: the website's map data (docs/data/) from the boundary build; make_survey_map
-                         (with survey_frame): the quads under the boundary drawing on Home and The boundary
+                         (with survey_frame): the quads under the boundary drawing on Home and The boundary;
+                         make_aquifer_3d (with aquifer/): the 3D aquifer page's data (docs/assets/aquifer/)
   publish/               ArcGIS Online: agol_publish, agol_layer, agol_dashboard, agol_org_categories, agol_share (what
                          is sent); agol_dryrun + agol_dryrun_checks (the dry run); agol_check (the live site)
 resources/
@@ -135,8 +136,11 @@ resources/
     proposed/            the proposed ring (Oct. 15), the Oct. 14 step lines and points, the Grit detour pins
     tracing/             pin-moves.json, trace priors, route overrides, hand-patches-EPSG4269.geojson
   ttb/                   TTB's Notice 243 PDF, the Federal Register's full-text XML of it (byte for byte), the
-                         AVAs_Production record and polygon snapshot
+                         AVAs_Production record and polygon snapshot, and the proposed Llano Uplift AVA's (3D page)
   geology/               USGS SGMC units shifted to the outcrops, for the map only; see resources/geology/README.md
+  aquifer/               the 3D aquifer page's inputs: inputs.csv (the pinned downloads), cache/ (them, not in git),
+                         TWDB's fault lines; see resources/aquifer/README.md
+  vineyards/             the vineyard outlines the 3D aquifer page draws; see resources/vineyards/README.md
   quads/                 quads-manifest.csv, cropped/ (neatline VRT templates); geotiff/ and geopdf/ are downloaded
 documents/               hand-written texts: README.template.txt ({AREA_SQMI} filled by the build),
                          read-me-first.template.html
@@ -187,7 +191,9 @@ research/                research, audits, design proposals and prototypes until
    (even two of GitHub's Linux runners) can place a vertex differently along the same ink (#116), so lines within 5 m
    of each other are reported in metres, not failed. The survey map under the boundary drawing
    (`src/site/make_survey_map.py`) is checked by its record, `docs/assets/survey-map.json` (its frame, the drawn line's
-   box and its quads) and the image's size, never by its pixel values.
+   box and its quads) and the image's size, never by its pixel values. The 3D aquifer page's data
+   (`src/site/make_aquifer_3d.py --check`) is checked by its record, `docs/assets/aquifer/record.json`, with no
+   download (see The website below).
 
 ## Python packages and security
 
@@ -268,6 +274,14 @@ for Python; 2-space YAML and TOML). By hand: `.venv/bin/ruff format .` and `.ven
 - `test_survey_map.py`: Home and The boundary draw the boundary alike; the survey image fills their viewBox at the
   record's size; the record lists exactly the quads of both manifests; and, on made-up drawings, the frame's fit, its
   refusal of a drawing at two scales, and what the check calls stale;
+- `test_aquifer_3d.py`: the 3D aquifer page's data is up to date with its record (the build's check); the page loads
+  the pinned SDK and its script, and its scripts read only files that exist (every tile, heads file and report cell
+  too); no well report keeps a removed field, or free text with a title, a role word, a company's name, a name after
+  "by", a phone number, an e-mail or street address, a district's well number or initials on a number, or (in a note
+  about people) a contact word or initials; on made-up names, a log line keeps its rock and loses the name, and an
+  owner's initials, short names and "&" names are found (the review of #139); `stats.json` holds every figure the page
+  marks, the wells' scales among them; the Wells group's controls and the groups' order; every file is under 2 MB; the
+  wording; and, on made-up records, what the check calls stale;
 - `test_site.py`: every page of the website in `docs/` is a complete HTML document (doctype, language, character set,
   phone viewport, title), every local file it links to or loads is in `docs/`, and every link off the site is https;
 - `test_publish_dryrun.py`: the publish dry run's checks pass on a dry run of the current build
@@ -377,6 +391,22 @@ line's bounding box and the quads; the image is made again only when that record
 or the wrong size, and the check compares the record and the image's size, never its pixel values, so machines whose
 GDAL rounds differently agree. A frame reaching past the listed quads stops `./build.sh site-data`, naming where.
 
+- **The Hickory Aquifer in 3D** (`aquifer.html`, #135; linked from The land): the whole Hickory Aquifer as TWDB's
+  Llano Uplift groundwater model (GAM v1.01, layer 7) draws it, under a see-through ground, in an `<arcgis-scene>`;
+  TWDB's well reports (driller's reports and the Groundwater Database) coloured by the rock their logs record, without
+  people's names; the vineyard outlines (a vineyard's popup lists the wells near it); the proposed district, TTB's
+  proposed Llano Uplift AVA, counties and towns; "My location", with the model's estimate of what lies beneath; a
+  switch for every layer and group and filters for use, water volume (yield) and depth. Zoomed out (the opening Whole
+  aquifer view) it draws one well per cell; from the District view's scale in (`WELLS_ALL_SCALE` in `params.py`,
+  between the two views as measured on a wide screen and a phone), every well's head, from the compact
+  `wells/heads-<n>.json`; closer in (`WELLS_LINES_SCALE`), every well's line too, around the middle of the view. Its
+  code is `aquifer3d.js`,
+  `aquifer-wells.js` and `aquifer.css`; its data is `docs/assets/aquifer/`, beside it, not in `docs/data/` (which
+  `make_site_data.py` owns). Every figure it shows comes from `docs/assets/aquifer/stats.json`, read when the page
+  loads (`data-stat` elements, not `data-figure`). When Esri's ground (elevation) cannot be loaded, for example a
+  refused key, the ground is drawn flat and the aquifer and wells at their depths below the model's own ground; when
+  the basemap cannot be loaded, the layers are drawn on the page's background; the page says which.
+
 Their code is `docs/assets/maps.js` (shared), `explore.js`, `walk.js` and `maps.css`. Text from the data is only ever set
 as text, never parsed as HTML. The basemaps need the ArcGIS Online API key in `docs/assets/map-config.js`. It is public by
 design and limited to the basemap styles service and to the referrers `https://hickorysandsdistrictava.org` and
@@ -400,6 +430,35 @@ the visitor's own email app (a `mailto:` URL) and the page sends and keeps nothi
 it in the tests), a message whose URL would pass 1,900 characters goes by the clipboard, and the pin map loads Esri's
 SDK only when asked; `forms.css` styles only that section. `tests/test_vineyards_form.py` checks the form, its county
 list against `docs/data/boundary.geojson`, the scripts, and (with node) the email.
+
+The 3D aquifer page's data is made by `src/site/make_aquifer_3d.py` (with `src/site/aquifer/`) from the downloads
+`resources/aquifer/inputs.csv` pins (TWDB's model archive, 364 MB, its 2017 aquifer outlines, its two well databases,
+the Census counties and places) and committed inputs (`resources/vineyards/`, TWDB's fault lines in
+`resources/aquifer/`, TTB's Llano Uplift AVA in `resources/ttb/`, the shifted geology). `docs/assets/aquifer/record.json`
+records every input's SHA-256, the generator's parameters (`src/site/aquifer/params.py` and a digest of the privacy
+rules) and every file written with its size. `./build.sh` (and so the build workflow) only checks it
+(`make_aquifer_3d.py --check`): it reads the manifest, the committed inputs and the record, downloads nothing, and
+exits 3 when an input, a parameter or a file changed. GitHub Actions never download the model or the well files.
+`./build.sh site-data` makes the data again only when it is stale: it fetches any input missing from the gitignored
+`resources/aquifer/cache/` (as the quads are kept in `resources/quads/geotiff/`), checks every one against its bytes and
+SHA-256, extracts the model's GeoPackage with `bsdtar` (macOS has it; on Linux `brew install libarchive`), writes every
+file into the gitignored `target/aquifer-next/`, and swaps that in only after two hard checks: no person's name or address
+survives in the well reports (`src/site/aquifer/privacy.py`: the removed fields; then every note blanked, and in a line
+of a well's log only the words taken out and marked `[removed]`, where it holds a word or the initials of a name on the
+record, a name from the area, a title, a person's role, a company's name, a name after "by", a rare word, a phone
+number, an e-mail or street address, a groundwater district's well number or initials on a number, or in a note about
+people a contact word or initials; the check also fails on a record's own names in any of its other text but TWDB's
+codes), and every file is under the hooks' 2 MB. The generator also
+reads the gitignored `.private-words`, when present (in a git worktree, the main checkout's, as the hook does), as
+more words to blank. Commit the data and its record together.
+
+**Refreshing an input.** TWDB's well databases are served from one URL that always gives today's file, so a fetch
+on another day does not match the pinned SHA-256 and the run stops, naming the input. Moving to a new snapshot is a
+deliberate change: download the file, put its date (`snapshot`: the date of the data, here the files' own date inside the
+zip; `fetched`: today), byte count and SHA-256 (`shasum -a 256`) in its row of `resources/aquifer/inputs.csv`, put the
+file in `resources/aquifer/cache/` under the row's `file` name (or delete the cached one and let the run fetch it),
+run `./build.sh site-data`, look at the figures in `docs/assets/aquifer/stats.json` and commit the data, the record and
+the manifest in one pull request. A changed fault-line or vineyard file in `resources/` makes the data stale the same way.
 
 The land page's geologic timeline (#117) is plain HTML in `docs/land.html`: eight stages, oldest first, each with its
 age, its uncertainty in words and numbered citations to the Sources list at its end. `docs/assets/timeline.js` only adds

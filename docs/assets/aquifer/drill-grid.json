@@ -1,0 +1,52 @@
+{
+ "source": "TWDB Llano Uplift GAM v1.01 (the top of every layer, layer 7's top and bottom, ibound); TWDB 2017 Minor Aquifers (the Hickory outline, shifted)",
+ "rows": 478,
+ "cols": 556,
+ "null": -32768,
+ "units": "US survey feet above sea level",
+ "layout": [
+  "ground_ft int16",
+  "top7_ft int16",
+  "bot7_ft int16",
+  "flags uint8"
+ ],
+ "order": "four arrays, each row-major from row 1, little-endian",
+ "flags": {
+  "layer7": 1,
+  "inside_official": 2,
+  "outcrop71": 4,
+  "precambrian81": 8,
+  "in_model": 16
+ },
+ "lonlat_to_rowcol": {
+  "degree": 3,
+  "terms": "u = lon - lon_c, v = lat - lat_c; for each total power n from 0 up, u^(n-j) v^j for j = 0..n",
+  "lon_c": -99.04040625689,
+  "lat_c": 30.7978258794879,
+  "row": [
+   237.40463749336075,
+   -169.29938408218393,
+   -193.55460663566234,
+   -0.7516605364106032,
+   1.7793488792451404,
+   -0.030178148671198755,
+   0.0023032405420598755,
+   0.007899823748301994,
+   0.0002766995981105141,
+   0.009520619830751784
+  ],
+  "col": [
+   277.223498888858,
+   166.3888637530018,
+   -196.94031780552928,
+   -0.7648108428246524,
+   -1.7487469183424018,
+   -0.030718494864330925,
+   -0.0022638433113121503,
+   0.008038193311689996,
+   -0.00027253954621740505,
+   0.009687076213011486
+  ],
+  "max_error_cells": 0.00013
+ }
+}

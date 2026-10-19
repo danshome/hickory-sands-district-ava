@@ -176,6 +176,9 @@ ACTIONS = (
     "main .arrival-foot a",
     "main .lp-link",  # The water's panel: About this map, Sources and limits
     "main .about-toc a",  # its About panel's contents (rendered when open)
+    "main .w-button",  # The vineyards: the form's start
+    "main .w-link",
+    "main .vy-show",  # its list's Show on the map
 )
 # The water: the panel's links, and the About panel's contents and Close
 AQUIFER_LINKS = ("main .lp-link",)

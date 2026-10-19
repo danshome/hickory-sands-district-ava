@@ -4,7 +4,7 @@ Context only: no boundary geometry comes from these layers. NAD83 (EPSG:4269), l
 
 | file | what it is | read by |
 |---|---|---|
-| `usgs-sgmc-geology-shifted-to-naip-EPSG4269.gpkg` | three USGS units, shifted to sit on the outcrops: `Town_Mountain_Granite` (68 polygons), `Younger_granitic_intrusions` (62), `Hickory_Sandstone_Member_formation` (95) | `src/publish/agol_layer.py` (layer 4m and the web map 4a) |
+| `usgs-sgmc-geology-shifted-to-naip-EPSG4269.gpkg` | three USGS units, shifted to sit on the outcrops: `Town_Mountain_Granite` (68 polygons), `Younger_granitic_intrusions` (62), `Hickory_Sandstone_Member_formation` (95) | `src/publish/agol_layer.py` (layer 4m and the web map 4a); `src/site/make_aquifer_3d.py` (the Hickory Sandstone Member formation on the 3D aquifer page, and the same shift applied to TWDB's 2017 Hickory outline) |
 
 Source: USGS State Geologic Map Compilation (Horton and others, 2017, USGS Data Series 1052), Texas units TXpCAt;0,
 TXpCAy;0 and TXCAh;0; public domain. SGMC as published sits about 400 m south-east of the outcrops on USDA NAIP

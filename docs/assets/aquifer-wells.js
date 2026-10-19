@@ -851,7 +851,7 @@ function reportElement(a, record, useGroups) {
   }
   links.append(el("span", " (TWDB's own pages show the names left out here.)"));
   box.append(links);
-  box.append(el("p", "As reported to TWDB, every field that holds something. Owners', drillers', pluggers' and companies' names, addresses and licence numbers are left out; any note that could name someone is blank, and words in the log that could are marked [removed]."));
+  box.append(el("p", "As reported to TWDB, every field that holds something. Owners', drillers', pluggers' and companies' names, addresses and license numbers are left out; any note that could name someone is blank, and words in the log that could are marked [removed]."));
   box.append(el("h4", a.uid[0] === "S" ? "Driller's report (TWDB SDR)" : "Groundwater Database (TWDB GWDB)"));
   box.append(fields(record));
   for (const [key, label, cols] of SECTIONS) {

@@ -2,20 +2,32 @@
 
 Every page in docs/ is a complete HTML document (a doctype, the language, the
 character set, the phone viewport and a title), every local file a page links
-to or loads is in docs/, and every link off the site is https. site.yml runs
-these before it deploys docs/ to GitHub Pages. Standard library only, so the
-lint workflow runs them too.
+to or loads is in docs/ (a script's or stylesheet's version stamp aside), every
+link off the site is https, and every local script and stylesheet a page loads,
+and every module a script imports, carries the stamp of the file as it is now
+(src/site/stamp_assets.py, #138), so a pull request that changes a script
+without stamping it again fails. A page that has moved (explore.html and
+aquifer.html, now the map) is a small page that sends the reader on, with and
+without JavaScript, and no page links it. Walk the line is the site's only
+story map: no page names or links the 2023 ArcGIS StoryMap (Dan, 2026-10-19).
+site.yml runs these before it deploys docs/ to GitHub Pages. Standard library
+only, so the lint workflow runs them too.
 """
 
 from html.parser import HTMLParser
 import os
+import re
 from urllib.parse import unquote
 from urllib.parse import urlsplit
 
 import pytest
 
+from src.site import stamp_assets
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SITE = os.path.join(ROOT, "docs")
+# Pages made from a template elsewhere, stamped like the pages (build.sh).
+TEMPLATES = (os.path.join(ROOT, "src", "site", "walk.template.html"),)
 PAGES = sorted(
     os.path.relpath(os.path.join(folder, name), SITE)
     for folder, _, names in os.walk(SITE)
@@ -23,6 +35,12 @@ PAGES = sorted(
     if name.endswith(".html")
 )
 LINKS = ("href", "src", "poster", "data")
+SITE_URL = "https://hickorysandsdistrictava.org/"
+# The pages that have moved, and where each sends the reader.
+MOVED = {
+    "explore.html": "map.html",
+    "aquifer.html": "map.html?layers=aquifer,vineyards,places",
+}
 
 
 class Page(HTMLParser):
@@ -37,6 +55,10 @@ class Page(HTMLParser):
         self.viewport = False
         self.title = ""
         self.refs = []
+        self.refresh = None  # a meta refresh's content
+        self.canonical = None
+        self.robots = None
+        self.moved_to = None  # assets/moved.js's data-to
         self._in_title = False
 
     def handle_decl(self, decl):
@@ -51,6 +73,16 @@ class Page(HTMLParser):
         elif tag == "meta":
             self.charset = self.charset or "charset" in a
             self.viewport = self.viewport or a.get("name") == "viewport"
+            if (a.get("http-equiv") or "").lower() == "refresh":
+                self.refresh = a.get("content")
+            if a.get("name") == "robots":
+                self.robots = a.get("content")
+        elif tag == "link" and a.get("rel") == "canonical":
+            self.canonical = a.get("href")
+        elif tag == "script" and (a.get("src") or "").split("?v=")[0] == (
+            "assets/moved.js"
+        ):
+            self.moved_to = a.get("data-to")
         elif tag == "title":
             self._in_title = True
         for name in LINKS:
@@ -127,7 +159,72 @@ def test_local_files_exist(page):
     assert not missing, f"not in docs/: {missing}"
 
 
+def test_a_stamped_url_names_its_file():
+    want = os.path.join(SITE, "assets", "site.css")
+    assert target("index.html", "assets/site.css?v=3f2a91c") == want
+    assert target("404.html", "/assets/site.css?v=3f2a91c") == want
+
+
+def test_every_script_and_stylesheet_carries_its_stamp():
+    stale = stamp_assets.Site(SITE, TEMPLATES).stale
+    shown = [
+        f"{os.path.relpath(p, ROOT)}: {have} -> {want}"
+        for p, have, want in stale
+    ]
+    assert not stale, (
+        "run ./build.sh stamp and commit what it changes:\n" + "\n".join(shown)
+    )
+
+
 @pytest.mark.parametrize("page", PAGES)
 def test_links_off_the_site_are_https(page):
     plain = [r for r in read(page).refs if urlsplit(r).scheme == "http"]
     assert not plain, f"http, not https: {plain}"
+
+
+def test_the_moved_pages_are_the_only_ones_that_refresh():
+    refreshing = sorted(p for p in PAGES if read(p).refresh is not None)
+    assert refreshing == sorted(MOVED)
+
+
+@pytest.mark.parametrize("page", sorted(MOVED))
+def test_a_moved_page_sends_the_reader_on(page):
+    # assets/moved.js goes there at once, keeping the old address's query and
+    # #fragment; without JavaScript the meta refresh goes to the address
+    # alone; the page's link is there for anything that stops both.
+    p = read(page)
+    to = MOVED[page]
+    assert p.moved_to == to
+    assert p.refresh == f"0; url={to}"
+    assert to in p.refs
+    assert p.canonical == SITE_URL + "map.html"
+    assert p.robots == "noindex"
+    assert os.path.isfile(target(page, to))
+
+
+@pytest.mark.parametrize("page", [p for p in PAGES if p not in MOVED])
+def test_no_page_relies_on_a_redirect(page):
+    moved = {os.path.join(SITE, name) for name in MOVED}
+    links = [r for r in read(page).refs if target(page, r) in moved]
+    assert not links, f"links a moved page: {links}"
+
+
+# The 2023 ArcGIS StoryMap: its host, ArcGIS Online's story app, or its name.
+STORYMAP = re.compile(r"storymaps\.arcgis\.com|/apps/stories/|storymap", re.I)
+
+
+def test_no_page_names_or_links_the_2023_storymap():
+    # Walk the line is the site's only story map (Dan, 2026-10-19).
+    texts = [os.path.join(ROOT, "src", "site", "walk.template.html")]
+    for folder, _, names in os.walk(SITE):
+        texts += [
+            os.path.join(folder, name)
+            for name in names
+            if name.endswith((".html", ".js", ".css"))
+        ]
+    found = []
+    for path in texts:
+        with open(path, encoding="utf-8") as fh:
+            for m in STORYMAP.finditer(fh.read()):
+                found.append(f"{os.path.relpath(path, ROOT)}: {m[0]!r}")
+    assert not found

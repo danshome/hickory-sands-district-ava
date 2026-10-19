@@ -1,8 +1,8 @@
 # resources/vineyards: the vineyard outlines on the site
 
 Read by `src/site/make_vineyards.py` (`src/site/aquifer/vineyards.py`), which writes `docs/assets/vineyards/` for the
-3D aquifer page, `docs/aquifer.html` (#135), and the vineyards page. NAD83 (EPSG:4269), longitude first. Map context
-only: no boundary geometry comes from it.
+map, `docs/map.html` (#135), and the vineyards page. NAD83 (EPSG:4269), longitude first. Map context only: no boundary
+geometry comes from it.
 
 `vineyards-EPSG4269.geojson`: one feature per vine block, with its vineyard's `name`, its `category`, its `block` (where a
 vineyard has several: its number or a planned block's name, always as text, since the page's map takes a field's type

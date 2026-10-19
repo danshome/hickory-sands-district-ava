@@ -14,18 +14,21 @@ local server started by hand:
     python3 -m http.server 8790 --bind 127.0.0.1 -d docs
     export HSD_SITE_URL=http://127.0.0.1:8790
     .venv/bin/python -m pytest -m live tests/live/test_site_mobile.py
-The basemap key in docs/assets/map-config.js serves only the live site's
-referrer and http://localhost:8765, so on any other local address Esri
-refuses the basemap (HTTP 401) and the maps draw the line on a plain
-background: on a loopback address those refusals, and the SDK's console
-lines about them, are allowed; on the live site they fail the test (the key
+Errors: a console error counts only when Chrome gives its source as one of
+the site's own files; what Esri's SDK logs (from js.arcgis.com) is never
+counted, here or live. The basemap key in docs/assets/map-config.js serves
+only the live site's referrer and http://localhost:8765, so on any other
+local address Esri refuses the basemap (HTTP 401) and the maps draw the line
+on a plain background: on a loopback address those refusals (HTTP 401 or 403
+from arcgis.com) are allowed; on the live site they fail the test (the key
 expired or lost its referrer).
 
 The viewports: phones 390x844 (iPhone), 360x780 (Android) and 375x667 (iPhone
 SE), emulated with their user agent, touch and pixel ratio (isMobile,
 hasTouch); and a 1440x900 desktop. On every page at every viewport:
-- no console error, uncaught error or failed request from the site's own
-  files (a request the browser aborts is not a failure);
+- no console error from the site's own files, uncaught error from them (or
+  from no file) or failed request for one (a request the browser aborts is
+  not a failure);
 - no sideways scrolling, with the menu shut or open;
 - the menu: a hamburger named "Menu" that opens by a tap (a click on the
   desktop) and by the keyboard, turns into a cross while open and closes the
@@ -34,11 +37,22 @@ hasTouch); and a 1440x900 desktop. On every page at every viewport:
   own marked aria-current, and every one answers 200;
 - the header's place line reads "Llano Uplift · Texas Hill Country" and,
   where it shows, sits on one line between the home link and the menu;
-- the header's, the footer's and the page's own buttons and action links are
-  at least 44 px each way (links inside sentences are not counted).
+- these buttons and action links are at least 44 px each way: the header's
+  home link and menu button, the open menu's links, the footer's links, and
+  on the pages those ACTIONS lists (.text-link, Explore's basemap buttons,
+  The land's Earlier and Later, Home's ways in and arrival links, The
+  water's panel links and About contents); other links and buttons (links
+  inside sentences, the vineyards form) are not measured. One hidden by
+  design is not measured: inside a [hidden] element, or not rendered
+  (checkVisibility(): display:none, visibility:hidden, the content of a shut
+  <details> or <dialog>). Every other one is, so a box collapsed to 1.5 px
+  or less fails as too small.
 Every menu link, tapped on a phone and clicked on the desktop, opens its
 page, which marks it as the current one (The water: aquifer.html). The place
 line also fits at 700 px, the narrowest screen that shows it.
+The water (aquifer.html), at every viewport: its panel's links (on a phone,
+with the Layers sheet opened) and, opened from "About this map", the About
+panel's contents links and Close button are 44 px each way.
 On the phones:
 - Explore: tapping three steps, a quarter, a half and three quarters of the
   way along the line (docs/data/steps.geojson), opens each one's popup, docked
@@ -50,24 +64,31 @@ On the phones:
   scrolls the page and leaves the map still; two fingers move the map; Home
   goes back to the whole boundary;
 - The land: the drawing steps to the stage on the reading line as the page
-  scrolls, and still does when the reader scrolls right after tapping Later;
-  so does the slice through the district, at every viewport, with no
-  sideways scrolling, after tapping Next too (screenshots of the maps, each
-  step and the questions); and when its data is not JSON, malformed, or
-  fails while it is drawn, the slice keeps the build's static drawing and
-  the steps, with nothing of land.js left on the page.
+  scrolls, and still does when the reader scrolls right after tapping Later
+  (the tap holds the drawing for 1,200 ms); and, with the page's clock
+  stopped so that only the reader can end the hold, a touch outside the
+  drawing's buttons or a turn of the wheel ends it at once, while a touch on
+  the buttons does not (timeline.js, reader()); so does the slice through
+  the district, at every viewport, with no sideways scrolling, after tapping
+  Next too (screenshots of the maps, each step and the questions); and when
+  its data is not JSON, malformed, or fails while it is drawn, the slice
+  keeps the build's static drawing and the steps, with nothing of land.js
+  left on the page.
 On a phone (390x844) and the desktop, The water's wells (aquifer.html,
 through the page's window.aquiferWells): at first the default filters'
 wells (irrigation, the default yield and up, counted here from the data),
 every one's head drawn zoomed out; "All" uses thins them to the overview;
 filters widened in quick steps leave one heads layer on the map, in step with
 the filters and the Wells switch; Reset comes back to the first count.
+Explore's map must settle (ready, not updating) within 30 s of each move,
+or the test fails there.
 Screenshots: target/browser-tests/site/<page>-<viewport>-<test>.png
 (-FAILED.png when it failed), and <page>-<viewport>-loaded.png after each
 load.
 """
 
 import contextlib
+import datetime
 import functools
 import json
 import os
@@ -158,7 +179,12 @@ ACTIONS = (
     "main .geo-step",
     "main .way-list>a",
     "main .arrival-foot a",
+    "main .lp-link",  # The water's panel: About this map, Sources and limits
+    "main .about-toc a",  # its About panel's contents (rendered when open)
 )
+# The water: the panel's links, and the About panel's contents and Close
+AQUIFER_LINKS = ("main .lp-link",)
+AQUIFER_ABOUT = ("main .aq-about .about-toc a", "main .aq-about .about-close")
 
 # ---------------------------------------------------------------- in the page
 READY = """(sel) => { const m = document.querySelector(sel);
@@ -179,7 +205,11 @@ SIDEWAYS = """() => {
   return {page: de.scrollWidth, body: document.body.scrollWidth,
           screen: de.clientWidth}; }"""
 
-# every visible element a selector finds, with its box
+# every element a selector finds, with its box, but those hidden by design:
+# inside a [hidden] element, or not rendered (checkVisibility(): display:none,
+# visibility:hidden, the content of a shut <details> or <dialog>). Any other
+# box is returned whatever its size, so one collapsed to nothing is measured
+# (and fails), not skipped.
 BOXES = """(sels) => {
   const out = [];
   for (const sel of sels) {
@@ -187,7 +217,6 @@ BOXES = """(sels) => {
       if (el.closest('[hidden]') || (el.checkVisibility &&
           !el.checkVisibility({visibilityProperty: true}))) continue;
       const r = el.getBoundingClientRect();
-      if (r.width <= 1.5 || r.height <= 1.5) continue;
       const text = (el.getAttribute('aria-label') || el.textContent)
         .trim().replace(/\\s+/g, ' ').slice(0, 40);
       out.push({sel, text, w: r.width, h: r.height, left: r.left,
@@ -307,6 +336,14 @@ LAND = """() => {
 # scrolls stage n's top to just under the stuck panel (its scroll margin)
 TO_STAGE = """(n) => { document.querySelectorAll('.geo-stage')[n - 1]
   .scrollIntoView({block: 'start'}); }"""
+
+# the same, at once (no smooth scrolling)
+JUMP_TO_STAGE = """(n) => { document.querySelectorAll('.geo-stage')[n - 1]
+  .scrollIntoView({block: 'start', behavior: 'instant'}); }"""
+
+# The water: whether the page's script has wired its panel and About links
+# (it does so once the 3D view is up, and marks the page ready at the end)
+AQUIFER_READY = """() => document.documentElement.dataset.aquifer === 'ready'"""
 
 # The water: the wells as drawn and counted, through the page's own hooks;
 # the default's counts are counted here from the data the page loaded
@@ -559,17 +596,39 @@ def swipe(view, start, end, steps=12):
     cdp.detach()
 
 
+def touch(view, x, y):
+    """Touches the screen at (x, y) with one finger, and lifts it."""
+    swipe(view, [(x, y)], [(x, y)], steps=0)
+
+
 def settle(view, sel):
-    """Waits until the map has drawn what it is moving to."""
+    """Waits until the map has drawn what it is moving to.
+
+    Fails the test, naming a screenshot, when the map is not ready or still
+    updating after 30 s: what the test measured next would be a map still
+    moving.
+    """
     view.page.wait_for_timeout(500)
-    with contextlib.suppress(PlaywrightTimeout):
+    try:
         view.page.wait_for_function(READY, arg=sel, timeout=30_000)
+    except PlaywrightTimeout:
+        shot = view.shot("settle-FAILED")
+        pytest.fail(
+            f"{view.name}: the map ({sel}) was not ready, or still updating, "
+            f"30 s after it was moved; screenshot: {shot}",
+            pytrace=False,
+        )
 
 
 def small(boxes):
-    """The boxes smaller than TARGET either way, described."""
+    """The boxes smaller than TARGET either way, described.
+
+    A box of 1.5 px or less either way, a button or link collapsed to
+    nothing that BOXES did not find hidden by design, is called collapsed.
+    """
     return [
         f"{b['sel']} {b['text']!r} {b['w']:.0f}x{b['h']:.0f}"
+        + (" (collapsed)" if min(b["w"], b["h"]) <= 1.5 else "")
         for b in boxes
         if b["w"] < TARGET - SUBPIXEL or b["h"] < TARGET - SUBPIXEL
     ]
@@ -912,10 +971,7 @@ def test_land_timeline_steps_on_scroll(site_page):
     problems = []
 
     def follows(n):
-        got = page.evaluate(LAND)
-        assert got["stuck"] == "sticky", f"the drawing is not stuck: {got}"
-        assert got["online"] == n, f"stage {n} is not on the line: {got}"
-        assert got["shown"] == n, f"stage {n} on the line, drawn: {got}"
+        land_shows(page, n, n)
 
     for n in range(1, 9):
         page.evaluate(TO_STAGE, n)
@@ -926,7 +982,7 @@ def test_land_timeline_steps_on_scroll(site_page):
     view.shot("scrolled")
 
     # a scroll right after a tap: the drawing follows it once the tap's hold
-    # ends
+    # ends (here, by its 1,200 ms timer)
     page.evaluate(TO_STAGE, 2)
     page.wait_for_timeout(1500)
     page.locator("#deep-time .geo-step").nth(1).tap()  # Later
@@ -1086,6 +1142,128 @@ def test_land_slice_keeps_its_static_drawing_on_bad_data(site_page, bad):
         problems.append(f"{bad}: no warning in the console: {warned}")
     if bad == "late" and page.locator("#deep-time .geo-step").count() != 2:
         problems.append("late: the timeline lost its buttons")
+    problems += view.problems()
+    assert not problems, f"{view.name}:\n  " + "\n  ".join(problems)
+
+
+def land_shows(page, online, shown):
+    """Asserts The land's drawing is stuck, with these stages.
+
+    Args:
+        page: The land's page.
+        online: The stage that should be on the reading line.
+        shown: The stage the drawing should show.
+    """
+    got = page.evaluate(LAND)
+    assert got["stuck"] == "sticky", f"the drawing is not stuck: {got}"
+    assert got["online"] == online, f"stage {online} is not on the line: {got}"
+    assert got["shown"] == shown, (
+        f"stage {online} on the line: stage {shown} should be drawn: {got}"
+    )
+
+
+@pytest.mark.parametrize(
+    "site_page", cells(["land.html"], PHONES), indirect=True
+)
+def test_land_a_touch_or_the_wheel_ends_the_hold_at_once(site_page):
+    view, page = site_page, site_page.page
+    # Later holds the drawing for 1,200 ms by the page's clock; with that
+    # clock stopped, neither the hold's timer nor Date.now() ever ends it, so
+    # only the reader's own touch or wheel can (timeline.js, reader()). With
+    # reduced motion the page jumps to a stage instead of gliding to it, so
+    # each scroll is over before the next step.
+    page.emulate_media(reduced_motion="reduce")
+    page.clock.install()
+    page.reload(wait_until="load")
+    page.wait_for_selector(".geo-has-figure", timeout=30_000)
+    page.clock.pause_at(datetime.datetime.now() + datetime.timedelta(minutes=1))
+    # the page's left margin, low on the screen: under the stuck drawing and
+    # away from its buttons
+    margin = (6, page.viewport_size["height"] - 40)
+    problems = []
+    for gesture in ("touch", "wheel"):
+        page.clock.run_for(2000)  # any hold left over ends by its timer
+        page.evaluate(JUMP_TO_STAGE, 2)
+        try:
+            view.wait(functools.partial(land_shows, page, 2, 2), timeout=5)
+            page.locator("#deep-time .geo-step").nth(1).tap()  # Later: 3, held
+            page.evaluate(JUMP_TO_STAGE, 6)
+            page.wait_for_timeout(300)
+            land_shows(page, 6, 3)
+        except AssertionError as e:
+            problems.append(f"{gesture}: Later did not hold the drawing: {e}")
+            continue
+        if gesture == "touch":
+            # a touch on the drawing's buttons is the reader's own hold
+            box = page.locator("#deep-time .geo-count").bounding_box()
+            touch(
+                view, box["x"] + box["width"] / 2, box["y"] + box["height"] / 2
+            )
+            page.wait_for_timeout(300)
+            try:
+                land_shows(page, 6, 3)
+            except AssertionError as e:
+                problems.append(f"a touch on the buttons ended the hold: {e}")
+            touch(view, *margin)
+        else:
+            page.mouse.move(*margin)
+            page.mouse.wheel(0, 1)
+        try:
+            view.wait(functools.partial(land_shows, page, 6, 6), timeout=3)
+        except AssertionError as e:
+            problems.append(
+                f"a {gesture} outside the buttons did not end the hold: {e}"
+            )
+    view.shot("released")
+    problems += view.problems()
+    assert not problems, f"{view.name}:\n  " + "\n  ".join(problems)
+
+
+@pytest.mark.parametrize(
+    "site_page", cells(["aquifer.html"], VIEWPORTS), indirect=True
+)
+def test_aquifer_panel_and_about_links_are_44px(site_page):
+    view, page = site_page, site_page.page
+    try:
+        page.wait_for_function(AQUIFER_READY, timeout=LOAD_S * 1000)
+    except PlaywrightTimeout:
+        shot = view.shot("ready-FAILED")
+        pytest.fail(
+            f"{view.name}: the 3D view was not ready (html[data-aquifer]) "
+            f"after {LOAD_S} s; screenshot: {shot}",
+            pytrace=False,
+        )
+    problems = []
+    toggle = page.locator("#aq-sheet-toggle")
+    if toggle.is_visible():  # a phone: the panel is a sheet, shut
+        tap(view, toggle)
+        page.wait_for_timeout(500)  # it slides up in 0.28 s
+    links = page.evaluate(BOXES, list(AQUIFER_LINKS))
+    expected = page.locator(AQUIFER_LINKS[0]).count()
+    if not expected or len(links) != expected:
+        problems.append(f"the panel shows {len(links)} of {expected} links")
+    problems += [f"under {TARGET} px: {s}" for s in small(links)]
+
+    tap(view, page.locator(AQUIFER_LINKS[0]).first)  # About this map
+    try:
+        page.wait_for_selector("#aq-about[open]", timeout=10_000)
+    except PlaywrightTimeout:
+        problems.append("About this map did not open the About panel")
+    else:
+        page.wait_for_timeout(300)
+        about = page.evaluate(BOXES, list(AQUIFER_ABOUT))
+        expected = sum(page.locator(sel).count() for sel in AQUIFER_ABOUT)
+        if len(about) != expected:
+            problems.append(f"the About panel shows {len(about)} of {expected}")
+        problems += [f"under {TARGET} px: {s}" for s in small(about)]
+        wide = page.evaluate(SIDEWAYS)
+        if max(wide["page"], wide["body"]) > wide["screen"] + 1:
+            problems.append(f"scrolls sideways (About open): {wide}")
+        view.shot("about-open")
+        tap(view, page.locator("#aq-about-close"))
+        page.wait_for_timeout(300)
+        if page.locator("#aq-about[open]").count():
+            problems.append("Close did not close the About panel")
     problems += view.problems()
     assert not problems, f"{view.name}:\n  " + "\n  ".join(problems)
 

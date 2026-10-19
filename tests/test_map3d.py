@@ -346,3 +346,24 @@ def test_the_wording(page, scripts):
     assert not re.search(r"Hickory Sandstone(?! Member)", text)
     assert not re.search(r"\bDan\b(?! McLaughlin)", text)
     assert "proposed" in text
+
+
+@pytest.mark.parametrize("name", ["map3d.js", "map3d-district.js"])
+def test_no_error_is_swallowed(scripts, name):
+    # The map always says when something did not load (the review of #160):
+    # a move another move took over (an AbortError) is the only error a
+    # script lets pass without a word.
+    assert not re.search(r"\.catch\(\(\)\s*=>\s*\{\s*\}\)", scripts[name])
+
+
+def test_the_map_says_what_did_not_load(scripts):
+    main = scripts["map3d.js"]
+    # a layer turned on that failed: said, its switch unticked, made again
+    assert "function layerFailed(layer, error)" in main
+    assert "layer.load().catch((error) => layerFailed(layer, error))" in main
+    # the boundary: the map fails, and says so
+    assert 'document.documentElement.dataset.map = "failed"' in main
+    # a step or point in the address that does not exist
+    assert 'say("address", `There is no ${asked}.`)' in main
+    # figures that did not load: a dash, never "…"
+    assert 'element.textContent = "—"' in main

@@ -1314,6 +1314,7 @@ def test_old_addresses_go_to_the_map(chrome):
         ("aquifer.html", WATER, True),
         ("aquifer.html?view=district", f"{WATER}&view=district", True),
         ("aquifer.html?view=district", WATER, False),
+        ("aquifer.html?layers=wells", "map.html?layers=wells", True),
     ]
     problems = []
     for old, new, js in rows:
@@ -1607,3 +1608,150 @@ def test_the_wells_start_filtered_and_follow_the_filters(site_page):
         problems.append(f"{e}; screenshot: {view.shot('wells-FAILED')}")
     problems += view.problems()
     assert not problems, f"{view.name}:\n  " + "\n  ".join(problems)
+
+
+@pytest.mark.parametrize(
+    "site_page",
+    cells(
+        ["map.html?step=999", "map.html?point=998"],
+        ["phone-390x844", "desktop-1440x900"],
+    ),
+    indirect=True,
+)
+def test_a_step_or_point_that_does_not_exist_is_said(site_page):
+    view, page = site_page, site_page.page
+    asked = "step 999" if "step=" in page.url else "point 998"
+    got = page.evaluate(MAP3D)
+    status = page.evaluate("document.getElementById('aq-status').textContent")
+    problems = []
+    if f"There is no {asked}." not in status:
+        problems.append(f"the status line reads {status!r}")
+    if "Loading" in status:
+        problems.append(f"the status line still says it is loading: {status!r}")
+    if got["popup"] or got["groups"] != ["district"] or got["tilt"] > 1:
+        problems.append(f"the map did not stay on the whole district: {got}")
+    view.shot("not-found")
+    problems += view.problems()
+    assert not problems, f"{view.name}:\n  " + "\n  ".join(problems)
+
+
+STATUS = "() => document.getElementById('aq-status').textContent"
+SETTLED_OR_FAILED = """() => ['ready', 'failed'].includes(
+  document.documentElement.dataset.map)"""
+
+
+def failing(chrome, address, aborted, refuse_basemap=False):
+    """Opens the map with some of its files refused, as a SiteView.
+
+    Args:
+        chrome: The chrome fixture.
+        address: The map's address, such as "map.html?layers=geology".
+        aborted: The site's files whose requests fail (paths in docs/).
+        refuse_basemap: Esri refuses the basemap too (HTTP 401), as for a
+            key that has expired.
+
+    Returns:
+        The SiteView, once the map is ready or has failed.
+    """
+    p, browser = chrome
+    context = browser.new_context(
+        viewport={"width": 390, "height": 844},
+        is_mobile=True,
+        has_touch=True,
+        user_agent=p.devices["iPhone 13"]["user_agent"],
+    )
+    view = SiteView(f"failing-{slug(address)}", context.new_page(), True)
+    for path in aborted:
+        view.page.route(f"{BASE}/{path}", lambda route: route.abort("failed"))
+    if refuse_basemap:
+        view.page.route(
+            "**/basemapstyles-api.arcgis.com/**",
+            lambda route: route.fulfill(
+                status=401,
+                content_type="application/json",
+                body='{"error": {"code": 401, "message": "refused"}}',
+            ),
+        )
+    view.page.goto(f"{BASE}/{address}", wait_until="load")
+    view.page.wait_for_function(SETTLED_OR_FAILED, timeout=LOAD_S * 1000)
+    return view
+
+
+def unexpected(view, aborted):
+    """The page's errors but those the refused files explain."""
+    return [
+        e
+        for e in view.errors
+        if not any(path in e for path in aborted) and "could not be" not in e
+    ]
+
+
+def test_a_file_that_does_not_load_is_said(chrome):
+    # Geology's Hickory Sandstone Member formation and the page's figures do
+    # not load, and Esri refuses the basemap: the map still opens, says each
+    # in its status line, unticks the layer that failed and leaves no "…".
+    aborted = [
+        "assets/aquifer/hickory-member.geojson",
+        "assets/aquifer/stats.json",
+    ]
+    view = failing(chrome, "map.html?layers=geology", aborted, True)
+    page = view.page
+    problems = []
+    try:
+
+        def said():
+            status = page.evaluate(STATUS)
+            for words in (
+                "Esri’s basemap could not be loaded",
+                "“Hickory Sandstone Member formation (USGS geologic map,",
+                "figures could not be loaded",
+            ):
+                assert words in status, f"{words!r} not in {status!r}"
+            assert "Loading" not in status, status
+            return status
+
+        view.wait(said, timeout=30)
+        state = page.evaluate(
+            "() => ({map: document.documentElement.dataset.map,"
+            " member: document.querySelector('[data-switch=member]').checked,"
+            " precambrian: document.querySelector("
+            "'[data-switch=precambrian]').checked,"
+            " dots: [...document.querySelectorAll('[data-stat]')]"
+            ".filter(e => e.textContent === '…').length})"
+        )
+        if state != {
+            "map": "ready",
+            "member": False,
+            "precambrian": True,
+            "dots": 0,
+        }:
+            problems.append(f"after the failures: {state}")
+        view.shot("failed-files")
+    except AssertionError as e:
+        problems.append(f"{e}; screenshot: {view.shot('failed-files-FAILED')}")
+    finally:
+        problems += unexpected(view, aborted)
+        view.close()
+    assert not problems, "\n  ".join(problems)
+
+
+def test_the_map_says_so_when_the_boundary_does_not_load(chrome):
+    aborted = ["data/steps.geojson"]
+    view = failing(chrome, "map.html", aborted)
+    page = view.page
+    problems = []
+    try:
+        status = page.evaluate(STATUS)
+        state = page.evaluate("document.documentElement.dataset.map")
+        if state != "failed":
+            problems.append(f"html[data-map] is {state!r}, not 'failed'")
+        if (
+            "the boundary could not be loaded" not in status
+            or "Loading" in status
+        ):
+            problems.append(f"the status line reads {status!r}")
+        view.shot("failed-boundary")
+    finally:
+        problems += unexpected(view, aborted)
+        view.close()
+    assert not problems, "\n  ".join(problems)

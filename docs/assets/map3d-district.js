@@ -174,6 +174,8 @@ export function districtLayers(GeoJSONLayer, { touch = false } = {}) {
  * ?point=beginning): the view moves to it, keeping its angle. The popup is
  * the scene's slotted <arcgis-popup>, which the scene element's openPopup
  * opens (the view's own openPopup would open a second, unstyled one).
+ * Returns false, moving nothing, when there is no such step or point (the
+ * caller says so); a query that fails rejects.
  */
 export async function openFeature(scene, { steps, points }, { step, point }, reducedMotion) {
   const view = scene.view;
@@ -199,7 +201,12 @@ export async function openFeature(scene, { steps, points }, { step, point }, red
   } else {
     target = { target: g, scale: 60000 };
   }
-  await view.goTo(target, { animate: !reducedMotion, duration: 1200 }).catch(() => {});
+  await view.goTo(target, { animate: !reducedMotion, duration: 1200 }).catch((error) => {
+    // A newer move took over (an AbortError): the popup still opens.
+    if (error?.name !== "AbortError") {
+      console.error("the map could not move to the step", error);
+    }
+  });
   await scene.openPopup({ features: [feature], location });
   return true;
 }

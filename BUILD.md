@@ -312,6 +312,9 @@ for Python; 2-space YAML and TOML). By hand: `.venv/bin/ruff format .` and `.ven
 - `test_map_url.py`: the map's address (`assets/map-url.js`, run in node when it is installed): the district alone by
   default, the water's defaults, `all`, unknown words dropped, a step or point checked, and what is written back reads
   back the same;
+- `test_moved.py`: the moved pages' redirect (`assets/moved.js`, run in node with a stand-in page): each old address
+  goes to the map with its query (whose words win: `aquifer.html?layers=wells` opens the wells alone) and `#fragment`,
+  never off the site;
 - `test_site.py`: every page of the website in `docs/` is a complete HTML document (doctype, language, character set,
   phone viewport, title), every local file it links to or loads is in `docs/`, and every link off the site is https; a
   page that has moved (`explore.html`, `aquifer.html`) sends the reader to the map by script and by meta refresh, and
@@ -414,7 +417,10 @@ HSD_SITE_URL=http://127.0.0.1:8790 .venv/bin/python -m pytest -v -m live tests/l
   figures; the wells, turned on, load and start at the script's `DEFAULT_FILTER`, and Reset comes back to it;
   `?layers=all` turns on every group; The water draws the aquifer, headed and marked as the water; `?step=` and
   `?point=beginning` open their popups; `explore.html` and `aquifer.html` go to the map with their query and
-  `#fragment` (and by their meta refresh without JavaScript), and Back does not return to them;
+  `#fragment` (and by their meta refresh without JavaScript), and Back does not return to them; a step or point in
+  the address that does not exist is said in the status line and the map stays on the district; with a layer's file
+  and the figures refused (Playwright aborts them) and Esri refusing the basemap, the map still opens and says each,
+  unticks the layer and leaves no "…"; with the steps refused it fails (`html[data-map="failed"]`) and says so;
 - The land, on the phones: the drawing shows the stage on its reading line as the page scrolls, and does so too when
   the reader scrolls right after tapping Later (whose hold ends after 1,200 ms); with the page's clock stopped, so that
   only the reader can end the hold, a touch outside the drawing's buttons or a turn of the wheel ends it at once, and a
@@ -491,6 +497,10 @@ pages and checked by `tests/test_site_maps.py`), on Esri's basemaps:
   reported yield (#148; `DEFAULT_FILTER` in `aquifer-wells.js`); the filters widen it. The old addresses,
   `explore.html` and `aquifer.html`, are small pages that send the reader to the map at once (`assets/moved.js`,
   keeping the query and `#fragment`; a meta refresh without JavaScript): keep them, and link the map, never them.
+  The map always says what did not load, in the status line over it: a layer turned on whose file cannot be loaded or
+  drawn (its switch is unticked, and turning it on again tries once more), the figures (shown as a dash), Esri's
+  basemap or ground, the aquifer, the wells, and a step or point in the address that does not exist; when the boundary
+  itself cannot be loaded the page says so and marks itself failed (`html[data-map="failed"]`, else `"ready"`).
 - **Walk the line** (`walk.html`, #112): every step's text in order, made by the build from `src/site/walk.template.html`
   and the data (so it reads without JavaScript and cannot drift from the boundary); the map follows the step being
   read. It is the site's only story map: the 2023 ArcGIS StoryMap is not named or linked anywhere on the site

@@ -102,11 +102,16 @@ export function formatStat(value, format) {
 let stats = {};
 try {
   stats = (await json(`${DATA}stats.json`)).figures;
-  for (const element of document.querySelectorAll("[data-stat]")) {
-    element.textContent = formatStat(stats[element.dataset.stat], element.dataset.format);
-  }
 } catch (error) {
   console.error("the page's figures could not be loaded", error);
+  say("stats", "Some of the map’s figures could not be loaded, so they are shown as a dash.");
+}
+for (const element of document.querySelectorAll("[data-stat]")) {
+  try {
+    element.textContent = formatStat(stats[element.dataset.stat], element.dataset.format);
+  } catch {
+    element.textContent = "—"; // no such figure: a dash, never "…"
+  }
 }
 
 let EsriModules;
@@ -692,6 +697,7 @@ const FACTORIES = {
 };
 const made = new Map(); // switch key: its layers, once made
 const RANK = new WeakMap(); // layer: its place in ORDER (the wells' own layers have none)
+const SWITCH = new WeakMap(); // layer: the key of the switch that made it
 const rank = (layer) => ORDER.indexOf(RANK.get(layer) ?? "wells");
 const indexFor = (key) => map.layers.filter((l) => rank(l) < ORDER.indexOf(key)).length;
 function layersOf(key) {
@@ -699,11 +705,55 @@ function layersOf(key) {
     const parts = FACTORIES[key]();
     for (const [orderKey, layer] of parts) {
       RANK.set(layer, orderKey);
+      SWITCH.set(layer, key);
       map.add(layer, indexFor(orderKey));
+      // Its file is fetched now; a failure is said, not only logged.
+      layer.load().catch((error) => layerFailed(layer, error));
     }
     made.set(key, parts.map(([, layer]) => layer));
   }
   return made.get(key);
+}
+// The district's own switches: its layers are made once, at the start.
+const DISTRICT_KEYS = ["district", "steps"];
+let districtFailed = false;
+// The boundary, its steps or its points could not be loaded: the map has
+// failed (html[data-map="failed"]), and says so.
+function districtLost(error) {
+  if (districtFailed) {
+    return;
+  }
+  console.error("the boundary could not be loaded", error);
+  districtFailed = true;
+  say("load", "");
+  say("district", "Sorry, the boundary could not be loaded. Please reload the page.");
+  document.documentElement.dataset.map = "failed";
+}
+// A layer turned on that could not be loaded or drawn: the status line says
+// which, its switch is unticked, and the layer is dropped, so turning it on
+// again makes it, and fetches its file, once more.
+const failedLayers = new WeakSet();
+function layerFailed(layer, error) {
+  const key = SWITCH.get(layer);
+  if (!key || error?.name === "AbortError" || failedLayers.has(layer)) {
+    return;
+  }
+  failedLayers.add(layer);
+  if (DISTRICT_KEYS.includes(key)) {
+    districtLost(error);
+    return;
+  }
+  console.error(`the layer “${layer.title}” could not be loaded`, error);
+  say(`layer-${key}`, `Sorry, “${layer.title}” could not be loaded. Turn it on again to try once more.`);
+  for (const other of made.get(key) || []) {
+    map.remove(other);
+  }
+  made.delete(key);
+  const box = document.querySelector(`input[data-switch="${key}"]`);
+  if (box) {
+    box.checked = false;
+    box.addEventListener("change", () => say(`layer-${key}`, ""), { once: true });
+  }
 }
 // Shows or hides a switch's layers; a layer never turned on is never made.
 function showLayers(key, on) {
@@ -828,6 +878,8 @@ view.on("layerview-create-error", ({ layer, error }) => {
   }
   if (map.basemap && (map.basemap.baseLayers.includes(layer) || map.basemap.referenceLayers.includes(layer))) {
     basemapRefused(error);
+  } else if (SWITCH.has(layer)) {
+    layerFailed(layer, error);
   } else if (map.allLayers.includes(layer)) {
     console.error(`the layer “${layer.title}” could not be drawn`, error);
   }
@@ -1660,21 +1712,36 @@ try {
   districtExtent = district.boundary.fullExtent.clone().expand(1.08);
   await view.goTo(targetFor(), { animate: false });
 } catch (error) {
-  console.error("the boundary could not be loaded", error);
-  say("district", "Sorry, the boundary could not be loaded. Please reload the page.");
+  districtLost(error);
 }
 // Home goes back to where the page opened, whatever the view's size by then.
 const home = scene.querySelector("arcgis-home");
 if (home) {
   home.viewpoint = view.viewpoint.clone();
 }
-if (opened.step !== null || opened.point !== null) {
-  await district.steps.load();
-  openFeature(scene, district, opened, reducedMotion).catch((error) =>
-    console.error("the step in the address could not be opened", error),
-  );
+// A step or point in the address: its popup opens. One that does not exist
+// is said in the status line, until the reader moves the map, which stays
+// on the whole district.
+if (!districtFailed && (opened.step !== null || opened.point !== null)) {
+  const asked = opened.step !== null ? `step ${opened.step}` : opened.point === "Beginning" ? "beginning point" : `point ${opened.point}`;
+  try {
+    await (opened.step !== null ? district.steps : district.points).load();
+    if (!(await openFeature(scene, district, opened, reducedMotion))) {
+      say("address", `There is no ${asked}.`);
+    }
+  } catch (error) {
+    if (error?.name !== "AbortError") {
+      console.error("the step in the address could not be opened", error);
+      say("address", `Sorry, the ${asked} could not be opened.`);
+    }
+  }
+  if (notes.has("address")) {
+    reactiveUtils.whenOnce(() => view.interacting).then(() => say("address", ""));
+  }
 }
 
 await reactiveUtils.whenOnce(() => !view.updating);
 say("load", "");
-document.documentElement.dataset.map = "ready";
+if (!districtFailed) {
+  document.documentElement.dataset.map = "ready";
+}

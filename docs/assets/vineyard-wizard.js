@@ -917,7 +917,7 @@ $("corner-centre").addEventListener("click", () => {
 $("pin-centre").addEventListener("click", () => {
   if (!view) return;
   state.pin = lonlat(view.center);
-  say("Pin dropped at the centre of the map.");
+  say("Pin dropped at the center of the map.");
   render();
   save();
 });

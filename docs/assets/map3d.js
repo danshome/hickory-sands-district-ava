@@ -20,7 +20,7 @@
 // page shows is read from the two stats.json files or marked data-figure.
 // Text from the data is only ever set as text, never parsed as HTML.
 import { apiKey } from "./map-config.js?v=999720b";
-import { setupWells, wellAttributes, CLASS_NAMES, DEFAULT_FILTER, FAR_HEADS_MAX } from "./aquifer-wells.js?v=9ee9e18";
+import { setupWells, wellAttributes, CLASS_NAMES, DEFAULT_FILTER, FAR_HEADS_MAX } from "./aquifer-wells.js?v=038b3c6";
 import { readState, writeState, GROUPS } from "./map-url.js?v=61d142f";
 import { districtLayers, keepSelectedInView, openFeature } from "./map3d-district.js?v=6eeaf52";
 

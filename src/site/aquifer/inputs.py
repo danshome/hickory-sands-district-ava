@@ -8,6 +8,7 @@ stops the run, naming the input: refreshing a snapshot is a deliberate
 change to the manifest (BUILD.md says how). Standard library only.
 """
 
+import contextlib
 import os
 import urllib.request
 
@@ -18,26 +19,25 @@ TIMEOUT_S = 120
 
 
 def download(url, path):
-    """Downloads a URL to a file: a temporary file, then a rename.
+    """Downloads a URL to a file.
 
     Args:
         url: An https URL from the manifest.
-        path: Where the file goes.
+        path: Where the file goes (ensure() gives a ".part" name, renamed
+            only once the file matches the manifest).
 
     Raises:
         ValueError: The URL is not https.
     """
     if not url.startswith("https://"):
         raise ValueError(f"{url}: not https")
-    part = path + ".part"
     request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
     with (
         urllib.request.urlopen(request, timeout=TIMEOUT_S) as response,
-        open(part, "wb") as fh,
+        open(path, "wb") as fh,
     ):
         for block in iter(lambda: response.read(1 << 20), b""):
             fh.write(block)
-    os.replace(part, path)
 
 
 def mismatch(row, path):
@@ -77,8 +77,27 @@ def ensure(rows, cache=record.CACHE):
     for row in rows:
         path = os.path.join(cache, row["file"])
         if not os.path.isfile(path):
+            # Fetched into a ".part" file, kept only when it is the pinned
+            # snapshot, so a wrong download never stays in the cache.
             print(f"fetching {row['name']}: {row['url']}")
-            download(row["url"], path)
+            part = path + ".part"
+            try:
+                download(row["url"], part)
+                why = mismatch(row, part)
+            except BaseException:
+                with contextlib.suppress(OSError):
+                    os.remove(part)
+                raise
+            if why:
+                os.remove(part)
+                raise SystemExit(
+                    f"{row['name']}: the download is {why}, so it was "
+                    "deleted. The source now serves a different file from "
+                    "the snapshot resources/aquifer/inputs.csv pins; to move "
+                    "to it, see BUILD.md (refreshing the aquifer page's "
+                    "inputs)"
+                )
+            os.replace(part, path)
         why = mismatch(row, path)
         if why:
             raise SystemExit(

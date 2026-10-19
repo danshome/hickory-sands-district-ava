@@ -59,12 +59,19 @@ DECIMALS = 5  # longitude and latitude in the page's GeoJSON
 TILE_DEG = 0.2
 DETAIL_DEG = 0.05
 OVERVIEW_DEG = 0.05
-# The view's map scales the page draws the wells by: every well's head from
-# WELLS_ALL_SCALE in (about the district's scale), and from WELLS_LINES_SCALE
-# in also the lines down the hole, for the tiles around the middle of the
-# view; further out, the thinned overview.
-WELLS_ALL_SCALE = 1_500_000
-WELLS_LINES_SCALE = 400_000
+# The view's map scales the page draws the wells by: further out than
+# WELLS_ALL_SCALE, the thinned overview; from it in, every well's head; and
+# from WELLS_LINES_SCALE in, also the lines down the hole, for the tiles
+# around the middle of the view. WELLS_ALL_SCALE lies between the page's two
+# views, as measured in Chrome on 2026-10-18: "Whole aquifer" opens at about
+# 1:647,000 at 1440 x 900 (1:471,000 at 1920 x 1080; 1:1,038,000 on a 390 x
+# 844 phone), thinned; "District" is about 1:145,000 at 1440 x 900 and
+# 1:368,000 on the phone (1:397,000 at 360 x 780), every well.
+WELLS_ALL_SCALE = 430_000
+WELLS_LINES_SCALE = 250_000
+# Every well's head is written this many to a file (wells/heads-<n>.json),
+# so each stays well under the hooks' 2 MB.
+HEADS_PER_FILE = 20_000
 # A vineyard's popup lists the wells within this many metres of it.
 VINEYARD_WELLS_M = 1000.0
 # The vineyards' categories (resources/vineyards/), each a layer of its own,

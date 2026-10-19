@@ -275,11 +275,13 @@ for Python; 2-space YAML and TOML). By hand: `.venv/bin/ruff format .` and `.ven
   record's size; the record lists exactly the quads of both manifests; and, on made-up drawings, the frame's fit, its
   refusal of a drawing at two scales, and what the check calls stale;
 - `test_aquifer_3d.py`: the 3D aquifer page's data is up to date with its record (the build's check); the page loads
-  the pinned SDK and its script, and its scripts read only files that exist (every tile and report cell too); no well
-  report keeps a removed field, or free text with a title, a company's name, a phone number, an e-mail or street
-  address, or (in a note about people) a role word or initials; `stats.json` holds every figure the page marks, the
-  wells' scales among them; the Wells group's controls and the groups' order; every file is under 2 MB; the wording;
-  and, on made-up records, what the check calls stale;
+  the pinned SDK and its script, and its scripts read only files that exist (every tile, heads file and report cell
+  too); no well report keeps a removed field, or free text with a title, a role word, a company's name, a name after
+  "by", a phone number, an e-mail or street address, a district's well number or initials on a number, or (in a note
+  about people) a contact word or initials; on made-up names, a log line keeps its rock and loses the name, and an
+  owner's initials, short names and "&" names are found (the review of #139); `stats.json` holds every figure the page
+  marks, the wells' scales among them; the Wells group's controls and the groups' order; every file is under 2 MB; the
+  wording; and, on made-up records, what the check calls stale;
 - `test_site.py`: every page of the website in `docs/` is a complete HTML document (doctype, language, character set,
   phone viewport, title), every local file it links to or loads is in `docs/`, and every link off the site is https;
 - `test_publish_dryrun.py`: the publish dry run's checks pass on a dry run of the current build
@@ -394,9 +396,11 @@ GDAL rounds differently agree. A frame reaching past the listed quads stops `./b
   TWDB's well reports (driller's reports and the Groundwater Database) coloured by the rock their logs record, without
   people's names; the vineyard outlines (a vineyard's popup lists the wells near it); the proposed district, TTB's
   proposed Llano Uplift AVA, counties and towns; "My location", with the model's estimate of what lies beneath; a
-  switch for every layer and group and filters for use, water volume (yield) and depth. Zoomed far out it draws one
-  well per cell; from about the district's scale in (`wells_all_scale` in `params.py`), every well's head; closer in
-  (`wells_lines_scale`), every well's line too, around the middle of the view. Its code is `aquifer3d.js`,
+  switch for every layer and group and filters for use, water volume (yield) and depth. Zoomed out (the opening Whole
+  aquifer view) it draws one well per cell; from the District view's scale in (`WELLS_ALL_SCALE` in `params.py`,
+  between the two views as measured on a wide screen and a phone), every well's head, from the compact
+  `wells/heads-<n>.json`; closer in (`WELLS_LINES_SCALE`), every well's line too, around the middle of the view. Its
+  code is `aquifer3d.js`,
   `aquifer-wells.js` and `aquifer.css`; its data is `docs/assets/aquifer/`, beside it, not in `docs/data/` (which
   `make_site_data.py` owns). Every figure it shows comes from `docs/assets/aquifer/stats.json`, read when the page
   loads (`data-stat` elements, not `data-figure`). When Esri's ground (elevation) cannot be loaded, for example a
@@ -432,9 +436,12 @@ exits 3 when an input, a parameter or a file changed. GitHub Actions never downl
 `resources/aquifer/cache/` (as the quads are kept in `resources/quads/geotiff/`), checks every one against its bytes and
 SHA-256, extracts the model's GeoPackage with `bsdtar` (macOS has it; on Linux `brew install libarchive`), writes every
 file into the gitignored `target/aquifer-next/`, and swaps that in only after two hard checks: no person's name or address
-survives in the well reports (`src/site/aquifer/privacy.py`: the removed fields, then every free text blanked where it
-holds a name from the record or the area, a title, a company's name, a rare word, a phone number, an e-mail or street
-address, or in a note about people a role word or initials), and every file is under the hooks' 2 MB. The generator also
+survives in the well reports (`src/site/aquifer/privacy.py`: the removed fields; then every note blanked, and in a line
+of a well's log only the words taken out and marked `[removed]`, where it holds a word or the initials of a name on the
+record, a name from the area, a title, a person's role, a company's name, a name after "by", a rare word, a phone
+number, an e-mail or street address, a groundwater district's well number or initials on a number, or in a note about
+people a contact word or initials; the check also fails on a record's own names in any of its other text but TWDB's
+codes), and every file is under the hooks' 2 MB. The generator also
 reads the gitignored `.private-words`, when present (in a git worktree, the main checkout's, as the hook does), as
 more words to blank. Commit the data and its record together.
 

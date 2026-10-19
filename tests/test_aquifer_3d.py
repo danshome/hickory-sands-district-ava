@@ -14,6 +14,7 @@ Standard library only, so the lint workflow runs these.
 """
 
 import json
+import math
 import os
 import re
 
@@ -122,6 +123,18 @@ def test_every_file_the_scripts_name_exists(scripts):
     assert os.path.isfile(os.path.join(DOCS, "data", "boundary.geojson"))
 
 
+def test_every_well_has_a_head_in_the_heads_files(index):
+    heads = []
+    for name in index["heads"]["files"]:
+        heads += load("wells", name)
+    assert len(heads) == len(index["filter_keys"])
+    assert len(index["heads"]["fields"]) == len(heads[0])
+    degrees = index["detail_degrees"]
+    for uid, lon, lat, *_ in heads[:: max(1, len(heads) // 500)]:
+        cell = f"{math.floor(lon / degrees)}_{math.floor(lat / degrees)}"
+        assert uid in load("wells", f"detail-{cell}.json"), uid
+
+
 def test_every_tile_and_report_cell_exists(index):
     wells = os.path.join(DATA, "wells")
     cells = set()
@@ -223,10 +236,92 @@ def test_no_well_report_keeps_a_name_or_contact():
         ("^JLO", "Comments"),
         ("Land Owner", "DistanceVerificationMethod"),
         ("1201 County Road 102", "Remarks"),
+        # The reviews of #139: a company in a log line, a district's well
+        # number (it leads to the owner), initials on a number.
+        ("Well Drilled By L & L Drilling 12/20/1989", "LithologyDescription"),
+        ("drilled by Smith", "LithologyDescription"),
+        ("Plugged By J. R.", "PlugSeal"),
+        ("MH DRILLING", "Remarks"),
+        ("Glass Well Service", "LithologyDescription"),
+        ("SWTCGCD # 57481JP", "Comments"),
+        ("SWTCGCD - 57482CR", "Comments"),
+        ("BPGCD # 20250027", "Comments"),
+        ("HTGCD # 02245", "Comments"),
+        ("District Well # 8178", "Comments"),
+        ("Field # 56-13-91EK.", "Remarks"),
+        ("sand 57481JP", "LithologyDescription"),
+        ("Somewhere, TX 77511", "LithologyDescription"),
     ],
 )
 def test_the_scan_catches_names_and_contacts(text, field):
     assert privacy.scan_record({field: text})
+
+
+@pytest.mark.parametrize(
+    ("text", "field"),
+    [
+        ("Limestone black hard drilling", "LithologyDescription"),
+        ("HARD DRILLING NO RETURNS", "LithologyDescription"),
+        ("Med Hard Porous Drilling-Poor Returns", "LithologyDescription"),
+        ("Gray limestone, underlain by Granite", "LithologyDescription"),
+        ("White/Tan SS, WB, 15GPM, 700TDS", "LithologyDescription"),
+        ("10YR 4/3 silty clay", "LithologyDescription"),
+        ("Hickory - TDS 1100", "WaterType"),
+        ("Mixed By Hand", "SealMethodOtherDesc"),
+        ("160PSI", "Schedule"),
+        ("100FT+", "DistanceToPropertyLine"),
+        ("granite contact at 300", "LithologyDescription"),
+        ("drill cuttings", "PlugSeal"),
+    ],
+)
+def test_the_scan_keeps_the_words_of_the_logs(text, field):
+    assert not privacy.scan_record({field: text}), text
+
+
+def scrubber(*names):
+    """A Scrubber that knows some names, and takes no word for a rare one."""
+    scrub = privacy.Scrubber()
+    scrub.learn(names)
+    scrub.finish()
+    scrub.is_rare = lambda word: False
+    return scrub
+
+
+@pytest.mark.parametrize(
+    ("text", "kept"),
+    [
+        ("Well Drilled By L & L Drilling 12/20/1989", "Well [removed]"),
+        ("Red granite, drilled by Smith Drilling", "Red granite, [removed]"),
+        ("Top soil Glass Well Service", "Top soil [removed]"),
+        ("MH DRILLING NO RETURNS", "[removed] NO RETURNS"),
+        ("sand 57481JP", "sand 57481"),
+        ("granite, BPGCD # 20250027", "granite, [removed]"),
+        ("Previous Driller", "Previous [removed]"),
+        ("OWNER WILL BACK-FILL WELL", ""),
+        ("Limestone black hard drilling", "Limestone black hard drilling"),
+        ("Sand & Gravel", "Sand & Gravel"),
+    ],
+)
+def test_a_log_line_keeps_its_rock_and_loses_the_name(text, kept):
+    scrub = scrubber("Glass Well Service")
+    assert scrub.clean(text, set(), "LithologyDescription") == kept
+
+
+def test_the_owner_s_initials_and_short_names_are_found():
+    own = privacy.name_tokens(["Smith, John Paul", "JJ Well Service"])
+    assert {"jp", "js", "sj", "jps", "sjp", "jj", "smith"} <= own
+    scrub = scrubber("A & W Drilling", "JJ Well Service", "Smith, John Paul")
+    for text, field in (
+        ("SWTCGCD # 57481JP", "Comments"),
+        ("57481 JP", "Remarks"),
+        ("A&W", "Comments"),
+        ("per A & W", "WaterType"),
+        ("JJ Well", "DistanceVerificationMethod"),
+    ):
+        assert scrub.clean(text, own, field) == "", text
+    assert scrub.clean("sand, JP lens", own, "LithologyDescription") == (
+        "sand, [removed] lens"
+    )
 
 
 def test_the_scan_keeps_well_terms():

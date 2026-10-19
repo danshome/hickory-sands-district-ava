@@ -18,9 +18,11 @@ shows only the fields that hold something). Lithology classes and use
 groups: src/site/aquifer/params.py.
 
 write() writes wells/index.json (the tiles, the counts, the thinned
-overview and every well's filter values), wells/draw-<tile>.json (what the
-page draws, per params.TILE_DEG tile) and wells/detail-<cell>.json (the raw
-reports, per params.DETAIL_DEG cell, fetched when a well is clicked).
+overview and every well's filter values), wells/heads-<n>.json (every
+well's head, params.HEADS_PER_FILE to a file, for the page's every-well
+layer), wells/draw-<tile>.json (what the page draws, its logs included, per
+params.TILE_DEG tile) and wells/detail-<cell>.json (the raw reports, per
+params.DETAIL_DEG cell, fetched when a well is clicked).
 """
 
 import collections
@@ -319,7 +321,7 @@ def read_sdr(path, domain, scrub, ct):
                 else f"as reported ({datum or 'datum not given'})"
             )
             sdr[tid] = rec
-            names["S" + tid] = set().union(*(privacy.tokens(n) for n in found))
+            names["S" + tid] = privacy.name_tokens(found)
         counts["sdr_inside"] = len(sdr)
         for table, field in SDR_TABLES:
             for r in rows(z, f"SDRDownload/{table}.txt"):
@@ -347,7 +349,7 @@ def read_sdr(path, domain, scrub, ct):
                 tid = p["WellReportTrackingNumber"]
             if not tid:
                 continue
-            names["S" + tid] |= set().union(*(privacy.tokens(n) for n in found))
+            names["S" + tid] |= privacy.name_tokens(found)
             rec = {
                 k: v
                 for k, v in p.items()
@@ -403,7 +405,7 @@ def read_gwdb(path, domain, scrub):
                 round(la, params.DECIMALS),
             ]
             gw[swn] = rec
-            names["G" + swn] = set().union(*(privacy.tokens(n) for n in found))
+            names["G" + swn] = privacy.name_tokens(found)
         counts["gwdb_inside"] = len(gw)
         for table, field in GWDB_TABLES:
             for r in rows(z, f"GWDBDownload/{table}.txt"):
@@ -456,6 +458,30 @@ def draw_record(w):
     ]
 
 
+# A well's head, as wells/heads-<n>.json holds it: what the page draws for
+# every well and shows in its popup's first lines, without the log.
+HEAD_FIELDS = (
+    "uid",
+    "lon",
+    "lat",
+    "depth_ft",
+    "hickory (GWDB)",
+    "use_group",
+    "water_class",
+    "water_top_ft",
+    "water_bottom_ft",
+    "water_basis",
+    "yield_gpm",
+    "yield_test",
+)
+
+
+def head_record(w):
+    """A well's head (HEAD_FIELDS), from its drawing record's values."""
+    r = draw_record(w)
+    return [r[0], r[1], r[2], r[3], r[7], *r[9:]]
+
+
 def write(paths, lookup, out_dir, extra_words=()):
     """Writes the wells' files.
 
@@ -490,6 +516,10 @@ def write(paths, lookup, out_dir, extra_words=()):
     }
     for swn, tid in linked.items():
         sdr[tid].setdefault("GWDB", []).append(gw[swn])
+        # The report shows the Groundwater Database record inside it, so
+        # both records' names are looked for in both.
+        names["S" + tid] |= names["G" + swn]
+        names["G" + swn] = names["S" + tid]
     wells = []
     for tid, rec in sdr.items():
         depth = sdr_depth(rec)
@@ -618,6 +648,7 @@ def write(paths, lookup, out_dir, extra_words=()):
     for i in range(len(params.USE_GROUPS)):
         figs[f"wells_use_{i}"] = sum(w["use"] == i for w in wells)
     figs.update({f"blanked_{k}": v for k, v in sorted(scrub.blanked.items())})
+    figs.update({f"redacted_{k}": v for k, v in sorted(scrub.redacted.items())})
     index = {
         "source": (
             "TWDB Submitted Driller's Reports and Groundwater Database, the "
@@ -670,6 +701,18 @@ def write(paths, lookup, out_dir, extra_words=()):
             "gwdb": sorted(privacy.REMOVED_GWDB),
         },
     }
+    # Every well's head, in a few files, for the page's every-well layer: a
+    # quarter of the drawing tiles' bytes.
+    heads = [head_record(w) for w in wells]
+    size = params.HEADS_PER_FILE
+    files = []
+    for n, at in enumerate(range(0, len(heads), size)):
+        files.append(f"heads-{n}.json")
+        record.write_json(
+            os.path.join(wells_dir, files[-1]), heads[at : at + size]
+        )
+    index["heads"] = {"files": files, "fields": list(HEAD_FIELDS)}
+    figs["wells_heads_files"] = len(files)
     record.write_json(os.path.join(wells_dir, "index.json"), index)
     for w in wells:
         del w["rec"]

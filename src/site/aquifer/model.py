@@ -436,6 +436,10 @@ def write(paths, out_dir):
         "official_layer7_sqmi": float(keep.sum()) * cell_sqmi,
         "official_no_layer7_sqmi": float((inside & ~active7).sum()) * cell_sqmi,
         "layer7_sqmi": float(active7.sum()) * cell_sqmi,
+        # TWDB's model has no active cell thinner than this.
+        "layer7_min_thickness_ft": float(
+            np.nanmin((grid.top7 - grid.bot7)[active7])
+        ),
         "outside_official_sqmi": float(outside7.sum()) * cell_sqmi,
         "outside_official_near_core_sqmi": (
             float((outside7 & near_core).sum()) * cell_sqmi

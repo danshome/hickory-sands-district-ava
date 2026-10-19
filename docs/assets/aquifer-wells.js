@@ -9,8 +9,9 @@
 // assets/aquifer/stats.json):
 // - zoomed far out, a thinned overview, one well per overview cell, with its
 //   head and its line;
-// - from about the district's scale in (wells_all_scale), every well's head,
-//   in one layer made from every tile, with the overview's lines;
+// - from the District view's scale in (wells_all_scale), every well's head,
+//   in one layer made from the compact heads files (wells/heads-<n>.json),
+//   with the overview's lines;
 // - closer in (wells_lines_scale), every head and every well's line in the
 //   tiles around the middle of the view, up to a cap; the page says how many
 //   wells in view have only their heads drawn.
@@ -40,6 +41,15 @@ export const CLASS_COLORS = {
 };
 const WATER = [120, 222, 244];
 const BASIS = ["its logged water-bearing zone", "its deepest logged interval", ""];
+
+// A well's head's values (wells/heads-<n>.json, index.heads.fields), by
+// name, as wellAttributes() gives them; its report's cell is found from its
+// place, as the generator files it.
+export function headAttributes(h, detailDegrees) {
+  const [uid, lon, lat, depth, hickory, use, wcls, wtop, wbot, wbasis, gpm, ytype] = h;
+  const cell = `${Math.floor(lon / detailDegrees)}_${Math.floor(lat / detailDegrees)}`;
+  return wellAttributes([uid, lon, lat, depth, null, null, null, hickory, cell, use, wcls, wtop, wbot, wbasis, gpm, ytype]);
+}
 
 // A drawing record's values (wells/index.json's fields), by name.
 export function wellAttributes(r) {
@@ -311,28 +321,29 @@ export async function setupWells(opts) {
     return p;
   }
 
-  // Many tiles, a few at a time, each tried twice.
-  async function loadTiles(keys, atOnce = 8) {
-    const out = new Array(keys.length);
-    let next = 0;
-    const worker = async () => {
-      while (next < keys.length) {
-        const i = next++;
-        out[i] = await loadTile(keys[i]).catch(() => loadTile(keys[i]));
-      }
-    };
-    await Promise.all(Array.from({ length: Math.min(atOnce, keys.length) }, worker));
-    return out;
-  }
+  // A file of the wells' data, tried twice.
+  const fetchJson = (name) => {
+    const once = () =>
+      fetch(`${DATA}${name}`).then((r) => {
+        if (!r.ok) throw new Error(`wells/${name}: HTTP ${r.status}`);
+        return r.json();
+      });
+    return once().catch(once);
+  };
 
-  // Every well's head, in one layer made from every tile, once.
+  // Every well's head, in one layer made once from the heads files (a
+  // quarter of the tiles' bytes, without the logs).
   let heads = null;
   let headSize = HEAD_FAR;
   let headsLoading = null;
   function loadHeads() {
     if (!headsLoading) {
-      headsLoading = loadTiles(Object.keys(index.tiles)).then((tiles) => {
-        const f = features(tiles.flat(), false);
+      headsLoading = Promise.all(index.heads.files.map(fetchJson)).then((files) => {
+        const records = files.flat().map((h) => {
+          const a = headAttributes(h, index.detail_degrees);
+          return [a.uid, a.lon, a.lat, a.depth, [], null, [], a.hickory, a.cell, a.use, a.wcls, a.wtop, a.wbot, a.wbasis, a.yield, a.ytype];
+        });
+        const f = features(records, false);
         heads = pointLayer(f.heads, headSize, "Well heads (TWDB reports)");
         heads.visible = false;
         map.add(heads, insertAt());
@@ -691,7 +702,7 @@ function reportElement(a, record, useGroups) {
   }
   links.append(el("span", " (TWDB's own pages show the names left out here.)"));
   box.append(links);
-  box.append(el("p", "As reported to TWDB, every field that holds something. Owners', drillers', pluggers' and companies' names, addresses and licence numbers are left out, and any comment that could name someone is blank."));
+  box.append(el("p", "As reported to TWDB, every field that holds something. Owners', drillers', pluggers' and companies' names, addresses and licence numbers are left out; any note that could name someone is blank, and words in the log that could are marked [removed]."));
   box.append(el("h4", a.uid[0] === "S" ? "Driller's report (TWDB SDR)" : "Groundwater Database (TWDB GWDB)"));
   box.append(fields(record));
   for (const [key, label, cols] of SECTIONS) {

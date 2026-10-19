@@ -195,10 +195,19 @@ async function loadTerrain() {
   }
 }
 
-const [model, terrain] = await Promise.all([
-  json(`${DATA}${small ? "hickory-k4.json" : "hickory-k2.json"}`),
-  loadTerrain(),
-]);
+let model;
+let terrain;
+try {
+  [model, terrain] = await Promise.all([
+    json(`${DATA}${small ? "hickory-k4.json" : "hickory-k2.json"}`),
+    loadTerrain(),
+  ]);
+} catch (error) {
+  // Without the model there is no aquifer to draw: say so, not "Loading".
+  console.error("the model could not be loaded", error);
+  say("load", "Sorry, the model could not be loaded, so the 3D view cannot be drawn. Please reload the page.");
+  throw error;
+}
 // Without Esri's ground, the ground is flat at 0 and every height is drawn
 // from the model's own ground, so wells and the aquifer still meet.
 const flat = terrain === null;
@@ -535,7 +544,8 @@ function nearList(vid) {
 const VINEYARD_STYLES = {
   hsd: { fill: [...WINE, 0.65], outline: [255, 214, 224] },
   "llano-uplift": { fill: [200, 132, 152, 0.4], outline: [255, 236, 240] },
-  "under-development": { fill: [0, 0, 0, 0], outline: [255, 214, 224], style: "dash" },
+  // A light fill, so small planned blocks show under the see-through aquifer.
+  "under-development": { fill: [255, 214, 224, 0.3], outline: [255, 214, 224], style: "dash" },
   historical: { fill: [0, 0, 0, 0], outline: [...MUTED, 1], style: "dot" },
 };
 const vineyardLayer = (category, title) => {
@@ -704,9 +714,11 @@ draw(exaggeration);
   setText("aq-block-size", `${kc} × ${kc} model cells${side ? ` (${side} square)` : ""}`);
 }
 
-// ---- "My location": the position stays in the browser. It is used only to
-// place a point, to look up its model cell in drill-grid.bin (a static file
-// fetched whole, so no request carries the position) and to move the view.
+// ---- "My location": the position is never sent anywhere or stored. It is
+// used only to place a point, to look up its model cell in drill-grid.bin (a
+// static file fetched whole, so no request names the position) and to move
+// the view there, which loads Esri's basemap and elevation tiles for that
+// area, as any web map does: Esri's servers see which area is shown.
 const drillLayer = new GraphicsLayer({ title: "Your location", elevationInfo: { mode: "relative-to-ground" } });
 map.add(drillLayer, map.layers.indexOf(vineyardsDistrict) + 1);
 let fix = null; // [lon, lat, result] while the page is open; never stored
@@ -750,7 +762,9 @@ function cellAt(grid, lon, lat) {
 const about = (ft) => (Math.round(ft / 10) * 10).toLocaleString("en-US");
 
 function describe(cell) {
-  const tail = "Estimate from TWDB’s regional model, quarter-mile cells.";
+  const tail = stats.cell_ft
+    ? `Estimate from TWDB’s regional model, whose cells are ${formatStat(stats.cell_ft, "num")} ft square.`
+    : "Estimate from TWDB’s regional model.";
   if (!cell || !(cell.flags & 16)) {
     return {
       lines: ["This spot is outside TWDB’s Llano Uplift groundwater model, so the model says nothing about what lies beneath it."],
@@ -1036,7 +1050,7 @@ const SHORT_USES = {
   "Monitoring / test / other / unknown": "Monitoring, other",
 };
 const n = (v) => Number(v).toLocaleString("en-US");
-const filters = { uses: true, yield: true, depth: true }; // true: not narrowed
+const filters = { uses: true, yield: true, depth: true, hickory: true }; // true: not narrowed
 let showCounts = () => {};
 
 function wireWellFilters(w) {
@@ -1138,6 +1152,7 @@ function wireWellFilters(w) {
     if (only) only.checked = false;
     w.setFilter({ uses: new Set(w.defaults.uses), hickoryOnly: false });
     filters.uses = true;
+    filters.hickory = true;
     for (const r of ranges) {
       r.lo.value = "0";
       r.hi.value = String(r.last);
@@ -1162,7 +1177,7 @@ function wellNote({ mode, left, failed, loading }) {
   } else if (mode === "overview") {
     note.textContent = failed
       ? `Not every well could be loaded, so ${cell} is drawn (${n(wells.index.overview.length)} of ${total}).`
-      : `Zoomed out: ${cell} (${n(wells.index.overview.length)} of ${total}). Zoom in to about ${scaleOf("wells_all_scale")} to see every well.`;
+      : `Zoomed out, the wells are thinned: ${cell} (${n(wells.index.overview.length)} of ${total}). Zoom in to about ${scaleOf("wells_all_scale")}, or go to District, to see every well.`;
   } else if (mode === "heads") {
     note.textContent = `Every well’s head is drawn, with the line down the hole of ${cell}. Zoom in to about ${scaleOf("wells_lines_scale")} for every well’s line.`;
   } else if (left > 0) {
@@ -1261,6 +1276,7 @@ document.querySelector('input[data-switch="wells-water"]')?.addEventListener("ch
   if (wells) wells.setWater(event.target.checked);
 });
 document.querySelector('input[data-switch="wells-hickory-only"]')?.addEventListener("change", (event) => {
+  filters.hickory = !event.target.checked;
   if (wells) showCounts(wells.setFilter({ hickoryOnly: event.target.checked }));
 });
 

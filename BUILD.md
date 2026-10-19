@@ -262,6 +262,9 @@ for Python; 2-space YAML and TOML). By hand: `.venv/bin/ruff format .` and `.ven
 - `test_site_maps.py`: the map pages load one pinned SDK release; the basemap key is empty or an API key; no map script
   parses text as HTML; the walk page lists every step of `docs/data/` with its own text; Explore's figures are the
   build's;
+- `test_private_words.py`: the private-words hook, run in a throwaway repository: a git worktree is checked
+  against the main checkout's gitignored list, a checkout's own list comes first, and with no list anywhere (as on
+  GitHub's runners) every file passes;
 - `test_survey_map.py`: Home and The boundary draw the boundary alike; the survey image fills their viewBox at the
   record's size; the record lists exactly the quads of both manifests; and, on made-up drawings, the frame's fit, its
   refusal of a drawing at two scales, and what the check calls stale;

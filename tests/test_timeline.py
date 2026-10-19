@@ -45,7 +45,9 @@ VOID = {
     "track",
     "wbr",
 }
-AGE = re.compile(r"^(?:Today|.*\d[\d,.]* million years(?: ago)?)$")
+AGE = re.compile(
+    r"^(?:Today|.*\d[\d,.]* million years(?: ago)?|.*half a billion years ago)$"
+)
 YEAR = re.compile(r"\b(?:1[89]\d\d|20\d\d)\b|\bn\.d\.")
 
 
@@ -200,6 +202,8 @@ def test_every_stage_s_dates_are_the_ones_its_age_gives(land, n):
     numbers = {
         int(x.replace(",", "")) for x in re.findall(r"\d[\d,]*", stage["age"])
     }
+    if "half a billion" in stage["age"]:
+        numbers.update(range(490, 511))  # "roughly half a billion": 500 +-2%
     for end in ("data-from", "data-to"):
         value = int(float(stage[end]))
         assert value == 0 or value in numbers, (

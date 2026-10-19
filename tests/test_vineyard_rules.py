@@ -210,6 +210,30 @@ FIXTURES = {
     ),
     "no-agree": variant(agree={"public": False, "permission": "yes"}),
     "planned": variant(vineyard__planted="planned"),
+    # Hostile text in each public field: refused, so never posted.
+    "name-backslash": variant(vineyard__name="Back\\slash Vineyard"),
+    "name-backtick-run": variant(vineyard__name="Vines ```` and `` more"),
+    "name-close-details": variant(vineyard__name="</details> Vineyard"),
+    "name-at-mention": variant(vineyard__name="Vineyard of @danshome"),
+    "name-issue-ref": variant(vineyard__name="Vineyard #123"),
+    "name-html-bold": variant(vineyard__name="<b>Bold</b> Vineyard"),
+    "name-md-link": variant(vineyard__name="[Vines](https://evil.example)"),
+    "name-md-link-bare": variant(vineyard__name="[Vines](evil)"),
+    "name-md-image": variant(vineyard__name="![x](x.png)"),
+    "name-autolink": variant(vineyard__name="Vines <https://evil.example>"),
+    "varieties-hostile": variant(
+        vineyard__varieties=[
+            "Syrah",
+            "@danshome",
+            "#123",
+            "</details>",
+            "a\\b",
+            "``x``",
+            "[x](y)",
+            "<i>x</i>",
+        ]
+    ),
+    "county-hostile": variant(vineyard__county="</details> @danshome"),
     # The limits, each side (#140's review): Texas's box for a point, a
     # point given the wrong way round or half given, the email, the acres
     # and the years.
@@ -464,6 +488,69 @@ def test_a_body_not_in_the_layout_is_refused():
     twice = good + good.split("<details>")[1]
     with pytest.raises(vs.SubmissionError):
         vs.parse_issue(twice)
+
+
+HOSTILE_FIXTURES = (
+    "name-backslash",
+    "name-backtick-run",
+    "name-close-details",
+    "name-at-mention",
+    "name-issue-ref",
+    "name-html-bold",
+    "name-md-link",
+    "name-md-link-bare",
+    "name-md-image",
+    "name-autolink",
+    "varieties-hostile",
+    "county-hostile",
+)
+# What a cell of the issue's table is given, were the rules ever to let
+# it through: each must stay one inert code span.
+HOSTILE = (
+    "a\\b|c`d",
+    "```` fence `` run",
+    "</details><script>alert(1)</script>",
+    "@danshome and #123 and GH-1",
+    "[link](https://evil.example) ![img](x.png)",
+    "\\` \\| \\\\",
+)
+CODE_BRIDGE = (
+    'import { pathToFileURL } from "node:url";'
+    "const m = await import(pathToFileURL(process.argv[1]));"
+    'let input = "";'
+    "for await (const chunk of process.stdin) input += chunk;"
+    "process.stdout.write(JSON.stringify(JSON.parse(input).map(m.code)));"
+)
+
+
+@pytest.mark.parametrize("name", HOSTILE_FIXTURES)
+def test_hostile_text_is_refused_where_it_is_typed(name):
+    field = name.split("-")[0]
+    errors = fields(name)
+    assert errors, name
+    assert set(errors) == {field}, (name, errors)
+
+
+def test_a_cell_is_one_inert_code_span_in_both():
+    # No @mention, #reference, link, image, HTML or fence can act inside
+    # a code span; nothing can end the span or the table's cell early.
+    if not NODE:
+        pytest.skip("node is not installed")
+    done = subprocess.run(
+        [NODE, "--input-type=module", "-e", CODE_BRIDGE, MODULE],
+        input=json.dumps(HOSTILE),
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    js = json.loads(done.stdout)
+    for text, cell in zip(HOSTILE, js, strict=True):
+        assert vs.code(text) == cell, text
+        inner = cell[1:-1]
+        assert cell.startswith("`") and cell.endswith("`"), cell
+        assert "`" not in inner, cell
+        assert "\\" not in inner.replace("\\|", ""), cell
+        assert "|" not in inner.replace("\\|", ""), cell
 
 
 def test_a_table_cell_holds_no_escape_or_fence():

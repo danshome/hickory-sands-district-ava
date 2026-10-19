@@ -83,7 +83,8 @@ export function standIn() {
   function database(url, init) {
     if (state.db === "down") return json(503, { message: "down" });
     if (init.headers.apikey !== env.SUPABASE_SERVICE_ROLE_KEY) return json(401, { message: "no key" });
-    const path = url.slice(`${env.SUPABASE_URL}/rest/v1/`.length);
+    const u = new URL(url);
+    const path = `${u.pathname}${u.search}`.replace(/^\/rest\/v1\//, "");
     const [name, query] = path.split("?");
     const body = init.body ? JSON.parse(init.body) : null;
     if (name === "rpc/hsd_vineyard_reserve" && init.method === "POST") return json(200, reserve(body));
@@ -112,7 +113,7 @@ export function standIn() {
   }
 
   function github(url, init) {
-    const path = url.slice(API.length);
+    const path = new URL(url).pathname;
     const body = init.body ? JSON.parse(init.body) : null;
     if (path === `/app/installations/${env.GITHUB_APP_INSTALLATION_ID}/access_tokens`) {
       if (state.github === "token-fails" || !verifyJwt(init.headers.Authorization)) return json(401, { message: "Bad credentials" });
@@ -161,10 +162,15 @@ export function standIn() {
 
   async function fetchStub(url, init = {}) {
     init = { ...init, headers: { ...(init.headers || {}) } };
-    const origin = new URL(url).origin;
-    if (origin === env.SUPABASE_URL) return database(url, init);
-    if (origin === API) return github(url, init);
-    if (url === "https://challenges.cloudflare.com/turnstile/v0/siteverify") return turnstile(init);
+    // each stand-in by the URL's protocol and host name, parsed, never by its text
+    const u = new URL(url);
+    const at = (base) => {
+      const b = new URL(base);
+      return u.protocol === b.protocol && u.hostname === b.hostname;
+    };
+    if (at(env.SUPABASE_URL)) return database(url, init);
+    if (at(API)) return github(url, init);
+    if (at("https://challenges.cloudflare.com") && u.pathname === "/turnstile/v0/siteverify") return turnstile(init);
     throw new Error(`no stand-in for ${url}`);
   }
 

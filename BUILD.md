@@ -77,7 +77,9 @@ Other commands:
 - `./build.sh check-site` drives Google Chrome over every page of the website at phone sizes and on a desktop
   (`tests/live/test_site_mobile.py`, see Tests below): the live site, or `HSD_SITE_URL`; `./build.sh check-site --local`
   serves this checkout's `docs/` on 127.0.0.1 (port 8790, or `HSD_SITE_PORT`) for the run. Run it with `--local` before
-  a website change is merged, and without it after the deploy.
+  a website change is merged, and without it after the deploy. It takes no other argument. With `--local` it waits up to
+  15 s for the server to answer (its log: `target/browser-tests/site-server.log`), and stops, printing the log, if the
+  server exits (the port is taken, say) or another server answers on the port.
 - `./build.sh stamp` gives every script and stylesheet the website loads its version stamp
   (`src/site/stamp_assets.py`, #138; see The website below), without a build: after changing a script or stylesheet,
   run `./build.sh site-data` (or the stamper alone, `./build.sh stamp`) and commit what it changes.
@@ -305,6 +307,17 @@ for Python; 2-space YAML and TOML). By hand: `.venv/bin/ruff format .` and `.ven
   module, another query or a fragment, a bad stamp, an unquoted or doubled URL, an inline script or import map naming a
   module, a template-literal, root, bare or variable import, a stylesheet's `@import`, an import circle, a missing site,
   a site with no pages, a missing template);
+- `test_site_nav.py`: every page in `docs/`, and `src/site/walk.template.html`, has Home's menu links in Home's order,
+  each opening a page in `docs/`, and marks its own link, and only that, `aria-current="page"` (a page not in the menu
+  marks none);
+- `test_public_text.py`: the claims that contradicted the petition or Comment 9 and were taken out stay out of `docs/`
+  (every page, data file and script) and `src/site/` (its code and template): a phrase, and where its words are also
+  said correctly, the words that make it wrong in the same sentence ("1:250,000" for the SGMC, not for the Geologic
+  Atlas of Texas; "about 9%" and "about 47%" for soil, sandstone or granite), whatever its case and whatever separates
+  its words (a space, a line break, a non-breaking space as a character, entity or escape, or an HTML tag), each wrong
+  sentence as it was and each correct use tested; no page marks the petition's or Notice No. 243's area
+  (`petition_area_whole`, `notice_243_area_whole`), which Home once showed as "about 194 square miles"; and the Status
+  page dates the amended petition as `src/boundary/build_proposed.py` does ("as amended June 6, 2023");
 - `test_publish_dryrun.py`: the publish dry run's checks pass on a dry run of the current build
   (`tests/fixtures/publish/dry-run/`, a copy of `target/publish/`: copy it there again after changing what the publish
   sends) and each fails on a fault planted in it (a layer left editable, plain CC0 on TTB's text, a phone element
@@ -367,14 +380,19 @@ python3 -m http.server 8790 --bind 127.0.0.1 -d docs
 HSD_SITE_URL=http://127.0.0.1:8790 .venv/bin/python -m pytest -v -m live tests/live/test_site_mobile.py
 ```
 
-- every page at every size: no console error, uncaught error or failed request from the site's own files; no sideways
-  scrolling, with the menu shut or open; the menu is a hamburger named "Menu" that opens and closes by a tap (a click
-  on the desktop) and by the keyboard (Enter, Space), a cross while open, inside the screen, with its links in order
-  (The boundary, The land, The water, The vineyards, Status, Journal, About & contact), the page's own marked
-  `aria-current`, each answering 200; the header's place line reads "Llano Uplift · Texas Hill Country", on one line
-  between the home link and the menu where it shows (also checked at 700 px, the narrowest screen that shows it); the
-  header's, the menu's, the footer's and the pages' own buttons and action links are at least 44 px each way (a link
-  inside a sentence is not counted);
+- every page at every size: no console error from the site's own files, uncaught error from them (or from no file) or
+  failed request for one; no sideways scrolling, with the menu shut or open; the menu is a hamburger named "Menu" that
+  opens and closes by a tap (a click on the desktop) and by the keyboard (Enter, Space), a cross while open, inside the
+  screen, with its links in order (The boundary, The land, The water, The vineyards, Status, Journal, About & contact),
+  the page's own marked `aria-current`, each answering 200; the header's place line reads "Llano Uplift · Texas Hill
+  Country", on one line between the home link and the menu where it shows (also checked at 700 px, the narrowest screen
+  that shows it);
+  these buttons and action links are at least 44 px each way: the header's home link and menu button, the open menu's
+  links, the footer's links, and on the pages those in the test's `ACTIONS` (`.text-link`, Explore's basemap
+  buttons, The land's Earlier and Later, Home's ways in and arrival links, The water's panel links and About contents);
+  other links and buttons (a link inside a sentence, the vineyards form) are not measured. One hidden by design is not
+  measured: inside a `[hidden]` element, or not rendered (`checkVisibility()`: `display:none`, `visibility:hidden`, the
+  content of a shut `<details>` or `<dialog>`); every other one is, so a box collapsed to 1.5 px or less fails;
 - every menu link, tapped on a phone and clicked on the desktop from Home, opens its page, which marks it current;
 - Explore, on the phones: tapping three steps, a quarter, a half and three quarters of the way along the line (from
   `docs/data/steps.geojson`), opens each step's popup, docked along the map's bottom, with the
@@ -382,14 +400,22 @@ HSD_SITE_URL=http://127.0.0.1:8790 .venv/bin/python -m pytest -v -m live tests/l
   has no undock button, and the zoom and Home buttons are 44 px; a one-finger swipe beside the map (the page's margin)
   or on it scrolls the page and leaves the map still; two fingers move the map; Home shows the whole boundary again;
 - The land, on the phones: the drawing shows the stage on its reading line as the page scrolls, and does so too when
-  the reader scrolls right after tapping Later.
+  the reader scrolls right after tapping Later (whose hold ends after 1,200 ms); with the page's clock stopped, so that
+  only the reader can end the hold, a touch outside the drawing's buttons or a turn of the wheel ends it at once, and a
+  touch on the buttons does not (`timeline.js`, `reader()`);
+- The water, at every size: its panel's links (on a phone, with the Layers sheet opened) and, opened from "About this
+  map", the About panel's contents links and Close are 44 px each way, with no sideways scrolling.
 
-The site is https://hickorysandsdistrictava.org unless `HSD_SITE_URL` names another. The basemap key serves only the
-live site and `http://localhost:8765`, so on any other local address Esri refuses the basemaps (HTTP 401) and the maps
-draw the line alone: on a loopback address the test allows those refusals and the SDK's console lines about them; on
-the live site they fail it (the key has expired or lost its referrer). `./build.sh check-live` does not run it: a
-Pages delay or a fault on the website must never fail an ArcGIS publish. Screenshots: `target/browser-tests/site/<page>-<viewport>-<test>.png` (`-FAILED.png` when it
-failed), with `-loaded.png` after each load and `-menu-open.png` with the menu open.
+Explore's map must settle (ready, not updating) within 30 s of each move, or the test fails there, with a screenshot.
+
+The site is https://hickorysandsdistrictava.org unless `HSD_SITE_URL` names another. A console error counts only when
+Chrome gives its source as one of the site's own files; what Esri's SDK logs (from js.arcgis.com) never counts, locally
+or live. The basemap key serves only the live site and `http://localhost:8765`, so on any other local address Esri
+refuses the basemaps (HTTP 401) and the maps draw the line alone: on a loopback address the test allows those refusals
+(HTTP 401 or 403 from arcgis.com); on the live site they fail it (the key has expired or lost its referrer).
+`./build.sh check-live` does not run it: a Pages delay or a fault on the website must never fail an ArcGIS publish.
+Screenshots: `target/browser-tests/site/<page>-<viewport>-<test>.png` (`-FAILED.png` when it failed), with `-loaded.png`
+after each load and `-menu-open.png` with the menu open.
 
 ## GitHub Actions and releases
 
@@ -438,10 +464,11 @@ pages and checked by `tests/test_site_maps.py`), on Esri's basemaps:
   read.
 
 No page types a boundary figure (#124). The area, the step and point counts, the line's length and the revision date are
-elements marked `data-figure` (`area_sqmi`, `area_whole`, `step_count`, `point_count`, `miles`, `revision_date`, and the
-petition's and Notice No. 243's areas, `petition_area_whole` and `notice_243_area_whole`, from the review stage), such
+elements marked `data-figure` (`area_sqmi`, `area_whole`, `step_count`, `point_count`, `miles`, `revision_date`), such
 as `<span data-figure="area_sqmi">193.83</span>` or `<time data-figure="revision_date" datetime="…">…</time>`. The
-site-data stage writes them from `docs/data/`; the revision date is the one in the build's file names, kept in the
+site-data stage also has the petition's and Notice No. 243's areas, `petition_area_whole` and `notice_243_area_whole`,
+from the review stage, but no page marks them now (`tests/test_public_text.py` keeps it so). The site-data stage
+writes the marked figures from `docs/data/`; the revision date is the one in the build's file names, kept in the
 boundary's record. `tests/test_site_figures.py` fails when a page types one without the mark. A journal note is history
 and stays as written; a dated step in the status timeline keeps its date, but its figures are marked.
 

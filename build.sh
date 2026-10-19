@@ -247,13 +247,25 @@ check_live() {
 SITE_SERVER=""
 check_site() {   # the website in Google Chrome (tests/live/test_site_mobile.py; screenshots in target/browser-tests/site/)
     if [ "${1:-}" = --local ]; then  # this checkout's docs/, on the loopback address only, for this run
-        local port="${HSD_SITE_PORT:-8790}"
-        "$PY" -E -s -B -m http.server "$port" --bind 127.0.0.1 -d docs >/dev/null 2>&1 &
+        local port="${HSD_SITE_PORT:-8790}" log="$TARGET/browser-tests/site-server.log" start=$SECONDS
+        local url="http://127.0.0.1:$port" probe="/?check-site=$$"
+        mkdir -p "$(dirname "$log")"
+        "$PY" -E -s -B -m http.server "$port" --bind 127.0.0.1 -d docs >"$log" 2>&1 &
         SITE_SERVER=$!
         trap 'kill "$SITE_SERVER" 2>/dev/null || true' EXIT
-        sleep 1
-        kill -0 "$SITE_SERVER" 2>/dev/null || { echo "no local server on port $port: set HSD_SITE_PORT to a free one"; exit 1; }
-        export HSD_SITE_URL="http://127.0.0.1:$port"
+        # ready when this run's server answers (it logs each request, so a page from another server on the port does
+        # not count); it fails at once if the server stops (the port is taken), and after 15 s
+        until run -c 'import sys, urllib.request; urllib.request.urlopen(sys.argv[1], timeout=2)' "$url$probe" 2>/dev/null \
+                && grep -qF "GET $probe " "$log"; do
+            if ! kill -0 "$SITE_SERVER" 2>/dev/null || [ $((SECONDS - start)) -ge 15 ]; then
+                echo "no local server of docs/ answered on $url (is the port taken? set HSD_SITE_PORT to a free one);" \
+                     "its log, $log:" >&2
+                cat "$log" >&2
+                exit 1
+            fi
+            sleep 0.2
+        done
+        export HSD_SITE_URL="$url"
     fi
     step "the website at phone sizes and on a desktop: ${HSD_SITE_URL:-https://hickorysandsdistrictava.org}"
     run -m pytest -v -m live tests/live/test_site_mobile.py
@@ -267,7 +279,10 @@ case "${1:-all}" in
     publish)   env_setup; if [ "${2:-}" = --dry-run ]; then dry_run; else publish; fi ;;
     publish-dry-run) env_setup; dry_run ;;
     check-live) env_setup; check_live ;;
-    check-site) env_setup; check_site "${2:-}" ;;
+    check-site) if [ $# -gt 2 ] || { [ $# = 2 ] && [ "$2" != --local ]; }; then  # before the setup: nothing else
+                    echo "usage: ./build.sh check-site [--local]" >&2; exit 2
+                fi
+                env_setup; check_site "${2:-}" ;;
     site-data) env_setup; [ -f "$WORK/.checks-passed" ] || { echo "no checked build: run ./build.sh first"; exit 1; }
                step "the website's map data (docs/data/), walk page and figures from the last build"; run "${SITE_DATA[@]}"; run "${SURVEY_MAP[@]}"
                run "${AQUIFER_3D[@]}"               # made again only when stale: fetches missing inputs into resources/aquifer/cache/

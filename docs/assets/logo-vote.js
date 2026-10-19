@@ -344,6 +344,9 @@ function vote(dir) {
   else down[it.id] = passes(it.id) + 1;
   history.push({ item: it, dir });
   send({ action: "vote", id: it.id, dir: String(dir) });
+  // Analytics (analytics.js's window.hsdTrack, absent or off on most
+  // visits): which way, never the design.
+  window.hsdTrack?.("vote_cast", { dir: dir > 0 ? "like" : "pass" });
   const said = dir > 0 ? "Liked." : "Passed.";
   const finish = () => {
     queue.shift();
@@ -378,6 +381,7 @@ function undo() {
   if (busy || !history.length) return;
   const h = history.pop();
   takeBack(h.item.id);
+  window.hsdTrack?.("vote_undo", {});
   renderDeck();
   renderLists();
   $("progress").textContent = "Vote taken back. " + $("progress").textContent;
@@ -636,6 +640,10 @@ $("send-form").addEventListener("submit", async (ev) => {
   }
   button.disabled = false;
   button.textContent = "Send it in";
+  // Analytics: sent, refused (an answer the page explains) or not sent; never
+  // the answer itself, the title or the photo.
+  const result = answer === "ok" ? "ok" : Object.hasOwn(ANSWERS, answer) ? "refused" : "error";
+  window.hsdTrack?.("vote_upload", { result });
   status.className = "lv-status" + (answer === "ok" ? " lv-good" : " lv-bad");
   status.textContent = ANSWERS[answer] ||
     "It didn't send. Check your signal and try again.";

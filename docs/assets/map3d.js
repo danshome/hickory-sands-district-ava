@@ -53,6 +53,10 @@ if (opened.water) {
   setText("aq-lede", "The ground is see-through. Drag to turn; go below to look up.");
   document.title = "The Hickory Aquifer in 3D · Hickory Sands District";
 }
+// Analytics (analytics.js's window.hsdTrack, absent or off on most visits):
+// how the map was opened, and below which switches, buttons and popups are
+// used, as fixed words only.
+window.hsdTrack?.("map_mode", { mode: opened.water ? "aquifer" : "map" });
 // What the wells start with when turned on (aquifer-wells.js, #148).
 setText(
   "aq-wells-start",
@@ -1202,7 +1206,11 @@ function sheet(open, focus = true) {
   pad();
 }
 if (toggle) {
-  toggle.addEventListener("click", () => sheet(!panel.classList.contains("is-open")));
+  toggle.addEventListener("click", () => {
+    const open = !panel.classList.contains("is-open");
+    sheet(open);
+    window.hsdTrack?.("map_view", { action: open ? "panel_restore" : "panel_min", value: "sheet" });
+  });
   panel.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && phone.matches && panel.classList.contains("is-open")) sheet(false);
   });
@@ -1217,7 +1225,11 @@ function minimized(min) {
   minimize.setAttribute("aria-label", min ? "Show the panel" : "Minimize the panel");
   pad();
 }
-minimize?.addEventListener("click", () => minimized(!panel.classList.contains("is-min")));
+minimize?.addEventListener("click", () => {
+  const min = !panel.classList.contains("is-min");
+  minimized(min);
+  window.hsdTrack?.("map_view", { action: min ? "panel_min" : "panel_restore", value: "button" });
+});
 const fit = () => {
   if (phone.matches) {
     if (panel.classList.contains("is-min")) minimized(false);
@@ -1231,6 +1243,7 @@ const fit = () => {
 phone.addEventListener("change", fit);
 addEventListener("resize", pad);
 fit();
+let lastOpened = null; // the feature whose popup was counted last
 if (popup) {
   keepSelectedInView(view, popup, {
     setBottom: (bottom) => {
@@ -1244,7 +1257,28 @@ if (popup) {
     if (event.detail?.name === "open" && popup.open && phone.matches && panel.classList.contains("is-open")) {
       sheet(false, false);
     }
+    if (event.detail?.name === "selectedFeature") {
+      const feature = popup.selectedFeature;
+      if (feature && feature !== lastOpened) {
+        window.hsdTrack?.("map_open_item", { kind: kindOf(feature) });
+      }
+      lastOpened = feature ?? null;
+    }
   });
+}
+// What a popup shows, as one word: a step, a point, a well, a vineyard, the
+// aquifer, or another.
+function kindOf(feature) {
+  const layer = feature.layer;
+  if (layer && layer === district.steps) return "step";
+  if (layer && layer === district.points) return "point";
+  if (Object.values(aquifer).includes(feature)) return "aquifer";
+  const key = layer ? SWITCH.get(layer) : undefined;
+  if (key?.startsWith("vineyards")) return "vineyard";
+  if (key === "official-outcrop") return "aquifer";
+  if (layer && wells?.headLayers?.().includes(layer)) return "well";
+  if (layer && wells && !key && layer.title?.startsWith("Wells")) return "well";
+  return "other";
 }
 
 const aboutDialog = document.getElementById("aq-about");
@@ -1256,6 +1290,7 @@ for (const link of document.querySelectorAll("[data-about]")) {
     opener = link;
     aboutDialog.showModal();
     aboutDialog.scrollTop = 0;
+    window.hsdTrack?.("map_view", { action: "about", value: link.dataset.about });
     if (link.dataset.about !== "about-district") {
       document.getElementById(link.dataset.about)?.scrollIntoView({ block: "start" });
     }
@@ -1282,6 +1317,15 @@ const SHORT_USES = {
   "Monitoring / test / other / unknown": "Monitoring, other",
 };
 const n = (v) => Number(v).toLocaleString("en-US");
+// One wells_filter event for each filter the reader moves, a second after
+// they stop (a slider sends one input for every stop it passes).
+const filterTimers = {};
+const filterUsed = (value) => {
+  clearTimeout(filterTimers[value]);
+  filterTimers[value] = setTimeout(() => {
+    window.hsdTrack?.("map_view", { action: "wells_filter", value });
+  }, 1000);
+};
 const filters = { uses: true, yield: true, depth: true, hickory: true }; // true: not narrowed
 let showCounts = () => {};
 
@@ -1321,13 +1365,17 @@ function wireWellFilters(w) {
       box.append(label);
       useBoxes.push(input);
       useCounts.push(count);
-      input.addEventListener("change", applyUses);
+      input.addEventListener("change", () => {
+        applyUses();
+        filterUsed("use");
+      });
     });
   }
   for (const [id, on] of [["aq-uses-all", true], ["aq-uses-none", false]]) {
     document.getElementById(id)?.addEventListener("click", () => {
       for (const b of useBoxes) b.checked = on;
       applyUses();
+      filterUsed("use");
     });
   }
   showCounts = (counts) => {
@@ -1387,9 +1435,18 @@ function wireWellFilters(w) {
       const bottom = a === last ? stops[last - 1] : stops[a];
       showCounts(w.setFilter({ [loKey]: bottom, [hiKey]: top, [noneKey]: none ? none.checked : true }));
     };
-    lo.addEventListener("input", () => apply(lo));
-    hi.addEventListener("input", () => apply(hi));
-    none?.addEventListener("change", () => apply(null));
+    lo.addEventListener("input", () => {
+      apply(lo);
+      filterUsed(key);
+    });
+    hi.addEventListener("input", () => {
+      apply(hi);
+      filterUsed(key);
+    });
+    none?.addEventListener("change", () => {
+      apply(null);
+      filterUsed("unreported");
+    });
     ranges.push({ lo, hi, none, startLo, startHi, startNone, apply });
     apply(null);
   }
@@ -1397,6 +1454,7 @@ function wireWellFilters(w) {
   // Hickory Aquifer only) back to their defaults; not the Wells switch or the
   // water levels.
   document.getElementById("aq-wells-reset")?.addEventListener("click", () => {
+    window.hsdTrack?.("map_view", { action: "wells_reset", value: "button" });
     useBoxes.forEach((b, i) => {
       b.checked = w.defaults.uses.has(i);
     });
@@ -1598,11 +1656,26 @@ function setGroup(toggleBox, on, byReader = true) {
 }
 for (const box of document.querySelectorAll("input[data-switch]")) {
   if (SWITCHES[box.dataset.switch]) {
-    box.addEventListener("change", () => layerBox(box));
+    box.addEventListener("change", () => {
+      layerBox(box);
+      const group = box.closest("[data-group]")?.dataset.group;
+      window.hsdTrack?.("map_layer", {
+        group,
+        layer: box.dataset.switch,
+        state: box.checked ? "on" : "off",
+      });
+    });
   }
 }
 for (const toggleBox of document.querySelectorAll("[data-group-switch]")) {
-  toggleBox.addEventListener("change", () => setGroup(toggleBox, toggleBox.checked));
+  toggleBox.addEventListener("change", () => {
+    setGroup(toggleBox, toggleBox.checked);
+    window.hsdTrack?.("map_layer", {
+      group: toggleBox.dataset.groupSwitch,
+      layer: "all",
+      state: toggleBox.checked ? "on" : "off",
+    });
+  });
 }
 // "Show wells", at the top of the Wells group, and the group's own switch are
 // one switch: every well on or off (heads, lines, rings and water dots).
@@ -1615,13 +1688,16 @@ function setWellsOn(on) {
 }
 document.getElementById("aq-wells-show")?.addEventListener("change", (event) => {
   setGroup(groupSwitch("wells"), event.target.checked);
+  window.hsdTrack?.("map_layer", { group: "wells", layer: "wells", state: event.target.checked ? "on" : "off" });
 });
 document.querySelector('input[data-switch="wells-water"]')?.addEventListener("change", (event) => {
   if (wells) wells.setWater(event.target.checked);
+  window.hsdTrack?.("map_layer", { group: "wells", layer: "wells-water", state: event.target.checked ? "on" : "off" });
 });
 document.querySelector('input[data-switch="wells-hickory-only"]')?.addEventListener("change", (event) => {
   filters.hickory = !event.target.checked;
   if (wells) showCounts(wells.setFilter({ hickoryOnly: event.target.checked }));
+  filterUsed("hickory_only");
 });
 
 // ---- The view's buttons: the basemap, 2D or 3D, and (below the ground) Go
@@ -1678,9 +1754,17 @@ reactiveUtils.watch(
     if (threeD) ensureTerrain();
   },
 );
-lookButton?.addEventListener("click", () => tiltTo(look !== "3d"));
+lookButton?.addEventListener("click", () => {
+  const threeD = look !== "3d";
+  tiltTo(threeD);
+  window.hsdTrack?.("map_view", { action: threeD ? "3d" : "2d", value: "button" });
+});
 for (const button of document.querySelectorAll("button[data-look]")) {
-  button.addEventListener("click", () => tiltTo(button.dataset.look === "3d"));
+  button.addEventListener("click", () => {
+    const threeD = button.dataset.look === "3d";
+    tiltTo(threeD);
+    window.hsdTrack?.("map_view", { action: threeD ? "3d" : "2d", value: "button" });
+  });
 }
 for (const button of document.querySelectorAll("button[data-basemap]")) {
   button.addEventListener("click", () => {
@@ -1690,6 +1774,7 @@ for (const button of document.querySelectorAll("button[data-basemap]")) {
     map.basemap = basemapFor(basemapName);
     map.basemap?.load().catch(basemapRefused);
     saveAddress();
+    window.hsdTrack?.("map_view", { action: "basemap", value: basemapName });
   });
 }
 for (const button of document.querySelectorAll("button[data-place]")) {
@@ -1735,6 +1820,9 @@ try {
 const home = scene.querySelector("arcgis-home");
 if (home) {
   home.viewpoint = view.viewpoint.clone();
+  home.addEventListener("click", () => {
+    window.hsdTrack?.("map_view", { action: "home", value: "button" });
+  });
 }
 // A step or point in the address: its popup opens. One that does not exist
 // is said in the status line, until the reader moves the map, which stays

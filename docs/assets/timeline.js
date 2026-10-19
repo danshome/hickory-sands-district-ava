@@ -471,6 +471,29 @@
   live.setAttribute("aria-live", "polite");
   caption.appendChild(live);
 
+  // Analytics (analytics.js's window.hsdTrack, absent or off on most visits):
+  // a stage counts once it has stayed in the figure for a second, once
+  // each, so scrolling past several sends nothing for them; the first
+  // drawing, made before the reader does anything, is not counted.
+  var counted = {};
+  var dwell = 0;
+  var ready = false;
+  function used(n) {
+    if (!ready) {
+      return;
+    }
+    clearTimeout(dwell);
+    dwell = setTimeout(function () {
+      if (n !== current || counted[n]) {
+        return;
+      }
+      counted[n] = true;
+      if (window.hsdTrack) {
+        window.hsdTrack("land_section", { section: "timeline-" + n });
+      }
+    }, 1000);
+  }
+
   function show(n, announce) {
     if (n < 1 || n > 8 || n === current) {
       return false;
@@ -511,6 +534,7 @@
     if (announce) {
       live.textContent = "Stage " + n + " of 8: " + s.title + ". " + s.age + ".";
     }
+    used(n);
     return true;
   }
 
@@ -554,6 +578,7 @@
 
   // Drawn before it goes in, so a failure leaves the list as it was.
   show(1, false);
+  ready = true;
   // One quiet line that says how the drawing moves; made here, so the page
   // without JavaScript (no drawing) never mentions it.
   var hint = el("p", "geo-hint");

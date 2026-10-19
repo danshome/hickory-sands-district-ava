@@ -195,7 +195,21 @@ addEventListener("popstate", (e) => {
   }
 });
 
+// Analytics (analytics.js's window.hsdTrack, absent or off on most visits):
+// how far the form gets, as fixed words, each once each time it is opened;
+// never what is entered.
+const FORM_STEPS = { 2: "blocks", 3: "details", 4: "details", 5: "review", done: "sent", failed: "error" };
+let counted = new Set();
+function reachedStep(step) {
+  const word = FORM_STEPS[step];
+  if (!word || counted.has(word)) return;
+  counted.add(word);
+  window.hsdTrack?.("vineyard_form", { step: word });
+}
+
 function open() {
+  counted = new Set();
+  window.hsdTrack?.("vineyard_form", { step: "start" });
   const kept = readDraft();
   if (kept) state = kept;
   else if (state.step === "done") state = fresh();
@@ -248,6 +262,7 @@ function show(step, { focus = true, fromHistory = false } = {}) {
   }
   msg("");
   state.step = step;
+  reachedStep(step);
   for (const s of wiz.querySelectorAll(".step")) s.hidden = s.dataset.step !== String(step);
   const n = typeof step === "number" ? step : 5;
   $("wiz-count").textContent = typeof step === "number" ? `Step ${step} of 5` : step === "done" ? "Sent" : "Step 5 of 5";
@@ -1263,6 +1278,7 @@ $("retry").addEventListener("click", () => {
 });
 $("copy").addEventListener("click", () => copyDetails(`Copied. Paste them into an email to ${ADDRESS}.`));
 $("mail").addEventListener("click", () => {
+  window.hsdTrack?.("vineyard_form", { step: "email_fallback" });
   if (mail?.long) copyDetails("Copied. Paste them into the email that opened.");
 });
 

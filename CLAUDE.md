@@ -123,6 +123,14 @@ ArcGIS publishing stays local (`./build.sh publish`). Fonts: the PDFs ask for Ti
 - Say "proposed", never "agreed". Use the official names, never "ours" against "TTB's": **Notice No. 243** (TTB's
   published text), **the AVA Map Explorer polygon** (TTB's AVAs_Production line), **the proposed revision** (this
   boundary). Sides of a difference: "in the proposed revision only" / "in the Map Explorer polygon only".
+- Nothing public (the site, ArcGIS Online, the documents, the public repo) may contradict the petition (as amended
+  June 6, 2023) or Comment 9 (the petitioners' response to Comment 8) (Dan, 2026-10-18). Every statement is backed by
+  a published source that was opened and read, and is consistent with both. Where research and either document
+  disagree, the point is left out entirely (no correction, no hedge); the disagreement goes only to Dan, in `research/`.
+- A new website feature or page goes: a design and a working prototype in `research/design-*/`; an independent check
+  by an agent that did not make it (a fact-check of every sentence and figure against its sources and both documents,
+  and a usability and security review); Dan's approval of the prototype; then the build, through PRs as below. A
+  finding that will go to anyone outside (an email, a comment) is confirmed independently first.
 - Everything in the ArcGIS Online folder and its group is public (`src/publish/agol_share.py` keeps it so). The
   organization's home page has a new section for the dashboard; leave its other sections and the original web map,
   story map and quadrangles alone: many people link to them. If TTB adopts the proposal, update that web map and story

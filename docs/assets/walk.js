@@ -8,7 +8,7 @@ import {
   markStep,
   reducedMotion,
   walkedTo,
-} from "./maps.js";
+} from "./maps.js?v=722b7c5";
 
 document.documentElement.classList.add("js");
 try {
@@ -18,10 +18,7 @@ try {
 }
 
 async function follow(element) {
-  const { layers, extent } = await boundaryMap(element, {
-    popups: false,
-    quiet: true,
-  });
+  const { layers, extent } = await boundaryMap(element, { quiet: true });
   // Never closer than about the scale of the 1:24,000 survey maps.
   element.constraints = {
     minScale: 1500000,

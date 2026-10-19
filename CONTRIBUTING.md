@@ -81,7 +81,9 @@ A new top-level folder needs an issue that agrees to it first.
 - **The website.** Merging a change to `docs/` publishes it at hickorysandsdistrictava.org; `site.yml` tests it first.
   Test every change at phone sizes before the pull request: `./build.sh check-site --local` runs
   `tests/live/test_site_mobile.py` against a local server of your branch; after the deploy, `./build.sh check-site`
-  runs it against the live site ([BUILD.md](BUILD.md)).
+  runs it against the live site ([BUILD.md](BUILD.md)). After changing a script or stylesheet in `docs/`, run
+  `./build.sh stamp` and commit what it changes: every URL that loads one carries a hash of the file, so browsers
+  fetch a changed file at once, and the checks (`tests/test_site.py`, the build) fail on a stale one.
 - **Publishing** to ArcGIS Online, tagging releases, and changing DNS or the domains are the maintainer's alone.
 
 ## Conduct

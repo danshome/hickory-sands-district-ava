@@ -1,0 +1,89 @@
+/* The land: "Sand, height and water" (four small maps) and "A slice through the district" (part of TWDB's section line
+   A–A′, drawn by land.js). Loaded after site.css and timeline.css, on land.html only. Every class here starts with lnd-;
+   the slice's buttons, count, progress marks, hint and announcements reuse the timeline's generic .geo-step, .geo-count,
+   .geo-progress, .geo-hint and .geo-live, so the two figures read as one family; the variables those rules use, which
+   timeline.css sets only on its own section (--geo-scale, the marks not yet reached), are set here too.
+   Colours: the paper's neutrals; --sand for the Hickory Sandstone Member formation; a muted blue-green for its water;
+   the wells in the 3D page's hues (sandstone yellow, granite pink-red, gneiss violet, limestone green), darkened for
+   paper. The maps and the slice's static drawing are SVG files the build writes (src/site/make_land.py), with their own
+   colours; these match them. */
+.lnd-place,.lnd-sec{--geo-scale:#e2dbcc;--lnd-high:#d6ccb7;--lnd-core:#e7e1d4;--lnd-core-mark:#a59a88;--lnd-younger:#d3ccbd;--lnd-younger-mark:#ada491;--lnd-water:#6d8c86;--lnd-water-edge:#47625c;--lnd-sand-mark:#8f6646;--lnd-c6:#d8bd55;--lnd-c0:#b5485e;--lnd-c1:#7b5ea7;--lnd-c2:#a8820f;--lnd-c3:#5b8a57;--lnd-c4:#a3906f;
+  border-top:1px solid var(--paper-line);padding-top:4rem;padding-bottom:4.5rem}
+.lnd-head{display:grid;gap:1.5rem}.lnd-head .reading-body h2{margin-bottom:1.5rem}.lnd-head .reading-body p{font-size:1.0625rem;line-height:1.8}
+
+/* Four small maps: one to a row on a phone (the map beside its key), two by two from 700px, four in a row from 1000px. */
+.lnd-maps{margin:2.5rem 0 0}.lnd-map-list{list-style:none;margin:0;padding:0;display:grid;gap:1.75rem}
+.lnd-map{min-width:0;display:grid;grid-template-columns:minmax(0,45%) minmax(0,1fr);column-gap:1rem;align-items:start}.lnd-map>.lnd-map-index{grid-column:1/-1}
+.lnd-map-index{font-size:.6875rem;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--paper-muted);margin-bottom:.45rem}
+.lnd-map>img{display:block;width:100%;height:auto;background:#f4efe5;border:1px solid var(--paper-line)}
+.lnd-map-text p{font-size:.8125rem;line-height:1.55;color:var(--paper-ink)}.lnd-map-text p+p{margin-top:.35rem}
+.lnd-map-text .lnd-map-key{color:var(--paper-muted);font-size:.75rem;line-height:1.5}.lnd-k{display:inline-flex;align-items:center;gap:.4rem;margin-right:.6rem}
+.lnd-maps-caption{max-width:46rem;margin-top:1.5rem}.lnd-line-key{display:inline-block;width:24px;height:0;border-top:2px solid var(--wine);vertical-align:middle;margin-right:.35rem}
+.lnd-links{display:flex;flex-wrap:wrap;gap:0 2rem;margin-top:1.5rem}
+
+/* Swatches, shared by the maps' keys and the steps' keys: patterned as the drawings are. */
+.lnd-sw{display:inline-block;flex:0 0 auto;width:16px;height:10px;border:1px solid var(--lnd-core-mark);vertical-align:-1px}
+.lnd-sw-high{background:var(--lnd-high)}.lnd-sw-sand{background:radial-gradient(circle,var(--lnd-sand-mark) 0 1px,transparent 1.4px) 0 0/5px 5px,var(--sand)}
+.lnd-sw-core{background:linear-gradient(var(--lnd-core-mark),var(--lnd-core-mark)) 3px 4px/4px 1px no-repeat,linear-gradient(var(--lnd-core-mark),var(--lnd-core-mark)) 4.5px 2.5px/1px 4px no-repeat,linear-gradient(var(--lnd-core-mark),var(--lnd-core-mark)) 10px 6px/3px 1px no-repeat,linear-gradient(var(--lnd-core-mark),var(--lnd-core-mark)) 11px 5px/1px 3px no-repeat,var(--lnd-core)}
+.lnd-sw-blank{background:#f4efe5}.lnd-sw-together{background:#b98457;border-color:#7d5636}
+.lnd-sw-water{background:radial-gradient(circle,#93aca6 0 1px,transparent 1.4px) 0 0/5px 5px,var(--lnd-water);border-color:var(--lnd-water-edge)}
+.lnd-sw-younger{background:linear-gradient(var(--lnd-younger-mark),var(--lnd-younger-mark)) 0 2px/100% 1px no-repeat,linear-gradient(var(--lnd-younger-mark),var(--lnd-younger-mark)) 0 6px/100% 1px no-repeat,linear-gradient(var(--lnd-younger-mark),var(--lnd-younger-mark)) 5px 2px/1px 4px no-repeat,linear-gradient(var(--lnd-younger-mark),var(--lnd-younger-mark)) 11px 6px/1px 4px no-repeat,var(--lnd-younger)}
+.lnd-sw-strip{background:var(--sand);height:4px;border:0}.lnd-sw-fault{width:0;height:12px;border:0;border-left:1.5px dashed var(--paper-ink);margin-inline:7px}
+.lnd-sw-district{background:var(--wine);height:4px;border:0}.lnd-sw-district-line{background:none;height:0;border:0;border-top:2px solid var(--wine)}
+.lnd-dot{display:inline-block;flex:0 0 auto;width:8px;height:8px;border-radius:50%}
+.lnd-c6{background:var(--lnd-c6)}.lnd-c0{background:var(--lnd-c0)}.lnd-c1{background:var(--lnd-c1)}.lnd-c2{background:var(--lnd-c2)}.lnd-c3{background:var(--lnd-c3)}.lnd-c4{background:var(--lnd-c4)}
+
+/* The slice: a figure (the build's static drawing, which land.js replaces with one drawn at the figure's width), six
+   steps that reveal it layer by layer, then three questions. */
+.lnd-sec-body{margin-top:2.5rem}
+.lnd-fig{margin:0 0 1rem;min-width:0}.lnd-art{min-height:200px}.lnd-art svg,.lnd-art img{display:block;width:100%;height:auto;background:#f4efe5;border:1px solid var(--paper-line)}
+.lnd-fig figcaption{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:.25rem 1rem;margin-top:.6rem}
+.lnd-now{font-family:var(--serif);font-size:1.5rem;line-height:1.1;color:var(--paper-ink)}.lnd-ve{font-size:.75rem;color:var(--paper-muted)}
+.lnd-progress{max-width:none}.lnd-controls{display:flex;align-items:center;gap:.75rem}
+.lnd-steps{list-style:none;margin:0;padding:0}
+.lnd-step{padding-block:2rem;border-top:1px solid var(--paper-line);min-width:0}.lnd-step:last-child{border-bottom:1px solid var(--paper-line)}
+.lnd-step-index{font-size:.6875rem;font-weight:500;letter-spacing:.15em;color:var(--paper-muted)}.lnd-current .lnd-step-index{color:var(--paper-ink)}
+.lnd-step h3{font-size:clamp(1.75rem,3vw,2.25rem);margin:.4rem 0 .8rem}.lnd-step>p{font-size:1.0625rem;line-height:1.75;max-width:36rem}
+.lnd-key{display:flex;flex-wrap:wrap;gap:.3rem 1rem;list-style:none;margin:.9rem 0 0;padding:0;font-size:.75rem;color:var(--paper-ink)}.lnd-key li{display:flex;align-items:center;gap:.45rem}
+.lnd-locator{display:block;width:min(100%,260px);height:auto;margin-top:.9rem;background:#f4efe5;border:1px solid var(--paper-line)}
+
+/* The drawing's layers (land.js): a layer waits, hidden, until its step; without JavaScript, or printed, all show. */
+.lnd-l{transition:opacity .45s ease-out}.lnd-wait{opacity:0}
+.lnd-art text{font-family:var(--sans);fill:var(--paper-muted);font-size:11px}.lnd-art .lnd-t-end{fill:var(--paper-ink);font-weight:600;letter-spacing:.06em}
+.lnd-art .lnd-t-rule{fill:var(--wine);paint-order:stroke;stroke:#f4efe5;stroke-width:3px;stroke-linejoin:round}.lnd-art .lnd-t-district{fill:var(--wine);font-weight:500}
+@media(prefers-reduced-motion:reduce){.lnd-l{transition:none}}
+
+/* Three questions, the links and the caveats. */
+.lnd-qa{margin-top:4rem;padding-top:2.5rem;border-top:1px solid var(--paper-line)}.lnd-qa-title{font-size:2rem;margin-bottom:1.5rem}
+.lnd-qa-list{display:grid;gap:2rem}.lnd-qa-list h4{font-family:var(--serif);font-weight:400;font-size:1.5rem;line-height:1.15;margin:0 0 .7rem}
+.lnd-qa-list p{font-size:1rem;line-height:1.75;max-width:34rem}
+.lnd-caveat{margin-top:2rem;max-width:44rem;font-size:.8125rem;line-height:1.6;color:var(--paper-muted)}
+
+@media(min-width:700px){
+  .lnd-place,.lnd-sec{padding-top:5rem;padding-bottom:6rem}
+  .lnd-head{grid-template-columns:1fr 2fr;gap:7vw}.lnd-head>.eyebrow{padding-top:.5rem}
+  .lnd-maps-caption,.lnd-links{margin-left:calc(33.3% + 2.33vw)}
+  .lnd-map-list{grid-template-columns:1fr 1fr;gap:2.25rem 1.5rem}.lnd-map{display:block}.lnd-map-text{margin-top:.6rem}
+  .lnd-qa-list{grid-template-columns:repeat(3,1fr);gap:2.5rem}
+}
+/* A wide screen: the figure sticks beside the steps, and the progress marks show (timeline.css hides its own there). */
+@media(min-width:1000px){
+  .lnd-map-list{grid-template-columns:repeat(4,1fr);gap:1.5rem}
+  .lnd-sec-body.lnd-has-figure{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:4vw;align-items:start}
+  .lnd-has-figure .lnd-fig{position:sticky;top:1.5rem;margin:0}.lnd-has-figure .lnd-progress{display:flex}
+}
+/* A phone held upright: the same query as land.js's "tall" (and the timeline's). The figure becomes a short panel stuck
+   to the top of the screen (the drawing, six progress marks, the step's name and two small buttons that stay put), and
+   the steps scroll under it. Nothing here applies without JavaScript: every rule needs .lnd-has-figure. */
+@media screen and (max-width:999px) and (min-height:520px) and (orientation:portrait){
+  .lnd-has-figure .lnd-fig{position:sticky;top:0;z-index:3;margin:0 -7vw;padding:.55rem 7vw .4rem;background:var(--bone);border-bottom:1px solid var(--paper-line);box-shadow:0 6px 14px -12px #282b2466}
+  .lnd-has-figure .lnd-ve{display:none}
+  .lnd-has-figure .lnd-fig figcaption{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:.5rem;margin-top:.15rem}
+  .lnd-has-figure .lnd-now{font-size:1.25rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .lnd-has-figure .lnd-controls{gap:.15rem}.lnd-has-figure .geo-step{justify-content:center;gap:0;width:44px;height:44px;padding:0;font-size:0}.lnd-has-figure .geo-step span{font-size:1.25rem;line-height:1}
+  .lnd-has-figure .geo-count{min-width:3.6em;text-align:center;font-size:.6875rem;letter-spacing:.12em}
+  /* A step's top lands just under the panel when a button scrolls to it; land.js measures the panel into --lnd-panel. */
+  .lnd-has-figure .lnd-step{scroll-margin-top:calc(var(--lnd-panel,300px) + .5rem)}
+  .lnd-has-figure .lnd-steps a,.lnd-has-figure .lnd-steps h3{scroll-margin-top:calc(var(--lnd-panel,300px) + 1rem)}
+}
+@media print{.lnd-has-figure .lnd-fig{position:static;box-shadow:none}.lnd-controls{display:none}.lnd-wait{opacity:1!important}.lnd-step,.lnd-map{break-inside:avoid}}

@@ -4,9 +4,13 @@ Every page in docs/, and src/site/walk.template.html (the build makes
 walk.html from it), has the header's menu (the nav in details.navigation)
 with the same links as Home's, in the same order; each link opens a page
 that is in docs/; and the page's own link, and only it, is marked
-aria-current="page" (a page that is not in the menu, such as Home or
-Explore, marks none). 404.html links from the site's root (/boundary.html),
-so it works at any depth; its links are read from there.
+aria-current="page" (a page that is not in the menu, such as Home or the
+map, marks none). A link's page is its address with its query: The water is
+map.html?layers=aquifer,vineyards,places, which the map marks by script
+from its address, so map.html itself marks none in its HTML. A page that has
+moved (explore.html, aquifer.html: a meta refresh to the map) has no menu.
+404.html links from the site's root (/boundary.html), so it works at any
+depth; its links are read from there.
 
 Standard library only, so the lint workflow runs it; in Chrome,
 tests/live/test_site_mobile.py checks the menu opens and its links answer.
@@ -23,9 +27,14 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 SITE = ROOT / "docs"
 TEMPLATE = ROOT / "src" / "site" / "walk.template.html"
-# each page and the page it is in the site (the walk's template is walk.html)
+# each page and the page it is in the site (the walk's template is walk.html),
+# but those that have moved (a meta refresh to the map)
 PAGES = {
-    **{path: path.name for path in sorted(SITE.glob("*.html"))},
+    **{
+        path: path.name
+        for path in sorted(SITE.glob("*.html"))
+        if 'http-equiv="refresh"' not in path.read_text(encoding="utf-8")
+    },
     TEMPLATE: "walk.html",
 }
 HOME = SITE / "index.html"
@@ -100,6 +109,17 @@ def target(href):
     return "index.html" if path in {".", ""} else path
 
 
+def address(href):
+    """Returns the address in the site a menu link opens, with its query.
+
+    "map.html?layers=aquifer,vineyards,places" (The water) is not
+    "map.html": the map marks The water only when opened as the water.
+    """
+    page = target(href)
+    query = urlsplit(href).query
+    return f"{page}?{query}" if page and query else page
+
+
 def links(path):
     """Returns the menu's links as (text, page) pairs."""
     return [(text, target(href)) for text, href, _ in menu(path).links]
@@ -134,7 +154,11 @@ def test_menu_is_home_s_with_this_page_marked(path):
         for text, _, current in parsed.links
         if current is not None
     ]
-    mine = [(text, "page") for text, linked in home if linked == page]
+    mine = [
+        (text, "page")
+        for text, href, _ in menu(HOME).links
+        if address(href) == page
+    ]
     assert marked == mine, (
         f"aria-current marks {marked}, not {mine or 'no link'} ({page})"
     )

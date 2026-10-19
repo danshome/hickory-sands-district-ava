@@ -1,21 +1,22 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<script src="assets/analytics.js?v=737a7e4" defer></script>
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#141512"><meta name="description" content="The register of growers in the proposed Hickory Sands District.">
 <title>The vineyards · Hickory Sands District</title><link rel="canonical" href="https://hickorysandsdistrictava.org/vineyards.html">
-<link rel="icon" type="image/svg+xml" href="assets/favicon.svg"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&amp;family=Source+Sans+3:wght@400;500;600;700&amp;display=swap" rel="stylesheet"><link rel="stylesheet" href="assets/site.css"><link rel="stylesheet" href="assets/vineyard-form.css"></head><body class="paper page-vineyards">
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&amp;family=Source+Sans+3:wght@400;500;600;700&amp;display=swap" rel="stylesheet"><link rel="stylesheet" href="assets/site.css?v=248a6c7"><link rel="stylesheet" href="assets/vineyard-form.css?v=16d5eb6"></head><body class="paper page-vineyards">
 <div id="page">
 <a class="skip" href="#main">Skip to content</a>
 <header class="site-header"><a class="identity" href="index.html" aria-label="Hickory Sands District home"><img src="assets/mark.svg" width="30" height="32" alt=""><span>Hickory Sands<br><span class="identity-small">District</span></span></a>
-<span class="header-place">Llano Uplift · Texas Hill Country</span><details class="navigation"><summary aria-label="Menu"><span class="menu-icon" aria-hidden="true"></span></summary><nav aria-label="Main navigation"><a href="boundary.html">The boundary</a><a href="land.html">The land</a><a href="aquifer.html">The water</a><a href="vineyards.html" aria-current="page">The vineyards</a><a href="status.html">Status</a><a href="journal.html">Journal</a><a href="about.html">About & contact</a></nav></details></header>
+<span class="header-place">Llano Uplift · Texas Hill Country</span><details class="navigation"><summary aria-label="Menu"><span class="menu-icon" aria-hidden="true"></span></summary><nav aria-label="Main navigation"><a href="boundary.html">The boundary</a><a href="land.html">The land</a><a href="map.html?layers=aquifer,vineyards,places">The water</a><a href="vineyards.html" aria-current="page">The vineyards</a><a href="status.html">Status</a><a href="journal.html">Journal</a><a href="about.html">About & contact</a></nav></details></header>
 <main id="main"><section class="page-heading section-pad"><p class="eyebrow">The vineyards</p><h1>A register<br>of growers.</h1><p class="standfirst">At the time of the petition (February 2023):<br>nine commercial vineyards, about 190 acres.</p></section>
 
 <section class="vy-register section-pad" id="register" aria-labelledby="register-title"><p class="eyebrow">On the map</p>
 <h2 id="register-title">The vineyards<br>on this site.</h2>
 <p class="vy-lead">Every vineyard on this site's maps, grouped as on The water. Each block is outlined on aerial photographs. Only the named vineyards were looked at, so this is not a survey: other vineyards may exist.</p>
 <div class="vy-map" id="vy-map"><arcgis-map id="vy-arcgis" aria-label="Map of the vineyards and the proposed Hickory Sands District. Tap a block for its vineyard's name."></arcgis-map><p class="vy-map-note" id="vy-map-note">The map loads as you reach it.</p></div>
-<div class="vy-list" id="vy-list"><p class="vy-empty" id="vy-empty">The list of vineyards needs JavaScript. <a href="aquifer.html">The water</a> shows them on its map.</p></div>
-<p class="vy-water">The water shows each block with the TWDB wells near it. <a class="text-link" href="aquifer.html">The water<span aria-hidden="true">↗</span></a></p>
+<div class="vy-list" id="vy-list"><p class="vy-empty" id="vy-empty">The list of vineyards needs JavaScript. <a href="map.html?layers=aquifer,vineyards,places">The water</a> shows them on its map.</p></div>
+<p class="vy-water">The water shows each block with the TWDB wells near it. <a class="text-link" href="map.html?layers=aquifer,vineyards,places">The water<span aria-hidden="true">↗</span></a></p>
 </section>
 
 <section class="reading add-vineyard section-pad" id="add" aria-labelledby="add-title"><p class="eyebrow">Not listed?</p><div class="reading-body"><h2 id="add-title">Add your<br>vineyard.</h2>
@@ -51,7 +52,7 @@
 </div>
 
 <div class="wiz-body" id="wiz-body">
-<form id="wiz-form" novalidate autocomplete="on">
+<form id="wiz-form" method="post" novalidate autocomplete="on">
 
 <section class="step" data-step="1" aria-labelledby="wiz-title">
 <button type="button" class="w-button w-primary w-icon" id="locate"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>Use my location</button>
@@ -159,6 +160,6 @@
 </div>
 <p class="visually-hidden" id="live" aria-live="polite"></p>
 </div>
-<script type="module" src="assets/vineyard-list.js"></script>
-<script type="module" src="assets/vineyard-wizard.js"></script>
+<script type="module" src="assets/vineyard-list.js?v=82e3634"></script>
+<script type="module" src="assets/vineyard-wizard.js?v=82ab37a"></script>
 </body></html>

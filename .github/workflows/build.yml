@@ -21,6 +21,8 @@ on:
       - docs/walk.html
       - docs/index.html
       - docs/boundary.html
+      - docs/land.html
+      - docs/assets/land/**
       - docs/assets/survey-map.webp
       - resources/**
       - src/**

@@ -8,10 +8,10 @@
 // is not set up (vineyard-config.js) or does not answer, the grower is offered
 // the email instead (vineyard-email.js). Text from the grower is only ever set
 // as text.
-import { apiKey } from "./map-config.js";
-import { endpoint, turnstileSiteKey } from "./vineyard-config.js";
-import * as rules from "./vineyard-blocks.js";
-import { ADDRESS, message, plan } from "./vineyard-email.js";
+import { apiKey } from "./map-config.js?v=999720b";
+import { endpoint, turnstileSiteKey } from "./vineyard-config.js?v=071004e";
+import * as rules from "./vineyard-blocks.js?v=a8b5daf";
+import { ADDRESS, message, plan } from "./vineyard-email.js?v=7d7e46c";
 
 // The function and the person check are set up only when both are given.
 const READY = /^https:\/\/[a-z0-9-]+\.supabase\.co\/functions\/v1\/vineyard-submit$/.test(endpoint) ||

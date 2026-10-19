@@ -1,24 +1,28 @@
-// The Hickory Aquifer in 3D (aquifer.html, #135): the whole aquifer as
-// TWDB's Llano Uplift groundwater model draws it, under a see-through ground,
-// with TWDB's well reports, the vineyards, the proposed district, TTB's
-// proposed Llano Uplift AVA, the counties and towns.
+// The map (map.html; its design: research/design-the-map-2026-10-19). One map
+// for the site, made from the Hickory Aquifer in 3D (#135). It opens on the
+// proposed revision alone, straight down as a paper map reads, with a popup
+// for every step and point (as the Explore page had them, #113); every other
+// layer is off until it is turned on in the panel, and its data loads only
+// then. With a layer below the ground on (the aquifer or the wells) the ground
+// turns see-through, the heights are exaggerated and the view tilts, as the
+// aquifer page did. The address says what is on (map-url.js): the menu's
+// "The water" opens map.html?layers=aquifer,vineyards,places.
 //
-// The data is assets/aquifer/ (made by src/site/make_aquifer_3d.py), the
-// vineyards are assets/vineyards/ (made by src/site/make_vineyards.py) and the
-// district is data/boundary.geojson. The aquifer's body is built here from
-// blocks of 2 x 2 (half a mile, large screens) or 4 x 4 (a mile, phones)
-// model cells, each from its bottom to its top, with walls only where a
-// neighbour is missing or steps up or down. Heights are metres above sea level
-// times the vertical exaggeration, and the ground's elevation is multiplied by
-// the same factor, so depths below the ground keep their proportions. When
-// Esri's ground cannot be loaded, the ground is flat and every height is drawn
-// from the model's own ground instead; when the basemap cannot be loaded, the
-// layers are drawn on the page's background. Every figure the page shows is
-// read from assets/aquifer/stats.json and, for the vineyards,
-// assets/vineyards/stats.json. Text from the data is only ever set as text,
-// never parsed as HTML.
-import { apiKey } from "./map-config.js";
-import { setupWells, wellAttributes, CLASS_NAMES, FAR_HEADS_MAX } from "./aquifer-wells.js";
+// The aquifer's data is assets/aquifer/ (made by src/site/make_aquifer_3d.py),
+// the vineyards' assets/vineyards/ (made by src/site/make_vineyards.py), and
+// the district is data/ (made by the build). The aquifer's body is built
+// here from blocks of 2 x 2 (half a mile, large screens) or 4 x 4 (a mile,
+// phones) model cells. Heights are metres above sea level times the vertical
+// exaggeration, and the ground's elevation is multiplied by the same factor.
+// When Esri's ground cannot be loaded, the ground is flat and every height is
+// drawn from the model's own ground instead; when the basemap cannot be
+// loaded, the layers are drawn on the page's background. Every figure the
+// page shows is read from the two stats.json files or marked data-figure.
+// Text from the data is only ever set as text, never parsed as HTML.
+import { apiKey } from "./map-config.js?v=999720b";
+import { setupWells, wellAttributes, CLASS_NAMES, DEFAULT_FILTER, FAR_HEADS_MAX } from "./aquifer-wells.js?v=9ee9e18";
+import { readState, writeState, GROUPS } from "./map-url.js?v=61d142f";
+import { districtLayers, keepSelectedInView, openFeature } from "./map3d-district.js?v=6eeaf52";
 
 const DATA = "assets/aquifer/";
 const VINEYARDS = "assets/vineyards/";
@@ -30,9 +34,32 @@ const setText = (id, text) => {
     element.textContent = text;
   }
 };
+
+// ---- The address, read before anything loads. Opened as the water (the
+// aquifer on), the menu marks "The water" and the panel is headed as the
+// aquifer page was; otherwise no menu link is this page: the map is reached
+// from The boundary, Walk the line and the step links, as Explore was.
+const opened = readState(location.search);
+if (opened.water) {
+  for (const a of document.querySelectorAll(".site-header nav a")) {
+    if ((a.getAttribute("href") || "").startsWith("map.html")) {
+      a.setAttribute("aria-current", "page");
+    }
+  }
+  setText("aq-eyebrow", "The Llano Uplift in 3D");
+  setText("aq-title", "The Hickory Aquifer");
+  setText("aq-lede", "The ground is see-through. Drag to turn; go below to look up.");
+  document.title = "The Hickory Aquifer in 3D · Hickory Sands District";
+}
+// What the wells start with when turned on (aquifer-wells.js, #148).
+setText(
+  "aq-wells-start",
+  `${DEFAULT_FILTER.use.toLowerCase()} wells that tested at ${DEFAULT_FILTER.yieldLo} gpm or more`,
+);
+
 const status = document.getElementById("aq-status");
 const notes = new Map();
-// The status line under the view: what is loading, and what failed.
+// The status line over the view: what is loading, and what failed.
 function say(key, text) {
   if (text) {
     notes.set(key, text);
@@ -78,11 +105,16 @@ let stats = {};
 try {
   const [aquifer, vines] = await Promise.all([json(`${DATA}stats.json`), json(`${VINEYARDS}stats.json`)]);
   stats = { ...aquifer.figures, ...vines.figures };
-  for (const element of document.querySelectorAll("[data-stat]")) {
-    element.textContent = formatStat(stats[element.dataset.stat], element.dataset.format);
-  }
 } catch (error) {
   console.error("the page's figures could not be loaded", error);
+  say("stats", "Some of the map’s figures could not be loaded, so they are shown as a dash.");
+}
+for (const element of document.querySelectorAll("[data-stat]")) {
+  try {
+    element.textContent = formatStat(stats[element.dataset.stat], element.dataset.format);
+  } catch {
+    element.textContent = "—"; // no such figure: a dash, never "…"
+  }
 }
 
 let EsriModules;
@@ -155,12 +187,15 @@ const TERRAIN =
 const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 // Phones and small screens get the 4 x 4 blocks (a quarter of the faces).
 const small = matchMedia("(max-width: 900px), (pointer: coarse)").matches;
+// A phone, or any touch screen: the map's buttons at the SDK's large size,
+// and wider steps and bigger points to tap.
+const touchSized = matchMedia("(max-width: 699px), (pointer: coarse)");
 
 if (apiKey) {
   config.apiKey = apiKey;
 }
 
-say("load", "Loading the model…");
+say("load", "Loading the map…");
 
 // Esri's ground, if it loads: its elevation times the vertical exaggeration.
 const ExaggeratedElevation = BaseElevationLayer.createSubclass({
@@ -189,39 +224,40 @@ const ExaggeratedElevation = BaseElevationLayer.createSubclass({
 });
 
 async function loadTerrain() {
-  const terrain = new ElevationLayer({ url: TERRAIN });
+  const layer = new ElevationLayer({ url: TERRAIN });
   try {
-    await terrain.load();
-    return terrain;
+    await layer.load();
+    return layer;
   } catch (error) {
     console.warn("Esri's ground elevation could not be loaded", error);
     return null;
   }
 }
 
-let model;
-let terrain;
-try {
-  [model, terrain] = await Promise.all([
-    json(`${DATA}${small ? "hickory-k4.json" : "hickory-k2.json"}`),
-    loadTerrain(),
-  ]);
-} catch (error) {
-  // Without the model there is no aquifer to draw: say so, not "Loading".
-  console.error("the model could not be loaded", error);
-  say("load", "Sorry, the model could not be loaded, so the 3D view cannot be drawn. Please reload the page.");
-  throw error;
-}
-// Without Esri's ground, the ground is flat at 0 and every height is drawn
-// from the model's own ground, so wells and the aquifer still meet.
-const flat = terrain === null;
-if (flat) {
-  say("ground", "Esri’s ground elevation could not be loaded, so the ground is drawn flat and the aquifer at its depth below the model’s own ground.");
+// ---- Esri's ground loads only when it shows: when the view is tilted or a
+// layer below the ground is on. Straight down, a map needs none.
+let terrain = null;
+let flat = null; // null: not tried yet; true: refused, so drawn flat
+let terrainTried = null;
+function ensureTerrain() {
+  if (!terrainTried) {
+    terrainTried = loadTerrain().then((layer) => {
+      terrain = layer;
+      flat = layer === null;
+      if (flat) {
+        say("ground", "Esri’s ground elevation could not be loaded, so the ground is drawn flat and the aquifer at its depth below the model’s own ground.");
+      }
+      ground.layers = groundLayers(exaggeration);
+    });
+  }
+  return terrainTried;
 }
 
-// ---- The aquifer: a block's corners come from the polynomial in the data
-// (model row and column to longitude and latitude).
-const poly = model.polynomial;
+// ---- The aquifer: loaded when it is first turned on. A block's corners
+// come from the polynomial in the data (model row and column to longitude and
+// latitude).
+let model = null;
+let modelLoading = null;
 function terms(u, v, degree) {
   const t = [];
   for (let n = 0; n <= degree; n++) {
@@ -236,6 +272,7 @@ function corner(i, j) {
   const key = i * 100000 + j;
   let at = corners.get(key);
   if (!at) {
+    const poly = model.polynomial;
     const kc = model.block_cells;
     const t = terms((j * kc - 0.5 - poly.col_c) / poly.col_s, (i * kc - 0.5 - poly.row_c) / poly.row_s, poly.degree);
     const dot = (c) => c.reduce((s, x, n) => s + x * t[n], 0);
@@ -331,6 +368,44 @@ const aquifer = {
   outside: new Graphic({ symbol: meshSymbol }),
 };
 
+function draw(k) {
+  if (!model) {
+    return;
+  }
+  const meshes = aquiferMesh(k);
+  for (const key of Object.keys(aquifer)) {
+    aquifer[key].geometry = meshes[key];
+    if (!view.graphics.includes(aquifer[key])) {
+      view.graphics.add(aquifer[key]);
+    }
+  }
+}
+
+// The aquifer's data (a quarter of the faces on a phone) and Esri's ground,
+// then its body; once.
+function ensureModel() {
+  if (!modelLoading) {
+    say("model", "Loading the Hickory Aquifer…");
+    modelLoading = Promise.all([json(`${DATA}${small ? "hickory-k4.json" : "hickory-k2.json"}`), ensureTerrain()])
+      .then(([data]) => {
+        model = data;
+        say("model", "");
+        draw(exaggeration);
+        // The block's size, from the data: its cells and the model's cell size.
+        const kc = model.block_cells;
+        const miles = (kc * stats.cell_ft) / 5280;
+        const side = { 0.5: "half a mile", 1: "a mile" }[miles] || (Number.isFinite(miles) ? `${miles} miles` : "");
+        setText("aq-block-size", `${kc} × ${kc} model cells${side ? ` (${side} square)` : ""}`);
+      })
+      .catch((error) => {
+        modelLoading = null;
+        console.error("the model could not be loaded", error);
+        say("model", "Sorry, the Hickory Aquifer could not be loaded. Turn it off and on again to try once more.");
+      });
+  }
+  return modelLoading;
+}
+
 // ---- The layers on the ground.
 const textSymbol = (size, color) => ({
   type: "label-3d",
@@ -348,7 +423,6 @@ const textSymbol = (size, color) => ({
 const fixedLabel = (text, color) => [
   {
     labelExpressionInfo: { expression: JSON.stringify(text) },
-    labelPlacement: "always-horizontal",
     symbol: textSymbol(11, color),
   },
 ];
@@ -379,107 +453,6 @@ const lineLayer = (title, kind, color, size) =>
       symbol: { type: "line-3d", symbolLayers: [{ type: "line", material: { color }, size }] },
     },
   });
-
-const precambrianBuried = fillLayer(
-  `${DATA}precambrian-buried.geojson`,
-  "Precambrian rock under younger rock; no Hickory Aquifer in the model",
-  [104, 76, 72, 0.85],
-);
-const precambrian = fillLayer(
-  `${DATA}precambrian.geojson`,
-  "Precambrian rock at the surface (TWDB model layer 8)",
-  [...GRANITE, 0.75],
-);
-precambrian.labelingInfo = fixedLabel("Precambrian rock at the surface: no Hickory Aquifer in the model", BONE);
-const outcrop = new GeoJSONLayer({
-  url: `${DATA}context.geojson`,
-  definitionExpression: "kind = 'outcrop'",
-  geometryType: "polygon",
-  title: "TWDB 2017 Hickory outcrop (shifted)",
-  elevationInfo: { mode: "on-the-ground" },
-  popupEnabled: false,
-  renderer: {
-    type: "simple",
-    symbol: { type: "polygon-3d", symbolLayers: [{ type: "fill", material: { color: [141, 180, 199, 0.6] } }] },
-  },
-});
-const counties = lineLayer("County lines (Census 2023)", "county", [...MUTED, 0.55], 1);
-const llanoUplift = new GeoJSONLayer({
-  url: `${DATA}llano-uplift.geojson`,
-  title: "Llano Uplift AVA (proposed, TTB)",
-  geometryType: "polygon",
-  elevationInfo: { mode: "on-the-ground" },
-  popupEnabled: false,
-  labelingInfo: fixedLabel("Llano Uplift AVA (proposed, TTB)", BONE),
-  renderer: {
-    type: "simple",
-    symbol: {
-      type: "polygon-3d",
-      symbolLayers: [
-        {
-          type: "fill",
-          material: { color: [0, 0, 0, 0] },
-          outline: { color: BONE, size: 2, pattern: { type: "style", style: "long-dash" } },
-        },
-      ],
-    },
-  },
-});
-const district = new GeoJSONLayer({
-  url: "data/boundary.geojson",
-  title: "Hickory Sands District (proposed revision)",
-  geometryType: "polygon",
-  elevationInfo: { mode: "on-the-ground" },
-  popupEnabled: false,
-  labelingInfo: fixedLabel("Hickory Sands District (proposed)", SAND),
-  renderer: {
-    type: "simple",
-    symbol: {
-      type: "polygon-3d",
-      symbolLayers: [{ type: "fill", material: { color: [...SAND, 0.08] }, outline: { color: SAND, size: 2.5 } }],
-    },
-  },
-});
-const towns = new GeoJSONLayer({
-  url: `${DATA}context.geojson`,
-  title: "Towns (Census 2023)",
-  definitionExpression: "kind = 'town'",
-  geometryType: "point",
-  outFields: ["name"],
-  popupEnabled: false,
-  elevationInfo: { mode: "relative-to-ground" },
-  screenSizePerspectiveEnabled: false,
-  renderer: {
-    type: "simple",
-    symbol: {
-      type: "point-3d",
-      symbolLayers: [
-        {
-          type: "icon",
-          resource: { primitive: "circle" },
-          material: { color: BONE },
-          outline: { color: [...INK, 1], size: 1 },
-          size: 7,
-        },
-      ],
-    },
-  },
-  labelingInfo: [
-    {
-      labelExpressionInfo: { expression: "$feature.name" },
-      labelPlacement: "above-center",
-      symbol: textSymbol(12, BONE),
-    },
-  ],
-});
-// The Hickory Sandstone Member formation at the surface: the USGS geologic
-// map, shifted onto the outcrops (the repository's resources/geology).
-const member = fillLayer(
-  `${DATA}hickory-member.geojson`,
-  "Hickory Sandstone Member formation (USGS geologic map, shifted)",
-  [...MEMBER, 0.85],
-);
-
 // ---- The vineyards, each with the wells near it.
 let wells = null;
 let nearWells = null;
@@ -521,7 +494,7 @@ function nearList(vid) {
         button.style.cssText = "font:inherit;color:inherit;background:none;border:0;padding:0;text-decoration:underline;cursor:pointer;text-align:left";
         button.textContent = `${a.uid[0] === "S" ? "Driller's report" : "State well"} ${a.uid.slice(1)}`;
         button.addEventListener("click", () => {
-          if (wells) wells.openWell(record);
+          openWellFromList(record);
         });
         const facts = [
           distance ? `${Number(distance).toLocaleString("en-US")} m away` : "inside the block",
@@ -602,67 +575,270 @@ const vineyardLayer = (category, title) => {
     },
   });
 };
-const vineyardsDistrict = vineyardLayer("hsd", "Hickory Sands District vineyards");
-const vineyardsLlano = vineyardLayer("llano-uplift", "Llano Uplift vineyards");
-const vineyardsDeveloping = vineyardLayer("under-development", "Vineyards under development");
-const vineyardsHistorical = vineyardLayer("historical", "Historical vineyards");
 
-let exaggeration = 5;
-const groundLayers = (k) => (flat ? [] : [new ExaggeratedElevation({ exaggeration: k, source: terrain })]);
+// ---- Every layer is made, and its data fetched, the first time it is turned
+// on (a layer added to the map fetches its file even while hidden). Bottom to
+// top, the reverse of the panel's list (the rock, the ground, the sky); the
+// aquifer's meshes are view graphics, under the ground.
+const ORDER = [
+  "precambrian-buried",
+  "precambrian",
+  "official-outcrop",
+  "member",
+  "counties",
+  "ava",
+  "vineyards-historical",
+  "vineyards-developing",
+  "vineyards-llano",
+  "vineyards-hsd",
+  "wells",
+  "location",
+  "district",
+  "steps",
+  "points",
+  "towns",
+];
+const district = districtLayers(GeoJSONLayer, { touch: touchSized.matches });
+const drillLayer = new GraphicsLayer({ title: "Your location", elevationInfo: { mode: "relative-to-ground" } });
+const FACTORIES = {
+  "precambrian-buried": () => [["precambrian-buried", fillLayer(
+    `${DATA}precambrian-buried.geojson`,
+    "Precambrian rock under younger rock; no Hickory Aquifer in the model",
+    [104, 76, 72, 0.85],
+  )]],
+  precambrian: () => {
+    const layer = fillLayer(
+      `${DATA}precambrian.geojson`,
+      "Precambrian rock at the surface (TWDB model layer 8)",
+      [...GRANITE, 0.75],
+    );
+    layer.labelingInfo = fixedLabel("Precambrian rock at the surface: no Hickory Aquifer in the model", BONE);
+    return [["precambrian", layer]];
+  },
+  "official-outcrop": () => [["official-outcrop", new GeoJSONLayer({
+    url: `${DATA}context.geojson`,
+    definitionExpression: "kind = 'outcrop'",
+    geometryType: "polygon",
+    title: "TWDB 2017 Hickory outcrop (shifted)",
+    elevationInfo: { mode: "on-the-ground" },
+    popupEnabled: false,
+    renderer: {
+      type: "simple",
+      symbol: { type: "polygon-3d", symbolLayers: [{ type: "fill", material: { color: [141, 180, 199, 0.6] } }] },
+    },
+  })]],
+  // The Hickory Sandstone Member formation at the surface: the USGS geologic
+  // map, shifted onto the outcrops (the repository's resources/geology).
+  member: () => [["member", fillLayer(
+    `${DATA}hickory-member.geojson`,
+    "Hickory Sandstone Member formation (USGS geologic map, shifted)",
+    [...MEMBER, 0.85],
+  )]],
+  counties: () => [["counties", lineLayer("County lines (Census 2023)", "county", [...MUTED, 0.55], 1)]],
+  ava: () => [["ava", new GeoJSONLayer({
+    url: `${DATA}llano-uplift.geojson`,
+    title: "Llano Uplift AVA (proposed, TTB)",
+    geometryType: "polygon",
+    elevationInfo: { mode: "on-the-ground" },
+    popupEnabled: false,
+    labelingInfo: fixedLabel("Llano Uplift AVA (proposed, TTB)", BONE),
+    renderer: {
+      type: "simple",
+      symbol: {
+        type: "polygon-3d",
+        symbolLayers: [
+          {
+            type: "fill",
+            material: { color: [0, 0, 0, 0] },
+            outline: { color: BONE, size: 2, pattern: { type: "style", style: "long-dash" } },
+          },
+        ],
+      },
+    },
+  })]],
+  "vineyards-historical": () => [["vineyards-historical", vineyardLayer("historical", "Historical vineyards")]],
+  "vineyards-developing": () => [["vineyards-developing", vineyardLayer("under-development", "Vineyards under development")]],
+  "vineyards-llano": () => [["vineyards-llano", vineyardLayer("llano-uplift", "Llano Uplift vineyards")]],
+  "vineyards-hsd": () => [["vineyards-hsd", vineyardLayer("hsd", "Hickory Sands District vineyards")]],
+  location: () => [["location", drillLayer]],
+  // The boundary's fill and its line (the steps); "Steps and points" adds the
+  // points and lets a step or a point be selected.
+  district: () => [["district", district.boundary], ["steps", district.steps]],
+  steps: () => [["points", district.points]],
+  towns: () => [["towns", new GeoJSONLayer({
+    url: `${DATA}context.geojson`,
+    title: "Towns (Census 2023)",
+    definitionExpression: "kind = 'town'",
+    geometryType: "point",
+    outFields: ["name"],
+    popupEnabled: false,
+    elevationInfo: { mode: "relative-to-ground" },
+    screenSizePerspectiveEnabled: false,
+    renderer: {
+      type: "simple",
+      symbol: {
+        type: "point-3d",
+        symbolLayers: [
+          {
+            type: "icon",
+            resource: { primitive: "circle" },
+            material: { color: BONE },
+            outline: { color: [...INK, 1], size: 1 },
+            size: 7,
+          },
+        ],
+      },
+    },
+    labelingInfo: [
+      {
+        labelExpressionInfo: { expression: "$feature.name" },
+        labelPlacement: "above-center",
+        symbol: textSymbol(12, BONE),
+      },
+    ],
+  })]],
+};
+const made = new Map(); // switch key: its layers, once made
+const RANK = new WeakMap(); // layer: its place in ORDER (the wells' own layers have none)
+const SWITCH = new WeakMap(); // layer: the key of the switch that made it
+const rank = (layer) => ORDER.indexOf(RANK.get(layer) ?? "wells");
+const indexFor = (key) => map.layers.filter((l) => rank(l) < ORDER.indexOf(key)).length;
+function layersOf(key) {
+  if (!made.has(key)) {
+    const parts = FACTORIES[key]();
+    for (const [orderKey, layer] of parts) {
+      RANK.set(layer, orderKey);
+      SWITCH.set(layer, key);
+      map.add(layer, indexFor(orderKey));
+      // Its file is fetched now; a failure is said, not only logged.
+      layer.load().catch((error) => layerFailed(layer, error));
+    }
+    made.set(key, parts.map(([, layer]) => layer));
+  }
+  return made.get(key);
+}
+// The district's own switches: its layers are made once, at the start.
+const DISTRICT_KEYS = ["district", "steps"];
+let districtFailed = false;
+// The boundary, its steps or its points could not be loaded: the map has
+// failed (html[data-map="failed"]), and says so.
+function districtLost(error) {
+  if (districtFailed) {
+    return;
+  }
+  console.error("the boundary could not be loaded", error);
+  districtFailed = true;
+  say("load", "");
+  say("district", "Sorry, the boundary could not be loaded. Please reload the page.");
+  document.documentElement.dataset.map = "failed";
+}
+// A layer turned on that could not be loaded or drawn: the status line says
+// which, its switch is unticked, and the layer is dropped, so turning it on
+// again makes it, and fetches its file, once more.
+const failedLayers = new WeakSet();
+function layerFailed(layer, error) {
+  const key = SWITCH.get(layer);
+  if (!key || error?.name === "AbortError" || failedLayers.has(layer)) {
+    return;
+  }
+  failedLayers.add(layer);
+  if (DISTRICT_KEYS.includes(key)) {
+    districtLost(error);
+    return;
+  }
+  console.error(`the layer “${layer.title}” could not be loaded`, error);
+  say(`layer-${key}`, `Sorry, “${layer.title}” could not be loaded. Turn it on again to try once more.`);
+  for (const other of made.get(key) || []) {
+    map.remove(other);
+  }
+  made.delete(key);
+  const box = document.querySelector(`input[data-switch="${key}"]`);
+  if (box) {
+    box.checked = false;
+    box.addEventListener("change", () => say(`layer-${key}`, ""), { once: true });
+  }
+}
+// Shows or hides a switch's layers; a layer never turned on is never made.
+function showLayers(key, on) {
+  if (!on && !made.has(key)) {
+    return;
+  }
+  for (const layer of layersOf(key)) {
+    layer.visible = on;
+  }
+}
+
+
+// ---- The map: the ground opaque and the camera kept above it until a layer
+// below the ground is turned on.
+let exaggeration = opened.layers.has("aquifer") || opened.layers.has("wells") ? 5 : 1;
+let exaggerationChosen = false; // the reader pressed 1×, 5× or 10×
+const groundLayers = (k) => (terrain ? [new ExaggeratedElevation({ exaggeration: k, source: terrain })] : []);
+// Its surface is the page's ink: what shows where no basemap is drawn.
 const ground = new Ground({
-  layers: groundLayers(exaggeration),
-  opacity: 0.4,
-  navigationConstraint: { type: "none" },
-});
-const map = new EsriMap({
-  basemap: apiKey ? new Basemap({ style: { id: "arcgis/dark-gray" } }) : null,
-  ground,
-  // Bottom to top, the reverse of the panel's list (the rock, the ground,
-  // the sky): the geology, the boundaries, the vineyards, then (added later,
-  // right above the vineyards) the wells and your location, and the towns on
-  // top. The aquifer's meshes are view graphics, under the ground.
-  layers: [
-    precambrianBuried,
-    precambrian,
-    outcrop,
-    member,
-    counties,
-    llanoUplift,
-    district,
-    vineyardsHistorical,
-    vineyardsDeveloping,
-    vineyardsLlano,
-    vineyardsDistrict,
-    towns,
-  ],
+  layers: [],
+  opacity: 1,
+  surfaceColor: [...INK, 1],
+  navigationConstraint: { type: "stay-above" },
 });
 
-// The places and angles the view can start from. "From above" looks across
-// the place from the south-west; "from below" looks up at the aquifer's base
-// from under the ground. Depths below the ground follow the exaggeration.
+// Esri's basemaps: the imagery (with its place and road names), the
+// topographic map, and the dark grey map the aquifer was drawn on. A scene
+// cannot grey the imagery, as the 2D Explore map did, so the district's line
+// has a dark casing instead (map3d-district.js).
+const BASEMAP_STYLES = { imagery: "arcgis/imagery", topo: "arcgis/topographic", dark: "arcgis/dark-gray" };
+let basemapName = opened.basemap;
+const basemapFor = (name) => (apiKey ? new Basemap({ style: { id: BASEMAP_STYLES[name] } }) : null);
+const map = new EsriMap({ basemap: basemapFor(basemapName), ground });
+// The district's layers are in the map from the start: the view takes its
+// spatial reference from them when the basemap is refused.
+layersOf("district");
+layersOf("steps");
+const basemapRefused = (error) => {
+  say("basemap", "Esri’s basemap could not be loaded, so the layers are drawn on a plain background.");
+  console.warn("the basemap could not be loaded", error);
+};
+
+// The places and angles the view can go to. Straight down (2D), the
+// district's extent once it has loaded, or the whole aquifer's middle. "From
+// above" in 3D looks across the place from the south-west; "from below" looks
+// up at the aquifer's base from under the ground.
 const PLACES = {
   whole: {
     above: () => ({ lon: -99.35, lat: 29.02, z: 150000, heading: 20, tilt: 48 }),
     below: (k) => ({ lon: -98.75, lat: 29.6, z: -9000 * k, heading: 0, tilt: 118 }),
+    top: () => ({ lon: -98.8, lat: 30.42, z: small ? 620000 : 420000, heading: 0, tilt: 0 }),
   },
   district: {
     above: () => ({ lon: -99.62, lat: 30.55, z: 26000, heading: 42, tilt: 66 }),
     below: (k) => ({ lon: -99.3, lat: 30.55, z: -1200 * k, heading: 8, tilt: 106 }),
+    top: () => ({ lon: -99.15, lat: 30.88, z: small ? 140000 : 90000, heading: 0, tilt: 0 }),
   },
 };
-let place = "whole";
+let place = opened.place;
 let angle = "above";
-const cameraFor = (k) => {
-  const v = PLACES[place][angle](k);
+let look = opened.look;
+let districtExtent = null;
+const cameraFor = (k, which = look === "2d" && angle === "above" ? "top" : angle) => {
+  const v = PLACES[place][which](k);
   return new Camera({
     position: new Point({ longitude: v.lon, latitude: v.lat, z: v.z, spatialReference: SpatialReference.WGS84 }),
     heading: v.heading,
     tilt: v.tilt,
   });
 };
+// Where Go to, From, Home and the address take the view.
+const targetFor = () =>
+  look === "2d" && angle === "above" && place === "district" && districtExtent
+    ? { target: districtExtent, tilt: 0, heading: 0 }
+    : cameraFor(exaggeration);
 
 const scene = document.querySelector(".aq-stage arcgis-scene");
 scene.map = map;
+// Web Mercator, as Esri's basemaps and ground are: without it a refused
+// basemap leaves the view in the GeoJSON's WGS 84, and the ground is refused
+// too ("spatial-reference-incompatible").
+scene.spatialReference = SpatialReference.WebMercator;
 scene.qualityProfile = small ? "medium" : "high";
 scene.camera = cameraFor(exaggeration);
 scene.aria = { label: scene.getAttribute("aria-label") };
@@ -672,7 +848,7 @@ try {
   view = scene.view;
 } catch (error) {
   // No WebGL 2, or the view could not start: the page keeps its text.
-  console.error("the 3D view could not be drawn", error);
+  console.error("the map could not be drawn", error);
   document.documentElement.classList.remove("js");
   throw error;
 }
@@ -682,51 +858,58 @@ view.environment = {
   atmosphereEnabled: false,
   lighting: { type: "virtual" },
 };
-window.aquiferView = view; // for the browser tests and anyone curious
+window.mapView = view; // for the browser tests and anyone curious
+window.aquiferView = view;
 
-// A layer that cannot be drawn: the basemap's are only a note; the rest are
-// logged, but for one taken off the map before it was drawn (the wells'
-// heads, replaced as the filters change), which is no failure.
+// A selected step, point, vineyard or well is outlined in sand, not the
+// SDK's cyan.
+const selected = view.highlights?.find((h) => h.name === "default");
+if (selected) {
+  selected.color = [...SAND, 1];
+  selected.haloOpacity = 0.9;
+  selected.fillOpacity = 0.2;
+}
+
+// A layer that cannot be drawn: the basemap's (its labels too) are only a
+// note; the rest are logged, but for one taken off the map before it was
+// drawn (the wells' heads and lines, replaced as the filters and the view
+// change: an AbortError, or a layer no longer in the map), which is no
+// failure.
 view.on("layerview-create-error", ({ layer, error }) => {
-  if (map.basemap && map.basemap.baseLayers.includes(layer)) {
-    say("basemap", "Esri’s basemap could not be loaded, so the layers are drawn on a plain background.");
-    console.warn("the basemap could not be loaded", error);
+  if (error?.name === "AbortError") {
+    return;
+  }
+  if (map.basemap && (map.basemap.baseLayers.includes(layer) || map.basemap.referenceLayers.includes(layer))) {
+    basemapRefused(error);
+  } else if (SWITCH.has(layer)) {
+    layerFailed(layer, error);
   } else if (map.allLayers.includes(layer)) {
     console.error(`the layer “${layer.title}” could not be drawn`, error);
   }
 });
-if (map.basemap) {
-  map.basemap.load().catch((error) => {
-    say("basemap", "Esri’s basemap could not be loaded, so the layers are drawn on a plain background.");
-    console.warn("the basemap could not be loaded", error);
-  });
-}
+map.basemap?.load().catch(basemapRefused);
 
-function draw(k) {
-  const meshes = aquiferMesh(k);
-  for (const key of Object.keys(aquifer)) {
-    aquifer[key].geometry = meshes[key];
-    if (!view.graphics.includes(aquifer[key])) {
-      view.graphics.add(aquifer[key]);
-    }
+// On a phone or a touch screen the map's buttons are the SDK's large ones,
+// and the popup has no button to undock it (it docks along the bottom).
+const popup = scene.querySelector("arcgis-popup");
+function sizeControls() {
+  const large = touchSized.matches;
+  for (const control of scene.querySelectorAll("arcgis-zoom, arcgis-home, arcgis-compass")) {
+    control.visualScale = large ? "l" : "m";
+  }
+  if (popup) {
+    popup.dockOptions = { ...popup.dockOptions, buttonEnabled: !large };
   }
 }
-draw(exaggeration);
-// The block's size, from the data: its cells and the model's cell size.
-{
-  const kc = model.block_cells;
-  const miles = (kc * stats.cell_ft) / 5280;
-  const side = { 0.5: "half a mile", 1: "a mile" }[miles] || (Number.isFinite(miles) ? `${miles} miles` : "");
-  setText("aq-block-size", `${kc} × ${kc} model cells${side ? ` (${side} square)` : ""}`);
-}
+sizeControls();
+touchSized.addEventListener("change", sizeControls);
+
 
 // ---- "My location": the position is never sent anywhere or stored. It is
 // used only to place a point, to look up its model cell in drill-grid.bin (a
 // static file fetched whole, so no request names the position) and to move
 // the view there, which loads Esri's basemap and elevation tiles for that
 // area, as any web map does: Esri's servers see which area is shown.
-const drillLayer = new GraphicsLayer({ title: "Your location", elevationInfo: { mode: "relative-to-ground" } });
-map.add(drillLayer, map.layers.indexOf(vineyardsDistrict) + 1);
 let fix = null; // [lon, lat, result] while the page is open; never stored
 let drillGrid = null;
 
@@ -889,24 +1072,33 @@ if (locateButton) {
           const cell = cellAt(grid, lon, lat);
           const result = describe(cell);
           // The model's ground at the point (metres), to aim the camera at.
-          result.groundM = !flat && cell && cell.flags & 16 ? cell.ground * FT : 0;
+          result.groundM = flat === false && cell && cell.flags & 16 ? cell.ground * FT : 0;
           fix = [lon, lat, result];
-          // The "Your location" row appears, checked; it shows while Places is on.
+          // The "Your location" row appears, checked. Places turns on with
+          // it; if Places was off, the towns stay off.
           const row = document.getElementById("aq-row-location");
           if (row) row.hidden = false;
           const box = document.querySelector('input[data-switch="location"]');
           if (box) box.checked = true;
-          const places = document.querySelector('[data-group-switch="places"]');
-          drillLayer.visible = !places || places.checked;
+          const places = groupSwitch("places");
+          if (places && !places.checked) {
+            const towns = document.querySelector('input[data-switch="towns"]');
+            if (towns) towns.checked = false;
+            setGroup(places, true);
+          } else {
+            showLayers("location", true);
+          }
           drawDrill(exaggeration);
           showDrill(result.lines);
+          // Straight down stays straight down; a tilted view stays tilted.
+          const tilted = view.camera.tilt > 5;
           view
             .goTo(
               {
                 target: new Point({ longitude: lon, latitude: lat, z: result.groundM * exaggeration, spatialReference: SpatialReference.WGS84 }),
                 zoom: 15,
-                tilt: 62,
-                heading: 20,
+                tilt: tilted ? 62 : 0,
+                heading: tilted ? 20 : 0,
               },
               { animate: !reducedMotion, duration: 2000 },
             )
@@ -932,14 +1124,15 @@ if (locateButton) {
   });
 }
 
-// ---- The panel (its design: research/design-3d-panel-2026-10-18). Groups
-// collapse and remember it; each group's switch gates its layers, as QGIS's
-// groups do; an "i" opens a one-line note; on a phone the panel is a bottom
-// sheet; "About this map" is a dialog.
+// ---- The panel (its design: research/design-3d-panel-2026-10-18, and the
+// map's: research/design-the-map-2026-10-19). Groups collapse and remember it;
+// each group's switch gates its layers, as QGIS's groups do; an "i" opens a
+// one-line note; on a phone the panel is a bottom sheet; "About this map" is
+// a dialog.
 const panel = document.getElementById("aq-panel");
 const panelBody = document.getElementById("aq-panel-body");
 const phone = matchMedia("(max-width: 640px)");
-const STORE = "hsd-aquifer-3d-panel";
+const STORE = "hsd-map-panel";
 const stored = (() => {
   try {
     return JSON.parse(localStorage.getItem(STORE)) || {};
@@ -955,11 +1148,11 @@ const remember = () => {
     // no storage: the panel just forgets
   }
 };
-// Open on a first visit; on a wide screen the well filters are open, so they
-// are in sight without scrolling (#135).
+// Open on a first visit: View, and on a wide screen the district and every
+// group the address turned on. On a phone the sheet starts as an index.
 const DEFAULT_OPEN = phone.matches
   ? { view: true }
-  : { view: true, wells: true, filters: true, vineyards: true, aquifer: true };
+  : { view: true, district: true, filters: true, ...Object.fromEntries([...opened.layers].map((g) => [g, true])) };
 for (const button of document.querySelectorAll(".lp-gt, .lp-subh")) {
   const key = button.dataset.sub || button.closest("[data-group]").dataset.group;
   const body = document.getElementById(button.getAttribute("aria-controls"));
@@ -984,12 +1177,15 @@ for (const button of document.querySelectorAll(".lp-i")) {
   });
 }
 
-// Keeps the panel from covering the middle of the view.
+// The view's padding keeps the panel (and a popup docked at the bottom of a
+// phone) from covering the middle of the view.
+let popupBottom = 0;
 const pad = () => {
   if (!panel) return;
+  const sheet = phone.matches && panel.classList.contains("is-open") ? Math.max(0, panel.offsetHeight - 64) : 0;
   view.padding = phone.matches
-    ? { bottom: panel.classList.contains("is-open") ? Math.max(0, panel.offsetHeight - 64) : 0 }
-    : { left: panel.offsetLeft + panel.offsetWidth };
+    ? { bottom: Math.max(popupBottom, sheet) }
+    : { left: panel.offsetLeft + panel.offsetWidth, bottom: popupBottom };
 };
 const toggle = document.getElementById("aq-sheet-toggle");
 function sheet(open, focus = true) {
@@ -998,6 +1194,7 @@ function sheet(open, focus = true) {
   toggle.setAttribute("aria-expanded", String(open));
   toggle.lastElementChild.textContent = open ? "Done" : "Layers";
   panelBody.inert = phone.matches && !open;
+  if (open && popup?.open && phone.matches) popup.open = false; // one sheet at a time
   if (focus && open) panelBody.querySelector("button, input, a")?.focus({ preventScroll: true });
   if (focus && !open) toggle.focus();
   pad();
@@ -1020,6 +1217,21 @@ const fit = () => {
 phone.addEventListener("change", fit);
 addEventListener("resize", pad);
 fit();
+if (popup) {
+  keepSelectedInView(view, popup, {
+    setBottom: (bottom) => {
+      popupBottom = bottom;
+      pad();
+    },
+    reducedMotion,
+  });
+  // A popup opening on a phone closes the sheet, so it is not hidden.
+  popup.addEventListener("arcgisPropertyChange", (event) => {
+    if (event.detail?.name === "open" && popup.open && phone.matches && panel.classList.contains("is-open")) {
+      sheet(false, false);
+    }
+  });
+}
 
 const aboutDialog = document.getElementById("aq-about");
 let opener = null;
@@ -1030,7 +1242,7 @@ for (const link of document.querySelectorAll("[data-about]")) {
     opener = link;
     aboutDialog.showModal();
     aboutDialog.scrollTop = 0;
-    if (link.dataset.about !== "about-reading") {
+    if (link.dataset.about !== "about-district") {
       document.getElementById(link.dataset.about)?.scrollIntoView({ block: "start" });
     }
     document.getElementById("aq-about-close")?.focus({ preventScroll: true });
@@ -1066,10 +1278,11 @@ function wireWellFilters(w) {
   // The page says the wells start as irrigation wells; without that use
   // group in the data every use is shown at first (aquifer-wells.js logs
   // it), and the page says that instead.
-  if (!groups.includes("Irrigation")) {
+  if (!groups.includes(DEFAULT_FILTER.use)) {
     for (const said of document.querySelectorAll("[data-wells-default]")) {
       said.textContent = `Shown at first: wells of every use that tested at ${n(w.defaults.yieldLo)} gpm or more; widen the filters to see the rest.`;
     }
+    setText("aq-wells-start", `wells of every use that tested at ${n(w.defaults.yieldLo)} gpm or more`);
   }
   const box = document.getElementById("aq-uses");
   const useBoxes = [];
@@ -1218,59 +1431,98 @@ function wellNote({ mode, left, failed, loading, shown, drawn }) {
   }
 }
 
-// Wells: TWDB's driller's reports and Groundwater Database.
+// The far-out limit on every head, as the script has it (About, Wells).
 setText("aq-wells-far-max", n(FAR_HEADS_MAX));
-try {
-  wells = await setupWells({
-    map,
-    view,
-    small,
-    exaggeration,
-    reducedMotion,
-    // The head of every well that passes the filters from about the
-    // district's scale in (further out too while few enough pass), and the
-    // lines down the hole closer in; else the thinned overview.
-    allScale: stats.wells_all_scale,
-    linesScale: stats.wells_lines_scale,
-    FeatureLayer,
-    Graphic,
-    Polyline,
-    Point,
-    SpatialReference,
-    reactiveUtils,
-    onNote: (note) => wellNote(note),
-    // Wells go right above the vineyards, under your location and the towns.
-    insertAt: () => map.layers.indexOf(vineyardsDistrict) + 1,
-  });
-  window.aquiferWells = wells; // for the browser tests
-  wireWellFilters(wells);
-  wellNote(wells.note());
-} catch (error) {
-  console.error("the wells could not be loaded", error);
-  say("wells", "The wells could not be loaded.");
+
+// ---- The wells: TWDB's driller's reports and Groundwater Database, loaded
+// the first time they are turned on, starting at their default filter.
+let wellsLoading = null;
+function ensureWells() {
+  if (!wellsLoading) {
+    say("wells", "Loading the wells…");
+    wellsLoading = ensureTerrain()
+      .then(() =>
+        setupWells({
+          map,
+          view,
+          small,
+          exaggeration,
+          reducedMotion,
+          // The head of every well that passes the filters from about the
+          // district's scale in (further out too while few enough pass), and
+          // the lines down the hole closer in; else the thinned overview.
+          allScale: stats.wells_all_scale,
+          linesScale: stats.wells_lines_scale,
+          FeatureLayer,
+          Graphic,
+          Polyline,
+          Point,
+          SpatialReference,
+          reactiveUtils,
+          onNote: (note) => wellNote(note),
+          // The scene's slotted popup, as every other popup on the page.
+          openPopup: (options) => scene.openPopup(options),
+          // Wells go right above the vineyards, under your location and the
+          // district.
+          insertAt: () => indexFor("wells"),
+        }),
+      )
+      .then((w) => {
+        wells = w;
+        window.aquiferWells = w; // for the browser tests
+        wireWellFilters(w);
+        wellNote(w.note());
+        document.getElementById("aq-wells-off")?.setAttribute("hidden", "");
+        document.getElementById("aq-wells-ui")?.removeAttribute("hidden");
+        w.setVisible(wellsOn());
+        say("wells", "");
+        return w;
+      })
+      .catch((error) => {
+        wellsLoading = null;
+        console.error("the wells could not be loaded", error);
+        say("wells", "The wells could not be loaded. Turn them off and on again to try once more.");
+        return null;
+      });
+  }
+  return wellsLoading;
+}
+// A well in a vineyard's list: the wells turn on, and its report opens.
+function openWellFromList(record) {
+  setWellsOn(true);
+  ensureWells().then((w) => w?.openWell(record));
 }
 
 // ---- The layer switches: each checkbox names what it turns on and off; a
 // layer shows when its group's switch is on and its own box is checked.
-const SWITCHES = {
-  towns: (on) => (towns.visible = on),
-  location: (on) => (drillLayer.visible = on),
-  "vineyards-hsd": (on) => (vineyardsDistrict.visible = on),
-  "vineyards-llano": (on) => (vineyardsLlano.visible = on),
-  "vineyards-developing": (on) => (vineyardsDeveloping.visible = on),
-  "vineyards-historical": (on) => (vineyardsHistorical.visible = on),
-  district: (on) => (district.visible = on),
-  ava: (on) => (llanoUplift.visible = on),
-  counties: (on) => (counties.visible = on),
-  member: (on) => (member.visible = on),
-  "official-outcrop": (on) => (outcrop.visible = on),
-  precambrian: (on) => (precambrian.visible = on),
-  "precambrian-buried": (on) => (precambrianBuried.visible = on),
-  "top-surface": (on) => (aquifer.outcrop.visible = on),
-  "top-buried": (on) => (aquifer.top.visible = on),
-  sides: (on) => (aquifer.side.visible = on),
-  "outside-official": (on) => (aquifer.outside.visible = on),
+const aquiferPart = (part) => (on) => {
+  aquifer[part].visible = on;
+  if (on) ensureModel();
 };
+const SWITCHES = {
+  towns: (on) => showLayers("towns", on),
+  location: (on) => showLayers("location", on),
+  "vineyards-hsd": (on) => showLayers("vineyards-hsd", on),
+  "vineyards-llano": (on) => showLayers("vineyards-llano", on),
+  "vineyards-developing": (on) => showLayers("vineyards-developing", on),
+  "vineyards-historical": (on) => showLayers("vineyards-historical", on),
+  district: (on) => showLayers("district", on),
+  steps: (on) => {
+    showLayers("steps", on);
+    district.steps.popupEnabled = on;
+  },
+  ava: (on) => showLayers("ava", on),
+  counties: (on) => showLayers("counties", on),
+  member: (on) => showLayers("member", on),
+  "official-outcrop": (on) => showLayers("official-outcrop", on),
+  precambrian: (on) => showLayers("precambrian", on),
+  "precambrian-buried": (on) => showLayers("precambrian-buried", on),
+  "top-surface": aquiferPart("outcrop"),
+  "top-buried": aquiferPart("top"),
+  sides: aquiferPart("side"),
+  "outside-official": aquiferPart("outside"),
+};
+const groupSwitch = (key) => document.querySelector(`[data-group-switch="${key}"]`);
 const groupOn = (box) => {
   const toggleOf = box.closest(".lp-group")?.querySelector("[data-group-switch]");
   return !toggleOf || toggleOf.checked;
@@ -1279,32 +1531,77 @@ const layerBox = (box) => {
   const apply = SWITCHES[box.dataset.switch];
   if (apply) apply(groupOn(box) && box.checked);
 };
+const groupsOn = () => new Set(GROUPS.filter((g) => groupSwitch(g)?.checked));
+// The address keeps the groups on and the basemap, so a copied link opens the
+// same map.
+const saveAddress = () => {
+  try {
+    history.replaceState(null, "", `${location.pathname}${writeState(location.search, { layers: groupsOn(), basemap: basemapName })}${location.hash}`);
+  } catch {
+    // a sandboxed page: the address just stays
+  }
+};
+
+// Below the ground: the aquifer or the wells. With one on, the ground is
+// see-through and the camera may go under it; the first time a reader turns
+// one on, the heights are exaggerated five times (unless they chose) and a
+// view looking straight down tilts, so the body is seen.
+const wellsOn = () => !!groupSwitch("wells")?.checked;
+let wasUnder = false;
+function refreshUnderground(byReader) {
+  const under = !!groupSwitch("aquifer")?.checked || wellsOn();
+  document.querySelector(".aq")?.classList.toggle("is-underground", under);
+  ground.opacity = under ? 0.4 : 1;
+  if (under) {
+    ground.navigationConstraint = { type: "none" };
+    ensureTerrain();
+  } else if ((view.camera?.position?.z ?? 1) > 0) {
+    ground.navigationConstraint = { type: "stay-above" };
+  }
+  if (under && !wasUnder && byReader) {
+    if (!exaggerationChosen && exaggeration === 1) {
+      setExaggeration(5);
+    }
+    if (view.camera.tilt < 10) {
+      tiltTo(true);
+    }
+  }
+  wasUnder = under;
+}
+
+function setGroup(toggleBox, on, byReader = true) {
+  toggleBox.checked = on;
+  const group = toggleBox.closest(".lp-group");
+  group.classList.toggle("is-off", !on);
+  if (toggleBox.dataset.groupSwitch === "wells") {
+    setWellsOn(on);
+  }
+  for (const box of group.querySelectorAll("input[data-switch]")) {
+    if (box !== toggleBox) layerBox(box);
+  }
+  refreshUnderground(byReader);
+  if (byReader) saveAddress();
+}
 for (const box of document.querySelectorAll("input[data-switch]")) {
   if (SWITCHES[box.dataset.switch]) {
     box.addEventListener("change", () => layerBox(box));
-    layerBox(box);
   }
 }
 for (const toggleBox of document.querySelectorAll("[data-group-switch]")) {
-  const group = toggleBox.closest(".lp-group");
-  toggleBox.addEventListener("change", () => {
-    group.classList.toggle("is-off", !toggleBox.checked);
-    for (const box of group.querySelectorAll("input[data-switch]")) {
-      if (box !== toggleBox) layerBox(box);
-    }
-  });
+  toggleBox.addEventListener("change", () => setGroup(toggleBox, toggleBox.checked));
 }
 // "Show wells", at the top of the Wells group, and the group's own switch are
 // one switch: every well on or off (heads, lines, rings and water dots).
 const wellsSwitches = [...document.querySelectorAll('input[data-switch="wells"], #aq-wells-show')];
-const setWellsOn = (on) => {
+function setWellsOn(on) {
   for (const box of wellsSwitches) box.checked = on;
   document.getElementById("aq-wells")?.classList.toggle("is-off", !on);
+  if (on) ensureWells();
   if (wells) wells.setVisible(on);
-};
-for (const box of wellsSwitches) {
-  box.addEventListener("change", () => setWellsOn(box.checked));
 }
+document.getElementById("aq-wells-show")?.addEventListener("change", (event) => {
+  setGroup(groupSwitch("wells"), event.target.checked);
+});
 document.querySelector('input[data-switch="wells-water"]')?.addEventListener("change", (event) => {
   if (wells) wells.setWater(event.target.checked);
 });
@@ -1313,49 +1610,141 @@ document.querySelector('input[data-switch="wells-hickory-only"]')?.addEventListe
   if (wells) showCounts(wells.setFilter({ hickoryOnly: event.target.checked }));
 });
 
-const move = () =>
-  view.goTo(cameraFor(exaggeration), { animate: !reducedMotion, duration: 2000 }).catch((error) => {
-    if (error.name !== "AbortError") {
-      console.error("the camera could not move", error);
-    }
-  });
+// ---- The view's buttons: the basemap, 2D or 3D, and (below the ground) Go
+// to, From and the exaggeration.
 const press = (selector, chosen) => {
   for (const other of document.querySelectorAll(selector)) {
-    other.setAttribute("aria-pressed", String(other === chosen));
+    other.setAttribute("aria-pressed", String(other.matches(chosen)));
   }
 };
+const moved = (error) => {
+  if (error?.name !== "AbortError") {
+    console.error("the camera could not move", error);
+  }
+};
+const move = () => view.goTo(targetFor(), { animate: !reducedMotion, duration: 2000 }).catch(moved);
+
+function setExaggeration(k) {
+  if (k === exaggeration) return;
+  exaggeration = k;
+  press("button[data-ve]", `[data-ve="${k}"]`);
+  setText("aq-ve", `${k}×`);
+  map.ground.layers = groundLayers(k);
+  draw(k);
+  if (wells) wells.setExaggeration(k);
+  drawDrill(k);
+}
+
+// 3D tilts the view about its middle; 2D turns it north up and straight down.
+function tiltTo(threeD) {
+  ensureTerrain();
+  const camera = view.camera;
+  view
+    .goTo(
+      { target: view.center, scale: view.scale, tilt: threeD ? 60 : 0, heading: threeD ? camera.heading : 0 },
+      { animate: !reducedMotion, duration: 1200 },
+    )
+    .catch(moved);
+}
+const lookButton = document.getElementById("map-look");
+function showLook(threeD) {
+  look = threeD ? "3d" : "2d";
+  press("button[data-look]", `[data-look="${look}"]`);
+  if (lookButton) {
+    lookButton.textContent = threeD ? "2D" : "3D";
+    lookButton.setAttribute("aria-pressed", String(threeD));
+    lookButton.setAttribute("aria-label", threeD ? "Back to 2D, straight down" : "Tilt the map in 3D");
+  }
+}
+reactiveUtils.watch(
+  () => view.camera?.tilt,
+  (tilt) => {
+    const threeD = tilt > 5;
+    if ((look === "3d") !== threeD) showLook(threeD);
+    if (threeD) ensureTerrain();
+  },
+);
+lookButton?.addEventListener("click", () => tiltTo(look !== "3d"));
+for (const button of document.querySelectorAll("button[data-look]")) {
+  button.addEventListener("click", () => tiltTo(button.dataset.look === "3d"));
+}
+for (const button of document.querySelectorAll("button[data-basemap]")) {
+  button.addEventListener("click", () => {
+    basemapName = button.dataset.basemap;
+    press("button[data-basemap]", `[data-basemap="${basemapName}"]`);
+    say("basemap", "");
+    map.basemap = basemapFor(basemapName);
+    map.basemap?.load().catch(basemapRefused);
+    saveAddress();
+  });
+}
 for (const button of document.querySelectorAll("button[data-place]")) {
   button.addEventListener("click", () => {
     place = button.dataset.place;
-    press("button[data-place]", button);
+    press("button[data-place]", `[data-place="${place}"]`);
     move();
   });
 }
 for (const button of document.querySelectorAll("button[data-angle]")) {
   button.addEventListener("click", () => {
     angle = button.dataset.angle;
-    press("button[data-angle]", button);
+    press("button[data-angle]", `[data-angle="${angle}"]`);
+    if (angle === "below") showLook(true);
     move();
   });
 }
 for (const button of document.querySelectorAll("button[data-ve]")) {
   button.addEventListener("click", () => {
-    const k = Number(button.dataset.ve);
-    if (k === exaggeration) {
-      return;
-    }
-    exaggeration = k;
-    press("button[data-ve]", button);
-    setText("aq-ve", `${k}×`);
-    map.ground.layers = groundLayers(k);
-    draw(k);
-    if (wells) {
-      wells.setExaggeration(k);
-    }
-    drawDrill(k);
+    exaggerationChosen = true;
+    setExaggeration(Number(button.dataset.ve));
   });
+}
+
+// ---- Opening, as the address says: its groups on, the rest off; the view
+// straight down on the district unless a layer below the ground is on.
+press("button[data-basemap]", `[data-basemap="${basemapName}"]`);
+press("button[data-place]", `[data-place="${place}"]`);
+press("button[data-ve]", `[data-ve="${exaggeration}"]`);
+setText("aq-ve", `${exaggeration}×`);
+showLook(look === "3d");
+for (const toggleBox of document.querySelectorAll("[data-group-switch]")) {
+  setGroup(toggleBox, opened.layers.has(toggleBox.dataset.groupSwitch), false);
+}
+try {
+  await district.boundary.load();
+  districtExtent = district.boundary.fullExtent.clone().expand(1.08);
+  await view.goTo(targetFor(), { animate: false });
+} catch (error) {
+  districtLost(error);
+}
+// Home goes back to where the page opened, whatever the view's size by then.
+const home = scene.querySelector("arcgis-home");
+if (home) {
+  home.viewpoint = view.viewpoint.clone();
+}
+// A step or point in the address: its popup opens. One that does not exist
+// is said in the status line, until the reader moves the map, which stays
+// on the whole district.
+if (!districtFailed && (opened.step !== null || opened.point !== null)) {
+  const asked = opened.step !== null ? `step ${opened.step}` : opened.point === "Beginning" ? "beginning point" : `point ${opened.point}`;
+  try {
+    await (opened.step !== null ? district.steps : district.points).load();
+    if (!(await openFeature(scene, district, opened, reducedMotion))) {
+      say("address", `There is no ${asked}.`);
+    }
+  } catch (error) {
+    if (error?.name !== "AbortError") {
+      console.error("the step in the address could not be opened", error);
+      say("address", `Sorry, the ${asked} could not be opened.`);
+    }
+  }
+  if (notes.has("address")) {
+    reactiveUtils.whenOnce(() => view.interacting).then(() => say("address", ""));
+  }
 }
 
 await reactiveUtils.whenOnce(() => !view.updating);
 say("load", "");
-document.documentElement.dataset.aquifer = "ready";
+if (!districtFailed) {
+  document.documentElement.dataset.map = "ready";
+}

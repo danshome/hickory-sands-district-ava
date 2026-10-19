@@ -6,7 +6,7 @@
 // No acres: an outline's acres are not planted acres. The map loads Esri's SDK
 // only when it comes near the screen, or when a vineyard is asked for. Text
 // from the data is only ever set as text, never parsed as HTML.
-import { apiKey } from "./map-config.js";
+import { apiKey } from "./map-config.js?v=999720b";
 
 const SDK = "https://js.arcgis.com/5.1/";
 const DATA = "assets/vineyards/";

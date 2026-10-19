@@ -169,7 +169,7 @@ def test_the_config_is_empty_or_well_formed(wizard):
     assert key == "" or re.fullmatch(r"0x[A-Za-z0-9_-]{10,}", key)
     # while either is empty, Send ends at the email, never a Turnstile that
     # cannot resolve
-    assert 'from "./vineyard-config.js"' in wizard
+    assert re.search(r'from "\./vineyard-config\.js(\?v=[0-9a-f]+)?"', wizard)
     assert "const CONFIGURED = READY && Boolean(turnstileSiteKey);" in wizard
     assert "if (CONFIGURED) loadTurnstile();" in wizard
     assert "if (!CONFIGURED || turnstileFailed ||" in wizard

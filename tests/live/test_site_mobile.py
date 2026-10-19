@@ -1635,7 +1635,7 @@ def test_a_step_or_point_that_does_not_exist_is_said(site_page):
     assert not problems, f"{view.name}:\n  " + "\n  ".join(problems)
 
 
-STATUS = "() => document.getElementById('aq-status').textContent"
+STATUS_LINE = "() => document.getElementById('aq-status').textContent"
 SETTLED_OR_FAILED = """() => ['ready', 'failed'].includes(
   document.documentElement.dataset.map)"""
 
@@ -1700,7 +1700,7 @@ def test_a_file_that_does_not_load_is_said(chrome):
     try:
 
         def said():
-            status = page.evaluate(STATUS)
+            status = page.evaluate(STATUS_LINE)
             for words in (
                 "Esri’s basemap could not be loaded",
                 "“Hickory Sandstone Member formation (USGS geologic map,",
@@ -1741,7 +1741,7 @@ def test_the_map_says_so_when_the_boundary_does_not_load(chrome):
     page = view.page
     problems = []
     try:
-        status = page.evaluate(STATUS)
+        status = page.evaluate(STATUS_LINE)
         state = page.evaluate("document.documentElement.dataset.map")
         if state != "failed":
             problems.append(f"html[data-map] is {state!r}, not 'failed'")

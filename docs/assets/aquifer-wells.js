@@ -68,14 +68,18 @@ export async function setupWells(opts) {
   }
   const index = await response.json();
   let k = opts.exaggeration;
+  // Dan, 2026-10-19: by default only irrigation wells that tested at 25 gpm
+  // or more (a well with no reported yield is left out); the panel's filters
+  // widen it.
+  const IRRIGATION = index.use_groups.indexOf("Irrigation");
   const DEFAULTS = {
     on: true,
     water: false,
     hickoryOnly: false,
-    uses: new Set(index.use_groups.map((_, i) => i)),
-    yieldLo: 0,
+    uses: new Set(IRRIGATION >= 0 ? [IRRIGATION] : index.use_groups.map((_, i) => i)),
+    yieldLo: 25,
     yieldHi: Infinity,
-    noYield: true,
+    noYield: false,
     depthLo: 0,
     depthHi: Infinity,
     noDepth: true,

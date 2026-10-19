@@ -1065,12 +1065,13 @@ function wireWellFilters(w) {
     filters.uses = uses.size === groups.length;
     showCounts(w.setFilter({ uses }));
   };
+  filters.uses = w.defaults.uses.size === groups.length;
   if (box) {
     groups.forEach((name, i) => {
       const label = document.createElement("label");
       const input = document.createElement("input");
       input.type = "checkbox";
-      input.checked = true;
+      input.checked = w.defaults.uses.has(i);
       input.dataset.use = String(i);
       const text = document.createElement("span");
       text.textContent = SHORT_USES[name] || name;
@@ -1116,8 +1117,14 @@ function wireWellFilters(w) {
       input.max = String(last);
       input.step = "1";
     }
-    lo.value = "0";
-    hi.value = String(last);
+    // Start at the defaults (the lowest stop at or below the default's
+    // lower limit, the top stop for no upper limit).
+    const startLo = Math.max(0, stops.findLastIndex((s) => s <= w.defaults[loKey]));
+    const startHi = Number.isFinite(w.defaults[hiKey]) ? Math.max(startLo, stops.findIndex((s) => s >= w.defaults[hiKey])) : last;
+    const startNone = w.defaults[noneKey];
+    lo.value = String(startLo);
+    hi.value = String(startHi);
+    if (none) none.checked = startNone;
     const apply = (moved) => {
       let a = Number(lo.value);
       let b = Number(hi.value);
@@ -1142,21 +1149,25 @@ function wireWellFilters(w) {
     lo.addEventListener("input", () => apply(lo));
     hi.addEventListener("input", () => apply(hi));
     none?.addEventListener("change", () => apply(null));
-    ranges.push({ lo, hi, none, last, apply });
+    ranges.push({ lo, hi, none, startLo, startHi, startNone, apply });
+    apply(null);
   }
   // Reset: the filters only (use, water volume, depth, "include unreported",
-  // Hickory Aquifer only); not the Wells switch or the water levels.
+  // Hickory Aquifer only) back to their defaults; not the Wells switch or the
+  // water levels.
   document.getElementById("aq-wells-reset")?.addEventListener("click", () => {
-    for (const b of useBoxes) b.checked = true;
+    useBoxes.forEach((b, i) => {
+      b.checked = w.defaults.uses.has(i);
+    });
     const only = document.querySelector('input[data-switch="wells-hickory-only"]');
     if (only) only.checked = false;
     w.setFilter({ uses: new Set(w.defaults.uses), hickoryOnly: false });
-    filters.uses = true;
+    filters.uses = w.defaults.uses.size === groups.length;
     filters.hickory = true;
     for (const r of ranges) {
-      r.lo.value = "0";
-      r.hi.value = String(r.last);
-      if (r.none) r.none.checked = true;
+      r.lo.value = String(r.startLo);
+      r.hi.value = String(r.startHi);
+      if (r.none) r.none.checked = r.startNone;
       r.apply(null);
     }
   });

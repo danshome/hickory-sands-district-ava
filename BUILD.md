@@ -290,6 +290,9 @@ for Python; 2-space YAML and TOML). By hand: `.venv/bin/ruff format .` and `.ven
   wording; and, on made-up records, what the check calls stale;
 - `test_site.py`: every page of the website in `docs/` is a complete HTML document (doctype, language, character set,
   phone viewport, title), every local file it links to or loads is in `docs/`, and every link off the site is https;
+- `test_analytics.py`: every page (and the walk template) loads `docs/assets/analytics.js` once, in its head, and no
+  other file names Google's tag; the script's opt-outs and settings; no form or script puts what is typed in the page's
+  address; and, in node when it is installed, the script run against made-up browsers (see Analytics below);
 - `test_publish_dryrun.py`: the publish dry run's checks pass on a dry run of the current build
   (`tests/fixtures/publish/dry-run/`, a copy of `target/publish/`: copy it there again after changing what the publish
   sends) and each fails on a fault planted in it (a layer left editable, plain CC0 on TTB's text, a phone element
@@ -352,7 +355,8 @@ python3 -m http.server 8790 --bind 127.0.0.1 -d docs
 HSD_SITE_URL=http://127.0.0.1:8790 .venv/bin/python -m pytest -v -m live tests/live/test_site_mobile.py
 ```
 
-- every page at every size: no console error, uncaught error or failed request from the site's own files; no sideways
+- every page at every size: no console error, uncaught error or failed request from the site's own files; no request
+  to Google Analytics (the tests never count a visit); no sideways
   scrolling, with the menu shut or open; the menu is a hamburger named "Menu" that opens and closes by a tap (a click
   on the desktop) and by the keyboard (Enter, Space), a cross while open, inside the screen, with its links in order
   (The boundary, The land, The water, The vineyards, Status, Journal, About & contact), the page's own marked
@@ -472,6 +476,17 @@ merged to `main`. The rest is set outside the repository, once:
   2606:50c0:8003::153, and `www` a CNAME to danshome.github.io (GitHub redirects it to the bare domain). The mail
   records beside them (MX, SPF, DKIM, DMARC, Google's verification) are Google Workspace's; leave them alone. The
   other Hickory Sands domains forward to hickorysandsdistrictava.org at Squarespace.
+
+**Analytics.** The site counts visits with Google Analytics 4 (the property "Hickory Sands District AVA"; in Analytics,
+Google signals is off and nothing is linked to Google Ads). Every page loads `docs/assets/analytics.js` in its head (the
+walk page through its template), and only that script loads Google's tag (gtag.js). The measurement ID is typed once,
+as `MEASUREMENT_ID` in that file: public by nature; empty, nothing loads. Nothing loads off the live site
+(`location.hostname` is not hickorysandsdistrictava.org: localhost, 127.0.0.1, previews), in an automated browser
+(`navigator.webdriver`, so the site's tests and every Playwright run never count), or for a browser that sends Do Not
+Track or Global Privacy Control. It turns Google signals and ad personalization off and adds no events of its own: gtag.js
+sends the page view and what the stream's enhanced measurement collects, whose form events carry a form's id, name and
+destination, never what is typed. The colophon says so. `tests/test_analytics.py` checks the pages and the script and
+runs it in node against made-up browsers; `tests/live/test_site_mobile.py` fails on any request to Google Analytics.
 
 The vineyards page's "Not listed?" form lets an owner send a vineyard's details to the district: it opens an email in
 the visitor's own email app (a `mailto:` URL) and the page sends and keeps nothing. Without JavaScript it is a plain

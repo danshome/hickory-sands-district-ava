@@ -26,6 +26,8 @@ SE), emulated with their user agent, touch and pixel ratio (isMobile,
 hasTouch); and a 1440x900 desktop. On every page at every viewport:
 - no console error, uncaught error or failed request from the site's own
   files (a request the browser aborts is not a failure);
+- no request to Google Analytics: docs/assets/analytics.js skips an
+  automated browser (navigator.webdriver), so the tests never count a visit;
 - no sideways scrolling, with the menu shut or open;
 - the menu: a hamburger named "Menu" that opens by a tap (a click on the
   desktop) and by the keyboard, turns into a cross while open and closes the
@@ -312,8 +314,10 @@ class SiteView(View):
         self.response = None  # the page's own HTTP response
         self.errors = []
         self.refused = []  # Esri's refusals of the basemap key (401, 403)
+        self.counted = []  # requests to Google Analytics: none, ever
         page.on("console", self._console)
         page.on("pageerror", self._pageerror)
+        page.on("request", self._request)
         page.on("requestfailed", self._requestfailed)
         page.on("response", self._response)
 
@@ -340,6 +344,10 @@ class SiteView(View):
         if ORIGIN in (error.stack or "") or "://" not in (error.stack or ""):
             self.errors.append(f"uncaught error: {error}"[:400])
 
+    def _request(self, request):
+        if analytics(request.url):
+            self.counted.append(request.url)
+
     def _requestfailed(self, request):
         failure = request.failure or ""
         if own(request.url) and "ERR_ABORTED" not in failure:
@@ -356,6 +364,12 @@ class SiteView(View):
     def problems(self):
         """Returns what the page logged that fails the tests."""
         found = list(self.errors)
+        if self.counted:
+            found.append(
+                f"the test reached Google Analytics ({len(self.counted)} "
+                f"requests, such as {self.counted[0]}): analytics.js must "
+                "skip an automated browser (navigator.webdriver)"
+            )
         if self.refused and not LOCAL:
             found.append(
                 f"Esri refused the basemap key ({len(self.refused)} "
@@ -374,6 +388,19 @@ def esri(url):
     """True when url is on Esri's ArcGIS services (arcgis.com)."""
     host = urlsplit(url).hostname or ""
     return host == "arcgis.com" or host.endswith(".arcgis.com")
+
+
+def analytics(url):
+    """True when url is Google's tag or one of Google Analytics' collectors."""
+    host = urlsplit(url).hostname or ""
+    return any(
+        host == name or host.endswith("." + name)
+        for name in (
+            "googletagmanager.com",
+            "google-analytics.com",
+            "analytics.google.com",
+        )
+    )
 
 
 @pytest.fixture(scope="module", autouse=True)

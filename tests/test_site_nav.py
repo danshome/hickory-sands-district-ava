@@ -7,7 +7,8 @@ that is in docs/; and the page's own link, and only it, is marked
 aria-current="page" (a page that is not in the menu, such as Home or the
 map, marks none). A link's page is its address with its query: The aquifer
 is map.html?layers=aquifer,vineyards,places and The map is map.html (both in
-"The maps", #179); map.html marks The map in its HTML, and its script marks
+"The maps", #179); The vineyards and The logo vote are in "The growers"
+(#100); map.html marks The map in its HTML, and its script marks
 The aquifer instead when opened with the aquifer on. A page that has
 moved (explore.html, aquifer.html: a meta refresh to the map) has no menu.
 404.html links from the site's root (/boundary.html), so it works at any

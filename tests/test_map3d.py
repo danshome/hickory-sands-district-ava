@@ -76,8 +76,9 @@ def test_the_page_loads_the_pinned_sdk_then_its_script(page):
     assert not re.findall(r"js\.arcgis\.com/(?!5\.1/)", page)
 
 
-def test_the_page_stays_out_of_search_engines(page):
-    assert '<meta name="robots" content="noindex">' in page
+def test_search_engines_may_index_the_page(page):
+    # Dan, 2026-10-19 (#167): the site's pages are indexed.
+    assert 'name="robots"' not in page
 
 
 def test_the_page_says_so_when_its_view_cannot_load(page):

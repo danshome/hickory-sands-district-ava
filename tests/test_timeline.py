@@ -209,8 +209,9 @@ def number(href):
     return int(href.removeprefix("#source-"))
 
 
-def test_page_stays_out_of_search_engines(land):
-    assert land.robots and "noindex" in land.robots
+def test_search_engines_may_index_the_page(land):
+    # Dan, 2026-10-19 (#167): the site's pages are indexed.
+    assert land.robots is None
 
 
 def test_timeline_styles_follow_the_site_and_the_script_waits(land):

@@ -298,22 +298,31 @@ for Python; 2-space YAML and TOML). By hand: `.venv/bin/ruff format .` and `.ven
 - `test_site_figures.py`: every page's figures and drawn paths are what the committed data gives, and no page types
   a figure without its mark;
 - `test_site_maps.py`: the map pages load one pinned SDK release; the basemap key is empty or an API key; no map script
-  parses text as HTML; the walk page lists every step of `docs/data/` with its own text; Explore's figures are the
-  build's;
+  parses text as HTML; the walk page lists every step of `docs/data/` with its own text; the map has what its scripts
+  use, a popup for every step and point linking to Walk the line, and Explore's three downloads;
 - `test_private_words.py`: the private-words hook, run in a throwaway repository: a git worktree is checked
   against the main checkout's gitignored list, a checkout's own list comes first, and with no list anywhere (as on
   GitHub's runners) every file passes;
 - `test_survey_map.py`: Home and The boundary draw the boundary alike; the survey image fills their viewBox at the
   record's size; the record lists exactly the quads of both manifests; and, on made-up drawings, the frame's fit, its
   refusal of a drawing at two scales, and what the check calls stale;
-- `test_aquifer_3d.py`: the 3D aquifer page's data is up to date with its record (the build's check); the page loads
-  the pinned SDK and its script, and its scripts read only files that exist (every tile, heads file and report cell
-  too); no well report keeps a removed field, or free text with a title, a role word, a company's name, a name after
-  "by", a phone number, an e-mail or street address, a district's well number or initials on a number, or (in a note
-  about people) a contact word or initials; on made-up names, a log line keeps its rock and loses the name, and an
-  owner's initials, short names and "&" names are found (the review of #139); `stats.json` holds every figure the page
-  marks, the wells' scales among them; the Wells group's controls and the groups' order; every file is under 2 MB; the
-  wording; and, on made-up records, what the check calls stale;
+- `test_aquifer_3d.py`: the map's aquifer data is up to date with its record (the build's check); every tile, heads
+  file and report cell exists; no well report keeps a removed field, or free text with a title, a role word, a
+  company's name, a name after "by", a phone number, an e-mail or street address, a district's well number or initials
+  on a number, or (in a note about people) a contact word or initials; on made-up names, a log line keeps its rock and
+  loses the name, and an owner's initials, short names and "&" names are found (the review of #139); the vineyards name
+  no one and keep the petition's names; every file is under 2 MB; and, on made-up records, what the check calls stale;
+- `test_map3d.py`: the map (`map.html`) loads the pinned SDK and its script, and its scripts read only files that
+  exist; every menu's "The water" opens it as the water; only the district's group starts on, and every other group's
+  layers are made (and their data fetched) only when turned on; `stats.json` holds every figure the page marks, the
+  wells' scales among them; the Wells group's controls, the filter the wells start at (the script's `DEFAULT_FILTER`)
+  and the groups' order; no figure typed; the wording;
+- `test_map_url.py`: the map's address (`assets/map-url.js`, run in node when it is installed): the district alone by
+  default, the water's defaults, `all`, unknown words dropped, a step or point checked, and what is written back reads
+  back the same;
+- `test_moved.py`: the moved pages' redirect (`assets/moved.js`, run in node with a stand-in page): each old address
+  goes to the map with its query (whose words win: `aquifer.html?layers=wells` opens the wells alone) and `#fragment`,
+  never off the site;
 - `test_land.py`: The land's slice and maps: the data is up to date with its record (the build's check); `section.json`
   agrees with `stats.json`, and both with the class rule run again on the 3D page's committed well files (the slice's
   logs and map 03's counts); only a report number and its driller's cleaned words leave the build; every file within its
@@ -327,7 +336,9 @@ for Python; 2-space YAML and TOML). By hand: `.venv/bin/ruff format .` and `.ven
 - `test_site.py`: every page of the website in `docs/` is a complete HTML document (doctype, language, character set,
   phone viewport, title), every local file it links to or loads is in `docs/` (a version stamp aside), every link off
   the site is https, and every script and stylesheet the pages load and every module a script imports carries the
-  stamp of the file as it is now (so a pull request that changes a script without stamping it again fails);
+  stamp of the file as it is now (so a pull request that changes a script without stamping it again fails); a page
+  that has moved (`explore.html`, `aquifer.html`) sends the reader to the map by script and by meta refresh, and no
+  page links it; no page names or links the 2023 ArcGIS StoryMap (Walk the line is the site's only story map);
 - `test_stamp_assets.py`: the stamper, on a made-up site: only local scripts and stylesheets stamped, with the hash
   of the file as served (a module's taken after its imports are stamped, so a change reaches every importer and page);
   each importer names a module alike; a second run changes nothing; `--check` writes nothing and exits 3; a stale or
@@ -416,30 +427,41 @@ HSD_SITE_URL=http://127.0.0.1:8790 .venv/bin/python -m pytest -v -m live tests/l
   failed request for one; no request to Google Analytics (the tests never count a visit); no sideways
   scrolling, with the menu shut or open; the menu is a hamburger named "Menu" that
   opens and closes by a tap (a click on the desktop) and by the keyboard (Enter, Space), a cross while open, inside the
-  screen, with its links in order (The boundary, The land, The water, The vineyards, Status, Journal, About & contact),
+  screen, with its links in order (The boundary, The land, The water, The vineyards, Status, Journal, About & contact;
+  The water is `map.html?layers=aquifer,vineyards,places`),
   the page's own marked `aria-current`, each answering 200; the header's place line reads "Llano Uplift · Texas Hill
   Country", on one line between the home link and the menu where it shows (also checked at 700 px, the narrowest screen
   that shows it);
   these buttons and action links are at least 44 px each way: the header's home link and menu button, the open menu's
-  links, the footer's links, and on the pages those in the test's `ACTIONS` (`.text-link`, Explore's basemap
-  buttons, The land's Earlier and Later, Home's ways in and arrival links, The water's panel links and About contents);
+  links, the footer's links, and on the pages those in the test's `ACTIONS` (`.text-link`, the map's Layers
+  button, The land's Earlier and Later, Home's ways in and arrival links, the map's panel links and About contents);
   other links and buttons (a link inside a sentence, the vineyards form) are not measured. One hidden by design is not
   measured: inside a `[hidden]` element, or not rendered (`checkVisibility()`: `display:none`, `visibility:hidden`, the
   content of a shut `<details>` or `<dialog>`); every other one is, so a box collapsed to 1.5 px or less fails;
 - every menu link, tapped on a phone and clicked on the desktop from Home, opens its page, which marks it current;
-- Explore, on the phones: tapping three steps, a quarter, a half and three quarters of the way along the line (from
-  `docs/data/steps.geojson`), opens each step's popup, docked along the map's bottom, with the
-  place tapped near the middle of the map left above it (the view's bottom is padded by the popup's height); the popup
-  has no undock button, and the zoom and Home buttons are 44 px; a one-finger swipe beside the map (the page's margin)
-  or on it scrolls the page and leaves the map still; two fingers move the map; Home shows the whole boundary again;
+- the map, on the phones: tapping three steps, a quarter, a half and three quarters of the way along the line (from
+  `docs/data/steps.geojson`), opens each step's popup, docked along the map's bottom, with the place tapped near the
+  middle of the map left above it (the view's bottom is padded by the popup's height); the popup has no undock button;
+  the Layers sheet opens and closes, and a popup and the sheet never show together; 3D tilts the map and 2D brings it
+  back north up and straight down; Home goes back to where the page opened; the page does not scroll under the map;
+  the zoom, Home, compass and 3D buttons and the sheet's are 44 px;
+- the map, on two phones and the desktop: it opens on the district alone and loads none of the aquifer's data but its
+  figures; the wells, turned on, load and start at the script's `DEFAULT_FILTER`, and Reset comes back to it;
+  `?layers=all` turns on every group; The water draws the aquifer, headed and marked as the water; `?step=` and
+  `?point=beginning` open their popups; `explore.html` and `aquifer.html` go to the map with their query and
+  `#fragment` (and by their meta refresh without JavaScript), and Back does not return to them; a step or point in
+  the address that does not exist is said in the status line and the map stays on the district; with a layer's file
+  and the figures refused (Playwright aborts them) and Esri refusing the basemap, the map still opens and says each,
+  unticks the layer and leaves no "…"; with the steps refused it fails (`html[data-map="failed"]`) and says so;
 - The land, on the phones: the drawing shows the stage on its reading line as the page scrolls, and does so too when
   the reader scrolls right after tapping Later (whose hold ends after 1,200 ms); with the page's clock stopped, so that
   only the reader can end the hold, a touch outside the drawing's buttons or a turn of the wheel ends it at once, and a
   touch on the buttons does not (`timeline.js`, `reader()`);
-- The water, at every size: its panel's links (on a phone, with the Layers sheet opened) and, opened from "About this
-  map", the About panel's contents links and Close are 44 px each way, with no sideways scrolling.
+- the map, plain and as The water, at every size: its panel's links (on a phone, with the Layers sheet opened) and,
+  opened from "About this map", the About panel's contents links and Close are 44 px each way, with no sideways
+  scrolling.
 
-Explore's map must settle (ready, not updating) within 30 s of each move, or the test fails there, with a screenshot.
+A map must settle (ready, not updating) within 30 s of each move, or the test fails there, with a screenshot.
 
 The site is https://hickorysandsdistrictava.org unless `HSD_SITE_URL` names another. A console error counts only when
 Chrome gives its source as one of the site's own files; what Esri's SDK logs (from js.arcgis.com) never counts, locally
@@ -490,11 +512,32 @@ AVAs_Production snapshot in `resources/ttb/`). When TTB establishes the AVA, ref
 The maps are drawn with Esri's ArcGIS Maps SDK for JavaScript, loaded from js.arcgis.com (release 5.1, pinned in the
 pages and checked by `tests/test_site_maps.py`), on Esri's basemaps:
 
-- **Explore** (`explore.html`, #113): one map with a popup for every step and point, and the dark grey map or greyscale
-  imagery.
+- **The map** (`map.html`; its design, approved on 2026-10-19, is in the gitignored `research/design-the-map-2026-10-19`):
+  the site's one map, built on the 3D aquifer page (#135, below). It opens on the proposed revision alone, straight
+  down on Esri's imagery, with a popup for every step and point (as the Explore page had them, #113; docked along the
+  bottom on a phone), each linking to the same place in Walk the line, and Explore's three GeoJSON downloads in The
+  district's group and in About this map. Every other group (places, wells, vineyards, boundaries, geology, the Hickory
+  Aquifer) is off until it is turned on, and its layers are made, and their data fetched, only then (a GeoJSON layer in
+  the map fetches its file even while hidden). A 3D button tilts it; turning on the aquifer or the wells tilts it the
+  first time, makes the ground see-through and exaggerates the heights five times. The basemap is Imagery, Topo or
+  Dark. Its address (`assets/map-url.js`) says what is on: `?layers=` with `places`, `wells`, `vineyards`,
+  `boundaries`, `geology`, `aquifer` or `all`; `view` (`district`, `whole`), `look` (`2d`, `3d`) and `basemap`
+  (`imagery`, `topo`, `dark`); `step` or `point` (a number, or `beginning`) opens its popup; the groups on and the
+  basemap are written back as the reader changes them. The menu's "The water" is
+  `map.html?layers=aquifer,vineyards,places`, which opens it as the aquifer page did (the whole aquifer, tilted, dark,
+  5x) and marks "The water"; the map itself is linked from The boundary, Walk the line and the step links, not from the
+  menu. The wells, turned on, start at irrigation wells that tested at 25 gpm or more, leaving out wells with no
+  reported yield (#148; `DEFAULT_FILTER` in `aquifer-wells.js`); the filters widen it. The old addresses,
+  `explore.html` and `aquifer.html`, are small pages that send the reader to the map at once (`assets/moved.js`,
+  keeping the query and `#fragment`; a meta refresh without JavaScript): keep them, and link the map, never them.
+  The map always says what did not load, in the status line over it: a layer turned on whose file cannot be loaded or
+  drawn (its switch is unticked, and turning it on again tries once more), the figures (shown as a dash), Esri's
+  basemap or ground, the aquifer, the wells, and a step or point in the address that does not exist; when the boundary
+  itself cannot be loaded the page says so and marks itself failed (`html[data-map="failed"]`, else `"ready"`).
 - **Walk the line** (`walk.html`, #112): every step's text in order, made by the build from `src/site/walk.template.html`
   and the data (so it reads without JavaScript and cannot drift from the boundary); the map follows the step being
-  read.
+  read. It is the site's only story map: the 2023 ArcGIS StoryMap is not named or linked anywhere on the site
+  (Dan, 2026-10-19; `tests/test_site.py`).
 
 No page types a boundary figure (#124). The area, the step and point counts, the line's length and the revision date are
 elements marked `data-figure` (`area_sqmi`, `area_whole`, `step_count`, `point_count`, `miles`, `revision_date`), such
@@ -526,7 +569,8 @@ line's bounding box and the quads; the image is made again only when that record
 or the wrong size, and the check compares the record and the image's size, never its pixel values, so machines whose
 GDAL rounds differently agree. A frame reaching past the listed quads stops `./build.sh site-data`, naming where.
 
-- **The Hickory Aquifer in 3D** (`aquifer.html`, #135; linked from The land): the whole Hickory Aquifer as TWDB's
+- **The Hickory Aquifer in 3D** (#135; now the map's groups, opened as The water and from The land): the whole
+  Hickory Aquifer as TWDB's
   Llano Uplift groundwater model (GAM v1.01, layer 7) draws it, under a see-through ground, in an `<arcgis-scene>`;
   TWDB's well reports (driller's reports and the Groundwater Database) coloured by the rock their logs record, without
   people's names; the vineyard outlines (a vineyard's popup lists the wells near it); the proposed district, TTB's
@@ -535,14 +579,16 @@ GDAL rounds differently agree. A frame reaching past the listed quads stops `./b
   aquifer view) it draws one well per cell; from the District view's scale in (`WELLS_ALL_SCALE` in `params.py`,
   between the two views as measured on a wide screen and a phone), every well's head, from the compact
   `wells/heads-<n>.json`; closer in (`WELLS_LINES_SCALE`), every well's line too, around the middle of the view. Its
-  code is `aquifer3d.js`,
-  `aquifer-wells.js` and `aquifer.css`; its data is `docs/assets/aquifer/`, beside it, not in `docs/data/` (which
+  code is the map's, `map3d.js`, with `aquifer-wells.js` and `map3d.css`; its data is `docs/assets/aquifer/`, beside
+  it, not in `docs/data/` (which
   `make_site_data.py` owns). Every figure it shows comes from `docs/assets/aquifer/stats.json`, read when the page
   loads (`data-stat` elements, not `data-figure`). When Esri's ground (elevation) cannot be loaded, for example a
   refused key, the ground is drawn flat and the aquifer and wells at their depths below the model's own ground; when
   the basemap cannot be loaded, the layers are drawn on the page's background; the page says which.
 
-Their code is `docs/assets/maps.js` (shared), `explore.js`, `walk.js` and `maps.css`. Text from the data is only ever set
+The map's code is `docs/assets/map3d.js` (the scene, the panel, the aquifer), `map3d-district.js` (the district's
+layers and popups), `map-url.js` (the address), `aquifer-wells.js` and `map3d.css`; Walk the line's is `maps.js` (the
+2D map it shares with the vineyard form's pin map), `walk.js` and `maps.css`. Text from the data is only ever set
 as text, never parsed as HTML. The basemaps need the ArcGIS Online API key in `docs/assets/map-config.js`. It is public by
 design and limited to the basemap styles service and to the referrers `https://hickorysandsdistrictava.org` and
 `http://localhost:8765` (for previews: `python3 -m http.server 8765 -d docs`). Stored geocoding and other credit-consuming

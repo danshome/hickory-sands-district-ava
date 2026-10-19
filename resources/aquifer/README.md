@@ -1,9 +1,9 @@
 # resources/aquifer: the inputs of the 3D aquifer page and of The land's slice and maps
 
-The website's page "The Hickory Aquifer in 3D" (`docs/aquifer.html`, #135) reads `docs/assets/aquifer/`, which
-`src/site/make_aquifer_3d.py` makes from these inputs. The land page's "Sand, height and water" and "A slice through the
-district" (`docs/land.html`) read `docs/assets/land/`, which `src/site/make_land.py` makes from some of them and from the
-3D page's data. Map context only: no boundary geometry comes from them.
+The website's map (`docs/map.html`; "The Hickory Aquifer in 3D", #135, is its groups below the ground) reads
+`docs/assets/aquifer/`, which `src/site/make_aquifer_3d.py` makes from these inputs. The land page's "Sand, height and
+water" and "A slice through the district" (`docs/land.html`) read `docs/assets/land/`, which `src/site/make_land.py`
+makes from some of them and from the map's data. Map context only: no boundary geometry comes from them.
 
 | file | what it is |
 |---|---|

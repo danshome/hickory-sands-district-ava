@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<script src="assets/analytics.js?v=737a7e4" defer></script>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#141512"><meta name="description" content="The proposed Hickory Sands District on the map: the line, every step and every point; and, when you turn them on, the Hickory Aquifer in 3D, wells, vineyards and geology.">
+<title>The map · Hickory Sands District</title><link rel="canonical" href="https://hickorysandsdistrictava.org/map.html">
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&amp;family=Source+Sans+3:wght@400;500;600&amp;display=swap" rel="stylesheet"><link rel="stylesheet" href="assets/site.css?v=248a6c7"><link rel="stylesheet" href="assets/maps.css?v=77746de"><link rel="stylesheet" href="assets/map3d.css?v=7611083">
+<script type="module" src="https://js.arcgis.com/5.1/"></script><script type="module" src="assets/map3d.js?v=f9b41e6"></script></head><body class="dark page-map calcite-mode-dark">
+<a class="skip" href="#main">Skip to content</a>
+<header class="site-header"><a class="identity" href="index.html" aria-label="Hickory Sands District home"><img src="assets/mark.svg" width="30" height="32" alt=""><span>Hickory Sands<br><span class="identity-small">District</span></span></a>
+<span class="header-place">Llano Uplift · Texas Hill Country</span><details class="navigation"><summary aria-label="Menu"><span class="menu-icon" aria-hidden="true"></span></summary><nav aria-label="Main navigation"><a href="boundary.html">The boundary</a><a href="land.html">The land</a><a href="map.html?layers=aquifer,vineyards,places">The water</a><a href="vineyards.html">The vineyards</a><a href="status.html">Status</a><a href="journal.html">Journal</a><a href="about.html">About & contact</a></nav></details></header>
+
+<main id="main" class="aq">
+<div class="aq-stage">
+<arcgis-scene aria-label="Map of the proposed Hickory Sands District. Select a step or a point for its description; turn on more layers in the panel."><arcgis-zoom slot="top-right"></arcgis-zoom><arcgis-home slot="top-right"></arcgis-home><arcgis-compass slot="top-right"></arcgis-compass><button type="button" class="map-look" slot="top-right" id="map-look" aria-pressed="false" aria-label="Tilt the map in 3D">3D</button><arcgis-popup slot="popup"></arcgis-popup></arcgis-scene>
+<p class="aq-status" id="aq-status" role="status"></p>
+
+<section class="lp" id="aq-panel" aria-labelledby="aq-title">
+  <span class="lp-handle" aria-hidden="true"></span>
+  <header class="lp-head">
+    <p class="eyebrow" id="aq-eyebrow">Hickory Sands District · proposed</p>
+    <h1 class="lp-title" id="aq-title">The map</h1>
+    <button type="button" class="lp-sheet-toggle" id="aq-sheet-toggle" aria-expanded="false" aria-controls="aq-panel-body"><span class="bars" aria-hidden="true"></span><span>Layers</span></button>
+  </header>
+
+  <div class="lp-body" id="aq-panel-body">
+    <div class="lp-intro">
+      <p class="lp-lede" id="aq-lede">Select a step or a point to read it. Turn on more below.</p>
+      <a class="lp-link" href="#aq-about" data-about="about-district">About this map <span aria-hidden="true">→</span></a>
+    </div>
+
+    <section class="lp-group" data-group="view">
+      <div class="lp-gh"><h2><button type="button" class="lp-gt" aria-expanded="true" aria-controls="g-view"><span class="chev" aria-hidden="true"></span><span class="name">View</span></button></h2></div>
+      <div class="lp-gb" id="g-view">
+        <div class="lp-view">
+          <span id="v-basemap">Basemap</span>
+          <div class="seg" role="group" aria-labelledby="v-basemap">
+            <button type="button" data-basemap="imagery" aria-pressed="true">Imagery</button>
+            <button type="button" data-basemap="topo" aria-pressed="false">Topo</button>
+            <button type="button" data-basemap="dark" aria-pressed="false">Dark</button>
+          </div>
+          <span id="v-look">Angle</span>
+          <div class="seg" role="group" aria-labelledby="v-look">
+            <button type="button" data-look="2d" aria-pressed="true">2D</button>
+            <button type="button" data-look="3d" aria-pressed="false">3D</button>
+          </div>
+          <span id="v-place" class="lp-under">Go to</span>
+          <div class="seg lp-under" role="group" aria-labelledby="v-place">
+            <button type="button" data-place="district" aria-pressed="true">District</button>
+            <button type="button" data-place="whole" aria-pressed="false">Whole aquifer</button>
+          </div>
+          <span id="v-angle" class="lp-under">From</span>
+          <div class="seg lp-under" role="group" aria-labelledby="v-angle">
+            <button type="button" data-angle="above" aria-pressed="true">Above</button>
+            <button type="button" data-angle="below" aria-pressed="false">Below</button>
+          </div>
+          <span id="v-ve" class="lp-under">Exaggeration</span>
+          <div class="seg lp-under" role="group" aria-label="Vertical exaggeration">
+            <button type="button" data-ve="1" aria-pressed="true">1×</button>
+            <button type="button" data-ve="5" aria-pressed="false">5×</button>
+            <button type="button" data-ve="10" aria-pressed="false">10×</button>
+          </div>
+          <div class="lp-loc">
+            <button type="button" class="lp-locate" id="aq-locate"><svg viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="4.5"/><path d="M8 0v3.5M8 12.5V16M0 8h3.5M12.5 8H16"/></svg>My location</button>
+            <small>Never sent or stored.</small>
+          </div>
+          <div id="aq-drill" class="lp-drill" role="status" hidden></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="lp-group" data-group="district">
+      <div class="lp-gh">
+        <h2><button type="button" class="lp-gt" aria-expanded="false" aria-controls="g-district"><span class="chev" aria-hidden="true"></span><span class="name">The district</span><span class="meta">Proposed</span></button></h2>
+        <label class="lp-swhit"><input type="checkbox" role="switch" class="lp-switch" data-group-switch="district" checked aria-label="Show the district"></label>
+      </div>
+      <div class="lp-gb" id="g-district" hidden>
+        <div class="lp-row">
+          <label><input type="checkbox" data-switch="district" checked><i class="sw sw-line" style="--c:var(--sand);--w:3px" aria-hidden="true"></i><span>The boundary</span></label>
+          <button type="button" class="lp-i" aria-expanded="false" aria-controls="n-district" aria-label="About the boundary"><span aria-hidden="true">i</span></button>
+          <p class="lp-note" id="n-district" hidden>The boundary description as proposed, drawn on the USGS historical survey maps it names.</p>
+        </div>
+        <div class="lp-row">
+          <label><input type="checkbox" data-switch="steps" checked><i class="sw sw-step" aria-hidden="true"></i><span>Steps and points</span></label>
+          <button type="button" class="lp-i" aria-expanded="false" aria-controls="n-steps" aria-label="About steps and points"><span aria-hidden="true">i</span></button>
+          <p class="lp-note" id="n-steps" hidden>Select a step or a point to read it. The points show from about a 1:400,000 scale in.</p>
+        </div>
+        <p class="lp-figs"><span data-figure="area_sqmi">193.83</span> sq mi · <span data-figure="step_count">104</span> steps · <span data-figure="point_count">105</span> points</p>
+        <div class="lp-docs">
+          <a class="lp-link" href="walk.html">Walk the line, step by step <span aria-hidden="true">→</span></a>
+          <p class="lp-dl"><span>GeoJSON, CC0</span><a href="data/boundary.geojson" download>Boundary</a><a href="data/steps.geojson" download>Steps</a><a href="data/points.geojson" download>Points</a></p>
+        </div>
+      </div>
+    </section>
+
+    <section class="lp-group is-off" data-group="places">
+      <div class="lp-gh">
+        <h2><button type="button" class="lp-gt" aria-expanded="false" aria-controls="g-places"><span class="chev" aria-hidden="true"></span><span class="name">Places</span></button></h2>
+        <label class="lp-swhit"><input type="checkbox" role="switch" class="lp-switch" data-group-switch="places" aria-label="Show places"></label>
+      </div>
+      <div class="lp-gb" id="g-places" hidden>
+        <div class="lp-row">
+          <label><input type="checkbox" data-switch="towns" checked><i class="sw sw-dot" style="--c:var(--bone)" aria-hidden="true"></i><span>Towns</span></label>
+        </div>
+        <div class="lp-row" id="aq-row-location" hidden>
+          <label><input type="checkbox" data-switch="location" checked><i class="sw sw-drill" aria-hidden="true"></i><span>Your location</span></label>
+          <button type="button" class="lp-i" aria-expanded="false" aria-controls="n-location" aria-label="About your location"><span aria-hidden="true">i</span></button>
+          <p class="lp-note" id="n-location" hidden>Your position and a line down through the model: thick where the model has the Hickory Aquifer.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="lp-group is-off" data-group="wells" id="aq-wells">
+      <div class="lp-gh">
+        <h2><button type="button" class="lp-gt" aria-expanded="false" aria-controls="g-wells"><span class="chev" aria-hidden="true"></span><span class="name">Wells</span><span class="meta" data-wells-meta></span></button></h2>
+        <label class="lp-swhit"><input type="checkbox" role="switch" class="lp-switch" data-switch="wells" data-group-switch="wells" aria-label="Show wells"></label>
+      </div>
+      <div class="lp-gb" id="g-wells" hidden>
+        <p class="lp-wnote lp-wells-off" id="aq-wells-off">Off. Turned on, the wells load and start with <span id="aq-wells-start">a filter</span>; the filters widen it.</p>
+        <div class="lp-wells-ui" id="aq-wells-ui" hidden>
+        <div class="lp-row lp-master"><label><input type="checkbox" role="switch" class="lp-switch" id="aq-wells-show"><span>Show wells</span></label></div>
+        <p class="lp-wnote" id="aq-wells-note" role="status"></p>
+        <div class="lp-legend" role="group" aria-labelledby="wl-cap">
+          <p class="lp-cap"><span id="wl-cap">Colour: the rock</span><button type="button" class="lp-i" aria-expanded="false" aria-controls="n-rock" aria-label="About the well colours"><span aria-hidden="true">i</span></button></p>
+          <p class="lp-note lp-note-flush" id="n-rock" hidden>Head: the rock that holds the well's water (else its deepest logged rock). Line: the rock down the hole, from the well's own log.</p>
+          <ul class="lp-chips">
+            <li><i style="--c:var(--rk-sand)"></i>Sandstone</li>
+            <li><i style="--c:var(--rk-granite)"></i>Granite</li>
+            <li><i style="--c:var(--rk-meta)"></i>Metamorphic</li>
+            <li><i style="--c:var(--rk-lime)"></i>Limestone</li>
+            <li><i style="--c:var(--rk-other)"></i>Other</li>
+            <li><i style="--c:var(--rk-none)"></i>Not logged</li>
+          </ul>
+        </div>
+        <div class="lp-row">
+          <label><input type="checkbox" data-switch="wells-hickory-only"><i class="sw sw-ring" aria-hidden="true"></i><span>Hickory Aquifer only</span></label>
+          <button type="button" class="lp-i" aria-expanded="false" aria-controls="n-hick" aria-label="About Hickory Aquifer only"><span aria-hidden="true">i</span></button>
+          <p class="lp-note" id="n-hick" hidden>Wells TWDB's Groundwater Database assigns to the Hickory Aquifer. On the map they carry a white ring.</p>
+        </div>
+        <div class="lp-row">
+          <label><input type="checkbox" data-switch="wells-water"><i class="sw sw-water" aria-hidden="true"></i><span>Water levels</span></label>
+          <button type="button" class="lp-i" aria-expanded="false" aria-controls="n-water" aria-label="About water levels"><span aria-hidden="true">i</span></button>
+          <p class="lp-note" id="n-water" hidden>Thick: water-bearing intervals. Small dots: static water levels.</p>
+        </div>
+
+        <button type="button" class="lp-subh" aria-expanded="true" aria-controls="aq-filters" data-sub="filters"><span class="chev" aria-hidden="true"></span>Filters<span class="meta" id="aq-filters-state">none</span></button>
+        <div class="lp-filters" id="aq-filters">
+          <p class="lp-wnote" id="aq-wells-default" data-wells-default>Shown at first: irrigation wells that tested at 25 gpm or more; widen the filters to see the rest.</p>
+          <div role="group" aria-labelledby="f-use">
+            <div class="lp-fh"><span id="f-use">Well use (the report's WellUse)</span><button type="button" class="lp-i" aria-expanded="false" aria-controls="n-use" aria-label="About well use"><span aria-hidden="true">i</span></button>
+              <span class="lp-allnone"><button type="button" id="aq-uses-all">All</button><button type="button" id="aq-uses-none">None</button></span></div>
+            <p class="lp-note lp-note-flush" id="n-use" hidden>The report's own use (WellUse; ProposedUse on a driller's report), grouped. Industrial takes in commercial and mining; Monitoring, other takes in test and unknown.</p>
+            <div id="aq-uses" class="lp-uses"></div>
+          </div>
+          <div role="group" aria-labelledby="f-yield">
+            <div class="lp-fh"><span id="f-yield">Water volume, highest tested yield (gpm)</span><button type="button" class="lp-i" aria-expanded="false" aria-controls="n-yield" aria-label="About water volume"><span aria-hidden="true">i</span></button><output id="aq-yield-out" for="aq-yield-lo aq-yield-hi">all</output></div>
+            <p class="lp-note lp-note-flush" id="n-yield" hidden>The highest tested yield the report gives, in gallons per minute.</p>
+            <div class="dual" id="aq-yield-dual"><input type="range" id="aq-yield-lo" aria-label="Lowest water volume, gpm"><input type="range" id="aq-yield-hi" aria-label="Highest water volume, gpm"></div>
+            <label class="lp-check small"><input type="checkbox" id="aq-yield-none"><span>Include wells with no value</span></label>
+          </div>
+          <div role="group" aria-labelledby="f-depth">
+            <div class="lp-fh"><span id="f-depth">Reported depth</span><button type="button" class="lp-i" aria-expanded="false" aria-controls="n-depth" aria-label="About depth"><span aria-hidden="true">i</span></button><output id="aq-depth-out" for="aq-depth-lo aq-depth-hi">all</output></div>
+            <p class="lp-note lp-note-flush" id="n-depth" hidden>The depth the report gives, in feet.</p>
+            <div class="dual" id="aq-depth-dual"><input type="range" id="aq-depth-lo" aria-label="Shallowest depth, ft"><input type="range" id="aq-depth-hi" aria-label="Deepest depth, ft"></div>
+            <label class="lp-check small"><input type="checkbox" id="aq-depth-none" checked><span>Include wells with no value</span></label>
+          </div>
+        </div>
+        <p class="lp-count" aria-live="polite"><span><b id="aq-wells-shown">…</b> of <b id="aq-wells-total">…</b> wells match</span><button type="button" class="lp-small" id="aq-wells-reset">Reset</button></p>
+        </div>
+      </div>
+    </section>
+
+    <section class="lp-group is-off" data-group="vineyards">
+      <div class="lp-gh">
+        <h2><button type="button" class="lp-gt" aria-expanded="false" aria-controls="g-vineyards"><span class="chev" aria-hidden="true"></span><span class="name">Vineyards</span></button></h2>
+        <label class="lp-swhit"><input type="checkbox" role="switch" class="lp-switch" data-group-switch="vineyards" aria-label="Show vineyards"></label>
+      </div>
+      <div class="lp-gb" id="g-vineyards" hidden>
+        <div class="lp-row">
+          <label><input type="checkbox" data-switch="vineyards-hsd" checked><i class="sw sw-fill sw-out" style="--c:var(--sw-wine);--o:var(--sw-wine-line)" aria-hidden="true"></i><span>Hickory Sands District vineyards</span></label>
+          <button type="button" class="lp-i" aria-expanded="false" aria-controls="n-vh" aria-label="About the district's vineyards"><span aria-hidden="true">i</span></button>
+          <p class="lp-note" id="n-vh" hidden>Blocks inside the proposed district, outlined by eye on NAIP 2022. Click a block for the wells near it.</p>
+        </div>
+        <div class="lp-row">
+          <label><input type="checkbox" data-switch="vineyards-llano" checked><i class="sw sw-fill sw-out" style="--c:var(--sw-wine-light);--o:var(--sw-wine-line-c9)" aria-hidden="true"></i><span>Llano Uplift vineyards</span></label>
+          <button type="button" class="lp-i" aria-expanded="false" aria-controls="n-vl" aria-label="About the Llano Uplift vineyards"><span aria-hidden="true">i</span></button>
+          <p class="lp-note" id="n-vl" hidden>Outside the district, inside TTB's proposed Llano Uplift AVA.</p>
+        </div>
+        <div class="lp-row">
+          <label><input type="checkbox" data-switch="vineyards-developing" checked><i class="sw" style="border:2px dashed var(--sw-wine-line);background:rgba(255,214,224,.3)" aria-hidden="true"></i><span>Under development</span></label>
+        </div>
+        <div class="lp-row">
+          <label><input type="checkbox" data-switch="vineyards-historical" checked><i class="sw" style="border:2px dotted var(--muted)" aria-hidden="true"></i><span>Historical</span></label>
+          <button type="button" class="lp-i" aria-expanded="false" aria-controls="n-vx" aria-label="About historical vineyards"><span aria-hidden="true">i</span></button>
+          <p class="lp-note" id="n-vx" hidden>Historical vineyards.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="lp-group is-off" data-group="boundaries">
+      <div class="lp-gh">
+        <h2><button type="button" class="lp-gt" aria-expanded="false" aria-controls="g-boundaries"><span class="chev" aria-hidden="true"></span><span class="name">Boundaries</span></button></h2>
+        <label class="lp-swhit"><input type="checkbox" role="switch" class="lp-switch" data-group-switch="boundaries" aria-label="Show boundaries"></label>
+      </div>
+      <div class="lp-gb" id="g-boundaries" hidden>
+        <div class="lp-row">
+          <label><input type="checkbox" data-switch="ava" checked><i class="sw sw-line" style="--c:var(--bone);--s:dashed" aria-hidden="true"></i><span>Llano Uplift AVA (proposed)</span></label>
+          <button type="button" class="lp-i" aria-expanded="false" aria-controls="n-ava" aria-label="About the Llano Uplift AVA"><span aria-hidden="true">i</span></button>
+          <p class="lp-note" id="n-ava" hidden>TTB's AVAs_Production layer, status Proposed.</p>
+        </div>
+        <div class="lp-row"><label><input type="checkbox" data-switch="counties" checked><i class="sw sw-line" style="--c:var(--sw-county);--w:1px" aria-hidden="true"></i><span>Counties</span></label></div>
+      </div>
+    </section>
+
+    <section class="lp-group is-off" data-group="geology">
+      <div class="lp-gh">
+        <h2><button type="button" class="lp-gt" aria-expanded="false" aria-controls="g-geology"><span class="chev" aria-hidden="true"></span><span class="name">Geology</span><span class="meta">On the ground</span></button></h2>
+        <label class="lp-swhit"><input type="checkbox" role="switch" class="lp-switch" data-group-switch="geology" aria-label="Show geology"></label>
+      </div>
+      <div class="lp-gb" id="g-geology" hidden>
+        <div class="lp-row">
+          <label><input type="checkbox" data-switch="member" checked><i class="sw sw-fill" style="--c:var(--sw-member)" aria-hidden="true"></i><span>Hickory Sandstone Member formation</span></label>
+          <button type="button" class="lp-i" aria-expanded="false" aria-controls="n-member" aria-label="About the Hickory Sandstone Member formation"><span aria-hidden="true">i</span></button>
+          <p class="lp-note" id="n-member" hidden>At the surface, from the USGS 1:500,000 geologic map (SGMC), shifted about <span data-stat="shift_m">…</span> m onto the outcrops.</p>
+        </div>
+        <div class="lp-row">
+          <label><input type="checkbox" data-switch="official-outcrop" checked><i class="sw sw-fill" style="--c:var(--sw-outcrop)" aria-hidden="true"></i><span>TWDB outcrop</span></label>
+          <button type="button" class="lp-i" aria-expanded="false" aria-controls="n-outcrop" aria-label="About TWDB outcrop"><span aria-hidden="true">i</span></button>
+          <p class="lp-note" id="n-outcrop" hidden>TWDB's 2017 Hickory Aquifer outcrop, shifted <span data-stat="shift_west_m">…</span> m W and <span data-stat="shift_north_m">…</span> m N to match the geology.</p>
+        </div>
+        <div class="lp-row">
+          <label><input type="checkbox" data-switch="precambrian" checked><i class="sw sw-fill" style="--c:var(--sw-pc)" aria-hidden="true"></i><span>Precambrian, exposed</span></label>
+          <button type="button" class="lp-i" aria-expanded="false" aria-controls="n-pc" aria-label="About Precambrian, exposed"><span aria-hidden="true">i</span></button>
+          <p class="lp-note" id="n-pc" hidden>Precambrian rock at the surface (model layer 8), where the model has no Hickory Aquifer.</p>
+        </div>
+        <div class="lp-row">
+          <label><input type="checkbox" data-switch="precambrian-buried" checked><i class="sw sw-fill" style="--c:var(--sw-pc-buried)" aria-hidden="true"></i><span>Precambrian, buried</span></label>
+          <button type="button" class="lp-i" aria-expanded="false" aria-controls="n-pcb" aria-label="About Precambrian, buried"><span aria-hidden="true">i</span></button>
+          <p class="lp-note" id="n-pcb" hidden>Precambrian rock under younger rock, where the model has no Hickory Aquifer.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="lp-group is-off" data-group="aquifer">
+      <div class="lp-gh">
+        <h2><button type="button" class="lp-gt" aria-expanded="false" aria-controls="g-aquifer"><span class="chev" aria-hidden="true"></span><span class="name">Hickory Aquifer</span><span class="meta">TWDB model</span></button></h2>
+        <label class="lp-swhit"><input type="checkbox" role="switch" class="lp-switch" data-group-switch="aquifer" aria-label="Show the Hickory Aquifer"></label>
+      </div>
+      <div class="lp-gb" id="g-aquifer" hidden>
+        <div class="lp-row">
+          <label><input type="checkbox" data-switch="top-surface" checked><i class="sw sw-fill" style="--c:var(--sw-water-out)" aria-hidden="true"></i><span>Top at surface</span></label>
+          <button type="button" class="lp-i" aria-expanded="false" aria-controls="n-ts" aria-label="About top at surface"><span aria-hidden="true">i</span></button>
+          <p class="lp-note" id="n-ts" hidden>The aquifer's top where the model has it at the surface (the model's outcrop).</p>
+        </div>
+        <div class="lp-row">
+          <label><input type="checkbox" data-switch="top-buried" checked><i class="sw sw-fill" style="--c:var(--sw-water-top)" aria-hidden="true"></i><span>Buried top</span></label>
+          <button type="button" class="lp-i" aria-expanded="false" aria-controls="n-tb" aria-label="About buried top"><span aria-hidden="true">i</span></button>
+          <p class="lp-note" id="n-tb" hidden>The aquifer's top where it lies under younger rock.</p>
+        </div>
+        <div class="lp-row">
+          <label><input type="checkbox" data-switch="sides" checked><i class="sw sw-fill" style="--c:var(--sw-water)" aria-hidden="true"></i><span>Sides and base</span></label>
+          <button type="button" class="lp-i" aria-expanded="false" aria-controls="n-sides" aria-label="About sides and base"><span aria-hidden="true">i</span></button>
+          <p class="lp-note" id="n-sides" hidden>The long diagonal sides are fault steps.</p>
+        </div>
+        <div class="lp-row">
+          <label><input type="checkbox" data-switch="outside-official" checked><i class="sw sw-fill" style="--c:var(--sw-model-only)" aria-hidden="true"></i><span>Model only</span></label>
+          <button type="button" class="lp-i" aria-expanded="false" aria-controls="n-mo" aria-label="About model only"><span aria-hidden="true">i</span></button>
+          <p class="lp-note" id="n-mo" hidden>TWDB's model has the Hickory Aquifer here; TWDB's 2017 official outline does not.</p>
+        </div>
+      </div>
+    </section>
+
+    <div class="lp-foot"><a class="lp-link" href="#about-sources" data-about="about-sources">Sources and limits <span aria-hidden="true">→</span></a></div>
+  </div>
+</section>
+</div>
+<p class="map-nojs section-pad">The map needs JavaScript, WebGL 2 and Esri’s map library; when any of them is missing, it is left out. <a href="boundary.html">The boundary</a> page has a static map, and <a href="walk.html">Walk the line</a> reads every step; what the map shows, its data and its sources are below.</p>
+
+<dialog class="aq-about" id="aq-about" aria-labelledby="aq-about-title">
+  <div class="about-head">
+    <div><p class="eyebrow">The map</p><h2 id="aq-about-title">About this map</h2></div>
+    <button type="button" class="about-close" id="aq-about-close">Close</button>
+  </div>
+  <nav class="about-toc" aria-label="In this panel"><a href="#about-district">The district</a><a href="#about-data">The data</a><a href="#about-reading">Reading the 3D view</a><a href="#about-wells">Wells</a><a href="#about-outline">Model and outline</a><a href="#about-location">Your location</a><a href="#about-sources">Sources and limits</a></nav>
+  <div class="about-body">
+    <section id="about-district" aria-labelledby="h-district">
+      <h3 id="h-district">The district</h3>
+      <p>The sand line is the proposed revision: the boundary description as proposed, drawn on the USGS historical survey maps it names, <span data-figure="step_count">104</span> steps and <span data-figure="point_count">105</span> points around <span data-figure="area_sqmi">193.83</span> square miles. Select a step or a point for its text; each one links to the same place in Walk the line, which reads every step in order.</p>
+      <p>The map opens straight down, as a paper map reads. 3D tilts it; on a touch screen, two fingers drag up or down to tilt and turn to rotate. The other layers are off until you turn them on in the panel; each loads only then.</p>
+    </section>
+    <section id="about-data" aria-labelledby="h-data">
+      <h3 id="h-data">The data</h3>
+      <p>NAD83 coordinates shown as WGS 84. The boundary data is dedicated to the public domain under CC0 1.0; the record is the boundary package for TTB, revision of <time data-figure="revision_date" datetime="2026-10-15">October 15, 2026</time>.</p>
+      <div class="document-list about-docs"><a class="text-link" href="data/boundary.geojson" download>The boundary <small>GeoJSON</small><span aria-hidden="true">↓</span></a><a class="text-link" href="data/steps.geojson" download>The steps <small>GeoJSON</small><span aria-hidden="true">↓</span></a><a class="text-link" href="data/points.geojson" download>The points <small>GeoJSON</small><span aria-hidden="true">↓</span></a><a class="text-link" href="walk.html">Walk the line<span aria-hidden="true">→</span></a><a class="text-link" href="boundary.html#documents">The boundary documents<span aria-hidden="true">→</span></a></div>
+    </section>
+    <section id="about-reading" aria-labelledby="h-reading">
+      <h3 id="h-reading">Reading the 3D view</h3>
+      <p>With the Hickory Aquifer or the wells turned on, the ground is see-through. Under it is the whole Hickory Aquifer as TWDB's groundwater model draws it: a ring around the Precambrian rock at the heart of the uplift, at the surface near that rock and deeper beneath younger rock away from it. Drag to turn the view; go below the ground to look up at it.</p>
+      <p>The layers are listed in the order they are drawn: from the sky, to the ground, to the rock beneath it. A layer higher in the list is drawn on top.</p>
+      <p><b>TWDB model layers, regional scale.</b> Each block is <span id="aq-block-size">a group of model cells</span>, averaged from the model's cells, each <span data-stat="cell_ft" data-format="num">…</span> ft square. Vertical exaggeration <span id="aq-ve">5×</span>, applied to the ground and the aquifer alike.</p>
+      <p>When Esri's ground cannot be loaded, the ground is drawn flat and the aquifer and wells at their depths below the model's own ground; when Esri's basemap cannot be loaded, the layers are drawn on a plain background. The line at the foot of the view says so.</p>
+    </section>
+    <section id="about-wells" aria-labelledby="h-wells">
+      <h3 id="h-wells">Wells</h3>
+      <p>Wells: <b data-stat="wells_drawn">…</b> TWDB reports across the area of TWDB's model, which takes in the whole granite core, where most wells find no Hickory Aquifer (<b data-stat="wells_drawn_sdr">…</b> driller's reports, <b data-stat="wells_drawn_gwdb">…</b> more from the Groundwater Database; <b data-stat="wells_gwdb_linked">…</b> Groundwater Database wells match a driller's report and are drawn once; <b data-stat="wells_no_depth">…</b> with no depth are drawn as a head only). Each line runs from the ground to the depth the report gives, at the same exaggeration as the aquifer, so you can see whether a well reaches the Hickory Aquifer or stops above it or beside it. <b data-stat="wells_logged">…</b> have a log, coloured interval by interval: an interval takes the first of granite, gneiss/schist/marble, sandstone (or "Hickory"), limestone found in its description, else "other". The rock classes are keyword matches on the drillers' own words: "other" takes in sand, clay, shale, gravel, caliche and the rest.</p>
+      <p>Only the wells that pass the filters are drawn. The lines zoomed out are those of one well in each <span data-stat="overview_deg" data-format="num">…</span>° cell (<b data-stat="wells_overview">…</b> wells), where it passes. Zoomed far out, the head of every well that passes is drawn while no more than <span id="aq-wells-far-max">a few thousand</span> pass; when more pass, only those one-per-cell wells, head and line. From about the district's scale in (<span data-stat="wells_all_scale" data-format="scale">…</span>), the head of every well that passes, still with only those lines; from about <span data-stat="wells_lines_scale" data-format="scale">…</span> in, every line as well, in <span data-stat="tile_deg" data-format="num">…</span>° tiles around the middle of the view, and the note under "Show wells" says how many wells that pass, in view, have only their heads drawn. Click a well for its report, every field that holds something, without people's names or addresses. Click a vineyard block for the wells within <span data-stat="vineyard_wells_radius_m">…</span> m of it, nearest first.</p>
+      <p>A well is a head at the ground coloured by the rock the water comes from, and a line to the reported depth coloured down the hole by the well's own log. Head colour: the rock of the logged interval that holds the well's water-bearing zone; if none is logged, its deepest logged interval; grey if unlogged. Line colour: each interval takes the first of granite, gneiss/schist/marble, sandstone (or "Hickory"), limestone named in its description, else "other". The legend's colours: sandstone, or "Hickory" in the log; granite; gneiss, schist or marble ("Metamorphic"); limestone; other rock; not logged.</p>
+      <p>White ring: TWDB's Groundwater Database assigns this well to the Hickory Aquifer. "Hickory Aquifer only" shows just those wells (<b data-stat="wells_hickory">…</b>). "Water levels" adds the water-bearing intervals (thick) and static water levels (small dots) to the lines drawn; it starts off.</p>
+      <p>Well use is the report's own use (WellUse in the Groundwater Database, ProposedUse on a driller's report), grouped: Irrigation; Domestic; Livestock / stock; Public supply; Industrial / commercial / mining; Recreation; Monitoring / test / other / unknown. Water volume is the highest tested yield the report gives, in gallons per minute (<b data-stat="wells_with_yield">…</b> wells give one); test methods vary. Depth is the reported depth, in feet. "Include wells with no value" keeps the wells whose report gives no yield or no depth. The count is of every well in the data that passes the filters, not only those in view. <span data-wells-default>Shown at first: irrigation wells that tested at 25 gpm or more; widen the filters to see the rest.</span> Reset goes back to them.</p>
+    </section>
+    <section id="about-outline" aria-labelledby="h-outline">
+      <h3 id="h-outline">The model and TWDB's outline</h3>
+      <p>TWDB's 2017 outline lines up with the USGS geologic map as published, not with the outcrops on the imagery, so it carries the same misregistration. Here it is shifted by the same amount as the geology: <span data-stat="shift_west_m">…</span> m west and <span data-stat="shift_north_m">…</span> m north. The model's cells are left where TWDB put them; their outcrop was drawn from the surface geology too, so it probably carries the same offset, about one cell.</p>
+      <p>TWDB's official outline and its model differ. The shifted outline covers <b data-stat="official_sqmi">…</b> sq mi; the model has the Hickory Aquifer in <b data-stat="official_layer7_sqmi">…</b> sq mi of it (none in the other <b data-stat="official_no_layer7_sqmi">…</b>) and in another <b data-stat="outside_official_sqmi">…</b> sq mi outside it, drawn pale: mostly the band the model runs beyond the outline's downdip edge, and <b data-stat="outside_official_near_core_sqmi">…</b> sq mi within <span data-stat="core_miles">…</span> miles of the Precambrian rock at the surface.</p>
+      <p>The darker diagonal bands are faults. The model's top steps down across them: <b data-stat="step_cells_near_fault_share" data-format="pct">…</b> of the cells beside a step of more than <span data-stat="step_ft">…</span> ft lie within <span data-stat="fault_near_ft">…</span> ft of a fault line in the model's source data. At <b data-stat="step_pairs_apart_share" data-format="pct">…</b> of those steps the fault has moved the layer by more than its thickness, so the two sides no longer touch: you see the aquifer's side and a gap, which the model fills with the rock above and below the Hickory Aquifer, not missing data.</p>
+    </section>
+    <section id="about-location" aria-labelledby="h-location">
+      <h3 id="h-location">Your location</h3>
+      <p>Your position is never sent to this site or anyone else, and it is not stored. Flying the view there loads Esri’s basemap and elevation tiles for that area, as any web map does, so Esri’s servers see which area is shown.</p>
+      <p>My location: the browser's own location service. The position is used only on this page: to place the point, to look up the model cell in a file the page downloads whole (no request names the position), and to move the view, which loads Esri's tiles for that area. The answer is an estimate from TWDB's regional model, whose cells are <span data-stat="cell_ft" data-format="num">…</span> ft square, not a site survey.</p>
+    </section>
+    <section id="about-sources" class="src" aria-labelledby="h-sources">
+      <h3 id="h-sources">Sources and limits</h3>
+      <p>Aquifer: Texas Water Development Board, <a href="https://www.twdb.texas.gov/groundwater/models/gam/llano/llano.asp">Llano Uplift Aquifer System Groundwater Availability Model</a> v1.01 (Shi and others, 2016), top and bottom of model layer 7, from its <a href="https://gw-models.s3.amazonaws.com/GAM_Properties/lnup_v101.7z">GAM Properties archive</a> (file of <time data-stat="twdb_gam_snapshot" data-format="date">…</time>). A cell is used where it is active and its centre lies inside TWDB's 2017 official Hickory Aquifer outline, outcrop and subsurface (<a href="https://www.twdb.texas.gov/mapping/gisdata/doc/minor_aquifers.zip">Minor Aquifers shapefile</a>, December 2017), shifted by <span data-stat="shift_lon" data-format="deg">…</span> longitude and <span data-stat="shift_lat" data-format="deg">…</span> latitude (about <span data-stat="shift_west_m">…</span> m west, <span data-stat="shift_north_m">…</span> m north), the shift the repository applies to the USGS geologic map (resources/geology). Cells are grouped into blocks of <span data-stat="block_small">…</span> × <span data-stat="block_small">…</span> (large screens) or <span data-stat="block_large">…</span> × <span data-stat="block_large">…</span> (phones); a block is drawn where at least half its cells are used, at their mean top and bottom. Grouping smooths fault steps inside a block and moves edges by up to half a block. Fault lines: the model's source geodatabase (lnup_source_data.gdb), layers Modified_GAT_Faults and Pennsylvanian_Faults.</p>
+      <p>Limits: the model's surfaces were mainly drawn by hand, no active cell is thinner than <span data-stat="layer7_min_thickness_ft">…</span> ft, and TWDB says the data are for regional-scale use only, not for individual sites. The outline's outer, downdip edge follows a limit of water quality, on dissolved solids (per TWDB's structure contractor), not the end of the sandstone. Block tops on the outcrop are the model's ground, so they sit a little above or below Esri's ground.</p>
+      <p>Hickory Sandstone Member formation: USGS <a href="https://doi.org/10.3133/ds1052">State Geologic Map Compilation</a> (Horton and others, 2017; Texas unit TXCAh), shifted about <span data-stat="shift_m">…</span> m onto the outcrops (the copy in the repository's resources/geology), because SGMC as published sits south-east of them. It is the statewide map at 1:500,000, and the shifted copy covers the Llano Uplift area only. The Bureau of Economic Geology's 1:24,000 geologic quadrangle maps would replace it; most of them are published as PDF only (Fly Gap's alone is GIS), and no Bureau of Economic Geology data is used here. Precambrian rock: model layer 8 outcrop cells (ibound 81). Llano Uplift AVA: TTB's AVAs_Production layer, status "Proposed", queried <time data-stat="ttb_llano_uplift_snapshot" data-format="date">…</time>. County lines: U.S. Census Bureau 2023 <a href="https://www2.census.gov/geo/tiger/GENZ2023/shp/cb_2023_us_county_500k.zip">cartographic boundaries</a>, 1:500,000. Towns: <a href="https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2023_Gazetteer/2023_gaz_place_48.txt">Census 2023 Gazetteer</a> internal points. Ground: Esri World Elevation. Basemap: Esri. District: the petitioners' proposed revision of the boundary in TTB's Notice No. 243, as described under The district above.</p>
+      <p>Wells: Texas Water Development Board, Submitted Driller's Reports database (<a href="https://www.twdb.texas.gov/groundwater/data/SDRDownload.zip">SDRDownload.zip</a>: well data, lithology, bore hole, casing, water strata, water levels, well tests, plugging reports) and Groundwater Database (<a href="https://www.twdb.texas.gov/groundwater/data/GWDBDownload.zip">GWDBDownload.zip</a>: well main, lithology, bore hole, casing, well tests, water levels), files dated <time data-stat="twdb_sdr_snapshot" data-format="date">…</time>, fetched <time data-stat="twdb_sdr_fetched" data-format="date">…</time>. Every report whose position lies in a cell of TWDB's Llano Uplift model where any layer is active: the Hickory Aquifer's outline and a margin around it, which takes in the whole Precambrian core. Driller's report positions marked NAD27 were moved to NAD83 with the NADCON 5.0 grid; the rest are used as published (most give no datum). TWDB says its well locations are not verified by its staff and may be inaccurate. Removed before the data were written: owners', drillers', apprentices', pluggers' and companies' names, licence numbers, street and mailing addresses, the location description, and owner and district well numbers. Comments, remarks and other notes are blank where they hold any of those names or their initials, a title, a person's role ("owner", "drilled by"), a company's name, a phone number, an address, a groundwater district's well number, initials on a number, a word that is too rare to be a well term or, in the notes about people, a word of any name in the area or initials. In a line of a well's log, only those words are taken out, marked [removed], so its rock stays. A check stops the build if any name survives. "Hickory Aquifer only" in the filter is TWDB's aquifer assignment in the Groundwater Database.</p>
+      <p>Vineyards, in four layers: the Hickory Sands District's (<b data-stat="vineyards_hsd_blocks">…</b> blocks of <b data-stat="vineyards_hsd_names">…</b> vineyards, inside the proposed district) and the Llano Uplift's (<b data-stat="vineyards_llano_uplift_blocks">…</b> blocks of <b data-stat="vineyards_llano_uplift_names">…</b> vineyards, outside the district and inside TTB's proposed Llano Uplift AVA), each block outlined by eye on NAIP 2022; vineyards under development (<b data-stat="vineyards_under_development_names">…</b>: I Don't Know Vineyard, by its 2022 outline, and Paisano Vineyards' two planned blocks, approximate, traced from its preliminary planting plan: it is being planted, with site preparation under way for about 6 acres to be planted in 2027 and 2028); and historical vineyards (<b data-stat="vineyards_historical_names">…</b>), shown by their 2022 outlines. The names come from the petition's Exhibit 3, the petitioners' vineyard layer (2022), the Llano Uplift petition's Table 1 (TTB-2026-0005-0006), Texas Wine Lover guide listings and the petitioner; Heart of Art Vineyard is the block outlined in the petitioners' response to Comment 8 (Comment 9, TTB-2026-0005-0018) on USGS NAIP Plus imagery, about ±15 m. A block's popup gives its source. Only the named vineyards were looked at, so this is not a survey: other vineyards may exist. Acres are of the outline, not of the planted vines.</p>
+    </section>
+  </div>
+</dialog>
+</main>
+<footer class="site-footer"><a class="footer-wordmark" href="index.html">Hickory Sands <span>District</span></a><div class="footer-links"><a href="status.html">Status</a><a href="https://www.regulations.gov/docket/TTB-2026-0005">Public docket</a><a href="about.html#contact">Contact</a><a href="#top">Back to top <span aria-hidden="true">↑</span></a></div><p>A site by the petitioners.<br>Independent of the Alcohol and Tobacco Tax and Trade Bureau.</p><a class="colophon-link" href="colophon.html">Sources & photography</a></footer>
+</body></html>

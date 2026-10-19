@@ -1,4 +1,4 @@
-// The wells of the 3D aquifer page (aquifer.html): TWDB's Submitted
+// The wells of the map (map.html): TWDB's Submitted
 // Driller's Reports and Groundwater Database, from assets/aquifer/wells/
 // (made by src/site/make_aquifer_3d.py, without people's names).
 //
@@ -58,6 +58,12 @@ const BASIS = ["its logged water-bearing zone", "its deepest logged interval", "
 // every well) and makes the small layer of those wells beside the overview.
 export const FAR_HEADS_MAX = 3000;
 
+// The filter the wells start at when they are turned on (#148): irrigation
+// wells that tested at 25 gpm or more, leaving out a well with no reported
+// yield; the panel's filters widen it and Reset comes back to it. Exported so
+// the map's panel says it from here, not from typed text.
+export const DEFAULT_FILTER = { use: "Irrigation", yieldLo: 25, noYield: false };
+
 // A well's head's values (wells/heads-<n>.json, index.heads.fields), by
 // name, as wellAttributes() gives them; its report's cell is found from its
 // place, as the generator files it.
@@ -87,19 +93,19 @@ export async function setupWells(opts) {
   // Dan, 2026-10-19: by default only irrigation wells that tested at 25 gpm
   // or more (a well with no reported yield is left out); the panel's filters
   // widen it.
-  const IRRIGATION = index.use_groups.indexOf("Irrigation");
+  const IRRIGATION = index.use_groups.indexOf(DEFAULT_FILTER.use);
   if (IRRIGATION < 0) {
-    // The page then says so (aquifer3d.js, the stated default).
-    console.error("wells/index.json has no Irrigation use group: every use is shown at first");
+    // The page then says so (map3d.js, the stated default).
+    console.error(`wells/index.json has no ${DEFAULT_FILTER.use} use group: every use is shown at first`);
   }
   const DEFAULTS = {
     on: true,
     water: false,
     hickoryOnly: false,
     uses: new Set(IRRIGATION >= 0 ? [IRRIGATION] : index.use_groups.map((_, i) => i)),
-    yieldLo: 25,
+    yieldLo: DEFAULT_FILTER.yieldLo,
     yieldHi: Infinity,
-    noYield: false,
+    noYield: DEFAULT_FILTER.noYield,
     depthLo: 0,
     depthHi: Infinity,
     noDepth: true,
@@ -688,7 +694,9 @@ export async function setupWells(opts) {
       .catch((error) => {
         if (error.name !== "AbortError") console.error("the camera could not move", error);
       })
-      .then(() => view.openPopup({ features: [graphic], location: point }));
+      // Through the page's own popup when it gives one (the map's scene opens
+      // its slotted <arcgis-popup>; the view's own would be a second one).
+      .then(() => (opts.openPopup ? opts.openPopup : (o) => view.openPopup(o))({ features: [graphic], location: point }));
   }
 
   reactiveUtils.watch(

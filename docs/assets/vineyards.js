@@ -17,7 +17,7 @@ import {
 } from "./vineyard-email.js?v=820d34b";
 
 const SDK = "https://js.arcgis.com/5.1/";
-const MAPS = "./maps.js?v=01ae1ae";
+const MAPS = "./maps.js?v=722b7c5";
 
 const $ = (id) => document.getElementById(id);
 const form = $("vineyard-form");

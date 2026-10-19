@@ -276,6 +276,16 @@ def test_no_form_puts_what_is_typed_in_the_address(path, page):
         assert mailed or posted, f"form {form.get('id')} sent by GET"
 
 
+# The scripts that write the page's address, and how: nothing typed reaches
+# it. map3d.js writes back the map's groups and basemap (map-url.js's
+# writeState keeps only the names it knows), and moved.js sends an old
+# address (explore.html, aquifer.html) on to the map with its own query.
+ADDRESS_WRITERS = {
+    "map3d.js": ("replaceState",),
+    "moved.js": ("location.replace(",),
+}
+
+
 @pytest.mark.parametrize(
     "path",
     [
@@ -288,12 +298,25 @@ def test_no_form_puts_what_is_typed_in_the_address(path, page):
 def test_no_script_writes_the_address_bar(path):
     # Only the vineyard form's email (a mailto: URL, vineyard-email.js) is
     # ever opened: the page's own address keeps nothing a visitor typed.
+    name = os.path.basename(path)
+    allowed = ADDRESS_WRITERS.get(name, ())
     text = read(path)
-    for sink in ("pushState", "replaceState", "location.assign"):
-        assert sink not in text, f"{os.path.basename(path)} uses {sink}"
-    assert not re.search(r"\blocation\.replace\(", text)
+    for sink in (
+        "pushState",
+        "replaceState",
+        "location.assign",
+        "location.replace(",
+    ):
+        if sink not in allowed:
+            assert sink not in text, f"{name} uses {sink}"
+    # A script's own variable named location (map3d-district.js's popup
+    # point) is not the page's.
+    own = re.search(r"\b(?:let|const|var)\s+location\b", text)
+    prop = r"(?:\.href|\.search|\.hash|\.pathname)"
     targets = re.findall(
-        r"\blocation(?:\.href|\.search|\.hash|\.pathname)?\s*=(?!=)\s*([^;\n]+)",
+        r"(?:\b(?:window|document)\.location" + prop + "?"
+        r"|(?<![\w.])location" + prop + ("" if own else "?") + r")"
+        r"\s*=(?!=)\s*([^;\n]+)",
         text,
     )
     assert set(targets) <= {"mail.url"}, targets

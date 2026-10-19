@@ -1,6 +1,6 @@
 # resources/vineyards: the vineyard outlines on the 3D aquifer page
 
-Read by `src/site/make_aquifer_3d.py` (`src/site/aquifer/vineyards.py`) for `docs/aquifer.html` (#135). NAD83
+Read by `src/site/make_aquifer_3d.py` (`src/site/aquifer/vineyards.py`) for the map, `docs/map.html` (#135). NAD83
 (EPSG:4269), longitude first. Map context only: no boundary geometry comes from it.
 
 `vineyards-EPSG4269.geojson`: one feature per vine block, with its vineyard's `name`, its `category`, its `block` (where a

@@ -1,6 +1,6 @@
-/* The maps: Explore (explore.html) and Walk the line (walk.html). The text works without JavaScript; the maps are added by it. */
+/* The 2D maps: Walk the line (walk.html) and the vineyard form's pin map. The text works without JavaScript; the maps are added by it. */
 arcgis-map{display:block;width:100%;height:100%;--calcite-font-family:var(--sans)}
-html:not(.js) .walk-map,html:not(.js) .explore-map{display:none}
+html:not(.js) .walk-map{display:none}
 /* Shown when there is no map: no JavaScript, or Esri's service or the data failed (maps.js takes the js class away). */
 .map-nojs{max-width:40rem;color:var(--muted);font-size:.875rem;line-height:1.55}
 .js .map-nojs{display:none}
@@ -22,22 +22,6 @@ html:not(.js) .walk-map,html:not(.js) .explore-map{display:none}
 .walk-step{scroll-margin-top:40svh}
 .walk-map{grid-column:2;grid-row:1;height:100svh;margin-inline:0 -7vw;border-bottom:0;border-left:1px solid var(--line)}
 }
-
-/* Explore: one large map, its key and the downloads; a shorter heading, so the map is on the first screen. */
-.page-explore .page-heading h1{font-size:clamp(2.75rem,7vw,5rem);line-height:1.02}
-.page-explore .page-heading{padding-top:3rem;padding-bottom:2.5rem}
-.explore{margin:0}
-.explore-map{height:72svh;min-height:420px;margin-inline:-7vw;border-block:1px solid var(--line)}
-/* On a phone the map sits inside the page's margins, shorter, so a thumb beside it or above it scrolls the page (one finger on the map scrolls it too: explore.js). */
-@media(max-width:699px){.explore-map{height:60svh;margin-inline:0;border:1px solid var(--line)}}
-.explore figcaption{display:flex;flex-wrap:wrap;align-items:center;gap:.75rem 2rem;margin-top:1.25rem;font-size:.8125rem;line-height:1.5;color:var(--muted)}
-.legend-point{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--bone);margin-right:.6rem;vertical-align:middle}
-.map-basemaps{display:inline-flex;gap:.5rem}
-.map-basemaps[hidden]{display:none}
-.map-basemaps button{font:inherit;color:var(--bone);background:none;border:1px solid var(--line);min-height:44px;padding:0 1rem;cursor:pointer}
-.map-basemaps button[aria-pressed="true"]{color:var(--sand);border-color:var(--sand)}
-.map-basemaps button:focus-visible{outline:2px solid var(--sand);outline-offset:2px}
-@media(min-width:1000px){.explore-map{height:78svh;margin-inline:0;border:1px solid var(--line)}}
 
 /* The notes under each map, and the link lists on these dark pages (site.css colours them for paper). */
 .dark .document-list small{color:var(--muted)}

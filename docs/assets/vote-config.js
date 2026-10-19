@@ -4,7 +4,7 @@
 // live: false until the switch-over (src/vote/SETUP.md). Until then the page
 // only says "The vote moves here soon" and links to the current page; it
 // calls nothing.
-export const live = false;
+export const live = true;
 
 // The Supabase Edge Function vote-api (src/vote/functions/vote-api/).
 export const endpoint =

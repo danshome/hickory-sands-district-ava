@@ -722,11 +722,12 @@ def land_figures(pages_dir):
     Returns:
         A dict from figure name to (text, ISO date or None): a whole number
         with its thousands separated ("2,594"), a fraction to two decimals
-        ("35.25"), and a date ("2026-10-16") as "October 16, 2026" with its
-        ISO date for a <time>; empty when there is no stats file yet.
+        ("35.25"), a date ("2026-10-16") as "October 16, 2026" with its ISO
+        date for a <time>, and other text as it is (the tiles' names and
+        years, "a quarter-mile"); empty when there is no stats file yet.
 
     Raises:
-        SystemExit: A figure is neither a number nor a date.
+        SystemExit: A figure is neither a number nor text.
     """
     path = os.path.join(pages_dir, *LAND_STATS)
     if not os.path.exists(path):
@@ -736,7 +737,7 @@ def land_figures(pages_dir):
     out = {}
     for name, value in stats.items():
         if isinstance(value, bool):
-            sys.exit(f"{path}: {name} is not a number or a date")
+            sys.exit(f"{path}: {name} is not a number or text")
         if isinstance(value, int):
             out[f"land_{name}"] = (f"{value:,}", None)
         elif isinstance(value, float):
@@ -748,8 +749,10 @@ def land_figures(pages_dir):
                 f"{month} {dated.day}, {dated.year}",
                 dated.isoformat(),
             )
+        elif isinstance(value, str):
+            out[f"land_{name}"] = (value, None)
         else:
-            sys.exit(f"{path}: {name} is not a number or a date")
+            sys.exit(f"{path}: {name} is not a number or text")
     return out
 
 

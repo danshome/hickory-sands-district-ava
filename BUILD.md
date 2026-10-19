@@ -294,11 +294,13 @@ for Python; 2-space YAML and TOML). By hand: `.venv/bin/ruff format .` and `.ven
 - `test_land.py`: The land's slice and maps: the data is up to date with its record (the build's check); `section.json`
   agrees with `stats.json`, and both with the class rule run again on the 3D page's committed well files (the slice's
   logs and map 03's counts); only a report number and its driller's cleaned words leave the build; every file within its
-  budget; every figure the two sections show is a `data-figure` the build fills, and no other number is typed there;
-  every drawing exists at the size the page gives it and carries its own patterns; Comment 9 is never a statement's only
-  source; `land.js` sets text only as text and agrees with `land.css` on a phone held upright; the wording; and, on
-  made-up records, the class rule (the fact-check's fixes among them), the logs, the figures' formats and what the
-  check calls stale;
+  budget; every figure the two sections show is a `data-figure` the build fills, and no other number is typed there (only
+  the named quotations of Notice No. 243 and the petition keep theirs); every drawing exists at the size the page gives
+  it, carries its own patterns and draws every outline; Comment 9 is never a statement's only source; `land.js` sets
+  text only as text, draws by the class colours and layers `section.json` gives (as `land.css` keys them) and agrees
+  with `land.css` on a phone held upright; `land.css` sets the timeline's variables the slice's marks use; the wording;
+  and, on made-up records, the class rule (the fact-check's fixes among them), the logs, the figures' formats, an empty
+  outline or part that stops the generator, and what the check calls stale;
 - `test_site.py`: every page of the website in `docs/` is a complete HTML document (doctype, language, character set,
   phone viewport, title), every local file it links to or loads is in `docs/`, and every link off the site is https;
 - `test_publish_dryrun.py`: the publish dry run's checks pass on a dry run of the current build
@@ -534,9 +536,14 @@ cache, `resources/aquifer/cache/`), TWDB's row 239 and fault lines, the shifted 
 the 3D page's Precambrian outcrop, stats and cleaned well files; `record.json` records them as the 3D page's does. The
 build only checks it (`make_land.py --check`, no download; GitHub Actions never download the tiles or the model), and
 `./build.sh site-data` makes it again when it is stale, after the boundary and the 3D page's data, then writes the page's
-`land_` figures from its `stats.json` (`make_site_data.py`). Two hard checks come first: each well carries only its
-report number and its driller's words as the 3D page's cleaned report gives them (the privacy rules' scan, and the
-private words), and `section.json` agrees with `stats.json`. The class rule (`src/site/land/rules.py`: the first rock a
+`land_` figures from its `stats.json` (`make_site_data.py`). Before it writes anything, it stops if any map's outline or
+its wells, or any part of the slice, comes out empty (an input that misses the maps' frame would otherwise draw a blank
+map). It writes into the gitignored `target/land-next/`, and swaps that in for `docs/assets/land/` only after three hard
+checks: each well carries only its report number and its driller's words as the 3D page's cleaned report gives them
+(the privacy rules' scan, and the private words); `section.json` agrees with `stats.json` and with the parameters
+`land.js` draws by (the class colours and the model's layers, which it reads from `section.json`); and every file is
+within its budget (each map 200 KB, any file the hooks' 2 MB). `land.js` checks the data's shape before it touches the
+page, and takes away everything it added if drawing still fails, so the static drawing stays. The class rule (`src/site/land/rules.py`: the first rock a
 driller names, a bare "sand" its own class) is not yet the 3D page's, so a well's colour here can differ from its colour
 on The water.
 

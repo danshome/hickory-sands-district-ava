@@ -31,10 +31,12 @@ As make_aquifer_3d.py does, it makes the data again only when its record
 would change, or a file it lists is missing or not its size; with --check
 nothing is read but the manifests, the committed inputs and the record,
 nothing is fetched or written, and the exit status is 3 when the data is
-stale. Every file is written into a new folder that replaces the old one only
-when the hard checks pass: only a report number and its driller's cleaned
-words leave the build for each well, section.json agrees with stats.json,
-and every file is within its size budget.
+stale. Nothing is written when a map's outline or its wells, or a part of
+the slice, comes out empty (an input that misses the frame). Every file is
+written into a new folder that replaces the old one only when three hard
+checks pass: only a report number and its driller's cleaned words leave the
+build for each well; section.json agrees with stats.json and with the
+parameters land.js draws by; and every file is within its size budget.
 
 Usage:
     make_land.py [--check]
@@ -164,6 +166,37 @@ def page_figures(figures, counts):
     }
 
 
+def and_list(words):
+    """Words joined as the page writes a list: "a", "a and b", "a, b and c"."""
+    words = list(words)
+    return (
+        ", ".join(words[:-1]) + (" and " if len(words) > 1 else "") + words[-1]
+    )
+
+
+def tile_figures(manifest):
+    """The 3DEP tiles and their years, as the page's source gives them.
+
+    Args:
+        manifest: record.read_manifest()'s rows.
+
+    Returns:
+        dem_years ("2022 and 2025") and dem_tiles ("n31w100 and n32w100
+        (2022), n31w099 and n32w099 (2025)"), each tile by the year of its
+        snapshot (the file's Last-Modified date), in the manifest's order.
+    """
+    years = {}
+    for row in manifest:
+        if row["name"] in params.DEM_TILES:
+            tile = row["name"].rsplit("-", 1)[1]
+            years.setdefault(row["snapshot"][:4], []).append(tile)
+    order = sorted(years)
+    return {
+        "dem_years": and_list(order),
+        "dem_tiles": ", ".join(f"{and_list(years[y])} ({y})" for y in order),
+    }
+
+
 def aquifer_figures(stats_path):
     """The figures this page takes from the 3D aquifer page's stats.
 
@@ -238,7 +271,15 @@ def generate(manifest, local, out_dir):
     print(f"the maps: {map_figures['wells_on_map']} wells")
     figures.update(map_figures)
     figures.update(aquifer_figures(paths["aquifer-stats"]))
+    figures.update(tile_figures(manifest))
     counts.update({f"map_{k}": v for k, v in map_counts.items()})
+    empty = verify.outlines(drawn, sec)
+    if empty:
+        for problem in empty:
+            print(f"CHECK FAILED: {problem}")
+        raise SystemExit(
+            f"{len(empty)} empty outlines or parts: nothing was written"
+        )
 
     new = os.path.join(record.ROOT, "target", "land-next")
     shutil.rmtree(new, ignore_errors=True)

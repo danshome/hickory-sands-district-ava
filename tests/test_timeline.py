@@ -50,7 +50,51 @@ AGE = re.compile(
     r"^(?:Today|.*\d[\d,.]* million years(?: ago)?|.*half a billion years ago)$"
 )
 YEAR = re.compile(r"\b(?:1[89]\d\d|20\d\d)\b|\bn\.d\.")
-QUOTED = re.compile(r"“[^”]*”")  # a quotation, in the page's curly quotes
+# A quotation in the page's curly quotes; one opening quote never reaches
+# past the next.
+QUOTED = re.compile(r"“[^“”]*”")
+# The quotations that keep a bare "Hickory Sands" as their source wrote it,
+# each with the page's words around it: the petition's (p. 11, and its term
+# "Hickory Sands soils") and Notice No. 243's (52584, "Hickory Sands"
+# standing alone). Any other quotation, or one of these anywhere else, is the
+# site's own wording.
+SOURCES_WORDS = (
+    (
+        "“the Hickory aquifer, Hickory Sands soils, and elevation at 1,500 "
+        "feet or higher.”"
+    ),
+    "the petition calls “Hickory Sands soils.”",
+    "“Hickory Sands” standing alone",
+)
+
+
+def own_words(text, phrases=SOURCES_WORDS):
+    """Returns the text without the named quotations: the site's own words.
+
+    Args:
+        text: The page's text, on one line.
+        phrases: The quotations, with their curly quotes and the words around
+            them, that keep their source's words.
+
+    Returns:
+        The text with each quotation taken out where it stands in one of the
+        phrases; any other quotation stays, as the site's wording.
+    """
+
+    def keep(m):
+        for phrase in phrases:
+            quote = QUOTED.search(phrase)[0]
+            at = phrase.index(quote)
+            before, after = phrase[:at], phrase[at + len(quote) :]
+            if (
+                m[0] == quote
+                and text[m.start() - len(before) : m.start()] == before
+                and text[m.end() : m.end() + len(after)] == after
+            ):
+                return ""
+        return m[0]
+
+    return QUOTED.sub(keep, text)
 
 
 class Land(HTMLParser):
@@ -266,11 +310,30 @@ def test_hickory_sandstone_is_always_the_member(land):
 
 
 def test_hickory_sands_is_only_the_district(land):
-    # A quotation keeps its source's words (the petition's "Hickory Sands
-    # soils", Notice No. 243's "Hickory Sands" standing alone): the rule is
-    # the site's own wording, outside quotation marks.
-    text = QUOTED.sub("", plain(land.words + land.titles))
+    # Only the named quotations keep their source's words (SOURCES_WORDS).
+    text = own_words(plain(land.words + land.titles))
     assert not re.findall(r"Hickory Sands\b(?! District).{0,30}", text)
+
+
+@pytest.mark.parametrize(
+    ("text", "kept"),
+    [
+        # a quotation the sources wrote is taken out
+        ("the petition calls “Hickory Sands soils.” 1, 2", "Hickory Sands"),
+        ("so: “Hickory Sands” standing alone", "Hickory Sands"),
+        # scare quotes are the site's own words: kept, and so caught
+        ("the “Hickory Sands” of the uplift", "“Hickory Sands”"),
+        ("so-called “Hickory Sands soils.”", "“Hickory Sands soils.”"),
+        # an unbalanced quote hides nothing after it
+        ("“a quote never closed. Hickory Sands soils “the end.”", "Hickory"),
+    ],
+)
+def test_only_the_named_quotations_keep_their_words(text, kept):
+    stripped = own_words(text)
+    if kept == "Hickory Sands":
+        assert kept not in stripped
+    else:
+        assert kept in stripped
 
 
 def test_never_agreed(land):

@@ -58,11 +58,24 @@ def svg_open(width, height, label):
     )
 
 
-def area(d, fill, extra=""):
-    """A filled outline (even-odd), or nothing when it is empty."""
-    if not d:
-        return ""
-    return f'<path d="{d}" fill="{fill}" fill-rule="evenodd"{extra}/>'
+def area(m, name, fill, extra=""):
+    """One of the maps' outlines, filled (even-odd).
+
+    Args:
+        m: maps.make()'s outlines.
+        name: The outline's name ("high", "hickory", ...).
+        fill: Its fill.
+        extra: More attributes, each with a space before it.
+
+    Returns:
+        The path.
+
+    Raises:
+        ValueError: The outline is empty, so the map would be drawn blank.
+    """
+    if not m.get(name):
+        raise ValueError(f"the maps' {name} outline is empty")
+    return f'<path d="{m[name]}" fill="{fill}" fill-rule="evenodd"{extra}/>'
 
 
 def map_svg(m, kind, label):
@@ -79,13 +92,13 @@ def map_svg(m, kind, label):
     w, h = m["w"], m["h"]
     out = [svg_open(w, h, label), MAP_DEFS]
     if kind == "high":
-        out.append(area(m["high"], HIGH))
+        out.append(area(m, "high", HIGH))
     elif kind == "sand":
-        out.append(area(m["precambrian"], "url(#core)"))
-        out.append(area(m["hickory"], "url(#sand)"))
+        out.append(area(m, "precambrian", "url(#core)"))
+        out.append(area(m, "hickory", "url(#sand)"))
     elif kind == "water":
-        out.append(area(m["precambrian"], CORE))
-        out.append(area(m["hickory"], SAND, ' fill-opacity=".28"'))
+        out.append(area(m, "precambrian", CORE))
+        out.append(area(m, "hickory", SAND, ' fill-opacity=".28"'))
         for name in params.MAP_DRAW_ORDER:
             cls = params.CLASSES.index(name)
             dots = "".join(
@@ -99,20 +112,23 @@ def map_svg(m, kind, label):
                     f'fill-opacity=".85">{dots}</g>'
                 )
     elif kind == "together":
-        out.append(area(m["high"], HIGH, ' fill-opacity=".45"'))
-        out.append(area(m["hickory"], SAND, ' fill-opacity=".3"'))
+        out.append(area(m, "high", HIGH, ' fill-opacity=".45"'))
+        out.append(area(m, "hickory", SAND, ' fill-opacity=".3"'))
         out.append(
             area(
-                m["together"],
+                m,
+                "together",
                 TOGETHER,
                 f' stroke="{TOGETHER_EDGE}" stroke-width=".6" {STROKE}',
             )
         )
     elif kind == "locator":
-        out.append(area(m["hickory"], "url(#sand)"))
-        out.append(area(m["precambrian"], "url(#core)"))
+        out.append(area(m, "hickory", "url(#sand)"))
+        out.append(area(m, "precambrian", "url(#core)"))
     else:
         raise ValueError(kind)
+    if not m.get("district"):
+        raise ValueError("the maps' district outline is empty")
     out.append(
         f'<path d="{m["district"]}" fill="none" stroke="{WINE}" '
         f'stroke-width="1.5" stroke-linejoin="round" fill-rule="evenodd" '

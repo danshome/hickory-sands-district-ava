@@ -1,12 +1,13 @@
 /* The land: "Sand, height and water" (four small maps) and "A slice through the district" (part of TWDB's section line
    A–A′, drawn by land.js). Loaded after site.css and timeline.css, on land.html only. Every class here starts with lnd-;
    the slice's buttons, count, progress marks, hint and announcements reuse the timeline's generic .geo-step, .geo-count,
-   .geo-progress, .geo-hint and .geo-live, so the two figures read as one family.
+   .geo-progress, .geo-hint and .geo-live, so the two figures read as one family; the variables those rules use, which
+   timeline.css sets only on its own section (--geo-scale, the marks not yet reached), are set here too.
    Colours: the paper's neutrals; --sand for the Hickory Sandstone Member formation; a muted blue-green for its water;
    the wells in the 3D page's hues (sandstone yellow, granite pink-red, gneiss violet, limestone green), darkened for
    paper. The maps and the slice's static drawing are SVG files the build writes (src/site/make_land.py), with their own
    colours; these match them. */
-.lnd-place,.lnd-sec{--lnd-high:#d6ccb7;--lnd-core:#e7e1d4;--lnd-core-mark:#a59a88;--lnd-younger:#d3ccbd;--lnd-younger-mark:#ada491;--lnd-water:#6d8c86;--lnd-water-edge:#47625c;--lnd-sand-mark:#8f6646;--lnd-c6:#d8bd55;--lnd-c0:#b5485e;--lnd-c1:#7b5ea7;--lnd-c2:#a8820f;--lnd-c3:#5b8a57;--lnd-c4:#a3906f;
+.lnd-place,.lnd-sec{--geo-scale:#e2dbcc;--lnd-high:#d6ccb7;--lnd-core:#e7e1d4;--lnd-core-mark:#a59a88;--lnd-younger:#d3ccbd;--lnd-younger-mark:#ada491;--lnd-water:#6d8c86;--lnd-water-edge:#47625c;--lnd-sand-mark:#8f6646;--lnd-c6:#d8bd55;--lnd-c0:#b5485e;--lnd-c1:#7b5ea7;--lnd-c2:#a8820f;--lnd-c3:#5b8a57;--lnd-c4:#a3906f;
   border-top:1px solid var(--paper-line);padding-top:4rem;padding-bottom:4.5rem}
 .lnd-head{display:grid;gap:1.5rem}.lnd-head .reading-body h2{margin-bottom:1.5rem}.lnd-head .reading-body p{font-size:1.0625rem;line-height:1.8}
 

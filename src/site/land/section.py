@@ -7,10 +7,14 @@ elevation, the shifted USGS geology, the site's boundary and the 3D aquifer
 page's well reports, make() gives what the page draws along the slice, as
 docs/assets/land/section.json holds it:
 
-    length_ft, ve, rule_ft, classes, z_top, z_base
+    length_ft, ve, rule_ft, z_top, z_base
         The slice's length (its cells' count times CELL_FT, exactly), the
-        vertical exaggeration, the rule's elevation, the well classes, and
-        the drawing's top and base (feet above sea level).
+        vertical exaggeration, the rule's elevation, and the drawing's top
+        and base (feet above sea level).
+    classes, colours, hickory_layer, precambrian_layer
+        The well classes and the colour each is drawn in, and the model's
+        layers of the Hickory and the Precambrian: land.js draws by these,
+        so they are the parameters', never typed again in the script.
     ground
         [[s, z], ...]: the ground every GROUND_STEP_FT * GROUND_KEEP feet
         along the slice from its north-west end, in feet.
@@ -479,6 +483,9 @@ def make(paths, details):
         "ve": params.VE,
         "rule_ft": params.RULE_FT,
         "classes": list(params.CLASSES),
+        "colours": list(params.CLASS_COLOURS),
+        "hickory_layer": params.HICKORY_LAYER,
+        "precambrian_layer": params.PRECAMBRIAN_LAYER,
         "z_top": z_top,
         "z_base": z_base,
         "ground": drawn,
@@ -489,8 +496,16 @@ def make(paths, details):
         "faults": faults,
         "wells": wells,
     }
+    # Step 5's last one-mile stretch, in whole model cells.
+    cells_left = (length % params.FT_PER_MI) / params.CELL_FT
+    if cells_left not in params.LAST_STRETCH_WORDS:
+        raise SystemExit(
+            f"the slice's last stretch is {cells_left} cells: step 5 says "
+            "it is shorter than a mile, in words for 1 to 3 cells; reword it"
+        )
     figures = {
         "rule_ft": params.RULE_FT,
+        "last_stretch": params.LAST_STRETCH_WORDS[cells_left],
         "ve": params.VE,
         "model_row": params.ROW,
         "line_mi": round(length / params.FT_PER_MI, 2),

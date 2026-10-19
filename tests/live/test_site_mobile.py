@@ -53,7 +53,9 @@ On the phones:
   scrolls, and still does when the reader scrolls right after tapping Later;
   so does the slice through the district, at every viewport, with no
   sideways scrolling, after tapping Next too (screenshots of the maps, each
-  step and the questions).
+  step and the questions); and when its data is not JSON, malformed, or
+  fails while it is drawn, the slice keeps the build's static drawing and
+  the steps, with nothing of land.js left on the page.
 On a phone (390x844) and the desktop, The water's wells (aquifer.html,
 through the page's window.aquiferWells): at first the default filters'
 wells (irrigation, the default yield and up, counted here from the data),
@@ -947,9 +949,17 @@ def test_land_slice_steps_on_scroll(site_page):
     # The maps, then the slice step by step, as the reader scrolls (the
     # screenshots show each), then the questions; then a scroll right after
     # a tap on Next. No console error and no sideways scrolling throughout.
+    # Every progress mark shows, the steps not yet reached among them.
     view, page = site_page, site_page.page
     page.wait_for_selector(".lnd-has-figure", timeout=30_000)
     problems = []
+    marks = page.evaluate(
+        "() => [...document.querySelectorAll('.lnd-progress li')]"
+        ".map(li => getComputedStyle(li).backgroundColor)"
+    )
+    clear = [m for m in marks if m in ("transparent", "rgba(0, 0, 0, 0)")]
+    if len(marks) != 6 or clear:
+        problems.append(f"progress marks {marks}: {len(clear)} clear")
     page.evaluate(
         "document.querySelector('.lnd-maps').scrollIntoView({block:'start'})"
     )
@@ -987,6 +997,92 @@ def test_land_slice_steps_on_scroll(site_page):
         view.wait(functools.partial(follows, 5), timeout=5)
     except AssertionError as e:
         problems.append(f"scrolling right after Next: {e}")
+    problems += view.problems()
+    assert not problems, f"{view.name}:\n  " + "\n  ".join(problems)
+
+
+# The slice as land.js leaves it when its data is bad: the static drawing and
+# the steps, with nothing it adds
+STATIC = """() => ({
+  figure: document.querySelector('.lnd-sec-body')
+    .classList.contains('lnd-has-figure'),
+  img: document.querySelectorAll('.lnd-art > img[src$="section.svg"]').length,
+  svg: document.querySelectorAll('.lnd-art svg').length,
+  buttons: document.querySelectorAll('.lnd-sec .geo-step').length,
+  hint: document.querySelectorAll('.lnd-sec .geo-hint').length,
+  marks: document.querySelectorAll('.lnd-progress li').length,
+  live: document.querySelectorAll('.lnd-sec .geo-live').length,
+  current: document.querySelectorAll('.lnd-current').length,
+  title: document.querySelector('.lnd-now').textContent})"""
+UNTOUCHED = {
+    "figure": False,
+    "img": 1,
+    "svg": 0,
+    "buttons": 0,
+    "hint": 0,
+    "marks": 0,
+    "live": 0,
+    "current": 0,
+    "title": "",
+}
+# Each bad case: what section.json answers (None: the real file), and a
+# script run in the page first (None: none). "late" breaks the slice's scroll
+# watcher once timeline.js has made its own, so land.js fails after it has
+# drawn and added its panel, and must take it all away again.
+BAD_DATA = {
+    "not-json": ("{not json", None),
+    "malformed": (json.dumps({"length_ft": 1, "ground": []}), None),
+    "late": (
+        None,
+        (
+            "document.addEventListener('DOMContentLoaded', () => {"
+            " window.IntersectionObserver = function () {"
+            " throw new Error('a made-up failure'); }; });"
+        ),
+    ),
+}
+
+
+@pytest.mark.parametrize("bad", list(BAD_DATA))
+@pytest.mark.parametrize(
+    "site_page",
+    cells(["land.html"], ["phone-390x844", "desktop-1440x900"]),
+    indirect=True,
+)
+def test_land_slice_keeps_its_static_drawing_on_bad_data(site_page, bad):
+    view, page = site_page, site_page.page
+    body, script = BAD_DATA[bad]
+    if body is not None:
+        page.route(
+            "**/assets/land/section.json",
+            lambda route: route.fulfill(
+                status=200, content_type="application/json", body=body
+            ),
+        )
+    if script is not None:
+        page.add_init_script(script)
+    warned = []
+    page.on(
+        "console",
+        lambda m: warned.append(m.text) if m.type == "warning" else None,
+    )
+    page.reload(wait_until="load")
+    with contextlib.suppress(PlaywrightTimeout):
+        page.wait_for_load_state("networkidle", timeout=15_000)
+    page.wait_for_timeout(500)
+    page.evaluate(
+        "document.querySelector('.lnd-fig').scrollIntoView({block:'start'})"
+    )
+    page.wait_for_timeout(300)
+    view.shot(f"bad-{bad}")
+    problems = []
+    got = page.evaluate(STATIC)
+    if got != UNTOUCHED:
+        problems.append(f"{bad}: the slice is not as the page has it: {got}")
+    if not any("keeps its static drawing" in w for w in warned):
+        problems.append(f"{bad}: no warning in the console: {warned}")
+    if bad == "late" and page.locator("#deep-time .geo-step").count() != 2:
+        problems.append("late: the timeline lost its buttons")
     problems += view.problems()
     assert not problems, f"{view.name}:\n  " + "\n  ".join(problems)
 

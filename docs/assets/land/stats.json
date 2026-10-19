@@ -2,9 +2,12 @@
  "about": "Every figure docs/land.html's slice and maps show, made by src/site/make_land.py; src/site/make_site_data.py writes them into the page's data-figure marks (land_<name>)",
  "figures": {
   "cell_ft": 1320,
+  "dem_tiles": "n31w100 and n32w100 (2022), n31w099 and n32w099 (2025)",
+  "dem_years": "2022 and 2025",
   "depth_top_nw_ft": 2240,
   "district_stretches": 2,
   "geology_shift_m": 400,
+  "last_stretch": "a quarter-mile",
   "line_mi": 35.25,
   "mile_stretches": 36,
   "model_row": 239,

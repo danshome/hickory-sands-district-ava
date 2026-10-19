@@ -47,7 +47,27 @@ DRAWINGS = (
 # Text with a digit that is not a figure: the maps' and the steps' indices
 # (skipped as elements), the notice's name and the 3D page's name.
 NOT_FIGURES = ("Notice No. 243", "in 3D")
-QUOTED = re.compile(r"“[^”]*”")
+# A quotation in the page's curly quotes; one opening quote never reaches
+# past the next.
+QUOTED = re.compile(r"“[^“”]*”")
+# The quotations whose figures are their source's, typed as it wrote them:
+# Notice No. 243 (52579) and the petition (p. 11). Any other quotation is the
+# site's own wording, and a number in it must be a figure the build fills.
+QUOTED_FIGURES = (
+    (
+        "“to encompass the portions of the Hickory Sandstone Member geologic "
+        "formation that are at 1,500 feet or higher.”"
+    ),
+    (
+        "“the Hickory aquifer, Hickory Sands soils, and elevation at 1,500 "
+        "feet or higher.”"
+    ),
+)
+
+
+def own_words(text):
+    """The text without the quotations whose figures are their source's."""
+    return QUOTED.sub(lambda m: "" if m[0] in QUOTED_FIGURES else m[0], text)
 
 
 def read(*parts):
@@ -175,6 +195,58 @@ def test_the_privacy_check_refuses_more_than_the_words():
     assert "OwnerName" in problems
     assert "not a report number" in problems
     assert "in LithologyDescription" in problems  # the scan's own finding
+
+
+# The outlines each committed drawing is made of (draw.map_svg), as filled or
+# stroked paths, and the dots of map 03.
+OUTLINES = {
+    "map-elevation.svg": 2,  # the high ground, the district
+    "map-sand.svg": 3,  # the core, the formation, the district
+    "map-water.svg": 3,  # the core, the formation, the district
+    "map-together.svg": 4,  # high, formation, both, the district
+    "locator.svg": 3,  # the formation, the core, the district
+}
+MADE_UP_MAPS = {
+    "w": 540,
+    "h": 500,
+    "district": "M0,0L1,0L1,1Z",
+    "hickory": "M0,0L2,0L2,2Z",
+    "precambrian": "M3,3L4,3L4,4Z",
+    "high": "M0,0L5,0L5,5Z",
+    "together": "M0,0L1,0L1,1Z",
+    "wells": [[1.0, 1.0, 2]],
+    "line": [[0, 0], [5, 5]],
+    "scale": 90,
+}
+
+
+def test_the_committed_maps_draw_every_outline():
+    for name, count in OUTLINES.items():
+        svg = read(DATA, name)
+        # an outline's path is "Mx,yL...", a pattern's mark "M3 6h6..."
+        assert len(re.findall(r'<path d="M[\d.]+,', svg)) == count, name
+    assert read(DATA, "map-water.svg").count("<circle") > 1
+
+
+@pytest.mark.parametrize("name", verify.MAP_OUTLINES)
+def test_an_empty_outline_stops_the_generator(section, name):
+    # An input that misses the frame leaves an outline empty: the generator
+    # stops before it writes (verify.outlines()), and the drawing refuses it.
+    maps = dict(MADE_UP_MAPS, **{name: ""})
+    assert verify.outlines(MADE_UP_MAPS, section) == []
+    assert name in " ".join(verify.outlines(maps, section))
+    with pytest.raises(ValueError, match=name):
+        for kind in ("high", "sand", "water", "together", "locator"):
+            draw.map_svg(maps, kind, "made up")
+
+
+def test_no_wells_or_an_empty_slice_stops_the_generator(section):
+    maps = dict(MADE_UP_MAPS, wells=[])
+    assert "no wells on the map" in " ".join(verify.outlines(maps, section))
+    for part in ("ground", "cols", "district", "surface_hickory", "core"):
+        empty = dict(section, **{part: []})
+        problems = " ".join(verify.outlines(MADE_UP_MAPS, empty))
+        assert f"the slice has no {part}" in problems
 
 
 def test_every_file_is_within_its_budget():
@@ -391,19 +463,40 @@ def test_both_sections_come_before_the_timeline(page):
     assert "CONCEPTUAL SECTION" not in page
 
 
-def test_every_figure_shown_is_the_build_s(sections, stats):
+def test_every_figure_shown_is_the_build_s(sections, stats, page):
     shown = {f for f in sections.figures if f.startswith("land_")}
     built = {f"land_{name}" for name in stats["figures"]}
     assert shown <= built, shown - built
-    # every figure but the wells' date (in the sources) is in the sections
-    assert built - shown == {"land_wells_snapshot"}
+    # every other figure is in the sources: the wells' date (source 7) and
+    # the 3DEP tiles and their years (source 3)
+    cited = {"land_wells_snapshot", "land_dem_years", "land_dem_tiles"}
+    assert built - shown == cited
+    for name in cited:
+        assert page.count(f'data-figure="{name}"') == 1, name
 
 
 def test_no_number_is_typed_in_the_sections(sections):
-    text = QUOTED.sub("", " ".join(sections.text))
+    text = own_words(re.sub(r"\s+", " ", " ".join(sections.text)))
     for allowed in NOT_FIGURES:
         text = text.replace(allowed, "")
     assert not re.findall(r".{0,30}\d.{0,30}", text)
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "the “about 1,500 feet” of ground",  # a number typed in quotes
+        "“a quote never closed, 2,240 feet “then another.”",  # unbalanced
+        "drawn “to encompass the portions at 1,500 feet or higher.”",  # cut
+    ],
+)
+def test_a_number_in_the_site_s_own_quotes_is_typed(text):
+    assert re.search(r"\d", own_words(text))
+
+
+def test_the_source_s_quotations_keep_their_figures():
+    for quotation in QUOTED_FIGURES:
+        assert not re.search(r"\d", own_words(f"so: {quotation}"))
 
 
 def test_comment_9_is_never_the_only_source(page, sections):
@@ -453,6 +546,27 @@ def test_land_figures_are_formatted_and_dated(tmp_path):
 
 
 # --------------------------------------------------------- the script, styles
+def test_the_page_draws_by_the_generator_s_colours_and_layers(section):
+    # land.js reads the class colours and the model's layers from
+    # section.json (checked against the parameters by verify.agree());
+    # land.css keys the classes in the same colours.
+    js = read(DOCS, "assets", "land.js")
+    for colour in params.CLASS_COLOURS:
+        assert colour.lower() not in js.lower(), colour
+    for name in ("colours", "hickory_layer", "precambrian_layer"):
+        assert f"S.{name}" in js, name
+    assert not re.search(r"c\[5\] *(?:<|===) *\d", js)
+    css = read(DOCS, "assets", "land.css")
+    keyed = dict(re.findall(r"--lnd-c(\d):(#[0-9a-fA-F]{6})", css))
+    drawn = {
+        str(i) for i, name in enumerate(params.CLASSES) if name != "unlogged"
+    }
+    assert set(keyed) == drawn, keyed
+    for i, colour in keyed.items():
+        assert colour.lower() == params.CLASS_COLOURS[int(i)].lower(), i
+    assert section["colours"] == list(params.CLASS_COLOURS)
+
+
 def test_the_script_sets_text_as_text():
     js = read(DOCS, "assets", "land.js")
     for sink in (
@@ -483,6 +597,37 @@ def test_the_script_and_styles_agree_on_a_phone_held_upright():
         for q in re.findall(r"@media([^{]*max-width:999px[^{]*)\{", css)
     }
     assert sticky == {query}, (sticky, query)
+
+
+# The timeline's classes the slice reuses (land.js makes them).
+REUSED = ("geo-progress", "geo-step", "geo-count", "geo-hint", "geo-live")
+
+
+def test_the_slice_sets_the_timeline_s_variables_it_uses():
+    # timeline.css sets its variables on its own section (.geo), which the
+    # slice's (.lnd-sec) is not inside: whatever its rules for the reused
+    # classes read, land.css sets for the slice, with the timeline's value
+    # (an unset one would leave the progress marks not yet reached clear).
+    def variables(css, selector):
+        block = re.search(re.escape(selector) + r"\{([^}]*)\}", css)
+        assert block, selector
+        return dict(re.findall(r"(--[\w-]+):([^;}]+)", block[1]))
+
+    timeline = re.sub(
+        r"/\*.*?\*/", "", read(DOCS, "assets", "timeline.css"), flags=re.S
+    )
+    land = re.sub(
+        r"/\*.*?\*/", "", read(DOCS, "assets", "land.css"), flags=re.S
+    )
+    used = set()
+    for selector, decls in re.findall(r"([^{}]+)\{([^{}]*)\}", timeline):
+        if any(re.search(rf"\.{c}\b", selector) for c in REUSED):
+            used |= set(re.findall(r"var\((--geo-[\w-]+)\)", decls))
+    assert "--geo-scale" in used  # the marks not yet reached
+    theirs = variables(timeline, ".geo")
+    ours = variables(land, ".lnd-place,.lnd-sec")
+    for name in used:
+        assert ours.get(name) == theirs[name], name
 
 
 def test_the_styles_use_their_own_classes_and_the_timeline_s_controls():

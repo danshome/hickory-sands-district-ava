@@ -7,7 +7,7 @@ again. VERSION counts changes to the code's output that no other parameter
 shows; raise it with any such change. Standard library only.
 """
 
-VERSION = 1
+VERSION = 2
 
 # The rule the line is drawn on: Notice No. 243 (91 FR 52579), "at 1,500 feet
 # or higher". A parameter of the rule, not a measurement.
@@ -40,6 +40,13 @@ Z_ROUND_FT = 100
 # The depth of the formation's top at the slice's north-west end, shown
 # rounded to this many feet ("about 2,240 feet").
 DEPTH_ROUND_FT = 10
+# The last of the slice's one-mile stretches is shorter (step 5: "the last
+# a quarter-mile"): how the page says it, by its whole model cells.
+LAST_STRETCH_WORDS = {
+    1: "a quarter-mile",
+    2: "half a mile",
+    3: "three quarters of a mile",
+}
 # Two intervals along the line closer than this (feet) are one.
 JOIN_FT = 2
 

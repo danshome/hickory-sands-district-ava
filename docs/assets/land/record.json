@@ -143,6 +143,11 @@
   "hickory_layer": 7,
   "join_ft": 2,
   "km_per_deg_lat": 111.32,
+  "last_stretch_words": {
+   "1": "a quarter-mile",
+   "2": "half a mile",
+   "3": "three quarters of a mile"
+  },
   "line_tiles": [
    "usgs-3dep-1-n31w100",
    "usgs-3dep-1-n32w100"
@@ -174,7 +179,7 @@
    "together": 0.0004
   },
   "ve": 40,
-  "version": 1,
+  "version": 2,
   "well_buffer_m": 800,
   "well_every_mi": 1,
   "z_above_ft": 150,
@@ -188,8 +193,8 @@
   "map-sand.svg": 30019,
   "map-together.svg": 86942,
   "map-water.svg": 129726,
-  "section.json": 25542,
+  "section.json": 25664,
   "section.svg": 102826,
-  "stats.json": 2029
+  "stats.json": 2170
  }
 }

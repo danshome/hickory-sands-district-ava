@@ -14,7 +14,11 @@
  * buttons (or the arrow keys, Home and End on them) do. Every element is
  * made with createElement or createElementNS and every text set with
  * textContent: nothing is parsed as HTML. Smooth scrolling and the fades
- * follow prefers-reduced-motion.
+ * follow prefers-reduced-motion. The data is checked before the page is
+ * touched, and the wells' colours and the model's layers come from it (the
+ * generator's parameters), never typed here; if anything still fails while
+ * the drawing is made, everything this file added is taken away again, so
+ * the static drawing and the steps stay as the page has them.
  */
 (function () {
   "use strict";
@@ -39,11 +43,6 @@
   function follows() {
     return wide.matches || tall.matches;
   }
-
-  // The wells' colours by the data's classes: granite, metamorphic,
-  // sandstone, limestone (or dolomite), other, unlogged, sand.
-  var COLOURS = ["#b5485e", "#7b5ea7", "#a8820f", "#5b8a57", "#a3906f",
-    "#9a958c", "#d8bd55"];
 
   function svg(name, attrs, parent) {
     var node = document.createElementNS(NS, name);
@@ -71,7 +70,59 @@
       .replace("-", "−");
   }
 
+  // The data's shape, checked before the page is touched: a malformed file
+  // throws here and the page stays as it is.
+  function check(S) {
+    function need(ok, what) {
+      if (!ok) {
+        throw new Error("assets/land/section.json: " + what);
+      }
+    }
+    function num(x) {
+      return typeof x === "number" && isFinite(x);
+    }
+    function pairs(list) {
+      return Array.isArray(list) && list.every(function (p) {
+        return Array.isArray(p) && p.length === 2 && num(p[0]) && num(p[1]);
+      });
+    }
+    need(S !== null && typeof S === "object", "not an object");
+    ["length_ft", "ve", "rule_ft", "z_top", "z_base", "hickory_layer",
+      "precambrian_layer"].forEach(function (k) {
+      need(num(S[k]), k);
+    });
+    need(S.length_ft > 0 && S.ve > 0 && S.z_top > S.z_base, "the frame");
+    need(pairs(S.ground) && S.ground.length > 1, "ground");
+    need(pairs(S.district) && S.district.length > 0, "district");
+    need(pairs(S.surface_hickory) && pairs(S.core), "surface_hickory, core");
+    need(Array.isArray(S.faults) && S.faults.every(num), "faults");
+    need(Array.isArray(S.colours) && S.colours.length > 0 &&
+      S.colours.every(function (c) {
+        return typeof c === "string" && /^#[0-9a-f]{6}$/i.test(c);
+      }), "colours");
+    need(Array.isArray(S.cols) && S.cols.length > 0 &&
+      S.cols.every(function (c) {
+        return Array.isArray(c) && c.length === 6 && num(c[0]) &&
+          num(c[1]) && (c[2] === null || num(c[2])) &&
+          (c[3] === null || num(c[3])) && num(c[4]) && num(c[5]);
+      }), "cols");
+    need(Array.isArray(S.wells) && S.wells.every(function (w) {
+      return w !== null && typeof w === "object" &&
+        typeof w.uid === "string" && num(w.s) && num(w.depth) &&
+        num(w.ground) && Array.isArray(w.log) &&
+        w.log.every(function (seg) {
+          return Array.isArray(seg) && seg.length === 4 && num(seg[0]) &&
+            num(seg[1]) && typeof S.colours[seg[2]] === "string" &&
+            typeof seg[3] === "string";
+        });
+    }), "wells");
+  }
+
   function start(S) {
+    // The generator's parameters: the class colours and the model's layers.
+    var COLOURS = S.colours;
+    var HICKORY = S.hickory_layer;
+    var PRECAMBRIAN = S.precambrian_layer;
     var gs = S.ground.map(function (g) { return g[0]; });
     var gz = S.ground.map(function (g) { return g[1]; });
 
@@ -111,7 +162,7 @@
     // left between the model's top and the ground.
     var units = {
       younger: {
-        has: function (c) { return c[5] < 7; },
+        has: function (c) { return c[5] < HICKORY; },
         top: function (c, s) { return ground(s); },
         bot: function (c, s) {
           return Math.min(c[2] !== null ? c[2] : c[4], ground(s));
@@ -120,14 +171,14 @@
       hickory: {
         has: function (c) { return c[2] !== null; },
         top: function (c, s) {
-          return c[5] === 7 ? ground(s) : Math.min(c[2], ground(s));
+          return c[5] === HICKORY ? ground(s) : Math.min(c[2], ground(s));
         },
         bot: function (c, s) { return Math.min(c[3], ground(s)); }
       },
       core: {
         has: function () { return true; },
         top: function (c, s) {
-          return c[5] === 8 ? ground(s) : Math.min(c[4], ground(s));
+          return c[5] === PRECAMBRIAN ? ground(s) : Math.min(c[4], ground(s));
         },
         bot: function () { return S.z_base; }
       }
@@ -356,221 +407,268 @@
       apply(false);
     }
 
-    /* The panel: the progress marks, the step's name, Back and Next. */
-    var progress = fig.querySelector(".lnd-progress");
-    var marks = items.map(function () {
-      return progress.appendChild(document.createElement("li"));
-    });
-    var controls = document.createElement("div");
-    controls.className = "lnd-controls";
-    controls.setAttribute("role", "group");
-    controls.setAttribute("aria-label", "Step through the layers");
-    var hold = 0; // until then, scrolling the steps does not move the figure
-    var holdEnds = 0; // the timer that ends the hold
-    var onLine = null; // the step on the reading line, kept during a hold too
-
-    function stepper(label, word, arrow, by) {
-      var b = document.createElement("button");
-      b.type = "button";
-      b.className = "geo-step";
-      b.setAttribute("aria-label", label + " layer");
-      var m = document.createElement("span");
-      m.setAttribute("aria-hidden", "true");
-      m.textContent = arrow;
-      if (by < 0) {
-        b.appendChild(m);
-      }
-      b.appendChild(document.createTextNode(word));
-      if (by > 0) {
-        b.appendChild(m);
-      }
-      b.addEventListener("click", function () {
-        if (b.getAttribute("aria-disabled") !== "true") {
-          go(current + by);
-        }
-      });
-      return b;
-    }
-    var back = stepper("Previous", "Back", "←", -1);
-    var count = document.createElement("span");
-    count.className = "geo-count";
-    count.setAttribute("aria-hidden", "true");
-    var next = stepper("Next", "Next", "→", 1);
-    controls.appendChild(back);
-    controls.appendChild(count);
-    controls.appendChild(next);
-    controls.addEventListener("keydown", function (event) {
-      var keys = { ArrowLeft: current - 1, ArrowRight: current + 1, Home: 1,
-        End: STEPS };
-      if (!Object.prototype.hasOwnProperty.call(keys, event.key)) {
-        return;
-      }
-      event.preventDefault();
-      go(keys[event.key]);
-    });
-    fig.querySelector("figcaption").appendChild(controls);
-    var live = document.createElement("p");
-    live.className = "geo-live";
-    live.setAttribute("aria-live", "polite");
-    fig.appendChild(live);
-
-    function pad(n) {
-      return (n < 10 ? "0" : "") + n;
-    }
-
-    function show(n, announce) {
-      if (n < 1 || n > STEPS) {
-        return false;
-      }
-      var changed = n !== current;
-      current = n;
-      var title = items[n - 1].querySelector("h3").textContent;
-      nowTitle.textContent = title;
-      count.textContent = pad(n) + " / " + pad(STEPS);
-      marks.forEach(function (m, i) {
-        m.classList.toggle("geo-on", i === n - 1);
-        m.classList.toggle("geo-past", i < n - 1);
-      });
-      items.forEach(function (li, i) {
-        li.classList.toggle("lnd-current", i === n - 1);
-      });
-      back.setAttribute("aria-disabled", String(n === 1));
-      next.setAttribute("aria-disabled", String(n === STEPS));
-      apply(!reduce.matches);
-      if (announce && changed) {
-        live.textContent = "Layer " + n + " of " + STEPS + ": " + title + ".";
-      }
-      return changed;
-    }
-
-    // The hold is over: the drawing shows the step on the reading line,
-    // which the reader may have scrolled to while the hold lasted.
-    function release() {
-      hold = 0;
-      clearTimeout(holdEnds);
-      if (onLine && follows()) {
-        show(items.indexOf(onLine) + 1, false);
-      }
-    }
-
-    function go(n) {
-      if (!show(n, true) || !follows()) {
-        return;
-      }
-      hold = Date.now() + 1200;
-      clearTimeout(holdEnds);
-      holdEnds = setTimeout(release, 1200);
-      var li = items[n - 1];
-      var behavior = reduce.matches ? "auto" : "smooth";
-      if (n === 1 && !wide.matches) {
-        // On a phone the first step follows the figure directly, so the
-        // buttons stay where they are.
-        window.scrollTo({
-          top: li.getBoundingClientRect().top + window.pageYOffset -
-            fig.getBoundingClientRect().height,
-          behavior: behavior
-        });
-        return;
-      }
-      li.scrollIntoView({
-        // On a phone the step's top lands just under the stuck figure (its
-        // scroll-margin-top is the figure's height).
-        block: wide.matches ? "center" : "start",
-        behavior: behavior
-      });
-    }
-
-    // One quiet line that says how the drawing moves; made here, so the
-    // page without JavaScript never mentions it.
-    var hint = document.createElement("p");
-    hint.className = "geo-hint";
-    body.parentNode.insertBefore(hint, body);
-    body.classList.add("lnd-has-figure");
-    draw();
-    show(1, false);
-
-    // Beside the steps (wide) or above them (a phone held upright), the
-    // figure follows the step that crosses a reading line: the middle of a
-    // wide screen; on a phone, a third of the way down the space left under
-    // the stuck figure, measured again when the window changes.
+    // What this adds to the page, so an error can take it away again.
+    var original = Array.prototype.slice.call(art.childNodes);
+    var made = [];
+    var listening = [];
     var watch = null;
-    function observe() {
-      var panel = Math.ceil(fig.getBoundingClientRect().height);
-      body.style.setProperty("--lnd-panel", panel + "px");
-      var scrolls = "IntersectionObserver" in window;
-      hint.textContent = follows() && scrolls ?
-        "The drawing changes as you scroll" : "Press Next to add a layer";
-      if (!scrolls) {
-        return;
-      }
+    function added(node) {
+      made.push(node);
+      return node;
+    }
+    function on(target, type, handler, options) {
+      target.addEventListener(type, handler, options);
+      listening.push([target, type, handler, options]);
+    }
+    function rollback() {
       if (watch) {
         watch.disconnect();
       }
-      var margin = "-45% 0px -54% 0px";
-      if (!wide.matches && tall.matches) {
-        var vh = window.innerHeight;
-        var at = Math.round(panel + (vh - panel) / 3);
-        margin = -at + "px 0px " + -(vh - at - 1) + "px 0px";
+      listening.forEach(function (l) {
+        l[0].removeEventListener(l[1], l[2], l[3]);
+      });
+      made.forEach(function (node) {
+        if (node.parentNode) {
+          node.parentNode.removeChild(node);
+        }
+      });
+      body.classList.remove("lnd-has-figure");
+      body.style.removeProperty("--lnd-panel");
+      while (art.firstChild) {
+        art.removeChild(art.firstChild);
       }
-      watch = new IntersectionObserver(function (entries) {
-        entries.forEach(function (entry) {
-          if (entry.isIntersecting) {
-            onLine = entry.target;
-          } else if (entry.target === onLine) {
-            onLine = null;
+      original.forEach(function (node) {
+        art.appendChild(node);
+      });
+      nowTitle.textContent = "";
+      items.forEach(function (li) {
+        li.classList.remove("lnd-current");
+      });
+    }
+
+    try {
+      /* The panel: the progress marks, the step's name, Back and Next. */
+      var progress = fig.querySelector(".lnd-progress");
+      var marks = items.map(function () {
+        return added(progress.appendChild(document.createElement("li")));
+      });
+      var controls = document.createElement("div");
+      controls.className = "lnd-controls";
+      controls.setAttribute("role", "group");
+      controls.setAttribute("aria-label", "Step through the layers");
+      var hold = 0; // until then, scrolling the steps does not move the figure
+      var holdEnds = 0; // the timer that ends the hold
+      var onLine = null; // the step on the reading line, kept during a hold too
+
+      function stepper(label, word, arrow, by) {
+        var b = document.createElement("button");
+        b.type = "button";
+        b.className = "geo-step";
+        b.setAttribute("aria-label", label + " layer");
+        var m = document.createElement("span");
+        m.setAttribute("aria-hidden", "true");
+        m.textContent = arrow;
+        if (by < 0) {
+          b.appendChild(m);
+        }
+        b.appendChild(document.createTextNode(word));
+        if (by > 0) {
+          b.appendChild(m);
+        }
+        b.addEventListener("click", function () {
+          if (b.getAttribute("aria-disabled") !== "true") {
+            go(current + by);
           }
         });
-        if (!follows() || Date.now() < hold || !onLine) {
+        return b;
+      }
+      var back = stepper("Previous", "Back", "←", -1);
+      var count = document.createElement("span");
+      count.className = "geo-count";
+      count.setAttribute("aria-hidden", "true");
+      var next = stepper("Next", "Next", "→", 1);
+      controls.appendChild(back);
+      controls.appendChild(count);
+      controls.appendChild(next);
+      controls.addEventListener("keydown", function (event) {
+        var keys = { ArrowLeft: current - 1, ArrowRight: current + 1, Home: 1,
+          End: STEPS };
+        if (!Object.prototype.hasOwnProperty.call(keys, event.key)) {
           return;
         }
-        show(items.indexOf(onLine) + 1, false);
-      }, { rootMargin: margin });
-      items.forEach(function (li) {
-        watch.observe(li);
+        event.preventDefault();
+        go(keys[event.key]);
       });
-    }
-    observe();
-    // The reader's own touch or wheel ends a hold at once (a tap on the
-    // buttons is theirs to hold), so the drawing follows the scroll it
-    // starts.
-    function reader(event) {
-      if (hold && !controls.contains(event.target)) {
-        release();
+      added(fig.querySelector("figcaption").appendChild(controls));
+      var live = document.createElement("p");
+      live.className = "geo-live";
+      live.setAttribute("aria-live", "polite");
+      added(fig.appendChild(live));
+
+      function pad(n) {
+        return (n < 10 ? "0" : "") + n;
       }
-    }
-    window.addEventListener("touchstart", reader, { passive: true });
-    window.addEventListener("wheel", reader, { passive: true });
-    var again = 0;
-    var lastW = art.clientWidth;
-    window.addEventListener("resize", function () {
-      clearTimeout(again);
-      again = setTimeout(function () {
-        if (Math.abs(art.clientWidth - lastW) > 2) {
-          lastW = art.clientWidth;
-          draw();
+
+      function show(n, announce) {
+        if (n < 1 || n > STEPS) {
+          return false;
         }
-        observe();
-      }, 150);
-    });
-    // Printing shows every layer.
-    window.addEventListener("beforeprint", function () {
-      layers.forEach(function (l) {
-        l[0].classList.remove("lnd-wait");
+        var changed = n !== current;
+        current = n;
+        var title = items[n - 1].querySelector("h3").textContent;
+        nowTitle.textContent = title;
+        count.textContent = pad(n) + " / " + pad(STEPS);
+        marks.forEach(function (m, i) {
+          m.classList.toggle("geo-on", i === n - 1);
+          m.classList.toggle("geo-past", i < n - 1);
+        });
+        items.forEach(function (li, i) {
+          li.classList.toggle("lnd-current", i === n - 1);
+        });
+        back.setAttribute("aria-disabled", String(n === 1));
+        next.setAttribute("aria-disabled", String(n === STEPS));
+        apply(!reduce.matches);
+        if (announce && changed) {
+          live.textContent = "Layer " + n + " of " + STEPS + ": " + title + ".";
+        }
+        return changed;
+      }
+
+      // The hold is over: the drawing shows the step on the reading line,
+      // which the reader may have scrolled to while the hold lasted.
+      function release() {
+        hold = 0;
+        clearTimeout(holdEnds);
+        if (onLine && follows()) {
+          show(items.indexOf(onLine) + 1, false);
+        }
+      }
+
+      function go(n) {
+        if (!show(n, true) || !follows()) {
+          return;
+        }
+        hold = Date.now() + 1200;
+        clearTimeout(holdEnds);
+        holdEnds = setTimeout(release, 1200);
+        var li = items[n - 1];
+        var behavior = reduce.matches ? "auto" : "smooth";
+        if (n === 1 && !wide.matches) {
+          // On a phone the first step follows the figure directly, so the
+          // buttons stay where they are.
+          window.scrollTo({
+            top: li.getBoundingClientRect().top + window.pageYOffset -
+              fig.getBoundingClientRect().height,
+            behavior: behavior
+          });
+          return;
+        }
+        li.scrollIntoView({
+          // On a phone the step's top lands just under the stuck figure (its
+          // scroll-margin-top is the figure's height).
+          block: wide.matches ? "center" : "start",
+          behavior: behavior
+        });
+      }
+
+      // One quiet line that says how the drawing moves; made here, so the
+      // page without JavaScript never mentions it.
+      var hint = document.createElement("p");
+      hint.className = "geo-hint";
+      added(body.parentNode.insertBefore(hint, body));
+      body.classList.add("lnd-has-figure");
+      draw();
+      show(1, false);
+
+      // Beside the steps (wide) or above them (a phone held upright), the
+      // figure follows the step that crosses a reading line: the middle of a
+      // wide screen; on a phone, a third of the way down the space left under
+      // the stuck figure, measured again when the window changes.
+      function observe() {
+        var panel = Math.ceil(fig.getBoundingClientRect().height);
+        body.style.setProperty("--lnd-panel", panel + "px");
+        var scrolls = "IntersectionObserver" in window;
+        hint.textContent = follows() && scrolls ?
+          "The drawing changes as you scroll" : "Press Next to add a layer";
+        if (!scrolls) {
+          return;
+        }
+        if (watch) {
+          watch.disconnect();
+        }
+        var margin = "-45% 0px -54% 0px";
+        if (!wide.matches && tall.matches) {
+          var vh = window.innerHeight;
+          var at = Math.round(panel + (vh - panel) / 3);
+          margin = -at + "px 0px " + -(vh - at - 1) + "px 0px";
+        }
+        watch = new IntersectionObserver(function (entries) {
+          entries.forEach(function (entry) {
+            if (entry.isIntersecting) {
+              onLine = entry.target;
+            } else if (entry.target === onLine) {
+              onLine = null;
+            }
+          });
+          if (!follows() || Date.now() < hold || !onLine) {
+            return;
+          }
+          show(items.indexOf(onLine) + 1, false);
+        }, { rootMargin: margin });
+        items.forEach(function (li) {
+          watch.observe(li);
+        });
+      }
+      observe();
+      // The reader's own touch or wheel ends a hold at once (a tap on the
+      // buttons is theirs to hold), so the drawing follows the scroll it
+      // starts.
+      function reader(event) {
+        if (hold && !controls.contains(event.target)) {
+          release();
+        }
+      }
+      on(window, "touchstart", reader, { passive: true });
+      on(window, "wheel", reader, { passive: true });
+      var again = 0;
+      var lastW = art.clientWidth;
+      on(window, "resize", function () {
+        clearTimeout(again);
+        again = setTimeout(function () {
+          if (Math.abs(art.clientWidth - lastW) > 2) {
+            lastW = art.clientWidth;
+            draw();
+          }
+          observe();
+        }, 150);
       });
-    });
-    window.addEventListener("afterprint", function () {
-      apply(false);
-    });
+      // Printing shows every layer.
+      on(window, "beforeprint", function () {
+        layers.forEach(function (l) {
+          l[0].classList.remove("lnd-wait");
+        });
+      });
+      on(window, "afterprint", function () {
+        apply(false);
+      });
+    } catch (error) {
+      rollback();
+      throw error;
+    }
   }
 
-  // The build's data; without it the static drawing and the steps stay as
-  // they are.
+  // The build's data. Without it, or when it is malformed (check), or when
+  // drawing it fails (start takes back what it added), the static drawing
+  // and the steps stay as the page has them.
   fetch("assets/land/section.json").then(function (response) {
     if (!response.ok) {
       throw new Error("assets/land/section.json: HTTP " + response.status);
     }
     return response.json();
-  }).then(start).catch(function (error) {
+  }).then(function (S) {
+    check(S);
+    start(S);
+  }).catch(function (error) {
     if (window.console) {
       window.console.warn("The slice keeps its static drawing:", error);
     }

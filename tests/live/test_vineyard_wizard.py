@@ -7,7 +7,8 @@ one-file bundle Dan deploys, served by tests/vineyard_standin.mjs with
 stand-ins for Supabase's table, Turnstile's check and GitHub; the page's
 config is pointed at it, with Cloudflare's always-passing test site key.
 
-- At 390x844 and 360x780 (touch only) and 1440x900 (the mouse): find the
+- At 390x844 and 360x780 (touch only), and at 1440x900 by the mouse and by
+  touch (a touch screen on a desktop): find the
   vineyard by the phone's location, tap four corners, undo one and tap it
   again, drag a corner, finish the block, add a second block of three
   corners, see an error and fix it, fill in the rest, wait for the person
@@ -60,10 +61,11 @@ TEST_SITE_KEY = (
 )
 # an open field inside the proposed district, east of Mason
 FIELD = (30.8640, -99.2940)
-VIEWPORTS = {
-    "phone-390x844": (390, 844, True),
-    "phone-360x780": (360, 780, True),
-    "desktop-1440x900": (1440, 900, False),
+VIEWPORTS = {  # name: (width, height, touch, a phone)
+    "phone-390x844": (390, 844, True, True),
+    "phone-360x780": (360, 780, True, True),
+    "desktop-1440x900": (1440, 900, False, False),
+    "desktop-1440x900-touch": (1440, 900, True, False),
 }
 BLOCK_1 = [(0.15, 0.25), (0.45, 0.25), (0.45, 0.70), (0.15, 0.70)]
 BLOCK_2 = [(0.55, 0.32), (0.78, 0.32), (0.66, 0.66)]
@@ -143,13 +145,13 @@ class Grower:
 
     def __init__(self, browser, viewport, site, endpoint, key=TEST_SITE_KEY):
         """Opens the page at a viewport, the config pointed at endpoint."""
-        width, height, touch = VIEWPORTS[viewport]
+        width, height, touch, phone = VIEWPORTS[viewport]
         self.name = viewport
         self.touch = touch
         self.context = browser.new_context(
             viewport={"width": width, "height": height},
             device_scale_factor=2,
-            is_mobile=touch,
+            is_mobile=phone,
             has_touch=touch,
             locale="en-US",
             geolocation={

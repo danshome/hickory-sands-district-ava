@@ -158,30 +158,136 @@ def test_single_quotes_are_kept(site):
 
 
 @pytest.mark.parametrize(
+    "tag",
+    [
+        # rel without quotes (#153's review): read as HTML reads it
+        '<link rel=stylesheet href="assets/site.css">',
+        # a ">" inside a quoted value before the href
+        '<link data-x="a>b" rel="stylesheet" href="assets/site.css">',
+        '<link rel="Preload StyleSheet" as="style" href="assets/site.css">',
+    ],
+)
+def test_a_link_is_read_as_html_reads_it(site, tag):
+    (site[0] / "index.html").write_text(tag, encoding="utf-8")
+    assert stamp(site, "--check") == sa.STALE  # not skipped
+    stamp(site)
+    css = sha(FILES["docs/assets/site.css"])
+    assert text(site, "index.html") == tag.replace(
+        "assets/site.css", f"assets/site.css?v={css}"
+    )
+    assert stamp(site, "--check") == 0
+
+
+def test_a_modulepreload_names_the_module_as_the_imports_do(site):
+    page = '<link rel="modulepreload" href="assets/config.js">'
+    (site[0] / "index.html").write_text(page, encoding="utf-8")
+    assert stamp(site, "--check") == sa.STALE
+    stamp(site)
+    config = sha(FILES["docs/assets/config.js"])
+    assert f'href="assets/config.js?v={config}"' in text(site, "index.html")
+    assert f'"./config.js?v={config}"' in text(site, "assets/app.js")
+
+
+# Inline scripts that name a module: not stamped, so refused.
+INLINE_IMPORT = (
+    '<script type="module">import { key } from "./assets/config.js";</script>'
+)
+INLINE_DYNAMIC = "<script type=\"module\">import('./assets/lazy.js');</script>"
+INLINE_MAP = (
+    '<script type="importmap">{"imports": {"c": "./assets/config.js"}}</script>'
+)
+
+
+@pytest.mark.parametrize(
     ("tag", "error"),
     [
         ('<script src="assets/gone.js"></script>', "not a file"),
         ('<link rel="stylesheet" href="assets/site.css?x=1">', "only its"),
+        ('<link rel="stylesheet" href="assets/site.css?v=G1">', "only its"),
+        ('<link rel="stylesheet" href="assets/site.css#x">', "only its"),
         ('<link rel="stylesheet" href="../outside.css">', "not a file"),
         ("<script src=assets/app.js></script>", "quote the src"),
+        ("<link rel=stylesheet href=assets/site.css>", "quote the href"),
+        (
+            '<link rel="stylesheet" href="assets/site.css" href="x.css">',
+            "one href",
+        ),
+        (INLINE_IMPORT, "inline <script> names a module"),
+        (INLINE_DYNAMIC, "inline <script> names a module"),
+        (INLINE_MAP, "inline <script> names a module"),
     ],
 )
 def test_refuses_what_it_cannot_stamp(site, tag, error):
     (site[0] / "index.html").write_text(tag, encoding="utf-8")
     with pytest.raises(SystemExit, match=error):
-        stamp(site)
+        stamp(site, "--check")
+
+
+@pytest.mark.parametrize(
+    ("script", "error"),
+    [
+        ("const lazy = import(`./lazy.js`);\n", "cannot stamp import"),
+        ('import { key } from "/assets/config.js";\n', "cannot stamp import"),
+        ('import { key } from "assets/config.js";\n', "cannot stamp import"),
+        ('import { key } from "config.js";\n', "cannot stamp import"),
+        ('import "./config.js?v=G1";\n', "cannot stamp import"),
+        ('const c = "./config.js?x=1";\n', "cannot stamp"),
+        ("const c = `./${name}.js`;\n", "cannot stamp"),
+        ('const lazy = import("/assets/lazy.js");\n', "cannot stamp import"),
+        ("const lazy = import(WHERE);\n", r"cannot stamp import\(WHERE\)"),
+        ("const lazy = import(base + name);\n", "cannot stamp import"),
+    ],
+)
+def test_refuses_an_import_it_cannot_stamp(site, script, error):
+    (site[0] / "assets" / "other.js").write_text(script, encoding="utf-8")
+    with pytest.raises(SystemExit, match=error):
+        stamp(site, "--check")
+
+
+def test_esri_s_sdk_is_imported_as_it_is(site):
+    script = (
+        'import "https://js.arcgis.com/5.1/";\n'
+        'import Map from "@arcgis/core/Map.js";\n'
+        "const load = (n) => $arcgis.import(`@arcgis/core/${n}.js`);\n"
+        'const [Graphic] = await $arcgis.import(["@arcgis/core/Graphic.js"]);\n'
+        'const later = import("@arcgis/core/Camera.js");\n'
+    )
+    (site[0] / "assets" / "other.js").write_text(script, encoding="utf-8")
+    stamp(site)
+    assert text(site, "assets/other.js") == script
+
+
+def test_refuses_a_stylesheet_that_imports_another(site):
+    (site[0] / "assets" / "site.css").write_text('@import "more.css";\n')
+    with pytest.raises(SystemExit, match="@import is not stamped"):
+        stamp(site, "--check")
 
 
 def test_refuses_a_missing_module(site):
     (site[0] / "assets" / "lazy.js").unlink()
     with pytest.raises(SystemExit, match=r"lazy\.js is not a module"):
-        stamp(site)
+        stamp(site, "--check")
 
 
 def test_refuses_modules_that_import_in_a_circle(site):
     (site[0] / "assets" / "config.js").write_text('import "./app.js";\n')
     with pytest.raises(SystemExit, match=r"in a circle: .*app\.js"):
-        stamp(site)
+        stamp(site, "--check")
+
+
+def test_refuses_a_site_that_is_not_there(tmp_path):
+    with pytest.raises(SystemExit, match="not a folder"):
+        sa.main(["--site", str(tmp_path / "gone"), "--check"])
+    (tmp_path / "empty" / "assets").mkdir(parents=True)
+    (tmp_path / "empty" / "assets" / "a.js").write_text("", encoding="utf-8")
+    with pytest.raises(SystemExit, match="no pages"):
+        sa.main(["--site", str(tmp_path / "empty"), "--check"])
+
+
+def test_refuses_a_missing_template(site, tmp_path):
+    gone = str(tmp_path / "gone.template.html")
+    with pytest.raises(SystemExit, match="no such template"):
+        sa.main(["--site", str(site[0]), "--template", gone, "--check"])
 
 
 def test_unstamped_and_without_stamps():

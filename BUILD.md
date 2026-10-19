@@ -300,7 +300,11 @@ for Python; 2-space YAML and TOML). By hand: `.venv/bin/ruff format .` and `.ven
 - `test_stamp_assets.py`: the stamper, on a made-up site: only local scripts and stylesheets stamped, with the hash
   of the file as served (a module's taken after its imports are stamped, so a change reaches every importer and page);
   each importer names a module alike; a second run changes nothing; `--check` writes nothing and exits 3; a stale or
-  conflicting stamp replaced; and its refusals (a missing file, another query, an unquoted URL, an import circle);
+  conflicting stamp replaced; a `<link>` read as HTML reads it (`rel` without quotes, a `>` inside a quoted value) and a
+  `modulepreload` stamped; Esri's SDK left alone; and each thing it cannot stamp stopping `--check` (a missing file or
+  module, another query or a fragment, a bad stamp, an unquoted or doubled URL, an inline script or import map naming a
+  module, a template-literal, root, bare or variable import, a stylesheet's `@import`, an import circle, a missing site,
+  a site with no pages, a missing template);
 - `test_publish_dryrun.py`: the publish dry run's checks pass on a dry run of the current build
   (`tests/fixtures/publish/dry-run/`, a copy of `target/publish/`: copy it there again after changing what the publish
   sends) and each fails on a fault planted in it (a layer left editable, plain CC0 on TTB's text, a phone element
@@ -478,13 +482,19 @@ change to the site is a pull request like any other: `site.yml` tests it on the 
 merged to `main`.
 
 **Version stamps (#138).** GitHub Pages serves every file with `cache-control: max-age=600`, so a browser that loaded a
-script shortly before a deploy could keep the old one for ten minutes. So every local `<script src>` and
-`<link rel="stylesheet" href>` in the pages (and in `src/site/walk.template.html`, so `walk.html` comes out stamped)
-carries a short hash of the file it names, `assets/timeline.js?v=3f2a91c`, and so does every import of one of the site's
-own modules by another (`from "./maps.js?v=…"`, and `const MAPS = "./maps.js?v=…"`, which `vineyards.js` imports when
-asked): a changed file gets a new URL, which browsers fetch at once. A module's hash is taken after its own imports are
-stamped, so a change to `map-config.js` changes the stamps of `maps.js`, of the scripts that import it and of their
-pages; and every importer names a module by the same URL, so a page never loads two copies of one.
+script shortly before a deploy could keep the old one for ten minutes. So every local `<script src>` and every local
+href of a `<link>` whose rel is `stylesheet`, `modulepreload` or `preload` in the pages (read as a browser reads them;
+also in `src/site/walk.template.html`, so `walk.html` comes out stamped) carries a short hash of the file it names,
+`assets/timeline.js?v=3f2a91c`, and so does every relative module path in plain quotes in the site's scripts: the
+imports of its own modules by each other (`from "./maps.js?v=…"`) and `const MAPS = "./maps.js?v=…"`, which
+`vineyards.js` gives `import()` when asked. A changed file gets a new URL, which browsers fetch at once. A module's hash
+is taken after its own imports are stamped, so a change to `map-config.js` changes the stamps of `maps.js`, of the
+scripts that import it and of their pages; and every importer names a module by the same URL, so a page never loads two
+copies of one. Whatever the stamper cannot stamp stops it, naming where, rather than being skipped: a `src` or `href`
+without quotes; a local URL with another query or a fragment; in a script, an import of anything but a relative path in
+plain quotes or Esri's SDK (its https URL or its `@arcgis/core/` modules), a template literal, `import()` of anything
+but such a path or a constant holding one; a stylesheet with `@import`; an inline `<script>` that names a module (move
+it into a file); an import circle; a missing site or template.
 `src/site/stamp_assets.py` writes them (standard library only); running it again changes nothing. **After changing a
 script or stylesheet, run `./build.sh site-data` (or the stamper alone, `./build.sh stamp`, which needs no build) and
 commit what it changes.** A branch that merges `main` and meets a conflict on a stamped line resolves it as any other,

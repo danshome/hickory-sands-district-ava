@@ -14,6 +14,7 @@ site.yml runs these before it deploys docs/ to GitHub Pages. Standard library
 only, so the lint workflow runs them too.
 """
 
+import html
 from html.parser import HTMLParser
 import os
 import re
@@ -228,3 +229,59 @@ def test_no_page_names_or_links_the_2023_storymap():
             for m in STORYMAP.finditer(fh.read()):
                 found.append(f"{os.path.relpath(path, ROOT)}: {m[0]!r}")
     assert not found
+
+
+# --- search engines and shared links (#167) -----------------------------------
+
+
+def head_tags(text):
+    """Returns the page's title, description, canonical and og: tags."""
+    tags = dict(
+        re.findall(r'<meta property="(og:[a-z:_]+)" content="([^"]*)">', text)
+    )
+    tags["title"] = html.unescape(
+        re.search(r"<title>(.*?)</title>", text).group(1)
+    )
+    desc = re.search(r'<meta name="description" content="([^"]*)">', text)
+    tags["description"] = html.unescape(desc.group(1)) if desc else None
+    canon = re.search(r'<link rel="canonical" href="([^"]+)">', text)
+    tags["canonical"] = canon.group(1) if canon else None
+    tags["noindex"] = 'name="robots"' in text
+    return tags
+
+
+def indexed():
+    """Returns {page: tags} for every page search engines may index."""
+    out = {}
+    for page in PAGES:
+        with open(os.path.join(SITE, page), encoding="utf-8") as fh:
+            tags = head_tags(fh.read())
+        if not tags["noindex"]:
+            out[page] = tags
+    return out
+
+
+def test_the_sitemap_lists_every_indexed_page_and_no_other():
+    with open(os.path.join(SITE, "sitemap.xml"), encoding="utf-8") as fh:
+        listed = re.findall(r"<loc>([^<]+)</loc>", fh.read())
+    assert sorted(listed) == sorted(t["canonical"] for t in indexed().values())
+
+
+def test_robots_txt_allows_all_and_names_the_sitemap():
+    with open(os.path.join(SITE, "robots.txt"), encoding="utf-8") as fh:
+        text = fh.read()
+    assert "Disallow: /\n" not in text
+    assert f"Sitemap: {SITE_URL}sitemap.xml" in text
+
+
+@pytest.mark.parametrize("path", [*PAGES, *TEMPLATES])
+def test_an_indexed_page_has_its_share_tags(path):
+    with open(os.path.join(SITE, path), encoding="utf-8") as fh:
+        tags = head_tags(fh.read())
+    if tags["noindex"]:
+        return
+    assert html.unescape(tags["og:title"]) == tags["title"]
+    assert html.unescape(tags["og:description"]) == tags["description"]
+    assert tags["og:url"] == tags["canonical"]
+    assert tags["og:image"] == f"{SITE_URL}assets/share.jpg"
+    assert os.path.isfile(os.path.join(SITE, "assets", "share.jpg"))

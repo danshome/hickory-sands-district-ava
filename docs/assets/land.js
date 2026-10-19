@@ -505,6 +505,29 @@
       live.setAttribute("aria-live", "polite");
       added(fig.appendChild(live));
 
+      // Analytics (analytics.js's window.hsdTrack, absent or off on most visits):
+      // a layer counts once it has stayed in the figure for a second, once
+      // each, so scrolling past several sends nothing for them; the first
+      // drawing, made before the reader does anything, is not counted.
+      var counted = {};
+      var dwell = 0;
+      var ready = false;
+      function used(n) {
+        if (!ready) {
+          return;
+        }
+        clearTimeout(dwell);
+        dwell = setTimeout(function () {
+          if (n !== current || counted[n]) {
+            return;
+          }
+          counted[n] = true;
+          if (window.hsdTrack) {
+            window.hsdTrack("land_section", { section: "slice-" + n });
+          }
+        }, 1000);
+      }
+
       function pad(n) {
         return (n < 10 ? "0" : "") + n;
       }
@@ -530,6 +553,9 @@
         apply(!reduce.matches);
         if (announce && changed) {
           live.textContent = "Layer " + n + " of " + STEPS + ": " + title + ".";
+        }
+        if (changed) {
+          used(n);
         }
         return changed;
       }
@@ -579,6 +605,7 @@
       body.classList.add("lnd-has-figure");
       draw();
       show(1, false);
+      ready = true;
 
       // Beside the steps (wide) or above them (a phone held upright), the
       // figure follows the step that crosses a reading line: the middle of a

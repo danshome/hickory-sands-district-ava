@@ -422,7 +422,9 @@ for Python; 2-space YAML and TOML). By hand: `.venv/bin/ruff format .` and `.ven
   a site with no pages, a missing template);
 - `test_analytics.py`: every page (and the walk template) loads `docs/assets/analytics.js` once, in its head, and no
   other file names Google's tag; the script's opt-outs and settings; no form or script puts what is typed in the page's
-  address; and, in node when it is installed, the script run against made-up browsers (see Analytics below);
+  address; the events' allow-list, and every `window.hsdTrack` call in `docs/assets/` sending an allowed event with
+  literal or listed params and nothing read from a field; and, in node when it is installed, the script run against
+  made-up browsers, events included (see Analytics below);
 - `test_site_nav.py`: every page in `docs/`, and `src/site/walk.template.html`, has Home's menu links in Home's order,
   each opening a page in `docs/`, and marks its own link, and only that, `aria-current="page"` (a page not in the menu
   marks none);
@@ -728,10 +730,37 @@ walk page through its template), and only that script loads Google's tag (gtag.j
 as `MEASUREMENT_ID` in that file: public by nature; empty, nothing loads. Nothing loads off the live site
 (`location.hostname` is not hickorysandsdistrictava.org: localhost, 127.0.0.1, previews), in an automated browser
 (`navigator.webdriver`, so the site's tests and every Playwright run never count), or for a browser that sends Do Not
-Track or Global Privacy Control. It turns Google signals and ad personalization off and adds no events of its own: gtag.js
-sends the page view and what the stream's enhanced measurement collects, whose form events carry a form's id, name and
-destination, never what is typed. The colophon says so. `tests/test_analytics.py` checks the pages and the script and
-runs it in node against made-up browsers; `tests/live/test_site_mobile.py` fails on any request to Google Analytics.
+Track or Global Privacy Control. It turns Google signals and ad personalization off. gtag.js sends the page view and what
+the stream's enhanced measurement collects, whose form events carry a form's id, name and destination, never what is
+typed. The colophon says so. `tests/test_analytics.py` checks the pages and the script and runs it in node against
+made-up browsers; `tests/live/test_site_mobile.py` fails on any request to Google Analytics.
+
+The site's own events show what people use (Dan, 2026-10-19). A page's script sends one only through
+`window.hsdTrack(name, params)`, which analytics.js defines on every page and which does nothing whenever Analytics is
+off (the same cases as above) or the call breaks a rule. Scripts call it as `window.hsdTrack?.(...)` (or under
+`if (window.hsdTrack)`), so a page works without it, and it never throws. It sends only the events in its `EVENTS`
+allow-list; a param only from that event's list, as one of its fixed words or a whole number from 0 to 999; anything
+else drops the whole call. Never free text, a place, an id or anything typed. It adds `page` itself, from the address
+(`home`, `about`, `boundary`, `colophon`, `journal`, `land`, `logo-vote`, `map`, `status`, `vineyards`, `walk`,
+`other`), and stops after 300 events in a page view. Each param is a custom dimension in Analytics (event scope):
+
+| Event | Params | Sent |
+|---|---|---|
+| `map_layer` | `group` (the panel's group: district, places, wells, vineyards, boundaries, geology, aquifer), `layer` (the switch's `data-switch`, or `all` for the group's own switch), `state` (on, off) | a group or layer switch on the map, by the reader |
+| `map_open_item` | `kind` (step, point, well, vineyard, aquifer, other) | a popup opens on a new feature |
+| `map_view` | `action` (3d, 2d, home, basemap, wells_filter, wells_reset, panel_min, panel_restore, about), `choice` (button; the basemap: imagery, topo, dark; the filter: use, yield, depth, unreported, hickory_only; the about link: about-district, about-sources; sheet, the phone's Layers sheet) | the map's buttons; a filter one second after it last moved, once |
+| `map_mode` | `mode` (map, aquifer: opened with the aquifer on) | once, when the map opens |
+| `walk_step` | `step`, `total` (numbers) | a step on Walk the line's reading line for a second, once per step |
+| `walk_complete` | `total` | the last step reached so |
+| `land_section` | `section` (slice-1 to slice-6, The land's slice; timeline-1 to timeline-8, its timeline) | a layer or stage in the figure for a second, once each, the first drawing not counted |
+| `vote_cast` | `dir` (like, pass) | a vote on the logo vote |
+| `vote_undo` | none | a vote taken back |
+| `vote_upload` | `result` (ok; refused, an answer the page explains; error) | a design sent |
+| `vineyard_form` | `step` (start; blocks; details, steps 3 and 4; review; sent; error, the "Not sent yet" screen; email_fallback, its email link tapped) | each step once each time the form opens |
+
+So the parameter names to register are `page`, `group`, `layer`, `state`, `kind`, `action`, `choice`, `mode`, `step`,
+`total`, `section`, `dir` and `result`. A new event or word goes in analytics.js's `EVENTS`, in `EVENTS` in
+`tests/test_analytics.py` and in this table; a new switch on the map fails the tests until it is listed.
 
 The vineyards page (`vineyards.html`) lists every vineyard of the site's data, grouped as on The water, with a map
 (`assets/vineyard-list.js`, from `assets/vineyards/register.json` and `vineyards.geojson`; Esri's SDK loads when the map

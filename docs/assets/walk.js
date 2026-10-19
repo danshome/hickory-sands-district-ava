@@ -39,11 +39,34 @@ async function follow(element) {
   let current = null;
   let moving = null;
 
+  // Analytics (analytics.js's window.hsdTrack, absent or off on most visits):
+  // a step counts once it has stayed on the reading line for a second, once
+  // per step, so scrolling past many sends nothing for them; the last step
+  // reached is the walk complete.
+  const total = items.length;
+  const last = Math.max(...items.map((item) => Number(item.dataset.step)));
+  const counted = new Set();
+  let dwell = 0;
+  function reached(step) {
+    clearTimeout(dwell);
+    dwell = setTimeout(() => {
+      if (step !== current || counted.has(step)) {
+        return;
+      }
+      counted.add(step);
+      window.hsdTrack?.("walk_step", { step, total });
+      if (step === last) {
+        window.hsdTrack?.("walk_complete", { total });
+      }
+    }, 1000);
+  }
+
   function show(step) {
     if (step === current) {
       return;
     }
     current = step;
+    reached(step);
     for (const item of items) {
       item.classList.toggle("is-current", Number(item.dataset.step) === step);
     }

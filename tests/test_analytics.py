@@ -7,13 +7,18 @@ Google's tag comes only through analytics.js. The script loads gtag.js only on
 the live site, never for an automated browser (navigator.webdriver: the site's
 own browser tests never count), with Do Not Track or Global Privacy Control,
 or with an empty measurement ID; it turns Google signals and ad
-personalization off and sends nothing of its own but the page view. No form
+personalization off. Besides the page view it sends only the site's own events,
+through window.hsdTrack: only the names in EVENTS below, each with only its
+own params, each a word from that param's fixed list or a small whole number;
+every call in docs/assets/ names one with literal or listed params and passes
+nothing read from a form's field. No form
 puts what a visitor types into the page's address (Analytics reads the address
 of every page it counts): every form is posted or mailed, and no script
 writes the address bar. And, in node when it is installed (it is on GitHub's
 Linux runners), the script is run against a made-up browser: on the live site
-it loads gtag.js with those settings, and in every other case it does nothing.
-Standard library only, so the lint workflow runs these.
+it loads gtag.js with those settings and sends only the allowed events, and in
+every other case it does nothing, events included. Standard library only, so
+the lint workflow runs these.
 """
 
 from html.parser import HTMLParser
@@ -73,7 +78,7 @@ process.stdin.on("end", () => {
   const added = [];
   const context = {
     navigator: env.navigator,
-    location: { hostname: env.hostname },
+    location: { hostname: env.hostname, pathname: env.pathname || "/" },
     document: {
       createElement: (tag) => ({ tag }),
       head: { appendChild: (el) => (added.push(el), el) },
@@ -86,6 +91,10 @@ process.stdin.on("end", () => {
   vm.runInNewContext(fs.readFileSync(path, "utf8"), context, {
     filename: path,
   });
+  // The page's own events, as its scripts would send them.
+  for (const [name, params] of env.calls || []) {
+    context.hsdTrack(name, params);
+  }
   const layer = context.dataLayer;
   process.stdout.write(JSON.stringify({
     added: added.map((e) => ({ tag: e.tag, src: e.src, async: e.async })),
@@ -237,7 +246,9 @@ def test_the_script_turns_google_signals_and_ad_personalization_off():
     assert re.search(r"\ballow_google_signals: false,", text)
     assert re.search(r"\ballow_ad_personalization_signals: false,", text)
     assert "send_page_view: true" in text
-    assert len(re.findall(r'\bgtag\("', text)) == 2, "only js and config"
+    # js and config once each, and the events track lets through
+    calls = re.findall(r'\bgtag\("(\w+)"', text)
+    assert sorted(calls) == ["config", "event", "js"], calls
 
 
 def test_the_script_loads_only_gtag_and_parses_and_keeps_nothing():
@@ -431,3 +442,431 @@ def test_nothing_loads_without_a_measurement_id(run, tmp_path):
     script = tmp_path / "analytics.js"
     script.write_text(empty, encoding="utf-8")
     assert run(visitor(), str(script)) == {"added": [], "dataLayer": None}
+
+
+# --- the site's own events ---------------------------------------------------
+
+# Every event analytics.js lets through, and each of its params: the words it
+# may take, or INT (a whole number from 0 to 999). BUILD.md (Analytics) lists
+# the same; each param is a custom dimension in Analytics. Every event also
+# carries page, which track adds from the page's address.
+INT = "int"
+MAP_GROUPS = [
+    "district",
+    "places",
+    "wells",
+    "vineyards",
+    "boundaries",
+    "geology",
+    "aquifer",
+]
+MAP_LAYERS = [
+    "all",
+    "ava",
+    "counties",
+    "district",
+    "location",
+    "member",
+    "official-outcrop",
+    "outside-official",
+    "precambrian",
+    "precambrian-buried",
+    "sides",
+    "steps",
+    "top-buried",
+    "top-surface",
+    "towns",
+    "vineyards-developing",
+    "vineyards-historical",
+    "vineyards-hsd",
+    "vineyards-llano",
+    "wells",
+    "wells-water",
+]
+EVENTS = {
+    "map_layer": {
+        "group": MAP_GROUPS,
+        "layer": MAP_LAYERS,
+        "state": ["on", "off"],
+    },
+    "map_open_item": {
+        "kind": ["step", "point", "well", "vineyard", "aquifer", "other"],
+    },
+    "map_view": {
+        "action": [
+            "3d",
+            "2d",
+            "home",
+            "basemap",
+            "wells_filter",
+            "wells_reset",
+            "panel_min",
+            "panel_restore",
+            "about",
+        ],
+        "choice": [
+            "button",
+            "imagery",
+            "topo",
+            "dark",
+            "use",
+            "yield",
+            "depth",
+            "unreported",
+            "hickory_only",
+            "about-district",
+            "about-sources",
+            "sheet",
+        ],
+    },
+    "map_mode": {"mode": ["map", "aquifer"]},
+    "walk_step": {"step": INT, "total": INT},
+    "walk_complete": {"total": INT},
+    "land_section": {
+        "section": [f"slice-{n}" for n in range(1, 7)]
+        + [f"timeline-{n}" for n in range(1, 9)],
+    },
+    "vote_cast": {"dir": ["like", "pass"]},
+    "vote_undo": {},
+    "vote_upload": {"result": ["ok", "refused", "error"]},
+    "vineyard_form": {
+        "step": [
+            "start",
+            "blocks",
+            "details",
+            "review",
+            "sent",
+            "email_fallback",
+            "error",
+        ],
+    },
+}
+PAGE_NAMES = [
+    "home",
+    "about",
+    "boundary",
+    "colophon",
+    "journal",
+    "land",
+    "logo-vote",
+    "map",
+    "status",
+    "vineyards",
+    "walk",
+    "other",
+]
+# What a param's value must never be read from: a field's value or files, a
+# page's text, its address, or a layer's or file's name.
+READS = (
+    ".value",
+    "valueAsNumber",
+    ".files",
+    "FormData",
+    "textContent",
+    "innerText",
+    "innerHTML",
+    "location",
+    ".title",
+    ".name",
+    "getAttribute",
+    "prompt(",
+)
+
+
+def events_in_the_script():
+    """The event names in analytics.js's EVENTS, in its order."""
+    text = read(SCRIPT)
+    block = re.search(r"\n  const EVENTS = \{\n(.*?)\n  \};\n", text, re.S)
+    assert block, "analytics.js has no EVENTS"
+    return re.findall(r"^    (\w+): ", block.group(1), re.M)
+
+
+def test_the_script_allows_only_the_listed_events():
+    assert events_in_the_script() == list(EVENTS)
+
+
+def test_the_event_names_and_params_suit_analytics():
+    # GA4: names of letters, digits and _, up to 40; at most 25 params.
+    for name, params in EVENTS.items():
+        assert re.fullmatch(r"[a-z][a-z0-9_]{0,39}", name), name
+        assert len(params) < 25, name
+        for param, vocabulary in params.items():
+            assert re.fullmatch(r"[a-z][a-z0-9_]{0,39}", param), param
+            assert param != "page", "track adds page itself"
+            if vocabulary != INT:
+                for word in vocabulary:
+                    assert re.fullmatch(r"[a-z0-9][a-z0-9_-]{0,29}", word)
+
+
+def test_the_map_s_switches_are_all_listed():
+    # A new switch on the map is counted only once it is listed here and in
+    # analytics.js.
+    text = read(os.path.join(DOCS, "map.html"))
+    groups = set(re.findall(r'data-group-switch="([^"]+)"', text))
+    switches = set(re.findall(r'data-switch="([^"]+)"', text))
+    assert groups <= set(MAP_GROUPS), groups - set(MAP_GROUPS)
+    # wells-hickory-only is a filter (map_view wells_filter hickory_only)
+    layers = switches - {"wells-hickory-only"}
+    assert layers <= set(MAP_LAYERS), layers - set(MAP_LAYERS)
+    url = read(os.path.join(ASSETS, "map-url.js"))
+    listed = re.search(r"export const GROUPS = \[(.*?)\];", url, re.S)
+    assert re.findall(r'"([^"]+)"', listed.group(1)) == MAP_GROUPS
+    basemaps = set(re.findall(r'data-basemap="([^"]+)"', text))
+    abouts = set(re.findall(r'data-about="([^"]+)"', text))
+    assert basemaps | abouts <= set(EVENTS["map_view"]["choice"])
+
+
+def split_top(text, sep=","):
+    """Splits text at sep outside brackets and strings."""
+    parts, depth, quote, start = [], 0, None, 0
+    i = 0
+    while i < len(text):
+        c = text[i]
+        if quote:
+            if c == "\\":
+                i += 1
+            elif c == quote:
+                quote = None
+        elif c in "\"'`":
+            quote = c
+        elif c in "([{":
+            depth += 1
+        elif c in ")]}":
+            depth -= 1
+        elif c == sep and depth == 0:
+            parts.append(text[start:i])
+            start = i + 1
+        i += 1
+    parts.append(text[start:])
+    return [p.strip() for p in parts if p.strip()]
+
+
+def closing(text, at):
+    """The index just past the bracket that closes the one at text[at]."""
+    pairs = {"(": ")", "{": "}", "[": "]"}
+    stack, quote, i = [], None, at
+    while i < len(text):
+        c = text[i]
+        if quote:
+            if c == "\\":
+                i += 1
+            elif c == quote:
+                quote = None
+        elif c in "\"'`":
+            quote = c
+        elif c in pairs:
+            stack.append(pairs[c])
+        elif c in ")}]":
+            assert stack and stack.pop() == c, text[at : i + 1]
+            if not stack:
+                return i + 1
+        i += 1
+    raise AssertionError("unclosed: " + text[at : at + 80])
+
+
+CALL = re.compile(r"window\.hsdTrack(\?\.)?\(")
+GUARD = "if (window.hsdTrack) {"
+
+
+def track_calls():
+    """Every hsdTrack call in docs/assets/ but analytics.js.
+
+    Returns:
+        The calls, as (where, [the name's text, the params' text]), and
+        where hsdTrack is named but neither called nor guarded.
+    """
+    calls, stray = [], []
+    for name in sorted(os.listdir(ASSETS)):
+        path = os.path.join(ASSETS, name)
+        if not name.endswith((".js", ".mjs")) or path == SCRIPT:
+            continue
+        text = read(path)
+        for found in re.finditer(r"hsdTrack", text):
+            line_start = text.rfind("\n", 0, found.start()) + 1
+            line = text[line_start : text.find("\n", found.start())]
+            where = f"{name}:{text.count(chr(10), 0, found.start()) + 1}"
+            if line.lstrip().startswith(("//", "*", "/*")):
+                continue  # a comment
+            if line.strip() == GUARD:
+                continue
+            call = CALL.match(text, found.start() - len("window."))
+            if not call:
+                stray.append(where)
+                continue
+            if not call.group(1):
+                # a plain call, only right under its guard
+                before = text[:line_start].rstrip().rsplit("\n", 1)[-1]
+                if before.strip() != GUARD:
+                    stray.append(where)
+                    continue
+            open_at = call.end() - 1
+            args = split_top(text[open_at + 1 : closing(text, open_at) - 1])
+            calls.append((where, args))
+    return calls, stray
+
+
+def test_every_mention_of_track_is_a_call_or_its_guard():
+    calls, stray = track_calls()
+    assert not stray, f"hsdTrack named but not called as allowed: {stray}"
+    assert len(calls) >= len(EVENTS), "fewer calls than events"
+
+
+def test_every_event_is_sent_somewhere():
+    calls, _ = track_calls()
+    sent = {json.loads(args[0]) for _, args in calls if args}
+    assert sent == set(EVENTS), set(EVENTS) ^ sent
+
+
+@pytest.mark.parametrize(
+    ("where", "args"), track_calls()[0], ids=lambda v: str(v)[:40]
+)
+def test_every_call_sends_an_allowed_event_with_allowed_params(where, args):
+    assert len(args) == 2, f"{where}: track(name, {{params}})"
+    name, params = args
+    assert re.fullmatch(r'"\w+"', name), f"{where}: a literal name"
+    name = json.loads(name)
+    assert name in EVENTS, f"{where}: {name} is not an allowed event"
+    allowed = EVENTS[name]
+    assert params.startswith("{") and params.endswith("}"), where
+    for entry in split_top(params[1:-1]):
+        key, _, value = entry.partition(":")
+        key = key.strip()
+        value = value.strip() or key  # { step } is { step: step }
+        assert key in allowed, f"{where}: {name} has no param {key}"
+        vocabulary = allowed[key]
+        for read_ in READS:
+            assert read_ not in value, f"{where}: {key} reads {read_}"
+        if re.fullmatch(r"\d+", value):
+            assert vocabulary == INT, f"{where}: {key} is not a number"
+        for literal in re.findall(r'"([^"]*)"', value):
+            assert vocabulary != INT, f"{where}: {key} takes a number"
+            assert any(word.startswith(literal) for word in vocabulary), (
+                f"{where}: {key} {literal!r} is not an allowed word"
+            )
+        assert "'" not in value and "`" not in value, f"{where}: {value}"
+
+
+def test_no_call_passes_what_a_field_holds():
+    # The params' text never reads a field: .value, files, a form's data.
+    calls, _ = track_calls()
+    for where, args in calls:
+        joined = " ".join(args)
+        for read_ in (".value", "valueAsNumber", ".files", "FormData"):
+            assert read_ not in joined, f"{where} reads {read_}"
+
+
+# --- the events, run in node --------------------------------------------------
+
+
+def every_allowed_call():
+    """One call for each word and number each param may take."""
+    calls = []
+    for name, params in EVENTS.items():
+        if not params:
+            calls.append([name, {}])
+        for param, vocabulary in params.items():
+            words = [0, 7, 999] if vocabulary == INT else vocabulary
+            calls.extend([name, {param: word}] for word in words)
+    return calls
+
+
+def test_the_allowed_events_are_sent_with_the_page(run):
+    if not measurement_id():
+        pytest.skip("no measurement ID: nothing loads")
+    calls = every_allowed_call()
+    got = run({**visitor(), "pathname": "/map.html", "calls": calls})
+    events = got["dataLayer"][2:]
+    assert events == [
+        ["event", name, {**params, "page": "map"}] for name, params in calls
+    ]
+
+
+@pytest.mark.parametrize(
+    ("pathname", "page"),
+    [
+        ("/", "home"),
+        ("/index.html", "home"),
+        ("/walk.html", "walk"),
+        ("/logo-vote.html", "logo-vote"),
+        ("/a/b/land.html", "land"),
+        ("/someone@example.com.html", "other"),
+        ("/map.html/../x", "other"),
+    ],
+)
+def test_the_page_is_one_of_the_site_s_pages(run, pathname, page):
+    if not measurement_id():
+        pytest.skip("no measurement ID: nothing loads")
+    assert page in PAGE_NAMES
+    got = run({**visitor(), "pathname": pathname, "calls": [["vote_undo", {}]]})
+    assert got["dataLayer"][2:] == [["event", "vote_undo", {"page": page}]]
+
+
+@pytest.mark.parametrize(
+    "call",
+    [
+        pytest.param(["page_view", {}], id="not-an-event"),
+        pytest.param(["map_layers", {}], id="near-miss"),
+        pytest.param(["toString", {}], id="inherited"),
+        pytest.param([7, {}], id="a-number-for-a-name"),
+        pytest.param(["vote_undo", {"dir": "like"}], id="another-s-param"),
+        pytest.param(["vote_cast", {"dir": "Like"}], id="not-the-word"),
+        pytest.param(
+            ["vote_cast", {"dir": "like", "page": "map"}], id="page-given"
+        ),
+        pytest.param(
+            ["map_view", {"action": "about", "choice": "a typed name"}],
+            id="free-text",
+        ),
+        pytest.param(
+            ["map_view", {"action": "basemap", "choice": ["dark"]}],
+            id="a-list",
+        ),
+        pytest.param(["walk_step", {"step": -1}], id="negative"),
+        pytest.param(["walk_step", {"step": 1000}], id="too-big"),
+        pytest.param(["walk_step", {"step": 1.5}], id="a-fraction"),
+        pytest.param(["walk_step", {"step": "3"}], id="a-number-as-text"),
+        pytest.param(["walk_step", {"step": 30.2967}], id="a-coordinate"),
+        pytest.param(["land_section", {"section": "slice-7"}], id="no-slice"),
+        pytest.param(["vote_cast", "like"], id="text-for-params"),
+    ],
+)
+def test_a_call_that_breaks_a_rule_sends_nothing(run, call):
+    if not measurement_id():
+        pytest.skip("no measurement ID: nothing loads")
+    got = run({**visitor(), "calls": [call, ["vote_undo", None]]})
+    # the bad call is dropped; the good one after it still goes
+    assert got["dataLayer"][2:] == [["event", "vote_undo", {"page": "home"}]]
+
+
+def test_a_page_view_sends_at_most_300_events(run):
+    if not measurement_id():
+        pytest.skip("no measurement ID: nothing loads")
+    got = run({**visitor(), "calls": [["vote_undo", {}]] * 400})
+    assert len(got["dataLayer"]) == 2 + 300
+
+
+@pytest.mark.parametrize(
+    "env",
+    [
+        pytest.param(visitor(webdriver=True), id="automated-browser"),
+        pytest.param(visitor(hostname="localhost"), id="localhost"),
+        pytest.param(visitor(doNotTrack="1"), id="do-not-track"),
+        pytest.param(
+            visitor(globalPrivacyControl=True), id="global-privacy-control"
+        ),
+    ],
+)
+def test_track_does_nothing_when_analytics_is_off(run, env):
+    got = run({**env, "calls": every_allowed_call()})
+    assert got == {"added": [], "dataLayer": None}
+
+
+def test_track_does_nothing_without_a_measurement_id(run, tmp_path):
+    text = read(SCRIPT)
+    empty = re.sub(
+        r'const MEASUREMENT_ID = "[^"]*";', 'const MEASUREMENT_ID = "";', text
+    )
+    script = tmp_path / "analytics.js"
+    script.write_text(empty, encoding="utf-8")
+    got = run({**visitor(), "calls": every_allowed_call()}, str(script))
+    assert got == {"added": [], "dataLayer": None}

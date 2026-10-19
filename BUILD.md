@@ -487,11 +487,11 @@ stamped, so a change to `map-config.js` changes the stamps of `maps.js`, of the 
 pages; and every importer names a module by the same URL, so a page never loads two copies of one.
 `src/site/stamp_assets.py` writes them (standard library only); running it again changes nothing. **After changing a
 script or stylesheet, run `./build.sh site-data` (or the stamper alone, `./build.sh stamp`, which needs no build) and
-commit what it changes.** A branch that merges `main` and meets a conflict in a stamp takes either side and runs it
-again. `./build.sh` checks them
-(`--check`, exit 3 when one is missing or stale), and so do `tests/test_site.py` (the lint and site workflows) on every
-pull request. The pages themselves, the images and the data files (`docs/data/`, `docs/assets/aquifer/`) are not
-stamped: a browser takes a new page once its copy is ten minutes old.
+commit what it changes.** A branch that merges `main` and meets a conflict on a stamped line resolves it as any other,
+keeping the code of both sides with either stamp, then runs it again. `./build.sh` checks them (`--check`, exit 3
+when one is missing or stale), and so do `tests/test_site.py` (the lint and site workflows) on every pull request.
+The pages themselves, the images and the data files (`docs/data/`, `docs/assets/aquifer/`) are not stamped: a
+browser takes a new page once its copy is ten minutes old.
 
 The rest is set outside the repository, once:
 

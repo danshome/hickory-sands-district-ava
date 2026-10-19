@@ -17,9 +17,9 @@ two copies of one module.
 
 Running it again changes nothing. After changing a script or stylesheet, or
 merging a branch that did, run it (./build.sh stamp, or ./build.sh site-data)
-and commit what it changes; a conflict in a stamp is resolved by taking
-either side and running it again. Standard library only, so the lint workflow
-tests it.
+and commit what it changes. A merge conflict on a stamped line is resolved as
+any other, keeping the code of both sides with either stamp, then it is run
+again. Standard library only, so the lint workflow tests it.
 
 Usage (the project .venv, -E -s -B):
   stamp_assets.py --site docs [--template FILE ...] [--check]

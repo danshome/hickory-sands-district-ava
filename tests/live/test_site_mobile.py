@@ -29,6 +29,8 @@ hasTouch); and a 1440x900 desktop. On every page at every viewport:
 - no console error from the site's own files, uncaught error from them (or
   from no file) or failed request for one (a request the browser aborts is
   not a failure);
+- no request to Google Analytics: docs/assets/analytics.js skips an
+  automated browser (navigator.webdriver), so the tests never count a visit;
 - no sideways scrolling, with the menu shut or open;
 - the menu: a hamburger named "Menu" that opens by a tap (a click on the
   desktop) and by the keyboard, turns into a cross while open and closes the
@@ -86,7 +88,12 @@ as the page scrolls, and still does when the reader scrolls right after
 tapping Later (the tap holds the drawing for 1,200 ms); and, with the page's
 clock stopped so that only the reader can end the hold, a touch outside the
 drawing's buttons or a turn of the wheel ends it at once, while a touch on
-the buttons does not (timeline.js, reader()).
+the buttons does not (timeline.js, reader()); so does the slice through the
+district, at every viewport, with no sideways scrolling, after tapping Next
+too (screenshots of the maps, each step and the questions); and when its data
+is not JSON, malformed, or fails while it is drawn, the slice keeps the
+build's static drawing and the steps, with nothing of land.js left on the
+page.
 A map must settle (ready, not updating) within 30 s of each move, or the
 test fails there.
 Screenshots: target/browser-tests/site/<page>-<viewport>-<test>.png
@@ -383,14 +390,14 @@ PANEL_TO = """(sel) => { const b = document.getElementById('aq-panel-body');
 # (a third of the way down the screen left under the stuck panel, as
 # timeline.js draws it on a phone held upright)
 LAND = """() => {
-  const fig = document.querySelector('.geo-figure');
+  const fig = document.querySelector('#deep-time .geo-figure');
   const panel = fig.getBoundingClientRect().height;
   const line = panel + (innerHeight - panel) / 3;
   const items = [...document.querySelectorAll('.geo-stage')];
   const on = items.findIndex(li => { const r = li.getBoundingClientRect();
     return r.top <= line && r.bottom > line; });
-  return {shown: parseInt(document.querySelector('.geo-count').textContent,
-                          10),
+  return {shown: parseInt(
+            document.querySelector('#deep-time .geo-count').textContent, 10),
           online: on + 1, stuck: getComputedStyle(fig).position}; }"""
 
 # scrolls stage n's top to just under the stuck panel (its scroll margin)
@@ -441,6 +448,29 @@ WIDEN = """async () => {
   none.checked = true; none.dispatchEvent(new Event('change')); }"""
 
 
+# The land's slice (land.js): the step the drawing shows, and the step on its
+# reading line (the middle of a wide screen; on a phone, a third of the way
+# down the screen left under the stuck panel)
+SLICE = """() => {
+  const fig = document.querySelector('.lnd-fig');
+  const wide = matchMedia('(min-width: 1000px)').matches;
+  const panel = wide ? 0 : fig.getBoundingClientRect().height;
+  const line = wide ? innerHeight * 0.455 : panel + (innerHeight - panel) / 3;
+  const items = [...document.querySelectorAll('.lnd-step')];
+  const on = items.findIndex(li => { const r = li.getBoundingClientRect();
+    return r.top <= line && r.bottom > line; });
+  return {shown: parseInt(
+            document.querySelector('.lnd-sec .geo-count').textContent, 10),
+          online: on + 1, stuck: getComputedStyle(fig).position,
+          over: document.documentElement.scrollWidth - innerWidth}; }"""
+
+# scrolls step n onto the reading line: its top just under the stuck panel
+# on a phone (its scroll margin), its middle at the middle of a wide screen
+TO_STEP = """(n) => { const wide = matchMedia('(min-width: 1000px)').matches;
+  document.querySelectorAll('.lnd-step')[n - 1]
+  .scrollIntoView({block: wide ? 'center' : 'start'}); }"""
+
+
 # --------------------------------------------------------------- the browser
 class SiteView(View):
     """One page of the site at one viewport, with what it logged.
@@ -456,9 +486,11 @@ class SiteView(View):
         self.errors = []
         self.refused = []  # Esri's refusals of the basemap key (401, 403)
         self.requested = []  # the site's own files asked for, by path
+        self.counted = []  # requests to Google Analytics: none, ever
         page.on("console", self._console)
         page.on("request", self._request)
         page.on("pageerror", self._pageerror)
+        page.on("request", self._request)
         page.on("requestfailed", self._requestfailed)
         page.on("response", self._response)
 
@@ -488,6 +520,8 @@ class SiteView(View):
     def _request(self, request):
         if own(request.url):
             self.requested.append(urlsplit(request.url).path.lstrip("/"))
+        if analytics(request.url):
+            self.counted.append(request.url)
 
     def _requestfailed(self, request):
         failure = request.failure or ""
@@ -505,6 +539,12 @@ class SiteView(View):
     def problems(self):
         """Returns what the page logged that fails the tests."""
         found = list(self.errors)
+        if self.counted:
+            found.append(
+                f"the test reached Google Analytics ({len(self.counted)} "
+                f"requests, such as {self.counted[0]}): analytics.js must "
+                "skip an automated browser (navigator.webdriver)"
+            )
         if self.refused and not LOCAL:
             found.append(
                 f"Esri refused the basemap key ({len(self.refused)} "
@@ -523,6 +563,19 @@ def esri(url):
     """True when url is on Esri's ArcGIS services (arcgis.com)."""
     host = urlsplit(url).hostname or ""
     return host == "arcgis.com" or host.endswith(".arcgis.com")
+
+
+def analytics(url):
+    """True when url is Google's tag or one of Google Analytics' collectors."""
+    host = urlsplit(url).hostname or ""
+    return any(
+        host == name or host.endswith("." + name)
+        for name in (
+            "googletagmanager.com",
+            "google-analytics.com",
+            "analytics.google.com",
+        )
+    )
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -1381,13 +1434,163 @@ def test_land_timeline_steps_on_scroll(site_page):
     # ends (here, by its 1,200 ms timer)
     page.evaluate(TO_STAGE, 2)
     page.wait_for_timeout(1500)
-    page.locator(".geo-step").nth(1).tap()  # Later
+    page.locator("#deep-time .geo-step").nth(1).tap()  # Later
     page.wait_for_timeout(300)
     page.evaluate(TO_STAGE, 6)
     try:
         view.wait(functools.partial(follows, 6), timeout=5)
     except AssertionError as e:
         problems.append(f"scrolling right after Later: {e}")
+    problems += view.problems()
+    assert not problems, f"{view.name}:\n  " + "\n  ".join(problems)
+
+
+@pytest.mark.parametrize(
+    "site_page",
+    cells(["land.html"], [*PHONES, "desktop-1440x900"]),
+    indirect=True,
+)
+def test_land_slice_steps_on_scroll(site_page):
+    # The maps, then the slice step by step, as the reader scrolls (the
+    # screenshots show each), then the questions; then a scroll right after
+    # a tap on Next. No console error and no sideways scrolling throughout.
+    # Every progress mark shows, the steps not yet reached among them.
+    view, page = site_page, site_page.page
+    page.wait_for_selector(".lnd-has-figure", timeout=30_000)
+    problems = []
+    marks = page.evaluate(
+        "() => [...document.querySelectorAll('.lnd-progress li')]"
+        ".map(li => getComputedStyle(li).backgroundColor)"
+    )
+    clear = [m for m in marks if m in ("transparent", "rgba(0, 0, 0, 0)")]
+    if len(marks) != 6 or clear:
+        problems.append(f"progress marks {marks}: {len(clear)} clear")
+    page.evaluate(
+        "document.querySelector('.lnd-maps').scrollIntoView({block:'start'})"
+    )
+    page.wait_for_timeout(800)
+    view.shot("maps")
+
+    def follows(n):
+        got = page.evaluate(SLICE)
+        assert got["stuck"] == "sticky", f"the drawing is not stuck: {got}"
+        assert got["online"] == n, f"step {n} is not on the line: {got}"
+        assert got["shown"] == n, f"step {n} on the line, drawn: {got}"
+        assert got["over"] <= 0, f"sideways scrolling: {got}"
+
+    for n in range(1, 7):
+        page.evaluate(TO_STEP, n)
+        try:
+            view.wait(functools.partial(follows, n), timeout=5)
+        except AssertionError as e:
+            problems.append(f"scrolling: {e}")
+        view.shot(f"step-{n}")
+    page.evaluate(
+        "document.querySelector('.lnd-qa').scrollIntoView({block:'start'})"
+    )
+    page.wait_for_timeout(300)
+    view.shot("questions")
+
+    # a scroll right after a tap: the drawing follows it once the tap's hold
+    # ends
+    page.evaluate(TO_STEP, 2)
+    page.wait_for_timeout(1500)
+    tap(view, page.locator(".lnd-sec .geo-step").nth(1))  # Next
+    page.wait_for_timeout(300)
+    page.evaluate(TO_STEP, 5)
+    try:
+        view.wait(functools.partial(follows, 5), timeout=5)
+    except AssertionError as e:
+        problems.append(f"scrolling right after Next: {e}")
+    problems += view.problems()
+    assert not problems, f"{view.name}:\n  " + "\n  ".join(problems)
+
+
+# The slice as land.js leaves it when its data is bad: the static drawing and
+# the steps, with nothing it adds
+STATIC = """() => ({
+  figure: document.querySelector('.lnd-sec-body')
+    .classList.contains('lnd-has-figure'),
+  img: document.querySelectorAll('.lnd-art > img[src$="section.svg"]').length,
+  svg: document.querySelectorAll('.lnd-art svg').length,
+  buttons: document.querySelectorAll('.lnd-sec .geo-step').length,
+  hint: document.querySelectorAll('.lnd-sec .geo-hint').length,
+  marks: document.querySelectorAll('.lnd-progress li').length,
+  live: document.querySelectorAll('.lnd-sec .geo-live').length,
+  current: document.querySelectorAll('.lnd-current').length,
+  title: document.querySelector('.lnd-now').textContent})"""
+UNTOUCHED = {
+    "figure": False,
+    "img": 1,
+    "svg": 0,
+    "buttons": 0,
+    "hint": 0,
+    "marks": 0,
+    "live": 0,
+    "current": 0,
+    "title": "",
+}
+# Each bad case: what section.json answers (None: the real file), and a
+# script run in the page first (None: none). "late" makes the scroll
+# watcher refuse the slice's steps (only theirs: the timeline's stages are
+# watched as ever), so land.js fails after it has drawn and added its panel,
+# and must take it all away again.
+BAD_DATA = {
+    "not-json": ("{not json", None),
+    "malformed": (json.dumps({"length_ft": 1, "ground": []}), None),
+    "late": (
+        None,
+        (
+            "const watch = IntersectionObserver.prototype.observe;"
+            " IntersectionObserver.prototype.observe = function (target) {"
+            " if (target.classList.contains('lnd-step')) {"
+            " throw new Error('a made-up failure'); }"
+            " return watch.call(this, target); };"
+        ),
+    ),
+}
+
+
+@pytest.mark.parametrize("bad", list(BAD_DATA))
+@pytest.mark.parametrize(
+    "site_page",
+    cells(["land.html"], ["phone-390x844", "desktop-1440x900"]),
+    indirect=True,
+)
+def test_land_slice_keeps_its_static_drawing_on_bad_data(site_page, bad):
+    view, page = site_page, site_page.page
+    body, script = BAD_DATA[bad]
+    if body is not None:
+        page.route(
+            "**/assets/land/section.json",
+            lambda route: route.fulfill(
+                status=200, content_type="application/json", body=body
+            ),
+        )
+    if script is not None:
+        page.add_init_script(script)
+    warned = []
+    page.on(
+        "console",
+        lambda m: warned.append(m.text) if m.type == "warning" else None,
+    )
+    page.reload(wait_until="load")
+    with contextlib.suppress(PlaywrightTimeout):
+        page.wait_for_load_state("networkidle", timeout=15_000)
+    page.wait_for_timeout(500)
+    page.evaluate(
+        "document.querySelector('.lnd-fig').scrollIntoView({block:'start'})"
+    )
+    page.wait_for_timeout(300)
+    view.shot(f"bad-{bad}")
+    problems = []
+    got = page.evaluate(STATIC)
+    if got != UNTOUCHED:
+        problems.append(f"{bad}: the slice is not as the page has it: {got}")
+    if not any("keeps its static drawing" in w for w in warned):
+        problems.append(f"{bad}: no warning in the console: {warned}")
+    if bad == "late" and page.locator("#deep-time .geo-step").count() != 2:
+        problems.append("late: the timeline lost its buttons")
     problems += view.problems()
     assert not problems, f"{view.name}:\n  " + "\n  ".join(problems)
 
@@ -1432,7 +1635,7 @@ def test_land_a_touch_or_the_wheel_ends_the_hold_at_once(site_page):
         page.evaluate(JUMP_TO_STAGE, 2)
         try:
             view.wait(functools.partial(land_shows, page, 2, 2), timeout=5)
-            page.locator(".geo-step").nth(1).tap()  # Later: stage 3, held
+            page.locator("#deep-time .geo-step").nth(1).tap()  # Later: 3, held
             page.evaluate(JUMP_TO_STAGE, 6)
             page.wait_for_timeout(300)
             land_shows(page, 6, 3)
@@ -1441,7 +1644,7 @@ def test_land_a_touch_or_the_wheel_ends_the_hold_at_once(site_page):
             continue
         if gesture == "touch":
             # a touch on the drawing's buttons is the reader's own hold
-            box = page.locator(".geo-count").bounding_box()
+            box = page.locator("#deep-time .geo-count").bounding_box()
             touch(
                 view, box["x"] + box["width"] / 2, box["y"] + box["height"] / 2
             )

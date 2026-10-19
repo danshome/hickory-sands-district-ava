@@ -161,7 +161,7 @@ html.wiz-open,html.wiz-open body{overflow:hidden;height:100%}
 .review-card dl{margin:.4rem 0 0;display:grid;grid-template-columns:auto 1fr;gap:.2rem .8rem;font-size:1.0625rem}
 .review-card dt{color:#4a4a42}
 .review-card dd{margin:0;font-weight:600;overflow-wrap:anywhere}
-.review-card .w-link{padding:.3rem 0;min-height:44px}
+.review-card .w-link{padding:.3rem .5rem;margin-right:-.5rem;min-height:48px;min-width:48px}
 .review-head{display:flex;align-items:center;justify-content:space-between}
 .review-shot{display:block;width:100%;margin-top:.5rem;border-radius:8px;border:1px solid #b1a797}
 .public-box{margin:1rem 0 0;padding:.8rem .9rem;background:#efe6d3;border-radius:12px;font-size:1.0625rem}

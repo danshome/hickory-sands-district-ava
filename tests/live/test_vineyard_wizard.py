@@ -277,8 +277,63 @@ class Grower:
         self.shot("4-contact")
         self.press("#next")
 
+    def small_targets(self):
+        """The visible tap targets in the form under 44 px either way."""
+        return self.page.evaluate(SMALL)
+
+    def ready_to_send(self):
+        """Ticks both boxes and waits for the person check."""
+        self.at_step(5)
+        self.page.wait_for_function(
+            "document.getElementById('human-note').textContent"
+            ".startsWith('Checked')"
+        )
+        if not self.page.locator("#w-agree-permission").is_checked():
+            self.press("#w-agree-permission")
+        if not self.page.locator("#w-agree-public").is_checked():
+            self.press("#w-agree-public")
+
+    def to_step_five(self, name="Prairie Gap Vineyard"):
+        """One block, a name, planted, the contact: at step 5."""
+        self.open_and_locate()
+        for fx, fy in BLOCK_1:
+            self.map_tap(fx, fy)
+        self.press("#done-block")
+        self.press("#next")
+        self.at_step(3)
+        self.type_in("#w-name", name)
+        self.press('input[name="planted"][value="planted"]')
+        self.press("#next")
+        self.contact_and_send()
+        self.at_step(5)
+
+    def failed(self):
+        self.page.wait_for_function(
+            "!document.querySelector('section[data-step=failed]').hidden",
+            timeout=90_000,
+        )
+
     def close(self):
         self.context.close()
+
+
+# Every visible button, card, box and link-button in the form (#wiz), not
+# links inside a sentence, nor the map's own controls: under 44 px either way.
+SMALL = """() => {
+  const out = [];
+  const sel = "button, a.w-button, .chip, label.card, label.w-check, .w-link";
+  for (const el of document.querySelectorAll(`#wiz ${sel}`)) {
+    if (el.closest("arcgis-map, [hidden], .kbd-only")) continue;
+    if (el.closest("p") && !el.matches(".w-link, button")) continue;
+    const r = el.getBoundingClientRect();
+    if (!r.width || !r.height) continue;
+    if (r.width < 43.5 || r.height < 43.5) {
+      const name = el.id || el.className || el.tagName;
+      out.push(`${name}: ${Math.round(r.width)}x${Math.round(r.height)}`);
+    }
+  }
+  return out;
+}"""
 
 
 @pytest.fixture
@@ -304,6 +359,7 @@ def test_draw_two_blocks_send_and_thanks(grower, standin, viewport):
     control(standin, reset=True)
     g = grower(viewport)
     g.open_and_locate()
+    small = {}
     corners = []
     for fx, fy in BLOCK_1:
         g.map_tap(fx, fy)
@@ -323,9 +379,11 @@ def test_draw_two_blocks_send_and_thanks(grower, standin, viewport):
     g.press("#done-block")
     g.shot("2-two-blocks")
     assert g.page.locator("#block-list li").count() == 2
+    small["2"] = g.small_targets()
     g.press("#next")
     # step 3: Next before the name shows the name's error, beside it
     g.at_step(3)
+    small["3"] = g.small_targets()
     assert g.page.locator("#w-county").input_value() == "Mason"
     assert g.text("#acres-hint").startswith("Your drawing is about")
     g.press("#next")
@@ -347,12 +405,15 @@ def test_draw_two_blocks_send_and_thanks(grower, standin, viewport):
     g.press("#w-agree-permission")
     g.press("#w-agree-public")
     g.shot("5-check")
+    small["5"] = g.small_targets()
     g.press("#next")
     g.page.wait_for_function(
         "!document.querySelector('section[data-step=done]').hidden",
         timeout=60_000,
     )
     g.shot("6-thanks")
+    small["done"] = g.small_targets()
+    assert all(not v for v in small.values()), small
     data = control(standin)
     (issue,) = data["issues"]
     (row,) = data["rows"]
@@ -486,3 +547,178 @@ def test_not_set_up_yet_the_form_ends_at_the_email(grower, standin):
         .startswith("mailto:district@hickorysandsdistrictava.org")
     )
     assert g.errors == [], g.errors
+
+
+def test_refusals_the_page_can_get_past_then_the_email(grower, standin):
+    # the function refuses the name (a private word: 422): step 3, the name's
+    # box, the message; Turnstile refuses three times (403): said, then the
+    # email; a send under way (409) three times: the same
+    control(standin, reset=True)
+    g = grower("phone-390x844")
+    g.to_step_five(name="Quillfeather Vineyard")
+    g.ready_to_send()
+    g.press("#next")
+    g.at_step(3)
+    assert g.shown("#err-name")
+    assert "can't show this name" in g.text("#err-name")
+    g.page.locator("#w-name").fill("Prairie Gap Vineyard")
+    g.press("#next")
+    g.press("#next")
+    for state, said in (
+        ({"turnstile": "fail"}, "didn't go through"),
+        ({"turnstile": "pass", "verdict": "again"}, "still being sent"),
+    ):
+        control(standin, **state)
+        for _ in range(2):
+            g.ready_to_send()
+            g.press("#next")
+            g.page.wait_for_function(
+                "!document.getElementById('err-send').hidden"
+            )
+            assert said in g.text("#err-send")
+        g.ready_to_send()
+        g.press("#next")
+        g.failed()
+        assert g.text("#fail-say") == "It didn't go through just now."
+        g.press("#retry")
+    control(standin, verdict="limit-ip")
+    g.ready_to_send()
+    g.press("#next")
+    g.failed()
+    g.shot("6-limit")
+    assert g.text("#fail-say") == (
+        "Several vineyards have already been sent from this internet "
+        "connection today."
+    )
+    assert control(standin)["issues"] == []
+
+
+def test_turnstile_failing_then_the_email_and_try_again_loads_it(
+    grower, standin
+):
+    # Cloudflare's script blocked: said, Send offers the email; Try again
+    # loads it again once it can, and the vineyard goes
+    control(standin, reset=True)
+    g = grower("phone-360x780")
+    blocked = []
+
+    def block(route):
+        blocked.append(route.request.url)
+        route.abort()
+
+    g.context.route("https://challenges.cloudflare.com/**", block)
+    g.to_step_five()
+    g.page.wait_for_function(
+        "document.getElementById('human-note').textContent"
+        ".includes('could not load')"
+    )
+    g.press("#w-agree-permission")
+    g.press("#w-agree-public")
+    g.press("#next")
+    g.failed()
+    assert (
+        g.text("#fail-say") == "The check that you're a person isn't working."
+    )
+    assert g.page.locator("#mail").get_attribute("href").startswith("mailto:")
+    assert blocked
+    g.context.unroute("https://challenges.cloudflare.com/**")
+    g.press("#retry")
+    g.ready_to_send()
+    g.press("#next")
+    g.page.wait_for_function(
+        "!document.querySelector('section[data-step=done]').hidden",
+        timeout=60_000,
+    )
+    assert len(control(standin)["issues"]) == 1
+
+
+def test_a_check_that_never_passes_ends_at_the_email(grower, standin):
+    # Cloudflare's test key that always fails: logged, and after its errors
+    # (or 30 seconds) Send offers the email
+    control(standin, reset=True)
+    g = grower("phone-390x844", key="2x00000000000000000000AB")
+    g.to_step_five()
+    g.press("#w-agree-permission")
+    g.press("#w-agree-public")
+    g.page.wait_for_timeout(31_000)
+    g.press("#next")
+    g.failed()
+    g.shot("6-turnstile-failed")
+    assert (
+        g.text("#fail-say") == "The check that you're a person isn't working."
+    )
+    assert any("person check" in e for e in g.errors), g.errors
+
+
+def test_the_draft_is_kept_and_back_goes_one_step(grower, standin):
+    g = grower("phone-390x844")
+    g.open_and_locate()
+    for fx, fy in BLOCK_1:
+        g.map_tap(fx, fy)
+    g.press("#done-block")
+    g.press("#next")
+    g.at_step(3)
+    g.type_in("#w-name", "Prairie Gap Vineyard")
+    g.press("#wiz-close")
+    assert g.text("#start") == "Continue adding your vineyard"
+    assert g.text("#draft-text").startswith("Your answers so far are kept")
+    g.page.reload(wait_until="load")
+    g.press("#start")
+    g.at_step(3)
+    assert g.page.locator("#w-name").input_value() == "Prairie Gap Vineyard"
+    g.press("#back")
+    g.at_step(2)
+    assert g.page.locator("#block-list li").count() == 1
+    g.press("#back")
+    g.at_step(1)
+    assert g.errors == [], g.errors
+
+
+def test_a_browser_that_keeps_nothing_is_told_so(grower, standin):
+    g = grower("phone-360x780")
+    g.page.add_init_script(
+        "Storage.prototype.setItem = function () {"
+        " throw new DOMException('blocked', 'SecurityError'); };"
+    )
+    g.page.reload(wait_until="load")
+    g.open_and_locate()
+    g.press("#wiz-close")
+    assert g.text("#draft-text") == (
+        "This browser won't keep your answers, so they stay only while this "
+        "page is open."
+    )
+    assert g.errors == [], g.errors
+
+
+def test_search_finds_a_road_and_says_when_it_cannot(grower, standin):
+    g = grower("desktop-1440x900")
+    g.press("#start")
+    g.page.wait_for_function(
+        "document.getElementById('map-loading').hidden", timeout=90_000
+    )
+    g.type_in("#search", "Ranch Road 152, Llano")
+    g.press("#search-go")
+    first = g.page.locator("#search-results button").first
+    first.wait_for(timeout=30_000)
+    assert "Ranch Road 152" in first.text_content()
+    first.click()
+    g.page.wait_for_function(
+        "document.getElementById('search-results').children.length === 0"
+    )
+    # Esri refusing (an error answered with 200): never "Nothing found"
+    g.context.route(
+        "https://geocode-api.arcgis.com/**",
+        lambda route: route.fulfill(
+            status=200,
+            content_type="application/json",
+            body='{"error":{"code":498,"message":"Invalid token."}}',
+        ),
+    )
+    g.page.locator("#search").fill("County Road 103, Mason")
+    g.press("#search-go")
+    g.page.wait_for_function(
+        "document.getElementById('search-results').textContent"
+        ".includes('isn\\'t working')"
+    )
+    assert "Nothing found" not in g.text("#search-results")
+    assert any("search did not answer" in e for e in g.errors), g.errors

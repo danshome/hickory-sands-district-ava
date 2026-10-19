@@ -90,6 +90,7 @@ function openMap() {
   })().catch((error) => {
     console.error("the vineyards' map could not load", error);
     $("vy-map-note").textContent = "The map could not load. The list below has every vineyard; The water shows them too.";
+    mapReady = null; // asked again (Show on the map), it tries again
     throw error;
   });
   return mapReady;
@@ -154,19 +155,17 @@ async function list() {
 }
 
 list();
-// The map loads when it comes near the screen.
+// The map loads when it comes near the screen. A failure is logged and said
+// in openMap(); null here.
+const mapQuietly = () => openMap().catch(() => null);
 if ("IntersectionObserver" in window) {
   const watch = new IntersectionObserver((seen) => {
     if (seen.some((s) => s.isIntersecting)) {
       watch.disconnect();
-      openMap().catch(() => {
-        // logged in openMap(), and the note says so
-      });
+      mapQuietly();
     }
   }, { rootMargin: "200px" });
   watch.observe($("vy-map"));
 } else {
-  openMap().catch(() => {
-    // logged in openMap(), and the note says so
-  });
+  mapQuietly();
 }

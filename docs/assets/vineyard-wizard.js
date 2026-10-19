@@ -81,26 +81,48 @@ function readDraft() {
   }
 }
 let saving = 0;
+// Whether this browser keeps the draft: false once a save failed (a private
+// window, a full or blocked store). The page then says the answers are kept
+// only while it is open, never that they are kept on the device.
+let keeps = true;
+function store(kept) {
+  try {
+    localStorage.setItem(DRAFT, JSON.stringify(kept));
+    keeps = true;
+  } catch (error) {
+    if (keeps) console.warn("this browser will not keep the draft", error);
+    keeps = false;
+  }
+  keptNote();
+}
 function save() {
   if (state.step === "done") return; // sent: nothing is kept
   clearTimeout(saving);
-  saving = setTimeout(() => {
-    try {
-      const kept = { ...state, savedAt: Date.now() };
-      for (const key of PRIVATE) delete kept[key]; // a shared phone keeps no contact details
-      localStorage.setItem(DRAFT, JSON.stringify(kept));
-    } catch {
-      // a private window or a full store: the form still works, unsaved
-    }
-  }, 250);
+  const kept = { ...state, savedAt: Date.now() };
+  for (const key of PRIVATE) delete kept[key]; // a shared phone keeps no contact details
+  saving = setTimeout(() => store(kept), 250);
+}
+// Saved now, not in a moment: before the form closes or says it is kept.
+function saveNow() {
+  if (state.step === "done") return;
+  clearTimeout(saving);
+  const kept = { ...state, savedAt: Date.now() };
+  for (const key of PRIVATE) delete kept[key];
+  store(kept);
 }
 function forget() {
   clearTimeout(saving);
   try {
     localStorage.removeItem(DRAFT);
-  } catch {
-    // nothing kept
+  } catch (error) {
+    console.warn("the draft could not be forgotten", error);
   }
+}
+// The page's own words about the draft, true to what this browser does.
+const KEPT = "Your answers so far are kept on this device, apart from your name, phone and email.";
+const NOT_KEPT = "This browser won't keep your answers, so they stay only while this page is open.";
+function keptNote() {
+  $("draft-text").textContent = keeps ? KEPT : NOT_KEPT;
 }
 
 // A message on the screen, above the foot bar, for what is not one field's
@@ -135,6 +157,9 @@ if (draft) {
 $("draft-discard").addEventListener("click", () => {
   forget();
   state = fresh();
+  shot = null;
+  fillFields();
+  render(); // the last vineyard's blocks leave the map too
   $("start").textContent = "Add my vineyard";
   $("draft-note").hidden = true;
   say("Started again. Nothing is kept.");
@@ -193,9 +218,9 @@ function hide() {
   html.classList.remove("wiz-open");
   $("page").inert = false;
   if (state.step !== "done") {
-    save();
+    saveNow();
     $("start").textContent = "Continue adding your vineyard";
-    $("draft-note").hidden = false; // "Your answers so far are kept on this device…"
+    $("draft-note").hidden = false; // says whether this browser keeps them
   }
   $("start").focus();
 }
@@ -247,14 +272,16 @@ $("another").addEventListener("click", () => {
   state = fresh();
   shot = null;
   fillFields();
+  render(); // the last vineyard's blocks leave the map
   show(1);
 });
 
-// Back on the screen and the phone's Back do the same: one entry back.
+// Back on the screen goes to the step before, whatever the way here was (a
+// resumed draft, a Change on the review, a retry); the phone's own Back
+// follows the browser's history.
 $("back").addEventListener("click", () => {
   if (typeof state.step !== "number" || state.step <= 1) return;
-  if (depth > 1 && history.state?.wiz) history.back();
-  else show(state.step - 1);
+  show(state.step - 1);
 });
 $("next").addEventListener("click", async () => {
   const step = state.step;
@@ -533,6 +560,8 @@ let mapStarted = false;
 async function openMap() {
   if (mapStarted) return;
   mapStarted = true;
+  $("map-failed").hidden = true;
+  $("map-loading").hidden = false;
   try {
     if (!window.$arcgis) await loadScript(SDK, "module");
     await customElements.whenDefined("arcgis-map");
@@ -567,12 +596,13 @@ async function openMap() {
         hint();
         save();
       });
-    });
+    }).catch((error) => console.error("the map's place will not be kept", error));
     $("map-loading").hidden = true;
     render();
     hint();
   } catch (error) {
     console.error("the map could not be drawn", error);
+    mapStarted = false; // closing and reopening the form tries again
     $("map-loading").hidden = true;
     $("map-failed").hidden = false;
   }
@@ -955,7 +985,7 @@ async function find() {
   list.append(status);
   try {
     const q = new URLSearchParams({ f: "json", text, maxSuggestions: "5", countryCode: "USA", location: "-98.95,30.8", searchExtent: EXTENT, token: apiKey });
-    const answer = await fetch(`${GEOCODE}/suggest?${q}`).then((r) => r.json());
+    const answer = await geocode(`${GEOCODE}/suggest?${q}`);
     list.replaceChildren();
     const found = (answer.suggestions || []).filter((s) => !s.isCollection);
     if (!found.length) {
@@ -974,23 +1004,35 @@ async function find() {
       list.append(li);
     }
     say(`${found.length} places found.`);
-  } catch {
+  } catch (error) {
+    console.error("the search did not answer", error);
     list.replaceChildren();
     const li = document.createElement("li");
-    li.textContent = "The search didn't work just now. Move the map instead.";
+    li.textContent = "The search isn't working just now. Move the map to your vineyard instead, or use your location.";
     list.append(li);
+    say(li.textContent);
   }
+}
+// Esri's answer, or an error: an error status, or an answer that says it is
+// one (Esri answers some errors with 200 and {"error": ...}).
+async function geocode(url) {
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(`search ${r.status}`);
+  const answer = await r.json();
+  if (answer?.error) throw new Error(`search ${answer.error.code}: ${answer.error.message}`);
+  return answer;
 }
 async function go(suggestion) {
   try {
     const q = new URLSearchParams({ f: "json", singleLine: suggestion.text, magicKey: suggestion.magicKey, maxLocations: "1", token: apiKey });
-    const answer = await fetch(`${GEOCODE}/findAddressCandidates?${q}`).then((r) => r.json());
+    const answer = await geocode(`${GEOCODE}/findAddressCandidates?${q}`);
     const c = answer.candidates?.[0];
-    if (!c) throw new Error("no place");
+    if (!c) throw new Error("no place for the suggestion");
     await view?.goTo({ center: [c.location.x, c.location.y], zoom: 16 });
     $("search-results").replaceChildren();
     say(`The map is at ${suggestion.text}. Move it to your vines.`);
-  } catch {
+  } catch (error) {
+    console.error("the place could not be shown", error);
     msg("That place could not be shown. Move the map to your vineyard instead.");
   }
 }
@@ -998,13 +1040,25 @@ $("search-go").addEventListener("click", find);
 
 // --- sending ------------------------------------------------------------------------
 
+// Cloudflare's check that a person is sending. It is given TURNSTILE_ERRORS
+// errors or TURNSTILE_WAIT_MS before Send offers the email instead; every
+// error is logged with Cloudflare's code; a script that did not load is
+// loaded again on Try again.
+const TURNSTILE_ERRORS = 3;
+const TURNSTILE_WAIT_MS = 30000;
 let turnstileLoading = null;
 let turnstileFailed = false;
+let turnstileErrors = 0;
+let turnstileSince = 0;
 let widget = null;
+function turnstileGaveUp(why) {
+  turnstileFailed = true;
+  $("human-note").textContent = `${why} Tap Send to send it by email instead.`;
+}
 function loadTurnstile() {
+  if (!turnstileSince) turnstileSince = Date.now();
   turnstileLoading ||= loadScript(TURNSTILE).catch((error) => {
-    console.error("the person check did not load", error);
-    $("human-note").textContent = "The check that you're a person could not load. Tap Send to send it by email instead.";
+    turnstileLoading = null; // Try again loads it again
     throw error;
   });
   turnstileLoading.then(() => {
@@ -1015,24 +1069,48 @@ function loadTurnstile() {
       action: "vineyard-submit",
       size: "flexible",
       theme: "light",
+      "retry-interval": 4000,
       callback: (t) => {
         token = t;
+        turnstileErrors = 0;
+        turnstileFailed = false;
         $("human-note").textContent = "Checked. You can send it.";
       },
       "expired-callback": () => {
         token = null;
         $("human-note").textContent = "The check ran out. It will run again by itself.";
       },
-      "error-callback": () => {
+      "error-callback": (code) => {
         token = null;
-        $("human-note").textContent = "The check that you're a person didn't work. Try again in a minute.";
+        turnstileErrors += 1;
+        console.error("the person check failed", code);
+        if (turnstileErrors >= TURNSTILE_ERRORS) turnstileGaveUp("The check that you're a person isn't working.");
+        else $("human-note").textContent = "The check that you're a person didn't work. It tries again by itself.";
+        return false; // Cloudflare retries by itself, every few seconds
       },
     });
-  }).catch(() => {
-    turnstileFailed = true; // logged above; Send then offers the email
+  }).catch((error) => {
+    console.error("the person check did not load", error);
+    turnstileGaveUp("The check that you're a person could not load.");
   });
 }
+// Try again: a fresh start for the check, and its script loaded again if it
+// did not load before.
+function retryTurnstile() {
+  turnstileFailed = false;
+  turnstileErrors = 0;
+  turnstileSince = 0;
+  token = null;
+  if (widget !== null) {
+    window.turnstile?.reset(widget); // a token is good for one send
+    $("human-note").textContent = "Checking again…";
+  }
+}
 
+// How many times Send may be refused in a row (by the person check, or a
+// send still under way) before the email is offered instead.
+const SEND_RETRIES = 3;
+let refusals = 0;
 async function send() {
   const errors = allErrors();
   if (errors.length) {
@@ -1041,10 +1119,11 @@ async function send() {
     showErrors(step, errors.filter(([f]) => STEP_ERRORS[step](f)));
     return;
   }
-  if (!CONFIGURED || turnstileFailed) {
-    $("fail-say").textContent = CONFIGURED
-      ? "The check that you're a person could not load."
-      : "Sending from this page isn't open yet.";
+  if (!CONFIGURED || turnstileFailed || (!token && Date.now() - turnstileSince > TURNSTILE_WAIT_MS)) {
+    $("fail-say").textContent = !CONFIGURED
+      ? "Sending from this page isn't open yet."
+      : "The check that you're a person isn't working.";
+    if (CONFIGURED) console.error("the person check gave no answer", turnstileErrors, "errors");
     return failed();
   }
   if (!token) {
@@ -1078,26 +1157,42 @@ async function send() {
     clearTimeout(timer);
   }
   token = null;
-  if (widget !== null) window.turnstile?.reset(widget);
+  if (widget !== null) {
+    window.turnstile?.reset(widget); // a token is good for one send
+    $("human-note").textContent = "Checking again…";
+  }
   $("next").disabled = false;
   $("next").textContent = "Send";
-  if (status === 200 && answer?.ok) return sent(answer);
-  if (status === 422 && Array.isArray(answer?.errors)) {
+  if (status === 200 && answer?.ok) {
+    refusals = 0;
+    return sent(answer);
+  }
+  if (status === 422 && Array.isArray(answer?.errors) && answer.errors.length) {
     const list = answer.errors.map((e) => [e.field, e.message]);
     const step = [2, 3, 4, 5].find((s) => list.some(([f]) => STEP_ERRORS[s](f))) || 5;
     if (step !== 5) show(step);
-    return showErrors(step, list.filter(([f]) => STEP_ERRORS[step](f)));
-  }
-  if (status === 403 && answer?.error === "turnstile") {
-    $("err-send").textContent = "The check that you're a person didn't go through. It runs again by itself; then tap Send.";
+    const own = list.filter(([f]) => STEP_ERRORS[step]?.(f));
+    if (own.length) return showErrors(step, own);
+    // a refusal no box on the page can show: said, and the email offered
+    console.error("the vineyard was refused", list.map(([f]) => f).join(", "));
+    $("err-send").textContent = list[0][1];
     $("err-send").hidden = false;
     return;
   }
-  if (status === 409) {
-    $("err-send").textContent = "It's still being sent. Wait a moment, then tap Send again.";
-    $("err-send").hidden = false;
-    return;
+  // Refusals Send can get past by itself (the person check refused, the first
+  // send still under way): said, and tried again; after SEND_RETRIES, the email.
+  if ((status === 403 && answer?.error === "turnstile") || status === 409) {
+    refusals += 1;
+    console.error("the vineyard was not sent yet", status, answer?.error || "");
+    if (refusals < SEND_RETRIES) {
+      $("err-send").textContent = status === 409
+        ? "It's still being sent. Wait a moment, then tap Send again."
+        : "The check that you're a person didn't go through. It runs again by itself; then tap Send.";
+      $("err-send").hidden = false;
+      return;
+    }
   }
+  refusals = 0;
   $("fail-say").textContent = answer?.error === "limit-ip"
     ? "Several vineyards have already been sent from this internet connection today."
     : answer?.error === "limit-day"
@@ -1133,9 +1228,11 @@ function failed() {
   $("copy-status").textContent = "";
   // Not set up yet: trying again cannot help, so only the email is offered.
   $("retry").hidden = !CONFIGURED;
+  saveNow();
+  const kept = keeps ? "Your answers are kept on this device." : "Your answers stay only while this page is open.";
   $("fail-lead").textContent = CONFIGURED
-    ? "Your answers are kept on this device. Try again in a minute, or send them by email instead."
-    : "Your answers are kept on this device. Send them by email instead, and the petitioners add your vineyard.";
+    ? `${kept} Try again in a minute, or send them by email instead.`
+    : `${kept} Send them by email instead, and the petitioners add your vineyard.`;
   show("failed");
 }
 function copyDetails(after) {
@@ -1153,7 +1250,10 @@ function copyDetails(after) {
     },
   );
 }
-$("retry").addEventListener("click", () => show(5));
+$("retry").addEventListener("click", () => {
+  retryTurnstile();
+  show(5); // the review loads the person check again
+});
 $("copy").addEventListener("click", () => copyDetails(`Copied. Paste them into an email to ${ADDRESS}.`));
 $("mail").addEventListener("click", () => {
   if (mail?.long) copyDetails("Copied. Paste them into the email that opened.");

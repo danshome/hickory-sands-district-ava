@@ -340,9 +340,10 @@ for Python; 2-space YAML and TOML). By hand: `.venv/bin/ruff format .` and `.ven
   own block numbers, the year and varieties kept, a private word refused); a pin's outline drawn by the petitioners;
 - `test_vineyard_form.py`: the vineyards page: the old email form gone; every field labelled and every message tied to
   its field; the counties and varieties the rules'; the config empty or well formed, and Send ending at the email while it
-  is empty; no script that parses text as HTML or hides a failure in an empty catch; one pinned SDK, loaded when needed;
-  the targets' sizes; the wording; and, in node, the fallback's email (every line in order, never a URL past 1,900
-  characters, nothing typed able to add a header, an emoji never cut in half);
+  is empty; no script that parses text as HTML, and no catch block that does nothing (a block of comments alone counts
+  as empty); one pinned SDK, loaded when needed; every tap target's size in the form's styles, at least 44 px; the
+  wording (a pin's place said to be public); and, in node, the fallback's email (every line in order, never a URL past
+  1,900 characters, nothing typed able to add a header, an emoji never cut in half);
 - `test_workflows.py`: every workflow's actions pinned to a commit, Linux only, no event text in a shell; the vineyard
   workflows' permissions and gates as reviewed, one bot and one label everywhere; a release only of `main`'s history;
 - `test_site.py`: every page of the website in `docs/` is a complete HTML document (doctype, language, character set,
@@ -569,7 +570,8 @@ GDAL rounds differently agree. A frame reaching past the listed quads stops `./b
 
 Their code is `docs/assets/maps.js` (shared), `explore.js`, `walk.js` and `maps.css`. Text from the data is only ever set
 as text, never parsed as HTML. The basemaps need the ArcGIS Online API key in `docs/assets/map-config.js`. It is public by
-design and limited to the basemap styles service and to the referrers `https://hickorysandsdistrictava.org` and
+design and limited to the basemap styles service and Esri's geocoding (not stored), which the vineyard form's search
+uses (checked on 2026-10-19), and to the referrers `https://hickorysandsdistrictava.org` and
 `http://localhost:8765` (for previews: `python3 -m http.server 8765 -d docs`). Stored geocoding and other credit-consuming
 services are refused to it. It lasts up to a year: renew it in ArcGIS Online (Content > the API key item) and replace the string
 in `map-config.js`. With the key empty, the maps draw the line on a plain background. A
@@ -595,8 +597,12 @@ the device as a draft (never the name, phone or email) until it is sent. It send
 not answer, the last screen offers to send the details by email (`assets/vineyard-email.js`, which node runs in the
 tests) or to copy them; there is no email form beside it. `tests/test_vineyard_form.py` checks the page and the email;
 `tests/live/test_vineyard_wizard.py` (marked live) drives the whole form in Chrome at 390x844 and 360x780 by touch and at
-1440x900 by mouse, against the real function served with stand-ins (`tests/vineyard_standin.mjs`), on
-`http://localhost:8765` for the real map (port 8765 must be free for the run):
+1440x900 by mouse and by touch, measuring every tap target in the form at each step; then a pin, the function
+unreachable, GitHub failing, the function not set up, its refusals (a name refused, the person check refused, a send
+still under way, the day's limit), Cloudflare's script blocked and then loaded on Try again, a person check that never
+passes, the draft kept across a reload and Back one step at a time, a browser that keeps nothing, and Esri's search
+(a road found; an error never shown as "nothing found"). It runs against the real function served with stand-ins
+(`tests/vineyard_standin.mjs`), on `http://localhost:8765` for the real map (port 8765 must be free for the run):
 
 ```
 .venv/bin/python -m pytest -v -m live tests/live/test_vineyard_wizard.py

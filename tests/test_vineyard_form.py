@@ -172,7 +172,7 @@ def test_the_config_is_empty_or_well_formed(wizard):
     assert 'from "./vineyard-config.js"' in wizard
     assert "const CONFIGURED = READY && Boolean(turnstileSiteKey);" in wizard
     assert "if (CONFIGURED) loadTurnstile();" in wizard
-    assert "if (!CONFIGURED || turnstileFailed) {" in wizard
+    assert "if (!CONFIGURED || turnstileFailed ||" in wizard
 
 
 @pytest.mark.parametrize("name", SCRIPTS)
@@ -185,10 +185,42 @@ def test_no_script_parses_text_as_html_or_hides_a_failure(name):
         "document.write",
     ):
         assert sink not in text, f"{name} uses {sink}"
-    assert not re.search(
-        r"catch\s*\(\s*(\(\s*\))?\s*(=>)?\s*\{\s*\}\s*\)", text
-    ), f"{name} has an empty catch"
+    for body in catch_bodies(text):
+        assert code_of(body), f"{name} has a catch that does nothing: {body!r}"
     assert "localStorage" not in text or name == "vineyard-wizard.js"
+
+
+def catch_bodies(text):
+    """The body of every catch block (try/catch, and .catch with a block)."""
+    out = []
+    for m in re.finditer(
+        r"\bcatch\s*(?:\([^()]*\))?\s*\{|\.catch\(\s*(?:\([^()]*\)|\w+)\s*=>\s*\{",
+        text,
+    ):
+        depth, i = 1, m.end()
+        while depth:
+            depth += {"{": 1, "}": -1}.get(text[i], 0)
+            i += 1
+        out.append(text[m.end() : i - 1])
+    return out
+
+
+def code_of(body):
+    """A block's code, without its comments and white space."""
+    body = re.sub(r"/\*.*?\*/", "", body, flags=re.DOTALL)
+    body = re.sub(r"//[^\n]*", "", body)
+    return body.strip()
+
+
+def test_the_catch_test_sees_comment_only_blocks():
+    text = (
+        "try { a(); } catch {\n  // nothing\n}\n"
+        "p.catch(() => {\n  /* none */\n});\n"
+        "q.catch((e) => { log(e); });\n"
+    )
+    bodies = catch_bodies(text)
+    assert len(bodies) == 3
+    assert [bool(code_of(b)) for b in bodies] == [False, False, True]
 
 
 def test_the_maps_load_one_pinned_sdk_only_when_needed(html):
@@ -211,21 +243,37 @@ def test_the_data_the_scripts_read_is_there(wizard):
         assert os.path.isfile(os.path.join(ASSETS, "vineyards", name))
 
 
+TARGETS = re.compile(
+    r"\.(w-button|w-link|map-button|chip|vy-show|wiz-close|w-check|card)"
+    r"(?![\w-])"
+)
+# the main buttons are larger than the least, 44 px
+LARGER = {".w-button": 56, ".map-button": 56, ".w-link": 48, ".chip": 48}
+
+
 def test_targets_are_big_enough_to_tap():
+    # Every rule whose last part is a button or other tap target, in the
+    # form (#wiz) and on the page: each size it gives at least 44 px. The
+    # live test measures them on the screen as well.
     css = read(ASSETS, "vineyard-form.css")
-    sizes = {
-        ".w-button{": 56,
-        ".map-button{": 56,
-        ".w-link{": 48,
-        ".chip{": 48,
-        ".vy-show{": 48,
-        ".wiz-close{": 48,
-    }
-    for rule, least in sizes.items():
-        body = css.split(rule, 1)[1].split("}", 1)[0]
-        found = re.search(r"min-height:(\d+)px|height:(\d+)px", body)
-        assert found, rule
-        assert int(found.group(1) or found.group(2)) >= least, rule
+    seen = set()
+    for selectors, body in re.findall(r"([^{}]+)\{([^{}]*)\}", css):
+        for selector in selectors.split(","):
+            last = selector.split()[-1] if selector.split() else ""
+            if not TARGETS.search(last) or ":" in last:
+                continue
+            for prop, value in re.findall(
+                r"(min-height|min-width|(?<!-)height|(?<!-)width):(\d+)px", body
+            ):
+                seen.add(selector.strip())
+                assert int(value) >= 44, (selector.strip(), prop, value)
+    for cls, size in LARGER.items():
+        body = re.search(re.escape(cls) + r"\{([^}]*)\}", css).group(1)
+        found = re.search(r"(?:min-)?height:(\d+)px", body)
+        assert found, cls
+        assert int(found.group(1)) >= size, cls
+    assert ".review-card .w-link" in seen
+    assert ".vy-show" in seen
 
 
 def test_the_wording(html, wizard):
@@ -234,7 +282,9 @@ def test_the_wording(html, wizard):
     assert "agreed" not in low
     assert "We'll review it within about a week." in html
     assert "[about a week]" not in html
-    assert "At the time of the petition:" in html
+    assert "At the time of the petition (February 2023):" in html
+    # a pin's place is public too, and the page says so
+    assert "or the place of your pin" in html
     assert "as each owner approves it" not in html
     # the petitioners, never "the district" for them
     assert not re.search(r"\b(to|by|from) the district\b", low)

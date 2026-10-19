@@ -44,8 +44,11 @@ zips the package into `dist/` with `SHA256SUMS.txt` and `build-report.txt`. `./b
   data, `docs/assets/aquifer/`, and every figure it marks `data-stat` (from its `stats.json`) come from
   `src/site/make_aquifer_3d.py` the same way (`--check` against its `record.json`, no download; a hard check stops it if
   a person's name or address survives in the well reports); The land's slice and maps, `docs/assets/land/`, from
-  `src/site/make_land.py`, the same way. Every page loads `docs/assets/analytics.js` (Google Analytics; BUILD.md).
-  The maps (`map.html`, the site's one map; `walk.html`; and the vineyard form's, loaded when asked for) use Esri's
+  `src/site/make_land.py`, and the vineyards', `docs/assets/vineyards/`, from `src/site/make_vineyards.py`, the same way.
+  Every page loads `docs/assets/analytics.js` (Google Analytics; BUILD.md); every page search engines may index is in
+  `docs/sitemap.xml` and carries share tags (`tests/test_site.py` keeps both in step).
+  The maps (`map.html`, listed in the menu's "The maps" as The map and, opened with the aquifer on, The aquifer;
+  `walk.html`; and the vineyard form's, loaded when asked for) use Esri's
   SDK and a public, basemaps-only API key in
   `docs/assets/map-config.js`. Every website change is tested at phone sizes before merge, against a local server of
   its branch (`./build.sh check-site --local`), and live after deploy (`./build.sh check-site`); both run
@@ -54,7 +57,9 @@ zips the package into `dist/` with `SHA256SUMS.txt` and `build-report.txt`. `./b
   the 13 quads and the 17 around them
   (`resources/quads/basemap-manifest.csv`; record `docs/assets/survey-map.json`). Its DNS is at
   Squarespace beside the Google Workspace mail records (MX, SPF, DKIM, DMARC `p=reject`): never touch those. The other
-  Hickory Sands domains forward to it.
+  Hickory Sands domains forward to it. The vineyard form ("Add your vineyard") sends to a Supabase Edge Function that
+  opens a public issue and keeps contacts private (`src/vineyards/`, set up by Dan per its SETUP.md; #166). The logo
+  vote runs on Shopify for now, with its backend in `vote-backend/` (#100).
 - `target/` (gitignored) everything the build makes: `work/` (recreated each run; GIS in `work/gis/`, reviews in
   `work/review/`), `quads-cropped/` (neatline VRTs for QGIS). `dist/` (gitignored) the distribution.
 - `tobedeleted/` (gitignored) is where things no build uses go for Dan to review and delete. Nothing may depend on it.

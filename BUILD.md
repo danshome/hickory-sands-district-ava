@@ -295,10 +295,14 @@ for Python; 2-space YAML and TOML). By hand: `.venv/bin/ruff format .` and `.ven
 - `test_site_nav.py`: every page in `docs/`, and `src/site/walk.template.html`, has Home's menu links in Home's order,
   each opening a page in `docs/`, and marks its own link, and only that, `aria-current="page"` (a page not in the menu
   marks none);
-- `test_public_text.py`: the phrases that contradicted the petition or Comment 9 and were taken out stay out of
-  `docs/` (every page, data file and script) and `src/site/` (its code and template), whatever their case or the space,
-  line break or entity between their words; and the Status page dates the amended petition as
-  `src/boundary/build_proposed.py` does ("as amended June 6, 2023");
+- `test_public_text.py`: the claims that contradicted the petition or Comment 9 and were taken out stay out of `docs/`
+  (every page, data file and script) and `src/site/` (its code and template): a phrase, and where its words are also
+  said correctly, the words that make it wrong in the same sentence ("1:250,000" for the SGMC, not for the Geologic
+  Atlas of Texas; "about 9%" and "about 47%" for soil, sandstone or granite), whatever its case and whatever separates
+  its words (a space, a line break, a non-breaking space as a character, entity or escape, or an HTML tag), each wrong
+  sentence as it was and each correct use tested; no page marks the petition's or Notice No. 243's area
+  (`petition_area_whole`, `notice_243_area_whole`), which Home once showed as "about 194 square miles"; and the Status
+  page dates the amended petition as `src/boundary/build_proposed.py` does ("as amended June 6, 2023");
 - `test_publish_dryrun.py`: the publish dry run's checks pass on a dry run of the current build
   (`tests/fixtures/publish/dry-run/`, a copy of `target/publish/`: copy it there again after changing what the publish
   sends) and each fails on a fault planted in it (a layer left editable, plain CC0 on TTB's text, a phone element
@@ -447,10 +451,10 @@ No page types a boundary figure (#124). The area, the step and point counts, the
 elements marked `data-figure` (`area_sqmi`, `area_whole`, `step_count`, `point_count`, `miles`, `revision_date`), such
 as `<span data-figure="area_sqmi">193.83</span>` or `<time data-figure="revision_date" datetime="…">…</time>`. The
 site-data stage also has the petition's and Notice No. 243's areas, `petition_area_whole` and `notice_243_area_whole`,
-from the review stage, but no page marks them now. The site-data stage writes the marked figures from `docs/data/`; the
-revision date is the one in the build's file names, kept in the boundary's record. `tests/test_site_figures.py` fails
-when a page types one without the mark. A journal note is history and stays as written; a dated step in the status
-timeline keeps its date, but its figures are marked.
+from the review stage, but no page marks them now (`tests/test_public_text.py` keeps it so). The site-data stage
+writes the marked figures from `docs/data/`; the revision date is the one in the build's file names, kept in the
+boundary's record. `tests/test_site_figures.py` fails when a page types one without the mark. A journal note is history
+and stays as written; a dated step in the status timeline keeps its date, but its figures are marked.
 
 The boundary drawing on Home and The boundary (an inline SVG) sits on a survey map, `docs/assets/survey-map.webp`, made
 by the site-data stage (`src/site/make_survey_map.py`). It shows the ground the drawing's viewBox covers, found by

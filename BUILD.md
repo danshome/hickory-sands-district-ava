@@ -168,8 +168,11 @@ research/                research, audits, design proposals and prototypes until
 2. **quads** - the 13 quads checked against their MD5s in `quads-manifest.csv`; missing or altered ones downloaded.
 3. **stage** - a fresh `target/work/`; the inputs are read in place from `resources/`.
 4. **trace** - every follow step traced onto the ink (`src/boundary/ink_centerline.py`), pins from `tracing/pin-moves.json`,
-   route hints from `tracing/route-overrides-EPSG4269.geojson`. Deterministic: two runs on one machine give identical lines (two
-   machines can place a vertex differently along the same ink: #116).
+   route hints from `tracing/route-overrides-EPSG4269.geojson`. Deterministic: two runs on one machine give identical lines.
+   The tracer's Gaussian weights come from the C library's `exp`, not NumPy's, which NumPy picks by the CPU (an AVX-512
+   kernel where there is one): on a straight north-south or east-west road the first centring pass reads the ink exactly
+   on cell edges, where the last bit of a weight decides the cell, and two of GitHub's Linux runners placed step 13
+   0.34 m apart that way (#116). A Mac (Apple's C library) and Linux (glibc) may still differ in a last digit.
 5. **hand patches** - spliced onto the traces; a patch whose ends no longer lie on the trace stops the build (redo
    that patch). Patch joins that turn more than 25 degrees are rounded.
 6. **boundary** - pins, straight-line steps, traced steps, polygon, points, GeoPackage, shapefiles.
@@ -265,6 +268,9 @@ for Python; 2-space YAML and TOML). By hand: `.venv/bin/ruff format .` and `.ven
 - `test_grit_change.py`: geodesic line lengths on GRS 1980 (#35), totals summed unrounded and rounded once (#33);
 - `test_compare_ttb.py`: a big difference's acres are the whole pieces its ring touches, even inside a hole in the
   ring (#26), and the helpers that find the stretches;
+- `test_centerline.py`: the tracer's smoothing, its road offsets and the first centring pass on a north-south road give
+  the same bits whether NumPy's `exp` is the C library's or one ulp higher, as another CPU's may be (#116), and its
+  Gaussian filter is SciPy's;
 - `test_make_readme.py`: README.txt's headings ("WHAT WE PROPOSE TO CHANGE IN NOTICE NO. 243 (...)") on the read-me page;
   every placeholder filled; the Web Mercator area against GDAL's for a one-degree square;
 - `test_site_data.py`: the website's map data in `docs/data/`: every step from the Beginning point, each ending at its

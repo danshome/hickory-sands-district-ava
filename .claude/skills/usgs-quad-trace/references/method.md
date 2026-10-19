@@ -158,3 +158,13 @@ highways dropped 30-50 points. Gate on the background; the paper rules were alre
   regrade.py samples ink differently from trace() and rewrites its input: only on copies.
 - **Process.** Every rule change runs all 27 steps and is compared with a FIXED reference (not the previous run);
   snapshot the code first (the skill is not under git). Checking a change on one spot is what broke this morning.
+
+## Oct. 19, 2026: the same line on every CPU (#116)
+
+- **Never NumPy's exp in the tracer.** NumPy picks its float64 `exp` by the CPU (an AVX-512 kernel where there is one,
+  the C library's elsewhere) and the two differ in the last bit of some values. On a straight north-south or east-west
+  road the Dijkstra path sits on cell centres, so the first centring pass (`edge_offsets`, 0.5 m steps across) samples
+  the ink exactly on cell edges, and the last bit of a smoothing weight decides which cell is read: two GitHub Linux
+  runners put step 13 0.34 m apart. `smooth` and `robust_offsets` take their Gaussian weights from `libm_exp`
+  (`math.exp`, which NumPy itself calls on the Mac, so the lines did not change). The knife edge itself remains: a
+  deterministic rule for samples on a cell edge would move step 13 and others, so it waits for a re-trace.

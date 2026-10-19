@@ -186,12 +186,60 @@ def directional_fill(ink, theta, length, nbins=16):
     return out
 
 
+def libm_exp(x):
+    """Returns exp(x) element by element from the C library, not from NumPy.
+
+    NumPy chooses its float64 exp by the CPU it runs on (an AVX-512 kernel
+    where the CPU has one, the C library's exp elsewhere), and the two differ
+    in the last bit of some results. The tracer's Gaussian weights must not:
+    on a straight north-south or east-west stretch the path sits on cell
+    centres, so the first road-centring pass reads the ink exactly on cell
+    edges, and that last bit decides which cell is read. Two of GitHub's
+    Linux runners placed step 13 0.34 m apart that way (issue #116). The C
+    library's exp (math.exp) does not depend on the CPU's vector units, and
+    on the Mac it is the very function NumPy calls, so the lines built there
+    are unchanged to the bit.
+
+    Args:
+        x: A number or an array of numbers.
+
+    Returns:
+        A float64 array of x's shape.
+    """
+    x = np.asarray(x, dtype=np.float64)
+    return np.fromiter(map(math.exp, x.ravel()), np.float64, x.size).reshape(
+        x.shape
+    )
+
+
+def gaussian_filter1d(f, sigma):
+    """Gaussian-smooths a 1-D array, its ends extended by their end values.
+
+    The same filter as scipy.ndimage.gaussian_filter1d(f, sigma,
+    mode="nearest") (a kernel 4 sigma either side, normalised to sum 1), with
+    the kernel's weights from libm_exp, not NumPy's exp: see libm_exp.
+
+    Args:
+        f: The values (a 1-D array).
+        sigma: The Gaussian's standard deviation, in samples.
+
+    Returns:
+        The smoothed values, as a float64 array of f's length.
+    """
+    radius = int(4.0 * float(sigma) + 0.5)
+    x = np.arange(-radius, radius + 1)
+    phi = libm_exp(-0.5 / (sigma * sigma) * x**2)
+    phi = phi / phi.sum()
+    return ndimage.correlate1d(f, phi[::-1], mode="nearest")
+
+
 def smooth(pts, sigma):
     """Smooths a path with a Gaussian by arc length (not by vertex), ends held.
 
     Each point is averaged over the same number of points either side, as
     many as lie within 3 sigma of arc, with Gaussian weights by their distance
-    along the path; sigma is in the path's units (m).
+    along the path (from libm_exp: the same on every CPU); sigma is in the
+    path's units (m).
     """
     s = np.concatenate([[0], np.cumsum(np.hypot(*np.diff(pts, axis=0).T))])
     out = pts.copy()
@@ -203,7 +251,7 @@ def smooth(pts, sigma):
         )
         k = min(i - lo, hi - 1 - i)
         j = np.arange(i - k, i + k + 1)
-        w = np.exp(-0.5 * ((s[j] - s[i]) / sigma) ** 2)
+        w = libm_exp(-0.5 * ((s[j] - s[i]) / sigma) ** 2)
         out[i] = (pts[j] * w[:, None]).sum(0) / w.sum()
     return out
 
@@ -900,7 +948,8 @@ def robust_offsets(m, sigma, med_size=41, tol=2.5):
     several metres along the road, and a flat median rejected exactly those
     readings, leaving the line on the inside casing of every curve. Readings
     more than tol m from the trend (junctions, lettering) are dropped, the
-    rest interpolated over the gaps and Gaussian-smoothed over sigma.
+    rest interpolated over the gaps and Gaussian-smoothed over sigma (both
+    smoothings by gaussian_filter1d: the same on every CPU).
 
     Returns:
         The smoothed offsets, one per reading (zeros when there are none).
@@ -911,16 +960,14 @@ def robust_offsets(m, sigma, med_size=41, tol=2.5):
     if not good.any():
         return np.zeros(len(m))
     f = np.interp(idx, idx[good], m[good])
-    trend = ndimage.gaussian_filter1d(
-        ndimage.median_filter(f, size=med_size, mode="nearest"),
-        sigma,
-        mode="nearest",
+    trend = gaussian_filter1d(
+        ndimage.median_filter(f, size=med_size, mode="nearest"), sigma
     )
     with np.errstate(invalid="ignore"):
         m[np.abs(m - trend) > tol] = np.nan
     good = ~np.isnan(m)
     f = np.interp(idx, idx[good], m[good]) if good.any() else np.zeros(len(m))
-    return ndimage.gaussian_filter1d(f, sigma, mode="nearest")
+    return gaussian_filter1d(f, sigma)
 
 
 # ---------------------------------------------------------------- one line

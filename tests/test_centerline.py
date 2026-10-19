@@ -12,7 +12,6 @@ change by a single bit.
 
 import math
 
-import numpy as np
 import pytest
 
 pytest.importorskip(
@@ -20,6 +19,7 @@ pytest.importorskip(
     reason="GDAL's Python bindings are in the build's .venv (./build.sh env), "
     "not the lint tools",
 )
+import numpy as np
 from scipy import ndimage
 
 from src.tracing import centerline

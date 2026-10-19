@@ -109,7 +109,8 @@ requirements.txt         compiled from it: every package and indirect dependency
 requirements-dev.in/.txt the same for the lint, audit and lock tools, pytest and Playwright
 .pre-commit-config.yaml  the hooks; .githooks/pre-commit runs them; ruff.toml, .codespellrc, .secrets.baseline;
                          .editorconfig: the same rules for editors
-pytest.ini, tests/       the unit tests (./build.sh test); tests/live/: the browser tests of the dashboard (check-live);
+pytest.ini, tests/       the unit tests (./build.sh test); tests/live/: the browser tests of the dashboard and the
+                         website (check-live);
                          tests/fixtures/publish/: the publish dry run's item list and a dry run
 README.md, BUILD.md      this documentation; CLAUDE.md: notes for Claude Code; LICENSE.txt
 src/
@@ -312,6 +313,37 @@ The figures (area, steps, reworded steps, big differences, acres, the corrected 
 `target/work` (or `HSD_WORK`), else from the publish of Oct. 17, 2026. Every test leaves a screenshot,
 `target/browser-tests/<viewport>-<test>.png` (`-FAILED.png` when it failed, named in the failure's report), and
 `<viewport>-loaded.png` shows each page as it first loaded. A page that does not load in two minutes is tried once more.
+
+### Browser tests of the website at phone sizes
+
+Every change to the website is tested at phone sizes before it is merged, against a local server of its branch, and
+live after it is deployed (Dan, 2026-10-18: mobile is always tested). `tests/live/test_site_mobile.py` (marked `live`)
+opens every page in `docs/` in Google Chrome, as the dashboard's tests do, on three phones held upright, emulated with
+their user agent, touch and pixel ratio (390x844, 360x780 and 375x667), and on a 1440x900 desktop:
+
+```
+python3 -m http.server 8790 -d docs                     # a local server of the branch, on a free port
+HSD_SITE_URL=http://127.0.0.1:8790 .venv/bin/python -m pytest -v -m live tests/live/test_site_mobile.py
+.venv/bin/python -m pytest -v -m live tests/live/test_site_mobile.py    # the live site, after the deploy
+```
+
+- every page at every size: no console error, uncaught error or failed request from the site's own files; no sideways
+  scrolling, with the menu shut or open; the menu opens by a tap (a click on the desktop), inside the screen, and each
+  of its links answers 200; the header's, the menu's, the footer's and the pages' own buttons and action links are at
+  least 44 px each way (a link inside a sentence is not counted);
+- Explore, on the phones: tapping steps 30, 60 and 90 opens each step's popup, docked along the map's bottom, with the
+  place tapped near the middle of the map left above it (the view's bottom is padded by the popup's height); the popup
+  has no undock button, and the zoom and Home buttons are 44 px; a one-finger swipe beside the map (the page's margin)
+  or on it scrolls the page and leaves the map still; two fingers move the map; Home shows the whole boundary again;
+- The land, on the phones: the drawing shows the stage on its reading line as the page scrolls, and does so too when
+  the reader scrolls right after tapping Later.
+
+The site is https://hickorysandsdistrictava.org unless `HSD_SITE_URL` names another. The basemap key serves only the
+live site and `http://localhost:8765`, so on any other local address Esri refuses the basemaps (HTTP 401) and the maps
+draw the line alone: on a loopback address the test allows those refusals and the SDK's console lines about them; on
+the live site they fail it (the key has expired or lost its referrer). `./build.sh check-live` runs it with the
+dashboard's tests. Screenshots: `target/browser-tests/site/<page>-<viewport>-<test>.png` (`-FAILED.png` when it
+failed), with `-loaded.png` after each load and `-menu-open.png` with the menu open.
 
 ## GitHub Actions and releases
 

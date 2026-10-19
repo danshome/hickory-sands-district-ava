@@ -73,6 +73,8 @@ A new top-level folder needs an issue that agrees to it first.
 - **Wording.** The boundary is "proposed", never "agreed". Use the official names: Notice No. 243 (TTB's published
   text), the AVA Map Explorer polygon (TTB's layer), the proposed revision (this boundary).
 - **The website.** Merging a change to `docs/` publishes it at hickorysandsdistrictava.org; `site.yml` tests it first.
+  Test every change at phone sizes before the pull request: `tests/live/test_site_mobile.py` against a local server
+  of your branch ([BUILD.md](BUILD.md)).
 - **Publishing** to ArcGIS Online, tagging releases, and changing DNS or the domains are the maintainer's alone.
 
 ## Conduct

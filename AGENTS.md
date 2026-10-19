@@ -30,7 +30,8 @@ checks). Where this file and CLAUDE.md differ, CLAUDE.md wins.
    Don't add a new top-level folder unless an issue agrees to it first.
 5. **No secrets in the repository. It is public.** Tokens, keys, passwords and connection strings stay in your
    tool's credential store or in environment variables, never in a file, a commit message or an issue.
-6. **Publish nothing without Dan.** Merging to `main` deploys `docs/` to the public website. ArcGIS Online
+6. **Publish nothing without Dan.** Merging to `main` deploys `docs/` to the public website. Test every website change
+   at phone sizes first (`tests/live/test_site_mobile.py`, see BUILD.md). ArcGIS Online
    (`./build.sh publish`), releases, DNS and the domains are Dan's to change.
 7. **The boundary changes only through `resources/boundary/`, and the build.** No geometry is copied from an existing
    boundary layer.

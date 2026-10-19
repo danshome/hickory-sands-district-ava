@@ -80,7 +80,7 @@ VINEYARD_CATEGORIES = (
     ("hsd", "Hickory Sands District vineyard"),
     ("llano-uplift", "Llano Uplift vineyard"),
     ("under-development", "Under development"),
-    ("historical", "Historical vineyard (not visible on NAIP 2022)"),
+    ("historical", "Historical vineyard"),
 )
 
 # The lithology classes: an interval takes the first that matches its

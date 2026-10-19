@@ -7,13 +7,16 @@ and Trade Bureau (TTB) establishes it in a final rule.
 This repository and the website [hickorysandsdistrictava.org](https://hickorysandsdistrictava.org) are the
 petitioners' work. They are independent of TTB and do not speak for it.
 
-## The petitioners
+## The people
 
 Three growers petitioned TTB to establish Hickory Sands District:
 
 - Dan McLaughlin, of Robert Clay Vineyards
 - William R. Parr, Jr., of Parr Vineyards and Parr Cellars
 - Drew Tallent, of Tallent Vineyards
+
+**Tesha Parr Solomon**, of Parr Cellars and Parr Vineyards, coordinated the petition and wrote it. **Dan McLaughlin**
+wrote the boundary narrative, drew the boundary, and did all the spatial work for the GIS layers.
 
 ## The official record
 

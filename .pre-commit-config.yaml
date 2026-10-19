@@ -112,6 +112,13 @@ repos:
         types: [text]
         exclude: ^resources/ttb/federal-register-.*\.xml$   # TTB's published notice, verbatim: it names TTB's contact (allowed)
 
+      - id: repository-readme
+        name: root README matches its template and generated figures
+        entry: .venv/bin/python -E -s -B src/documents/make_repo_readme.py --check
+        language: system
+        always_run: true
+        pass_filenames: false
+
       - id: step-text
         name: step text uses the Federal Register's characters; TTB's steps identical to the Federal Register
         entry: .venv/bin/python -E -s -B src/checks/check_step_text.py

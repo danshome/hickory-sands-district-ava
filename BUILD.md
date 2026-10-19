@@ -224,6 +224,21 @@ research/                research, audits, design proposals and prototypes until
    stylesheet the pages load, and every module a script imports, must carry the version stamp of the file as it is
    (`src/site/stamp_assets.py --check`, #138).
 
+## Editing the GitHub README
+
+The root `README.md` is generated. Edit `documents/repository-README.template.md`,
+then run `./build.sh readme` and commit both files. This command uses the committed
+`documents/repository-README.figures.json`, so prose edits need no GIS build.
+Do not edit the figures JSON: `./build.sh site-data` refreshes it and the README
+from the last checked build's statistics and points. The template's `{{name}}`
+placeholders must match the figure names; missing or malformed placeholders fail.
+
+A read-only pre-commit hook, also run by the GitHub lint workflow, rejects any
+README that differs from the template and recorded figures, including prose added
+directly to README.md. The full build also compares the recorded figures with its
+statistics, and retains `check_outputs.py`'s independent numerical checks.
+The package's generated README.txt and its template are separate and unchanged.
+
 ## Python packages and security
 
 `requirements.in` and `requirements-dev.in` name the packages; `./build.sh upgrade` compiles them (pip-compile) into

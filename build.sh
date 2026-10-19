@@ -20,6 +20,7 @@
 #   ./build.sh site-data  refresh the website's map data (docs/data/, walk.html, the pages' figures, the survey map, the 3D
 #                         aquifer page's data in docs/assets/aquifer/, the vineyards' in docs/assets/vineyards/, The land's
 #                         slice and maps in docs/assets/land/) from the last build, then stamp; commit it
+#   ./build.sh readme     render the root README from its editable template and committed build figures
 #   ./build.sh stamp      version-stamp every script and stylesheet the website loads (assets/x.js?v=<hash>, #138), with
 #                         no build needed: run it after changing one (or merging a branch that did) and commit it
 #
@@ -168,6 +169,7 @@ LAND=(src/site/make_land.py)   # The land page's slice and maps (docs/assets/lan
 
 site_data() {
     step "the website's map data (docs/data/, walk.html, figures, stamps) against this build"   # hard, after the package: a boundary change must reach the site
+    run src/documents/make_repo_readme.py --check --from-build "$WORK"
     run "${SITE_DATA[@]}" --check            # exits 3 when docs/data/ is stale, and says how to refresh it
     run "${SURVEY_MAP[@]}" --check           # exits 3 when the survey map's frame, line or quads changed (never on pixel values)
     run "${AQUIFER_3D[@]}" --check           # exits 3 when an input snapshot, a parameter or a file changed; no download (#135)
@@ -180,6 +182,7 @@ documents() {
     step "documents"
     local D="$WORK/documents" S1="Hickory-Sands-District-boundary-description-as-proposed-$REVISION" S2="Hickory-Sands-District-boundary-changes-side-by-side-$REVISION"
     local LABEL; LABEL="$("$PY" -E -s -B -c 'import sys; sys.path.insert(0, "src"); import revision; print(revision.SHORT)')"   # "Oct. 15, 2026"
+    run src/documents/make_repo_readme.py --check
     run src/documents/make_readme.py
     run src/documents/make_docs.py >/dev/null
     run src/documents/make_compare.py >/dev/null
@@ -288,7 +291,9 @@ case "${1:-all}" in
                     echo "usage: ./build.sh check-site [--local]" >&2; exit 2
                 fi
                 env_setup; check_site "${2:-}" ;;
+    readme) env_setup; run src/documents/make_repo_readme.py ;;
     site-data) env_setup; [ -f "$WORK/.checks-passed" ] || { echo "no checked build: run ./build.sh first"; exit 1; }
+               run src/documents/make_repo_readme.py --from-build "$WORK"
                step "the website's map data (docs/data/), walk page and figures from the last build"; run "${SITE_DATA[@]}"; run "${SURVEY_MAP[@]}"
                run "${AQUIFER_3D[@]}"               # made again only when stale: fetches missing inputs into resources/aquifer/cache/
                run "${VINEYARDS[@]}"                # after the aquifer: it reads the aquifer's well tiles
@@ -300,5 +305,5 @@ case "${1:-all}" in
     upgrade)   upgrade ;;
     lint)      env_setup; step "pre-commit hooks on every file"; PRE_COMMIT_HOME="$TARGET/pre-commit" "$VENV/bin/pre-commit" run --all-files ;;
     test)      env_setup; step "unit tests (tests/, pytest)"; run -m pytest -q tests ;;
-    *)         echo "usage: ./build.sh [all|env|lint|test|audit|upgrade|clean|distclean|publish [--dry-run]|publish-dry-run|check-live|check-site [--local]|site-data|stamp]"; exit 2 ;;
+    *)         echo "usage: ./build.sh [all|env|lint|test|audit|upgrade|clean|distclean|publish [--dry-run]|publish-dry-run|check-live|check-site [--local]|site-data|readme|stamp]"; exit 2 ;;
 esac

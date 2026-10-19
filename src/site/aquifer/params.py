@@ -72,16 +72,8 @@ WELLS_LINES_SCALE = 250_000
 # Every well's head is written this many to a file (wells/heads-<n>.json),
 # so each stays well under the hooks' 2 MB.
 HEADS_PER_FILE = 20_000
-# A vineyard's popup lists the wells within this many metres of it.
-VINEYARD_WELLS_M = 1000.0
-# The vineyards' categories (resources/vineyards/), each a layer of its own,
-# and how a popup names each.
-VINEYARD_CATEGORIES = (
-    ("hsd", "Hickory Sands District vineyard"),
-    ("llano-uplift", "Llano Uplift vineyard"),
-    ("under-development", "Under development"),
-    ("historical", "Historical vineyard"),
-)
+# The vineyards it draws, and the wells near each, are made apart from the
+# rest (src/site/make_vineyards.py; their parameters are in vineyards.py).
 
 # The lithology classes: an interval takes the first that matches its
 # description, case-insensitive (Comment 9's s04 rule plus limestone).

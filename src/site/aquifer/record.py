@@ -19,6 +19,7 @@ import csv
 import hashlib
 import json
 import os
+import subprocess
 
 from . import params
 from . import privacy
@@ -40,7 +41,6 @@ LOCAL = {
     "usgs-sgmc-shifted": (
         "resources/geology/usgs-sgmc-geology-shifted-to-naip-EPSG4269.gpkg"
     ),
-    "vineyards": "resources/vineyards/vineyards-EPSG4269.geojson",
 }
 
 
@@ -241,3 +241,57 @@ def write_bytes(path, data):
     with open(part, "wb") as fh:
         fh.write(data)
     os.replace(part, path)
+
+
+def private_words_path():
+    """The gitignored .private-words: this checkout's, else the main one's.
+
+    A git worktree has no copy of the list, so, as the private-words hook
+    does (src/checks/check_private_words.py), it reads the main checkout's.
+
+    Returns:
+        The list's path, or None when neither checkout has one.
+    """
+    own = os.path.join(ROOT, ".private-words")
+    if os.path.exists(own):
+        return own
+    try:
+        common = subprocess.run(
+            [
+                "git",
+                "-C",
+                ROOT,
+                "rev-parse",
+                "--path-format=absolute",
+                "--git-common-dir",
+            ],
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout.strip()
+    except OSError, subprocess.CalledProcessError:
+        return None  # not a git checkout: no other list
+    main = os.path.join(os.path.dirname(common), ".private-words")
+    return main if os.path.exists(main) else None
+
+
+def private_words():
+    """More words never to publish, from the private lists that are there.
+
+    The gitignored .private-words (private_words_path()), and the
+    environment's PRIVATE_WORDS, one word per line: GitHub's runners have no
+    copy of the file, so the vineyard Actions pass the list from an Actions
+    secret. Neither is ever printed.
+
+    Returns:
+        The words, without blank lines and # comments.
+    """
+    lines = os.environ.get("PRIVATE_WORDS", "").splitlines()
+    path = private_words_path()
+    if path is not None:
+        try:
+            with open(path, encoding="utf-8") as fh:
+                lines += fh.read().splitlines()
+        except OSError:
+            pass  # unreadable: the environment's list only
+    return [w.strip() for w in lines if w.strip() and w.lstrip()[:1] != "#"]

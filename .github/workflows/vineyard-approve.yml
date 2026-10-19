@@ -1,0 +1,57 @@
+# Dan's label `approved` on a vineyard sent through the website's form opens the pull request that adds it: the blocks
+# into resources/vineyards/vineyards-EPSG4269.geojson (the name, category, block, acres, year first planted, varieties
+# and source), then the vineyard data the site shows, made again here by src/site/make_vineyards.py (standard library,
+# from resources/vineyards/ and the committed well tiles; no download), so the pull request is complete and its checks
+# (lint, site, build) run on it. Every pull request is reviewed and merged by hand; nothing merges itself.
+# It runs only when all of these hold: the label is `approved`; the repository's owner (Dan) added it; the issue was
+# opened by the form's App (its bot) and carries vineyard-submission; it is open. The form's App can add labels only as
+# its bot, so a leak of its key cannot approve anything; src/vineyards/approve.py checks the same again.
+# The pull request is opened with a one-run token of a second GitHub App, "HSD vineyard PR" (Contents and Pull requests
+# on this repository only), whose key lives only in the environment `vineyard-pr` (deployment branches: main); a pull
+# request opened by an App, unlike one opened with GITHUB_TOKEN, runs the repository's checks. The token reaches Python
+# by env and is used with the REST API: no git credentials on disk, nothing from the issue in a shell. An issues event
+# always runs this file as it is on main. GitHub's Linux machines only (src/vineyards/SETUP.md).
+name: vineyard-approve
+on:
+  issues:
+    types: [labeled]
+permissions: {}
+concurrency:
+  group: vineyard-approve-${{ github.event.issue.number }}   # per issue: no approval waits behind, or replaces, another
+  cancel-in-progress: false
+jobs:
+  approve:
+    name: open the pull request
+    if: >-
+      github.event.label.name == 'approved' &&
+      github.event.sender.login == github.repository_owner &&
+      github.event.issue.user.login == 'hsd-vineyard-form[bot]' &&
+      contains(github.event.issue.labels.*.name, 'vineyard-submission') &&
+      github.event.issue.state == 'open'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment: vineyard-pr   # deployment branches: main only; optionally Dan as its required reviewer
+    permissions:
+      contents: read   # the checkout; the branch and the pull request are made with the second App's token
+      issues: write    # the comments back: the pull request's link, or why there is none
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: "3.14"
+      - name: A token of the App "HSD vineyard PR" for this run, Contents and Pull requests only
+        id: pr-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1  # v3.2.0
+        with:
+          client-id: ${{ vars.VINEYARD_PR_CLIENT_ID }}
+          private-key: ${{ secrets.VINEYARD_PR_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+      - name: Check again, add the blocks, make the vineyard data, open the pull request (reads $GITHUB_EVENT_PATH)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_TOKEN: ${{ steps.pr-token.outputs.token }}
+          PRIVATE_WORDS: ${{ secrets.PRIVATE_WORDS }}   # optional: words never to publish, never printed
+        run: python -I -B src/vineyards/approve.py

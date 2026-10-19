@@ -65,7 +65,7 @@
   },
   "aquifer-stats": {
    "file": "docs/assets/aquifer/stats.json",
-   "sha256": "sha256:2f5e6f58b7f3a62309cdbbc7827097fdca38dd1f90188f51a7c4b03cd9683c55"
+   "sha256": "sha256:8a8f8fbb4de23693810ce45c43ae24a1e8915527b5382cd0c344b486de371262"
   },
   "aquifer-wells": {
    "file": "docs/assets/aquifer/wells/ (heads, and the frame's reports)",

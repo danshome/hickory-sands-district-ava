@@ -18,8 +18,8 @@
 #                         the live site, or HSD_SITE_URL; --local serves this checkout's docs/ on 127.0.0.1 for the run
 #                         (before a website change is merged); after a deploy, run it without --local (read-only)
 #   ./build.sh site-data  refresh the website's map data (docs/data/, walk.html, the pages' figures, the survey map, the 3D
-#                         aquifer page's data in docs/assets/aquifer/, The land's slice and maps in docs/assets/land/) from
-#                         the last build, then stamp; commit it
+#                         aquifer page's data in docs/assets/aquifer/, the vineyards' in docs/assets/vineyards/, The land's
+#                         slice and maps in docs/assets/land/) from the last build, then stamp; commit it
 #   ./build.sh stamp      version-stamp every script and stylesheet the website loads (assets/x.js?v=<hash>, #138), with
 #                         no build needed: run it after changing one (or merging a branch that did) and commit it
 #
@@ -160,6 +160,7 @@ checks() {
 SITE_DATA=(src/site/make_site_data.py --gis "$WORK/gis" --stats "$WORK/review/grit-change-stats.json" --out docs/data --walk src/site/walk.template.html docs/walk.html --pages docs)
 SURVEY_MAP=(src/site/make_survey_map.py --pages docs)   # the quads under the boundary drawing on Home and The boundary
 AQUIFER_3D=(src/site/make_aquifer_3d.py)   # the 3D aquifer page's data (docs/assets/aquifer/), from resources/aquifer/inputs.csv
+VINEYARDS=(src/site/make_vineyards.py)     # the vineyards' data (docs/assets/vineyards/), from resources/vineyards/ and the well tiles
 # A short hash of each script and stylesheet on every URL the pages (and walk.html's template) and the site's own modules
 # load it by, so a changed file reaches browsers at once (#138: GitHub Pages lets them keep a file 10 minutes)
 STAMP=(src/site/stamp_assets.py --site docs --template src/site/walk.template.html)
@@ -170,6 +171,7 @@ site_data() {
     run "${SITE_DATA[@]}" --check            # exits 3 when docs/data/ is stale, and says how to refresh it
     run "${SURVEY_MAP[@]}" --check           # exits 3 when the survey map's frame, line or quads changed (never on pixel values)
     run "${AQUIFER_3D[@]}" --check           # exits 3 when an input snapshot, a parameter or a file changed; no download (#135)
+    run "${VINEYARDS[@]}" --check            # exits 3 when the vineyards, the well tiles or a parameter changed
     run "${LAND[@]}" --check                 # the same for The land's slice and maps; no download
     run "${STAMP[@]}" --check                # exits 3 when a script's or stylesheet's version stamp is missing or stale (#138)
 }
@@ -289,6 +291,7 @@ case "${1:-all}" in
     site-data) env_setup; [ -f "$WORK/.checks-passed" ] || { echo "no checked build: run ./build.sh first"; exit 1; }
                step "the website's map data (docs/data/), walk page and figures from the last build"; run "${SITE_DATA[@]}"; run "${SURVEY_MAP[@]}"
                run "${AQUIFER_3D[@]}"               # made again only when stale: fetches missing inputs into resources/aquifer/cache/
+               run "${VINEYARDS[@]}"                # after the aquifer: it reads the aquifer's well tiles
                run "${LAND[@]}"                     # after the boundary and the 3D page's data, which it reads; the same cache
                run "${SITE_DATA[@]}"                # again, for The land's figures, which make_land.py may have changed
                run "${STAMP[@]}" ;;                 # last: walk.html is written above, from its template

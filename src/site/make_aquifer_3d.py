@@ -2,16 +2,17 @@
 
 The page shows the whole Hickory Aquifer as TWDB's Llano Uplift groundwater
 model draws it, with TWDB's well reports (without people's names), the
-vineyards, the proposed district, TTB's proposed Llano Uplift AVA, the
-counties and towns. Its data is docs/assets/aquifer/ (src/site/aquifer/
-says what each file holds), made from:
+proposed district, TTB's proposed Llano Uplift AVA, the counties and towns.
+Its data is docs/assets/aquifer/ (src/site/aquifer/ says what each file
+holds); the vineyards it draws are docs/assets/vineyards/, made apart by
+src/site/make_vineyards.py from these well tiles. It is made from:
 
 - the downloads resources/aquifer/inputs.csv pins (TWDB's model archive,
   its 2017 aquifer outlines and its two well databases, the Census
   counties and places), fetched into the gitignored resources/aquifer/cache/
   when missing and checked against their SHA-256s;
-- committed inputs: resources/vineyards/, resources/aquifer/'s fault lines,
-  TTB's Llano Uplift AVA in resources/ttb/ and the shifted geology.
+- committed inputs: resources/aquifer/'s fault lines, TTB's Llano Uplift AVA
+  in resources/ttb/ and the shifted geology.
 
 docs/assets/aquifer/record.json records those inputs, the generator's
 parameters and the files written. The data is made again only when that
@@ -30,7 +31,6 @@ import argparse
 import math
 import os
 import shutil
-import subprocess
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # src/site
@@ -38,54 +38,6 @@ from aquifer import params
 from aquifer import record
 
 STALE = 3  # --check's exit status when the data is stale
-
-
-def private_words_path():
-    """The gitignored .private-words: this checkout's, else the main one's.
-
-    A git worktree has no copy of the list, so, as the private-words hook
-    does (src/checks/check_private_words.py), it reads the main checkout's.
-
-    Returns:
-        The list's path, or None when neither checkout has one.
-    """
-    own = os.path.join(record.ROOT, ".private-words")
-    if os.path.exists(own):
-        return own
-    try:
-        common = subprocess.run(
-            [
-                "git",
-                "-C",
-                record.ROOT,
-                "rev-parse",
-                "--path-format=absolute",
-                "--git-common-dir",
-            ],
-            capture_output=True,
-            text=True,
-            check=True,
-        ).stdout.strip()
-    except OSError, subprocess.CalledProcessError:
-        return None  # not a git checkout: no other list
-    main = os.path.join(os.path.dirname(common), ".private-words")
-    return main if os.path.exists(main) else None
-
-
-def private_words():
-    """The gitignored .private-words, when present: more words to blank."""
-    path = private_words_path()
-    if path is None:
-        return []
-    try:
-        with open(path, encoding="utf-8") as fh:
-            return [
-                w.strip()
-                for w in fh
-                if w.strip() and not w.lstrip().startswith("#")
-            ]
-    except OSError:
-        return []
 
 
 def stats(manifest, figures):
@@ -146,7 +98,6 @@ def generate(manifest, local, out_dir):
     from aquifer import inputs  # noqa: PLC0415 (not needed by --check)
     from aquifer import model  # noqa: PLC0415 (GDAL and NumPy)
     from aquifer import privacy  # noqa: PLC0415
-    from aquifer import vineyards  # noqa: PLC0415
     from aquifer import wells  # noqa: PLC0415 (GDAL)
 
     paths = inputs.ensure(manifest)
@@ -161,15 +112,13 @@ def generate(manifest, local, out_dir):
     new = os.path.join(record.ROOT, "target", "aquifer-next")
     shutil.rmtree(new, ignore_errors=True)
     os.makedirs(new)
-    words = private_words()
+    words = record.private_words()
     print(f"{len(words)} more words to blank from .private-words")
     figures, lookup = model.write(paths, new)
     print("aquifer, drill grid and context written")
-    found, drawn, names, scrub = wells.write(paths, lookup, new, words)
+    found, _, names, scrub = wells.write(paths, lookup, new, words)
     print(f"{found['wells_drawn']} wells written")
-    draw = {w["uid"]: wells.draw_record(w) for w in drawn}
     figures.update(found)
-    figures.update(vineyards.write(paths, drawn, draw, new, words))
     record.write_json(
         os.path.join(new, "stats.json"), stats(manifest, figures), indent=1
     )

@@ -1,0 +1,16 @@
+{
+ "about": "Every vineyard figure docs/aquifer.html and docs/vineyards.html show, made by src/site/make_vineyards.py; the pages format them",
+ "figures": {
+  "vineyard_blocks": 66,
+  "vineyard_wells_near": 450,
+  "vineyard_wells_radius_m": 1000.0,
+  "vineyards_historical_blocks": 2,
+  "vineyards_historical_names": 2,
+  "vineyards_hsd_blocks": 38,
+  "vineyards_hsd_names": 8,
+  "vineyards_llano_uplift_blocks": 23,
+  "vineyards_llano_uplift_names": 9,
+  "vineyards_under_development_blocks": 3,
+  "vineyards_under_development_names": 2
+ }
+}

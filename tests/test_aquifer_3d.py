@@ -29,6 +29,7 @@ from src.site.aquifer import vineyards
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DOCS = os.path.join(ROOT, "docs")
 DATA = os.path.join(DOCS, "assets", "aquifer")
+VINES = os.path.join(DOCS, "assets", "vineyards")
 
 
 def read(*parts):
@@ -83,7 +84,10 @@ def test_every_tile_and_report_cell_exists(index):
         assert len(records) == index["tiles"][key]["count"], key
         cells |= {r[8] for r in records}
     cells |= {r[8] for r in index["overview"]}
-    near = load("vineyard-wells.json")["vineyards"]
+    with open(
+        os.path.join(VINES, "vineyard-wells.json"), encoding="utf-8"
+    ) as fh:
+        near = json.load(fh)["vineyards"]
     cells |= {r[9] for found in near.values() for r in found}
     for cell in cells:
         assert os.path.isfile(os.path.join(wells, f"detail-{cell}.json")), cell
@@ -219,7 +223,7 @@ VINEYARDS = os.path.join(
 
 
 @pytest.mark.parametrize(
-    "path", [VINEYARDS, os.path.join(DATA, "vineyards.geojson")]
+    "path", [VINEYARDS, os.path.join(VINES, "vineyards.geojson")]
 )
 def test_the_vineyards_name_no_one(path):
     features = json.loads(read(path))["features"]
@@ -230,7 +234,7 @@ def test_the_vineyards_name_no_one(path):
 
 
 @pytest.mark.parametrize(
-    "path", [VINEYARDS, os.path.join(DATA, "vineyards.geojson")]
+    "path", [VINEYARDS, os.path.join(VINES, "vineyards.geojson")]
 )
 def test_every_vineyard_field_keeps_one_type(path):
     # The page's GeoJSONLayer takes a field's type from its values: a block
@@ -263,7 +267,7 @@ HSD_NAMES = {
 
 
 @pytest.mark.parametrize(
-    "path", [VINEYARDS, os.path.join(DATA, "vineyards.geojson")]
+    "path", [VINEYARDS, os.path.join(VINES, "vineyards.geojson")]
 )
 def test_the_district_s_vineyards_keep_the_petition_s_names(path):
     features = json.loads(read(path))["features"]

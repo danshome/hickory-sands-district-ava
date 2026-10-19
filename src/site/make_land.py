@@ -235,9 +235,9 @@ def generate(manifest, local, out_dir):
     Raises:
         SystemExit: A hard check failed; the old data is left as it was.
     """
-    from src.site import make_aquifer_3d  # noqa: PLC0415 (its private words)
     from src.site.aquifer import inputs  # noqa: PLC0415 (not for --check)
     from src.site.aquifer import model  # noqa: PLC0415 (GDAL and NumPy)
+    from src.site.aquifer import record as aquifer_record  # noqa: PLC0415
     from src.site.land import draw  # noqa: PLC0415
     from src.site.land import maps  # noqa: PLC0415 (GDAL and NumPy)
     from src.site.land import section  # noqa: PLC0415 (GDAL)
@@ -295,7 +295,7 @@ def generate(manifest, local, out_dir):
     stats = page_figures(figures, counts)
     record.write_json(os.path.join(new, "stats.json"), stats, indent=1)
 
-    bad = verify.privacy(sec, reports.of, make_aquifer_3d.private_words())
+    bad = verify.privacy(sec, reports.of, aquifer_record.private_words())
     bad += verify.agree(sec, stats["figures"])
     bad += verify.sizes(new)
     if bad:

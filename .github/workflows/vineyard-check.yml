@@ -1,0 +1,42 @@
+# The check of a vineyard sent through the website's form (docs/vineyards.html, "Add your vineyard"). The Supabase
+# function vineyard-submit opens the issue as the GitHub App "HSD vineyard form" (its bot, never a person) with the label
+# vineyard-submission and the form's fixed layout (src/vineyards/SETUP.md). This reads the issue from the event's JSON
+# file in Python, never from an expression in a shell; checks it again with the repository's data (each block's acres,
+# the proposed district, TTB's proposed Llano Uplift AVA, vineyards already on the map, the wells nearby, the privacy
+# rules); and posts one comment, which it edits when the issue is edited (src/vineyards/check_issue.py, standard
+# library only: nothing is installed). An issues event always runs this file as it is on main, so no pull request or
+# fork changes what runs here. GitHub's Linux machines only.
+name: vineyard-check
+on:
+  issues:
+    types: [opened, edited, labeled]
+permissions: {}
+concurrency:
+  group: vineyard-check-${{ github.event.issue.number }}
+  cancel-in-progress: true
+jobs:
+  check:
+    name: check the submission
+    # only the form's issues: opened by the form's App (no person can open one as it), labelled, open
+    if: >-
+      contains(github.event.issue.labels.*.name, 'vineyard-submission') &&
+      github.event.issue.user.login == 'hsd-vineyard-form[bot]' &&
+      github.event.issue.state == 'open' &&
+      (github.event.action != 'labeled' || github.event.label.name == 'vineyard-submission')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read   # the code, the boundary, the vineyards and the well tiles
+      issues: write    # the one comment
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: "3.14"
+      - name: Check the submission and comment (reads $GITHUB_EVENT_PATH)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PRIVATE_WORDS: ${{ secrets.PRIVATE_WORDS }}   # optional: words never to publish, never printed
+        run: python -I -B src/vineyards/check_issue.py

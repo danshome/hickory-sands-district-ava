@@ -19,7 +19,7 @@ import re
 
 import pytest
 
-from src.site.aquifer import params
+from src.site.aquifer import vineyards
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DOCS = os.path.join(ROOT, "docs")
@@ -46,6 +46,8 @@ GROUPS = [
 VINEYARDS = os.path.join(
     ROOT, "resources", "vineyards", "vineyards-EPSG4269.geojson"
 )
+# The vineyards' data, made by src/site/make_vineyards.py.
+VINES = os.path.join(DOCS, "assets", "vineyards")
 
 
 def read(*parts):
@@ -118,8 +120,9 @@ def test_scripts_never_parse_text_as_html(scripts, name):
 
 
 def test_every_file_the_scripts_name_exists(scripts):
-    # Each script names its files after its own DATA folder; the tiles and
-    # the reports, named by key, are test_aquifer_3d.py's.
+    # Each script names its files after its own DATA folder (and map3d.js
+    # the vineyards' after VINEYARDS); the tiles and the reports, named by
+    # key, are test_aquifer_3d.py's.
     named = set()
     for name, folder in (("map3d.js", ""), ("aquifer-wells.js", "wells/")):
         found = re.findall(
@@ -131,10 +134,8 @@ def test_every_file_the_scripts_name_exists(scripts):
         "hickory-k2.json",
         "hickory-k4.json",
         "drill-grid.bin",
-        "vineyard-wells.json",
         "wells/index.json",
         "context.geojson",
-        "vineyards.geojson",
         "llano-uplift.geojson",
         "hickory-member.geojson",
         "precambrian.geojson",
@@ -142,6 +143,14 @@ def test_every_file_the_scripts_name_exists(scripts):
     } <= named
     for name in named:
         assert os.path.isfile(os.path.join(DATA, name)), name
+    vines = set(
+        re.findall(
+            r"\$\{VINEYARDS\}([\w.-]+\.(?:json|geojson))", scripts["map3d.js"]
+        )
+    )
+    assert vines == {"stats.json", "vineyard-wells.json", "vineyards.geojson"}
+    for name in vines:
+        assert os.path.isfile(os.path.join(VINES, name)), name
     district = re.findall(
         r'"(data/[\w.-]+\.geojson)"', scripts["map3d-district.js"]
     )
@@ -155,7 +164,13 @@ def test_every_file_the_scripts_name_exists(scripts):
 
 
 def test_every_figure_the_page_shows_is_in_the_stats(page):
+    # The aquifer's figures and the vineyards' (src/site/make_vineyards.py),
+    # which the page merges; no name is in both.
     figures = load("stats.json")["figures"]
+    with open(os.path.join(VINES, "stats.json"), encoding="utf-8") as fh:
+        vines = json.load(fh)["figures"]
+    assert not set(figures) & set(vines)
+    figures.update(vines)
     marks = re.findall(
         r'data-stat="([a-z0-9_]+)"(?: data-format="(\w+)")?', page
     )
@@ -314,7 +329,7 @@ def test_every_layer_is_made_when_it_is_first_turned_on(scripts):
 
 
 def test_every_vineyard_has_a_category_and_a_layer(page, scripts):
-    categories = [c for c, _ in params.VINEYARD_CATEGORIES]
+    categories = [c for c, _ in vineyards.CATEGORIES]
     features = json.loads(read(VINEYARDS))["features"]
     assert {f["properties"]["category"] for f in features} <= set(categories)
     for f in features:

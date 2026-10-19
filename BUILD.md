@@ -144,7 +144,7 @@ src/
                          the vineyard file's writer), check_issue and approve (the two Actions), functions/vineyard-submit/
                          (the Supabase Edge Function and its table's SQL), bundle_function, check_function, outline_issue,
                          reconcile (the daily check);
-                         SETUP.md: setting it up (the GitHub Apps, Turnstile, Supabase)
+                         SETUP.md: setting it up (the GitHub Apps, Supabase; Turnstile only if bots show up)
   vote/                  the growers' logo vote (docs/logo-vote.html, #100): functions/vote-api/ (the Supabase Edge
                          Function and hsd_vote_migration.sql, its database change), bundle_function (the one file Dan
                          pastes), shopify-handoff.liquid (the Shopify page's hand-off), sb and sb_deploy (Management
@@ -369,7 +369,8 @@ for Python; 2-space YAML and TOML). By hand: `.venv/bin/ruff format .` and `.ven
   that can close a code fence or carry HTML;
 - `test_vineyard_function.py`: the Edge Function, bundled as Dan deploys it, run in node (22 or later) against stand-ins
   for its table, Turnstile and GitHub (`tests/vineyard_standin.mjs`): CORS, size, Turnstile (and Cloudflare failing,
-  503), the trap, the rules and the private words (and the silent hold, off by default), the row and the issue, a
+  503; and with TURNSTILE_SECRET unset, no person check while the trap and the limits stay), the trap, the rules and
+  the private words (and the silent hold, off by default), the row and the issue, a
   retry, the limits, GitHub's answer lost (one issue, found again by its marker), the row not tied to its issue (never
   reported as sent), a dropped label, failures, the App's key in each form, the webhook (no row: 404; the table down:
   503), the reconciliation (at most every ten minutes; missed closings, reopenings and deletions; rows tied by their
@@ -739,8 +740,10 @@ comes near the screen). Its "Not listed?" section opens "Add your vineyard", fiv
 blocks tapped corner by corner on Esri World Imagery (or a pin), what it is, how to reach the sender, and a last check.
 The rules are `assets/vineyard-blocks.js`, the module the Supabase function also runs. What the grower enters is kept on
 the device as a draft (never the name, phone or email) until it is sent. It sends to the function named in
-`assets/vineyard-config.js` (with the Turnstile site key; both public). While either is empty, or when the function does
-not answer, the last screen offers to send the details by email (`assets/vineyard-email.js`, which node runs in the
+`assets/vineyard-config.js` (public). The person check, Cloudflare Turnstile, is optional on both sides: the page loads
+and requires it only when that file also has a Turnstile site key, and the function asks Cloudflare only when its
+`TURNSTILE_SECRET` is set (off for now; Dan, 2026-10-19: added only if bots show up). While the endpoint is empty, or
+when the function does not answer, the last screen offers to send the details by email (`assets/vineyard-email.js`, which node runs in the
 tests) or to copy them; there is no email form beside it. `tests/test_vineyard_form.py` checks the page and the email;
 `tests/live/test_vineyard_wizard.py` (marked live) drives the whole form in Chrome at 390x844 and 360x780 by touch and at
 1440x900 by mouse and by touch, measuring every tap target in the form at each step; then a pin, the function

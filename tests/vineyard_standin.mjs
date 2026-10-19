@@ -27,7 +27,7 @@ const json = (status, body) => new Response(body === null ? null : JSON.stringif
 export function standIn() {
   const { privateKey, publicKey } = generateKeyPairSync("rsa", { modulusLength: 2048 });
   const state = {
-    rows: [], issues: [], logs: [], calls: [], nextIssue: 9001,
+    rows: [], issues: [], logs: [], calls: [], nextIssue: 9001, siteverify: 0,
     turnstile: "pass", github: "ok", dropLabels: false, labelFails: false, db: "ok",
     now: new Date("2026-10-19T12:00:00.000Z"), seq: 0, lastTick: null,
   };
@@ -185,6 +185,7 @@ export function standIn() {
   }
 
   function turnstile(init) {
+    state.siteverify += 1;
     if (state.turnstile === "down") throw new TypeError("network");
     if (state.turnstile === "5xx") return new Response("<html>Bad gateway</html>", { status: 502 });
     if (state.turnstile === "html") return new Response("<html>a challenge page</html>", { status: 200 });
@@ -469,6 +470,24 @@ export async function cases(bundlePath) {
   t = fresh();
   out.healthReady = await look(await t.handle(request(null, { method: "GET", path: "/health" })));
 
+  // the person check off (TURNSTILE_SECRET unset): ready, Cloudflare never
+  // asked, a token ignored; the trap and the limits stay
+  t = fresh();
+  t.env.TURNSTILE_SECRET = "";
+  out.offHealth = await look(await t.handle(request(null, { method: "GET", path: "/health" })));
+  const { turnstile: _, ...noToken } = GOOD;
+  out.offSent = await look(await t.handle(request(noToken)));
+  out.offFailToken = await look(await t.handle(request({ ...GOOD, id: uuid(300), turnstile: "fail" }, { ip: "198.51.100.30" })));
+  out.offTrap = await look(await t.handle(request({ ...noToken, id: uuid(301), website: "http://spam" }, { ip: "198.51.100.31" })));
+  out.offInvalid = await look(await t.handle(request({ ...noToken, id: uuid(302), vineyard: { ...GOOD.vineyard, name: "Call 3255550100" } }, { ip: "198.51.100.32" })));
+  out.afterOff = { rows: t.state.rows.length, issues: t.state.issues.length };
+  const offPerIp = [];
+  for (let i = 0; i < 6; i++) {
+    offPerIp.push((await look(await t.handle(request({ ...noToken, id: uuid(310 + i) }, { ip: "198.51.100.40" })))).status);
+  }
+  out.offPerIp = offPerIp;
+  out.offSiteverify = t.state.siteverify;
+
   // the key, in each form Dan may paste it
   for (const form of ["pkcs1-lines", "pkcs1-one-line", "pkcs8-lines", "pkcs8-escaped", "not-a-key"]) {
     t = fresh(); // the stand-in's GitHub checks the JWT against this run's key
@@ -538,6 +557,7 @@ export async function serve(port, bundlePath) {
           handle = fn.makeHandler(s.deps);
         }
         Object.assign(s.state, set.state || {});
+        Object.assign(s.env, set.env || {}); // after a reset: its env is fresh
       }
       res.writeHead(200, { "Content-Type": "application/json", ...cors });
       res.end(JSON.stringify({ rows: s.state.rows, issues: s.state.issues, logs: s.state.logs }));

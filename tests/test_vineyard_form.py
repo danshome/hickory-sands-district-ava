@@ -1,19 +1,20 @@
 """docs/vineyards.html: the vineyards on the site, and "Add your vineyard".
 
 The page lists every vineyard of the site's data (assets/vineyard-list.js)
-and opens the five-step form (assets/vineyard-wizard.js), which sends to
-the Supabase function set in assets/vineyard-config.js and, when it cannot
-send, offers the email (assets/vineyard-email.js). These check the page and
-its files: the old email form gone; every field labelled, every message tied
-to its field, every field the rules name on the page; the counties and
-varieties the rules'; the config empty or well formed, and the form ending
-at the email while it is empty; no script that parses text as HTML or hides
-a failure in an empty catch; one pinned SDK; the targets' sizes; the
-wording. And, in node when it is installed, the fallback's email: every line
-in order, never a URL past LONG_URL, nothing typed able to add a header, an
-emoji never cut in half. The rules themselves are
-tests/test_vineyard_rules.py's. Standard library only, so the lint workflow
-runs these.
+and opens the five-step form (assets/vineyard-wizard.js), which sends to the
+Supabase function set in assets/vineyard-config.js and, when it cannot send,
+offers the email (assets/vineyard-email.js). These check the page and its
+files: the old email form gone; every field labelled, every message tied to
+its field, every field the rules name on the page; the counties and
+varieties the rules'; the config empty or well formed, the form ending at
+the email while the endpoint is empty, and the person check (Turnstile)
+loaded and required only when its site key is set; no script that parses
+text as HTML or hides a failure in an empty catch; one pinned SDK; the
+targets' sizes; the wording. And, in node when it is installed, the
+fallback's email: every line in order, never a URL past LONG_URL, nothing
+typed able to add a header, an emoji never cut in half. The rules themselves
+are tests/test_vineyard_rules.py's. Standard library only, so the lint
+workflow runs these.
 """
 
 from html.parser import HTMLParser
@@ -167,12 +168,23 @@ def test_the_config_is_empty_or_well_formed(wizard):
         endpoint,
     )
     assert key == "" or re.fullmatch(r"0x[A-Za-z0-9_-]{10,}", key)
-    # while either is empty, Send ends at the email, never a Turnstile that
-    # cannot resolve
     assert re.search(r'from "\./vineyard-config\.js(\?v=[0-9a-f]+)?"', wizard)
-    assert "const CONFIGURED = READY && Boolean(turnstileSiteKey);" in wizard
-    assert "if (CONFIGURED) loadTurnstile();" in wizard
-    assert "if (!CONFIGURED || turnstileFailed ||" in wizard
+    # the endpoint alone opens sending; while it is empty, Send ends at the
+    # email
+    assert "CONFIGURED" not in wizard
+    assert "if (!READY) {" in wizard
+    assert '$("retry").hidden = !READY;' in wizard
+    # the person check only with a site key too (Dan, 2026-10-19: Turnstile
+    # only if bots show up): never loaded, waited for or sent without one
+    assert "const CHECK_ON = READY && Boolean(turnstileSiteKey);" in wizard
+    assert "if (CHECK_ON) loadTurnstile();" in wizard
+    assert wizard.count("loadTurnstile();") == 1
+    assert "if (CHECK_ON && (turnstileFailed ||" in wizard
+    assert "if (CHECK_ON && !token) {" in wizard
+    assert (
+        "JSON.stringify(CHECK_ON ? { ...payload(), turnstile: token }"
+        " : payload())"
+    ) in wizard
 
 
 @pytest.mark.parametrize("name", SCRIPTS)

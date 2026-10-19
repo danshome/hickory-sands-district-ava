@@ -9,9 +9,10 @@
 // POST /vineyard-submit, JSON from https://hickorysandsdistrictava.org only.
 // In order:
 //   1. CORS allow-list of one origin, POST, application/json, at most 64 KB;
-//   2. Cloudflare Turnstile (siteverify): a success, for the site's hostname
-//      and the form's action, never a test key's (Cloudflare failing answers
-//      503, never a refusal);
+//   2. Cloudflare Turnstile (siteverify), only when TURNSTILE_SECRET is set
+//      (unset, there is no person check; every other rule stays): a success,
+//      for the site's hostname and the form's action, never a test key's
+//      (Cloudflare failing answers 503, never a refusal);
 //   3. the checks: vineyard-blocks.js, the same module the page runs (held to
 //      src/vineyards/submission.py's answers by the tests), then the private
 //      words; a filled trap field is answered as sent, and nothing is kept;
@@ -42,7 +43,8 @@
 // an issue goes after UNLINKED_HOURS. A failure answers 500, and the Action
 // reports it on an issue for Dan.
 //
-// GET /vineyard-submit/health: {ready, missing: [secret names]} and which
+// GET /vineyard-submit/health: {ready, missing: [secret names],
+// person_check: whether Turnstile is asked} and which
 // address headers a request carries, never a value: for Dan's check
 // (src/vineyards/check_function.py).
 //
@@ -54,8 +56,10 @@
 //   GITHUB_APP_PRIVATE_KEY   the App's private key, as GitHub gives it (the
 //                            whole file, or its lines run together)
 //   GITHUB_WEBHOOK_SECRET    the App's webhook secret
-//   TURNSTILE_SECRET         the Turnstile widget's secret key
 //   IP_SALT                  random text: the IP is kept only as an HMAC
+//   TURNSTILE_SECRET         optional: the Turnstile widget's secret key;
+//                            unset, there is no person check (Dan,
+//                            2026-10-19: added only if bots show up)
 //   PRIVATE_WORDS            optional: words never to publish, one per line
 //   PRIVATE_WORDS_SILENT     optional, off: "1" holds a submission with a
 //                            private word for the petitioners (a 200 with no
@@ -89,7 +93,6 @@ export const SECRETS = [
   "GITHUB_APP_INSTALLATION_ID",
   "GITHUB_APP_PRIVATE_KEY",
   "GITHUB_WEBHOOK_SECRET",
-  "TURNSTILE_SECRET",
   "IP_SALT",
 ];
 
@@ -171,6 +174,7 @@ export function makeHandler(deps: Deps): (req: Request) => Promise<Response> {
       return "";
     }
   };
+  const personCheck = () => Boolean(env("TURNSTILE_SECRET"));
   const missing = () => [...SECRETS.filter((k) => !env(k)), ...(env("SUPABASE_URL") && serviceKey() ? [] : ["SUPABASE_URL"])];
   const privateWords = () => (deps.env("PRIVATE_WORDS") || "").split("\n")
     .map((w) => w.trim().toLowerCase()).filter((w) => w && !w.startsWith("#"));
@@ -394,12 +398,14 @@ export function makeHandler(deps: Deps): (req: Request) => Promise<Response> {
     }
     const ip = clientIp(req);
     const token = raw.turnstile;
-    delete raw.turnstile;
-    try {
-      if (!(await human(token, ip))) return answer(403, { error: "turnstile" }, origin);
-    } catch (error) {
-      deps.log("vineyard submission: Turnstile did not answer", short(error));
-      return answer(503, { error: "turnstile-unreachable" }, origin);
+    delete raw.turnstile; // never the rules' to see, the check on or off
+    if (personCheck()) {
+      try {
+        if (!(await human(token, ip))) return answer(403, { error: "turnstile" }, origin);
+      } catch (error) {
+        deps.log("vineyard submission: Turnstile did not answer", short(error));
+        return answer(503, { error: "turnstile-unreachable" }, origin);
+      }
     }
 
     let checked;
@@ -590,6 +596,7 @@ export function makeHandler(deps: Deps): (req: Request) => Promise<Response> {
         ok: true,
         ready: missing().length === 0,
         missing: missing(),
+        person_check: personCheck(),
         address_headers: ["cf-connecting-ip", "x-real-ip", "x-forwarded-for"].filter((n) => h.has(n)),
         forwarded_entries: (h.get("x-forwarded-for") || "").split(",").filter((s) => s.trim()).length,
         address_digest: env("IP_SALT") ? (await hmacHex(env("IP_SALT"), enc.encode(`probe:${clientIp(req)}`))).slice(0, 8) : null,

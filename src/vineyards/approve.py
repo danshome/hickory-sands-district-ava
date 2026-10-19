@@ -320,7 +320,7 @@ def main(argv=None):
             issues,
             number,
             f"the environment `{ENVIRONMENT}` may be used from any branch. "
-            "Limit it to main first (src/vineyards/SETUP.md, step 3.2).",
+            "Limit it to main first (src/vineyards/SETUP.md, step A.2).",
         )
     try:
         data = vs.parse_issue(event["issue"].get("body"))

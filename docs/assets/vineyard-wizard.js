@@ -9,14 +9,17 @@
 // the email instead (vineyard-email.js). Text from the grower is only ever set
 // as text.
 import { apiKey } from "./map-config.js?v=999720b";
-import { endpoint, turnstileSiteKey } from "./vineyard-config.js?v=071004e";
+import { endpoint, turnstileSiteKey } from "./vineyard-config.js?v=477d32b";
 import * as rules from "./vineyard-blocks.js?v=a8b5daf";
 import { ADDRESS, message, plan } from "./vineyard-email.js?v=7d7e46c";
 
-// The function and the person check are set up only when both are given.
+// The form sends when the function's address is given (READY). The person
+// check (Cloudflare Turnstile) is loaded and required only when its site key
+// is given too (CHECK_ON); without one, Send posts without a token (Dan,
+// 2026-10-19: Turnstile is added only if bots show up).
 const READY = /^https:\/\/[a-z0-9-]+\.supabase\.co\/functions\/v1\/vineyard-submit$/.test(endpoint) ||
   /^http:\/\/(localhost|127\.0\.0\.1):\d+\/vineyard-submit$/.test(endpoint);
-const CONFIGURED = READY && Boolean(turnstileSiteKey);
+const CHECK_ON = READY && Boolean(turnstileSiteKey);
 const SDK = "https://js.arcgis.com/5.1/";
 const TURNSTILE = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
 const GEOCODE = "https://geocode-api.arcgis.com/arcgis/rest/services/World/GeocodeServer";
@@ -522,7 +525,7 @@ function review() {
     ["Varieties", p.vineyard.varieties.join(", ")],
   ]);
   card("You (private)", 4, [["Name", state.cname], ["Phone", state.phone], ["Email", state.email]]);
-  if (CONFIGURED) loadTurnstile();
+  if (CHECK_ON) loadTurnstile();
   else $("human").hidden = true;
 }
 
@@ -1119,14 +1122,16 @@ async function send() {
     showErrors(step, errors.filter(([f]) => STEP_ERRORS[step](f)));
     return;
   }
-  if (!CONFIGURED || turnstileFailed || (!token && Date.now() - turnstileSince > TURNSTILE_WAIT_MS)) {
-    $("fail-say").textContent = !CONFIGURED
-      ? "Sending from this page isn't open yet."
-      : "The check that you're a person isn't working.";
-    if (CONFIGURED) console.error("the person check gave no answer", turnstileErrors, "errors");
+  if (!READY) {
+    $("fail-say").textContent = "Sending from this page isn't open yet.";
     return failed();
   }
-  if (!token) {
+  if (CHECK_ON && (turnstileFailed || (!token && Date.now() - turnstileSince > TURNSTILE_WAIT_MS))) {
+    $("fail-say").textContent = "The check that you're a person isn't working.";
+    console.error("the person check gave no answer", turnstileErrors, "errors");
+    return failed();
+  }
+  if (CHECK_ON && !token) {
     $("err-send").textContent = "Wait a moment for the check above to finish, then tap Send.";
     $("err-send").hidden = false;
     return;
@@ -1142,7 +1147,7 @@ async function send() {
     const r = await fetch(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...payload(), turnstile: token }),
+      body: JSON.stringify(CHECK_ON ? { ...payload(), turnstile: token } : payload()),
       signal: controller.signal,
     });
     status = r.status;
@@ -1181,7 +1186,9 @@ async function send() {
   }
   // Refusals Send can get past by itself (the person check refused, the first
   // send still under way): said, and tried again; after SEND_RETRIES, the email.
-  if ((status === 403 && answer?.error === "turnstile") || status === 409) {
+  // (A 403 "turnstile" with no check on this page: the function asks for one
+  // the page was not given; trying again cannot help, so the email.)
+  if ((CHECK_ON && status === 403 && answer?.error === "turnstile") || status === 409) {
     refusals += 1;
     console.error("the vineyard was not sent yet", status, answer?.error || "");
     if (refusals < SEND_RETRIES) {
@@ -1227,10 +1234,10 @@ function failed() {
     : "Your email app opens with the details filled in. Nothing is sent until you send it there.";
   $("copy-status").textContent = "";
   // Not set up yet: trying again cannot help, so only the email is offered.
-  $("retry").hidden = !CONFIGURED;
+  $("retry").hidden = !READY;
   saveNow();
   const kept = keeps ? "Your answers are kept on this device." : "Your answers stay only while this page is open.";
-  $("fail-lead").textContent = CONFIGURED
+  $("fail-lead").textContent = READY
     ? `${kept} Try again in a minute, or send them by email instead.`
     : `${kept} Send them by email instead, and the petitioners add your vineyard.`;
   show("failed");

@@ -18,8 +18,11 @@ config is pointed at it, with Cloudflare's always-passing test site key.
 - At 360x780: a pin instead of blocks (the acres then needed), and the
   function unreachable: the failure screen, its email link and copying.
 - At 390x844: GitHub failing (the function answers 502): the failure screen.
-- At 390x844: the config empty (the function not set up yet): no person
+- At 390x844: the endpoint empty (the function not set up yet): no person
   check, and Send offers the email.
+- At 390x844: the endpoint set and no site key, the function without
+  TURNSTILE_SECRET (no Cloudflare for now, Dan 2026-10-19): no person check
+  shown or loaded, and Send sends: the thank-you screen, one row, one issue.
 
     .venv/bin/python -m pytest -v -m live tests/live/test_vineyard_wizard.py
 
@@ -131,9 +134,17 @@ def standin(tmp_path_factory):
 
 
 def control(standin, **state):
-    """Sets the stand-ins (a fresh one with reset=True); answers their data."""
+    """Sets the stand-ins (a fresh one with reset=True); answers their data.
+
+    env={...} sets the function's secrets after any reset (a fresh stand-in
+    has every one set).
+    """
     body = json.dumps(
-        {"reset": state.pop("reset", False), "state": state}
+        {
+            "reset": state.pop("reset", False),
+            "env": state.pop("env", {}),
+            "state": state,
+        }
     ).encode()
     req = urllib.request.Request(f"{standin}/standin", data=body, method="POST")
     with urllib.request.urlopen(req, timeout=10) as resp:
@@ -341,10 +352,10 @@ def grower(chrome, served, standin, request):
     _, browser = chrome
     opened = []
 
-    def make(viewport, **kw):
-        g = Grower(
-            browser, viewport, served, f"{standin}/vineyard-submit", **kw
-        )
+    def make(viewport, endpoint=None, **kw):
+        if endpoint is None:
+            endpoint = f"{standin}/vineyard-submit"
+        g = Grower(browser, viewport, served, endpoint, **kw)
         opened.append(g)
         return g
 
@@ -519,7 +530,7 @@ def test_github_failing_offers_the_email(grower, standin):
 
 
 def test_not_set_up_yet_the_form_ends_at_the_email(grower, standin):
-    g = grower("phone-390x844", key="")
+    g = grower("phone-390x844", endpoint="", key="")
     g.open_and_locate()
     for fx, fy in BLOCK_1:
         g.map_tap(fx, fy)
@@ -546,6 +557,36 @@ def test_not_set_up_yet_the_form_ends_at_the_email(grower, standin):
         .get_attribute("href")
         .startswith("mailto:district@hickorysandsdistrictava.org")
     )
+    assert g.errors == [], g.errors
+
+
+def test_no_person_check_the_form_still_sends(grower, standin):
+    # No Cloudflare for now (Dan, 2026-10-19): no site key on the page and no
+    # TURNSTILE_SECRET in the function. Nothing from Cloudflare is loaded,
+    # the person check is not shown, and Send sends.
+    control(standin, reset=True, env={"TURNSTILE_SECRET": ""})
+    g = grower("phone-390x844", key="")
+    cloudflare = []
+    g.context.route(
+        "https://challenges.cloudflare.com/**",
+        lambda route: (cloudflare.append(route.request.url), route.abort()),
+    )
+    g.to_step_five()
+    assert not g.shown("#human")
+    g.press("#w-agree-permission")
+    g.press("#w-agree-public")
+    g.press("#next")
+    g.page.wait_for_function(
+        "!document.querySelector('section[data-step=done]').hidden",
+        timeout=60_000,
+    )
+    g.shot("6-sent-no-check")
+    data = control(standin)
+    (issue,) = data["issues"]
+    (row,) = data["rows"]
+    assert g.text("#ref") == str(issue["number"])
+    assert row["issue_number"] == issue["number"]
+    assert cloudflare == []
     assert g.errors == [], g.errors
 
 

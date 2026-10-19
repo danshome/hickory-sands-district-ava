@@ -1,0 +1,260 @@
+{
+ "about": "One entry per vineyard of vineyards.geojson, for the vineyards page's list (src/site/make_vineyards.py)",
+ "vineyards": [
+  {
+   "name": "Blackmon Vineyard",
+   "category": "hsd",
+   "category_label": "Hickory Sands District vineyard",
+   "vids": [
+    "v-1",
+    "v-2",
+    "v-3"
+   ],
+   "year": null,
+   "varieties": []
+  },
+  {
+   "name": "Certenburg Vineyard",
+   "category": "hsd",
+   "category_label": "Hickory Sands District vineyard",
+   "vids": [
+    "v-4",
+    "v-5",
+    "v-6"
+   ],
+   "year": null,
+   "varieties": []
+  },
+  {
+   "name": "Parr Vineyards",
+   "category": "hsd",
+   "category_label": "Hickory Sands District vineyard",
+   "vids": [
+    "v-7",
+    "v-8",
+    "v-9"
+   ],
+   "year": null,
+   "varieties": []
+  },
+  {
+   "name": "Peters Prairie Vineyard",
+   "category": "hsd",
+   "category_label": "Hickory Sands District vineyard",
+   "vids": [
+    "v-10",
+    "v-11",
+    "v-12",
+    "v-13"
+   ],
+   "year": null,
+   "varieties": []
+  },
+  {
+   "name": "Pontotoc Vineyard",
+   "category": "hsd",
+   "category_label": "Hickory Sands District vineyard",
+   "vids": [
+    "v-14"
+   ],
+   "year": null,
+   "varieties": []
+  },
+  {
+   "name": "Robert Clay Vineyards",
+   "category": "hsd",
+   "category_label": "Hickory Sands District vineyard",
+   "vids": [
+    "v-15",
+    "v-16",
+    "v-17",
+    "v-18",
+    "v-19"
+   ],
+   "year": null,
+   "varieties": []
+  },
+  {
+   "name": "Tallent Vineyards",
+   "category": "hsd",
+   "category_label": "Hickory Sands District vineyard",
+   "vids": [
+    "v-20",
+    "v-21",
+    "v-22",
+    "v-23",
+    "v-24",
+    "v-25",
+    "v-26",
+    "v-27",
+    "v-28",
+    "v-29",
+    "v-30",
+    "v-31",
+    "v-32"
+   ],
+   "year": null,
+   "varieties": []
+  },
+  {
+   "name": "Two Tales Vineyards",
+   "category": "hsd",
+   "category_label": "Hickory Sands District vineyard",
+   "vids": [
+    "v-33",
+    "v-34",
+    "v-35",
+    "v-36",
+    "v-37",
+    "v-38"
+   ],
+   "year": null,
+   "varieties": []
+  },
+  {
+   "name": "1900 Vineyard",
+   "category": "llano-uplift",
+   "category_label": "Llano Uplift vineyard",
+   "vids": [
+    "v-39"
+   ],
+   "year": null,
+   "varieties": []
+  },
+  {
+   "name": "Castell Vineyard",
+   "category": "llano-uplift",
+   "category_label": "Llano Uplift vineyard",
+   "vids": [
+    "v-40",
+    "v-41",
+    "v-42"
+   ],
+   "year": null,
+   "varieties": []
+  },
+  {
+   "name": "Fall Creek Vineyards",
+   "category": "llano-uplift",
+   "category_label": "Llano Uplift vineyard",
+   "vids": [
+    "v-43",
+    "v-44"
+   ],
+   "year": null,
+   "varieties": []
+  },
+  {
+   "name": "Heart of Art Vineyard",
+   "category": "llano-uplift",
+   "category_label": "Llano Uplift vineyard",
+   "vids": [
+    "v-45"
+   ],
+   "year": null,
+   "varieties": []
+  },
+  {
+   "name": "Loyal Valley Vineyard",
+   "category": "llano-uplift",
+   "category_label": "Llano Uplift vineyard",
+   "vids": [
+    "v-46",
+    "v-47",
+    "v-48"
+   ],
+   "year": null,
+   "varieties": []
+  },
+  {
+   "name": "Perissos Vineyard and Winery",
+   "category": "llano-uplift",
+   "category_label": "Llano Uplift vineyard",
+   "vids": [
+    "v-49",
+    "v-50",
+    "v-51",
+    "v-52"
+   ],
+   "year": null,
+   "varieties": []
+  },
+  {
+   "name": "Purple Calf Vineyard",
+   "category": "llano-uplift",
+   "category_label": "Llano Uplift vineyard",
+   "vids": [
+    "v-53",
+    "v-54"
+   ],
+   "year": null,
+   "varieties": []
+  },
+  {
+   "name": "Torr Na Lochs Vineyard & Winery",
+   "category": "llano-uplift",
+   "category_label": "Llano Uplift vineyard",
+   "vids": [
+    "v-55"
+   ],
+   "year": null,
+   "varieties": []
+  },
+  {
+   "name": "Uplift Vineyard",
+   "category": "llano-uplift",
+   "category_label": "Llano Uplift vineyard",
+   "vids": [
+    "v-56",
+    "v-57",
+    "v-58",
+    "v-59",
+    "v-60",
+    "v-61"
+   ],
+   "year": null,
+   "varieties": []
+  },
+  {
+   "name": "I Don't Know Vineyard",
+   "category": "under-development",
+   "category_label": "Under development",
+   "vids": [
+    "v-62"
+   ],
+   "year": null,
+   "varieties": []
+  },
+  {
+   "name": "Paisano Vineyards",
+   "category": "under-development",
+   "category_label": "Under development",
+   "vids": [
+    "v-63",
+    "v-64"
+   ],
+   "year": null,
+   "varieties": []
+  },
+  {
+   "name": "Akashic Vineyard",
+   "category": "historical",
+   "category_label": "Historical vineyard",
+   "vids": [
+    "v-65"
+   ],
+   "year": null,
+   "varieties": []
+  },
+  {
+   "name": "Spiller Mine Vineyard",
+   "category": "historical",
+   "category_label": "Historical vineyard",
+   "vids": [
+    "v-66"
+   ],
+   "year": null,
+   "varieties": []
+  }
+ ]
+}

@@ -1,0 +1,404 @@
+// Stand-ins for what the vineyard form's Edge Function talks to: Supabase's
+// table (and hsd_vineyard_reserve(), as hsd_vineyard_contacts.sql does it),
+// Cloudflare's Turnstile check and GitHub's API (the App's token, verified
+// against a key made here, and the issues). The function itself is the real
+// one, the one-file bundle Dan deploys (src/vineyards/bundle_function.py).
+//
+//   node tests/vineyard_standin.mjs cases BUNDLE
+//       runs every case of tests/test_vineyard_function.py and prints what
+//       happened, as JSON;
+//   node tests/vineyard_standin.mjs serve PORT BUNDLE
+//       serves the function on 127.0.0.1:PORT for the browser tests
+//       (tests/live/test_vineyard_wizard.py): a request from the local page
+//       is passed on as if from the site; GET /standin and POST /standin
+//       read and set the stand-ins.
+import { createHmac, createVerify, generateKeyPairSync } from "node:crypto";
+import http from "node:http";
+import { pathToFileURL } from "node:url";
+
+const SITE = "https://hickorysandsdistrictava.org";
+const API = "https://api.github.com";
+const URL_BASE = "https://yayebhncbagmebwgmezd.supabase.co/functions/v1/vineyard-submit";
+
+const json = (status, body) => new Response(body === null ? null : JSON.stringify(body), {
+  status, headers: { "Content-Type": "application/json" },
+});
+
+export function standIn() {
+  const { privateKey, publicKey } = generateKeyPairSync("rsa", { modulusLength: 2048 });
+  const state = {
+    rows: [], issues: [], logs: [], calls: [], nextIssue: 9001,
+    turnstile: "pass", github: "ok", dropLabels: false, db: "ok",
+    now: new Date("2026-10-19T12:00:00.000Z"), seq: 0,
+  };
+  const env = {
+    SUPABASE_URL: "https://db.example.invalid",
+    SUPABASE_SERVICE_ROLE_KEY: "eyJ.service.role",
+    GITHUB_APP_ID: "123456",
+    GITHUB_APP_INSTALLATION_ID: "7890",
+    // as GitHub hands it out: PKCS#1, with its line breaks
+    GITHUB_APP_PRIVATE_KEY: privateKey.export({ type: "pkcs1", format: "pem" }),
+    GITHUB_WEBHOOK_SECRET: "webhook-secret-for-tests", // pragma: allowlist secret
+    TURNSTILE_SECRET: "turnstile-secret-for-tests", // pragma: allowlist secret
+    IP_SALT: "salt-for-tests",
+    PRIVATE_WORDS: "quillfeather\n# a comment\n",
+  };
+
+  function filters(query) {
+    const out = {};
+    for (const [k, v] of new URLSearchParams(query)) out[k] = v;
+    return out;
+  }
+  function matches(row, f) {
+    return Object.entries(f).every(([k, v]) => {
+      const [op, ...rest] = v.split(".");
+      const value = rest.join(".");
+      if (op === "eq") return String(row[k]) === value;
+      if (op === "is" && value === "null") return row[k] === null;
+      if (op === "lt") return row[k] !== null && new Date(row[k]) < new Date(value);
+      throw new Error(`filter ${k}=${v}`);
+    });
+  }
+
+  function reserve(a) {
+    const again = state.rows.find((r) => r.submission_id === a.p_submission);
+    if (again) return [{ id: again.id, issue_number: again.issue_number, verdict: "again" }];
+    const dayAgo = state.now.getTime() - 86400000;
+    const recent = state.rows.filter((r) => new Date(r.created_at).getTime() > dayAgo);
+    if (recent.filter((r) => r.ip_hash === a.p_ip_hash).length >= a.p_per_ip) {
+      return [{ id: null, issue_number: null, verdict: "limit-ip" }];
+    }
+    if (recent.length >= a.p_per_day) return [{ id: null, issue_number: null, verdict: "limit-day" }];
+    if (!a.p_email && !a.p_phone) throw new Error("check hsd_vineyard_contacts_reach");
+    if (String(a.p_ip_hash).length !== 32) throw new Error("check ip_hash");
+    const row = {
+      id: `row-${++state.seq}`, submission_id: a.p_submission, issue_number: null,
+      created_at: state.now.toISOString(), closed_at: null, ip_hash: a.p_ip_hash,
+      contact_name: a.p_name, email: a.p_email, phone: a.p_phone,
+    };
+    state.rows.push(row);
+    return [{ id: row.id, issue_number: null, verdict: "new" }];
+  }
+
+  function database(url, init) {
+    if (state.db === "down") return json(503, { message: "down" });
+    if (init.headers.apikey !== env.SUPABASE_SERVICE_ROLE_KEY) return json(401, { message: "no key" });
+    const path = url.slice(`${env.SUPABASE_URL}/rest/v1/`.length);
+    const [name, query] = path.split("?");
+    const body = init.body ? JSON.parse(init.body) : null;
+    if (name === "rpc/hsd_vineyard_reserve" && init.method === "POST") return json(200, reserve(body));
+    if (name !== "hsd_vineyard_contacts") return json(404, { message: name });
+    const f = filters(query || "");
+    if (init.method === "PATCH") {
+      const hit = state.rows.filter((r) => matches(r, f));
+      for (const r of hit) Object.assign(r, body);
+      return json(200, hit);
+    }
+    if (init.method === "DELETE") {
+      const hit = state.rows.filter((r) => matches(r, f));
+      state.rows = state.rows.filter((r) => !hit.includes(r));
+      return json(200, hit);
+    }
+    return json(405, { message: init.method });
+  }
+
+  function verifyJwt(auth) {
+    const [head, claims, sig] = auth.replace(/^Bearer /, "").split(".");
+    const v = createVerify("RSA-SHA256");
+    v.update(`${head}.${claims}`);
+    const ok = v.verify(publicKey, Buffer.from(sig, "base64url"));
+    const c = JSON.parse(Buffer.from(claims, "base64url").toString());
+    return ok && c.iss === env.GITHUB_APP_ID && c.exp - c.iat <= 660;
+  }
+
+  function github(url, init) {
+    const path = url.slice(API.length);
+    const body = init.body ? JSON.parse(init.body) : null;
+    if (path === `/app/installations/${env.GITHUB_APP_INSTALLATION_ID}/access_tokens`) {
+      if (state.github === "token-fails" || !verifyJwt(init.headers.Authorization)) return json(401, { message: "Bad credentials" });
+      state.calls.push({ token: body });
+      return json(201, { token: "ghs_installation_token_for_tests" });
+    }
+    if (init.headers.Authorization !== "Bearer ghs_installation_token_for_tests") return json(401, { message: "Bad credentials" });
+    const repo = "/repos/danshome/hickory-sands-district-ava";
+    if (path === `${repo}/issues` && init.method === "POST") {
+      if (state.github === "issue-fails") return json(502, { message: "Server Error" });
+      const issue = {
+        number: state.nextIssue++, title: body.title, body: body.body,
+        labels: state.dropLabels ? [] : body.labels.map((name) => ({ name })),
+        user: { login: "hsd-vineyard-form[bot]" },
+      };
+      state.issues.push(issue);
+      if (state.github === "answer-lost") throw new TypeError("network");
+      return json(201, issue);
+    }
+    const m = path.match(new RegExp(`^${repo}/issues/(\\d+)/labels$`));
+    if (m && init.method === "POST") {
+      const issue = state.issues.find((i) => i.number === Number(m[1]));
+      issue.labels.push(...body.labels.map((name) => ({ name })));
+      return json(200, issue.labels);
+    }
+    return json(404, { message: path });
+  }
+
+  function turnstile(init) {
+    if (state.turnstile === "down") throw new TypeError("network");
+    const form = new URLSearchParams(init.body.toString());
+    if (form.get("secret") !== env.TURNSTILE_SECRET) return json(200, { success: false });
+    const token = form.get("response");
+    const answers = {
+      pass: { success: true, hostname: "hickorysandsdistrictava.org", action: "vineyard-submit" },
+      "test-key": { success: true, hostname: "example.com", action: "vineyard-submit", metadata: { result_with_testing_key: true } },
+      "other-host": { success: true, hostname: "example.org", action: "vineyard-submit" },
+      "other-action": { success: true, hostname: "hickorysandsdistrictava.org", action: "vote" },
+      fail: { success: false, "error-codes": ["invalid-input-response"] },
+    };
+    // a named token answers as named; any other (the browser's) as the
+    // stand-in is set: "pass" by default
+    const mode = answers[token] ? token : state.turnstile;
+    return json(200, answers[mode] || { success: false, "error-codes": ["invalid-input-response"] });
+  }
+
+  async function fetchStub(url, init = {}) {
+    init = { ...init, headers: { ...(init.headers || {}) } };
+    const origin = new URL(url).origin;
+    if (origin === env.SUPABASE_URL) return database(url, init);
+    if (origin === API) return github(url, init);
+    if (url === "https://challenges.cloudflare.com/turnstile/v0/siteverify") return turnstile(init);
+    throw new Error(`no stand-in for ${url}`);
+  }
+
+  const deps = {
+    env: (k) => env[k] ?? "",
+    fetch: fetchStub,
+    now: () => state.now,
+    log: (...args) => state.logs.push(args.map(String).join(" ")),
+  };
+  return { state, env, deps, privateKey, publicKey };
+}
+
+// --- the cases (tests/test_vineyard_function.py) ---------------------------
+
+const GOOD = {
+  form: "hsd-vineyard", version: 1, id: "3f2b8c1e-5d4a-4e6f-9a7b-1c2d3e4f5a6b",
+  vineyard: { name: "Prairie Gap Vineyard", county: "Mason", planted: "planted", acres: 4.5, year: 2019,
+    varieties: ["Tempranillo", "Mourvèdre"] },
+  blocks: [[[-99.295, 30.865], [-99.2925, 30.865], [-99.2925, 30.8632], [-99.295, 30.8632]]],
+  pin: null,
+  contact: { name: "Jane Q. Grower", email: "jane@example.com", phone: "325-555-0100" },
+  agree: { public: true, permission: true }, website: "", turnstile: "pass",
+};
+const uuid = (n) => `3f2b8c1e-5d4a-4e6f-9a7b-${String(n).padStart(12, "0")}`;
+
+function request(body, { origin = SITE, type = "application/json", ip = "203.0.113.7", path = "", method = "POST", headers = {} } = {}) {
+  const text = typeof body === "string" ? body : JSON.stringify(body);
+  const h = { "Content-Type": type, "cf-connecting-ip": ip, ...headers };
+  if (origin) h.Origin = origin;
+  if (method !== "GET" && method !== "OPTIONS") h["Content-Length"] = String(Buffer.byteLength(text));
+  return new Request(URL_BASE + path, { method, headers: h, body: method === "GET" || method === "OPTIONS" ? undefined : text });
+}
+
+async function look(res) {
+  const text = await res.text();
+  let body = null;
+  try { body = text ? JSON.parse(text) : null; } catch { body = text; }
+  return { status: res.status, body, acao: res.headers.get("Access-Control-Allow-Origin") };
+}
+
+function hook(env, payload, event = "issues", secret = env.GITHUB_WEBHOOK_SECRET) {
+  const text = JSON.stringify(payload);
+  const sig = `sha256=${createHmac("sha256", secret).update(text).digest("hex")}`;
+  return request(text, { origin: null, path: "/github", headers: { "X-GitHub-Event": event, "X-Hub-Signature-256": sig } });
+}
+
+export async function cases(bundlePath) {
+  const fn = await import(pathToFileURL(bundlePath));
+  const out = {};
+  const fresh = () => {
+    const s = standIn();
+    return { ...s, handle: fn.makeHandler(s.deps) };
+  };
+
+  // CORS and the request's shape
+  let t = fresh();
+  out.preflight = await look(await t.handle(request(null, { method: "OPTIONS" })));
+  out.preflightOther = await look(await t.handle(request(null, { method: "OPTIONS", origin: "https://example.com" })));
+  out.otherOrigin = await look(await t.handle(request(GOOD, { origin: "https://example.com" })));
+  out.noOrigin = await look(await t.handle(request(GOOD, { origin: null })));
+  out.get = await look(await t.handle(request(null, { method: "GET" })));
+  out.textPlain = await look(await t.handle(request(GOOD, { type: "text/plain" })));
+  out.tooLarge = await look(await t.handle(request({ ...GOOD, pad: "x".repeat(70000) })));
+  out.notJson = await look(await t.handle(request("{")));
+  out.array = await look(await t.handle(request("[]")));
+  out.nan = await look(await t.handle(request(JSON.stringify(GOOD).replace("-99.295", "NaN"))));
+
+  // Turnstile
+  for (const token of ["", "fail", "test-key", "other-host", "other-action"]) {
+    out[`turnstile:${token}`] = await look(await t.handle(request({ ...GOOD, turnstile: token })));
+  }
+  t.state.turnstile = "down";
+  out["turnstile:down"] = await look(await t.handle(request(GOOD)));
+  out.afterTurnstile = { rows: t.state.rows.length, issues: t.state.issues.length };
+
+  // the trap, the rules, the private words
+  t = fresh();
+  out.trap = await look(await t.handle(request({ ...GOOD, website: "http://spam" })));
+  out.invalid = await look(await t.handle(request({ ...GOOD, vineyard: { ...GOOD.vineyard, name: "Call 3255550100" } })));
+  out.privateWord = await look(await t.handle(request({ ...GOOD, vineyard: { ...GOOD.vineyard, name: "Quillfeather Vineyard" } })));
+  out.afterRefusals = { rows: t.state.rows.length, issues: t.state.issues.length };
+
+  // a good one, and the same one again
+  t = fresh();
+  out.good = await look(await t.handle(request(GOOD)));
+  out.goodRow = { ...t.state.rows[0] };
+  out.goodIssue = t.state.issues[0];
+  out.tokenAsked = t.state.calls[0];
+  out.again = await look(await t.handle(request(GOOD)));
+  out.afterAgain = { rows: t.state.rows.length, issues: t.state.issues.length };
+  out.logs = t.state.logs;
+
+  // a send still under way: the row is there, its issue number not yet
+  t.state.rows.push({ id: "row-x", submission_id: uuid(99), issue_number: null, created_at: t.state.now.toISOString(),
+    closed_at: null, ip_hash: "f".repeat(32), contact_name: "X", email: "x@example.com", phone: null });
+  out.inProgress = await look(await t.handle(request({ ...GOOD, id: uuid(99) })));
+
+  // the limits: 5 a day from one address, 30 a day in all
+  t = fresh();
+  const perIp = [];
+  for (let i = 1; i <= 6; i++) perIp.push((await look(await t.handle(request({ ...GOOD, id: uuid(i) })))).status);
+  out.perIp = perIp;
+  out.perIpLast = await look(await t.handle(request({ ...GOOD, id: uuid(7) })));
+  t = fresh();
+  const perDay = [];
+  for (let i = 1; i <= 31; i++) {
+    perDay.push((await look(await t.handle(request({ ...GOOD, id: uuid(100 + i) }, { ip: `198.51.100.${i}` })))).status);
+  }
+  out.perDay = perDay;
+  out.perDayLast = await look(await t.handle(request({ ...GOOD, id: uuid(200) }, { ip: "198.51.100.200" })));
+  t.state.now = new Date(t.state.now.getTime() + 86400000 + 1000);
+  out.nextDay = await look(await t.handle(request({ ...GOOD, id: uuid(201) }, { ip: "198.51.100.201" })));
+
+  // GitHub failing: the row is freed, a retry starts again
+  t = fresh();
+  t.state.github = "issue-fails";
+  out.githubFails = await look(await t.handle(request(GOOD)));
+  out.afterGithubFails = { rows: t.state.rows.length, issues: t.state.issues.length };
+  t.state.github = "ok";
+  out.retry = await look(await t.handle(request(GOOD)));
+  t = fresh();
+  t.state.github = "token-fails";
+  out.tokenFails = await look(await t.handle(request(GOOD)));
+  out.afterTokenFails = { rows: t.state.rows.length };
+  t = fresh();
+  t.state.db = "down";
+  out.dbDown = await look(await t.handle(request(GOOD)));
+  out.dbDownIssues = t.state.issues.length;
+
+  // a label GitHub dropped is added again
+  t = fresh();
+  t.state.dropLabels = true;
+  out.dropped = await look(await t.handle(request(GOOD)));
+  out.droppedLabels = t.state.issues[0].labels.map((l) => l.name);
+
+  // secrets missing
+  t = fresh();
+  t.env.TURNSTILE_SECRET = "";
+  t.env.IP_SALT = "";
+  out.notReady = await look(await t.handle(request(GOOD)));
+  out.health = await look(await t.handle(request(null, { method: "GET", path: "/health", headers: { "x-forwarded-for": "198.51.100.1, 10.0.0.1" } })));
+  t = fresh();
+  out.healthReady = await look(await t.handle(request(null, { method: "GET", path: "/health" })));
+
+  // the key, in each form Dan may paste it
+  for (const form of ["pkcs1-lines", "pkcs1-one-line", "pkcs8-lines", "pkcs8-escaped", "not-a-key"]) {
+    t = fresh(); // the stand-in's GitHub checks the JWT against this run's key
+    const type = form.startsWith("pkcs1") ? "pkcs1" : "pkcs8";
+    let text = t.privateKey.export({ type, format: "pem" });
+    if (form.endsWith("one-line")) text = text.replace(/\n/g, " ");
+    if (form.endsWith("escaped")) text = text.replace(/\n/g, "\\n");
+    if (form === "not-a-key") text = "c2hvcnQ=";
+    t.env.GITHUB_APP_PRIVATE_KEY = text;
+    out[`key:${form}`] = (await look(await t.handle(request(GOOD)))).status;
+    out[`keyRows:${form}`] = t.state.rows.length;
+  }
+
+  // the webhook: closing, reopening, the sweep a year on
+  t = fresh();
+  await t.handle(request(GOOD));
+  await t.handle(request({ ...GOOD, id: uuid(2) }, { ip: "198.51.100.2" }));
+  const issue = (n, extra = {}) => ({ number: n, user: { login: "hsd-vineyard-form[bot]" }, ...extra });
+  out.hookBad = await look(await t.handle(hook(t.env, { action: "closed", issue: issue(9001) }, "issues", "wrong")));
+  out.hookUnsigned = await look(await t.handle(request(JSON.stringify({ action: "closed" }), { origin: null, path: "/github", headers: { "X-GitHub-Event": "issues" } })));
+  out.hookPing = await look(await t.handle(hook(t.env, { zen: "hello" }, "ping")));
+  out.hookOther = await look(await t.handle(hook(t.env, { action: "closed", issue: { number: 9002, user: { login: "someone" } } })));
+  out.afterOther = t.state.rows.map((r) => r.closed_at);
+  out.hookClosed = await look(await t.handle(hook(t.env, { action: "closed", issue: issue(9001, { closed_at: "2026-10-19T13:00:00Z" }) })));
+  out.afterClosed = t.state.rows.map((r) => [r.issue_number, r.closed_at]);
+  out.hookReopened = await look(await t.handle(hook(t.env, { action: "reopened", issue: issue(9001) })));
+  out.afterReopened = t.state.rows.map((r) => [r.issue_number, r.closed_at]);
+  await t.handle(hook(t.env, { action: "closed", issue: issue(9001, { closed_at: "2026-10-19T13:00:00Z" }) }));
+  await t.handle(hook(t.env, { action: "deleted", issue: issue(9002) }));
+  t.state.now = new Date("2027-10-01T00:00:00Z"); // under a year after closing
+  await t.handle(hook(t.env, { zen: "hi" }, "ping"));
+  await t.handle(hook(t.env, { action: "labeled", issue: issue(9001) }));
+  out.underAYear = t.state.rows.map((r) => r.issue_number);
+  t.state.now = new Date("2027-10-20T12:00:00Z"); // a year and a day on
+  await t.handle(hook(t.env, { action: "labeled", issue: issue(9001) }));
+  out.aYearOn = t.state.rows.map((r) => r.issue_number);
+  return out;
+}
+
+// --- the browser tests' server ------------------------------------------------
+
+export async function serve(port, bundlePath) {
+  const fn = await import(pathToFileURL(bundlePath));
+  let s = standIn();
+  let handle = fn.makeHandler(s.deps);
+  s.state.now = new Date();
+  const server = http.createServer(async (req, res) => {
+    const chunks = [];
+    for await (const c of req) chunks.push(c);
+    const body = Buffer.concat(chunks);
+    const origin = req.headers.origin || "";
+    const cors = { "Access-Control-Allow-Origin": origin || "*", Vary: "Origin" };
+    if (req.url.startsWith("/standin")) {
+      if (req.method === "POST") {
+        const set = JSON.parse(body.toString() || "{}");
+        if (set.reset) {
+          s = standIn();
+          s.state.now = new Date();
+          handle = fn.makeHandler(s.deps);
+        }
+        Object.assign(s.state, set.state || {});
+      }
+      res.writeHead(200, { "Content-Type": "application/json", ...cors });
+      res.end(JSON.stringify({ rows: s.state.rows, issues: s.state.issues, logs: s.state.logs }));
+      return;
+    }
+    if (s.state.github === "unreachable") {
+      req.socket.destroy();
+      return;
+    }
+    // the local page's requests pass as the site's; any other origin as it is
+    const local = /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
+    const headers = { ...req.headers, origin: local ? SITE : origin };
+    delete headers.host;
+    const answer = await handle(new Request(URL_BASE + req.url.replace(/^\/vineyard-submit/, ""), {
+      method: req.method,
+      headers,
+      body: ["GET", "HEAD", "OPTIONS"].includes(req.method) ? undefined : body,
+    }));
+    const out = Object.fromEntries(answer.headers.entries());
+    if (local && out["access-control-allow-origin"]) out["access-control-allow-origin"] = origin;
+    res.writeHead(answer.status, out);
+    res.end(Buffer.from(await answer.arrayBuffer()));
+  });
+  server.listen(port, "127.0.0.1", () => process.stdout.write(`stand-in on http://127.0.0.1:${port}\n`));
+}
+
+const [mode, ...rest] = process.argv.slice(2);
+if (mode === "cases") {
+  process.stdout.write(JSON.stringify(await cases(rest[0])));
+} else if (mode === "serve") {
+  await serve(Number(rest[0]), rest[1]);
+}

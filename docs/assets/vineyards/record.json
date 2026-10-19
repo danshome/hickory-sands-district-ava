@@ -1,0 +1,63 @@
+{
+ "about": "What docs/assets/vineyards/ was made from, by src/site/make_vineyards.py: ./build.sh checks it and ./build.sh site-data makes the data again when it changes",
+ "local": {
+  "vineyards": {
+   "file": "resources/vineyards/vineyards-EPSG4269.geojson",
+   "sha256": "sha256:7a102a3fdc86cb1aa88f5af466fc386064095e0cbdeaad0e687f3ac814faaf05"
+  },
+  "wells": {
+   "file": "docs/assets/aquifer/wells/index.json and draw-*.json",
+   "sha256": "sha256:013678b36ad4d588e2af76936448eacc1ba4f2cd9211d16e1f85df83847c8272"
+  },
+  "context": {
+   "file": "docs/assets/aquifer/context.geojson",
+   "sha256": "sha256:5ab859706e4d819f86f9960beab5c6ab28fb23571e56eeb3bfb3d5cb7e6061cf"
+  }
+ },
+ "parameters": {
+  "version": 1,
+  "fields": [
+   "name",
+   "category",
+   "block",
+   "acres",
+   "source"
+  ],
+  "wells_m": 1000.0,
+  "categories": [
+   [
+    "hsd",
+    "Hickory Sands District vineyard"
+   ],
+   [
+    "llano-uplift",
+    "Llano Uplift vineyard"
+   ],
+   [
+    "under-development",
+    "Under development"
+   ],
+   [
+    "historical",
+    "Historical vineyard"
+   ]
+  ],
+  "counties": [
+   "Blanco",
+   "Burnet",
+   "Gillespie",
+   "Llano",
+   "Mason",
+   "McCulloch",
+   "San Saba"
+  ],
+  "privacy_rules": "sha256:3311ae7cd6226288e2e44d051774e5d14db9fd4208e392acc6b74c90b19b52ae"
+ },
+ "outputs": {
+  "counties.geojson": 32460,
+  "register.json": 4586,
+  "stats.json": 543,
+  "vineyard-wells.json": 200708,
+  "vineyards.geojson": 31800
+ }
+}

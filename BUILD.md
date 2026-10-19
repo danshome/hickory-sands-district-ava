@@ -135,7 +135,12 @@ src/
   site/                  make_site_data: the website's map data (docs/data/) from the boundary build, and (with
                          boundary_drawing) the boundary drawing on Home and The boundary; make_survey_map
                          (with survey_frame): the quads under that drawing;
-                         make_aquifer_3d (with aquifer/): the 3D aquifer page's data (docs/assets/aquifer/)
+                         make_aquifer_3d (with aquifer/): the 3D aquifer page's data (docs/assets/aquifer/);
+                         make_vineyards (with aquifer/vineyards): the vineyards' data (docs/assets/vineyards/)
+  vineyards/             the vineyards page's form, "Add your vineyard": submission (the rules, the issue, the review,
+                         the vineyard file's writer), check_issue and approve (the two Actions), functions/vineyard-submit/
+                         (the Supabase Edge Function and its table's SQL), bundle_function, check_function, outline_issue;
+                         SETUP.md: setting it up (the GitHub Apps, Turnstile, Supabase)
   publish/               ArcGIS Online: agol_publish, agol_layer, agol_dashboard, agol_org_categories, agol_share (what
                          is sent); agol_dryrun + agol_dryrun_checks (the dry run); agol_check (the live site)
 resources/
@@ -149,7 +154,7 @@ resources/
   geology/               USGS SGMC units shifted to the outcrops, for the map only; see resources/geology/README.md
   aquifer/               the 3D aquifer page's inputs: inputs.csv (the pinned downloads), cache/ (them, not in git),
                          TWDB's fault lines; see resources/aquifer/README.md
-  vineyards/             the vineyard outlines the 3D aquifer page draws; see resources/vineyards/README.md
+  vineyards/             the vineyard outlines the site shows; see resources/vineyards/README.md
   quads/                 quads-manifest.csv, cropped/ (neatline VRT templates); geotiff/ and geopdf/ are downloaded
 documents/               hand-written texts: README.template.txt ({AREA_SQMI} filled by the build),
                          read-me-first.template.html
@@ -206,7 +211,8 @@ research/                research, audits, design proposals and prototypes until
    (`src/site/make_survey_map.py`) is checked by its record, `docs/assets/survey-map.json` (its frame, the drawn line's
    box and its quads) and the image's size, never by its pixel values. The 3D aquifer page's data
    (`src/site/make_aquifer_3d.py --check`) is checked by its record, `docs/assets/aquifer/record.json`, with no
-   download (see The website below).
+   download, and the vineyards' (`src/site/make_vineyards.py --check`) by theirs,
+   `docs/assets/vineyards/record.json` (see The website below).
 
 ## Python packages and security
 
@@ -306,6 +312,26 @@ for Python; 2-space YAML and TOML). By hand: `.venv/bin/ruff format .` and `.ven
   owner's initials, short names and "&" names are found (the review of #139); `stats.json` holds every figure the page
   marks, the wells' scales among them; the Wells group's controls and the groups' order; every file is under 2 MB; the
   wording; and, on made-up records, what the check calls stale;
+- `test_make_vineyards.py`: the vineyards' data (`docs/assets/vineyards/`) is up to date with its record, and made
+  again here it is the committed bytes (the wells near each block from the 3D page's well tiles); seven closed counties;
+  one register entry per vineyard; the aquifer's record no longer lists the vineyards; what the check calls stale;
+- `test_vineyard_rules.py`: the vineyard form's rules, `docs/assets/vineyard-blocks.js` (the page's and the function's,
+  in node) against `src/vineyards/submission.py` (the Actions'): the same errors, facts, cleaned submission, title and
+  issue for every fixture, hostile ones among them, and each limit on each side; the issue holds no contact and nothing
+  that can close a code fence or carry HTML;
+- `test_vineyard_function.py`: the Edge Function, bundled as Dan deploys it, run in node (22 or later) against stand-ins
+  for its table, Turnstile and GitHub (`tests/vineyard_standin.mjs`): CORS, size, Turnstile, the trap, the rules and
+  the private words, the row and the issue, a retry, the limits, failures, the App's key in each form, the webhook and
+  the year's deletion; and `check_function.py` passing on it;
+- `test_vineyard_sql.py`: the contacts table's SQL in a throwaway PostgreSQL, when one is installed (Supabase's roles
+  kept out, row level security forced, the limits and a send again, only `hsd_vineyard_*` objects);
+- `test_vineyard_actions.py`: `check_issue.py` and `approve.py` run as the workflows run them (`python -I -B`) on sample
+  issue events, against a stand-in for GitHub's API: opened, edited, labelled by the owner, labelled by someone else, a
+  forged issue, a body not in the layout, an overlap, a pin, a second approval;
+- `test_vineyard_submission.py`: the review, and the vineyard file's writer (byte for byte, sorted, clockwise, the file's
+  own block numbers, the year and varieties kept, a private word refused); a pin's outline drawn by the petitioners;
+- `test_workflows.py`: every workflow's actions pinned to a commit, Linux only, no event text in a shell; the vineyard
+  workflows' permissions and gates as reviewed, one bot and one label everywhere; a release only of `main`'s history;
 - `test_site.py`: every page of the website in `docs/` is a complete HTML document (doctype, language, character set,
   phone viewport, title), every local file it links to or loads is in `docs/`, and every link off the site is https;
 - `test_site_nav.py`: every page in `docs/`, and `src/site/walk.template.html`, has Home's menu links in Home's order,
@@ -420,7 +446,7 @@ after each load and `-menu-open.png` with the menu open.
 
 ## GitHub Actions and releases
 
-Four workflows in `.github/workflows/`, every action pinned to a commit:
+Six workflows in `.github/workflows/`, every action pinned to a commit:
 
 - **lint** (`lint.yml`, GitHub's Linux machines): every pre-commit hook on every file, then the unit tests that need
   only the lint tools, on every pull request and every push to `main`. The lint tools come from `requirements-dev.txt`,
@@ -442,6 +468,19 @@ Four workflows in `.github/workflows/`, every action pinned to a commit:
 git tag v2026.10.20 && git push origin v2026.10.20
 ```
 
+  It releases only a tag on `main`'s history: a tag pushed on another branch (the vineyard pull request App can push
+  branches and tags) is refused.
+
+- **vineyard-check** (`vineyard-check.yml`, Linux): when an issue is opened, edited or labelled, and only for the
+  form's issues (opened by the GitHub App "HSD vineyard form", labelled `vineyard-submission`, open), it checks the
+  vineyard sent through the website's form again with the repository's data and posts one comment, which it edits when
+  the issue changes (`src/vineyards/check_issue.py`). Its token can write issues only.
+- **vineyard-approve** (`vineyard-approve.yml`, Linux): when the repository's owner adds the label `approved` to one of
+  those issues, it adds the blocks to `resources/vineyards/`, makes the site's vineyard data again and opens the pull
+  request, with a one-run token of the GitHub App "HSD vineyard PR" from the environment `vineyard-pr` (main only), so
+  the pull request's checks run (`src/vineyards/approve.py`). Every such pull request is reviewed and merged by hand.
+  Both read the issue from the event's file, never from an expression in a shell; an issues event runs them as they
+  are on `main`. Setting them up: `src/vineyards/SETUP.md`.
 - **site** (`site.yml`, Linux): the website. On pull requests that touch `docs/`, its tests (`tests/test_site.py`); on
   a push to `main` that touches `docs/`, and by hand, the same tests and then `docs/` deployed to GitHub Pages as it
   is (no build step: what is in `docs/` is what is served).
@@ -496,7 +535,8 @@ GDAL rounds differently agree. A frame reaching past the listed quads stops `./b
 - **The Hickory Aquifer in 3D** (`aquifer.html`, #135; linked from The land): the whole Hickory Aquifer as TWDB's
   Llano Uplift groundwater model (GAM v1.01, layer 7) draws it, under a see-through ground, in an `<arcgis-scene>`;
   TWDB's well reports (driller's reports and the Groundwater Database) coloured by the rock their logs record, without
-  people's names; the vineyard outlines (a vineyard's popup lists the wells near it); the proposed district, TTB's
+  people's names; the vineyard outlines (a vineyard's popup lists the wells near it; their data is
+  `docs/assets/vineyards/`, below); the proposed district, TTB's
   proposed Llano Uplift AVA, counties and towns; "My location", with the model's estimate of what lies beneath; a
   switch for every layer and group and filters for use, water volume (yield) and depth. Zoomed out (the opening Whole
   aquifer view) it draws one well per cell; from the District view's scale in (`WELLS_ALL_SCALE` in `params.py`,
@@ -535,7 +575,7 @@ list against `docs/data/boundary.geojson`, the scripts, and (with node) the emai
 
 The 3D aquifer page's data is made by `src/site/make_aquifer_3d.py` (with `src/site/aquifer/`) from the downloads
 `resources/aquifer/inputs.csv` pins (TWDB's model archive, 364 MB, its 2017 aquifer outlines, its two well databases,
-the Census counties and places) and committed inputs (`resources/vineyards/`, TWDB's fault lines in
+the Census counties and places) and committed inputs (TWDB's fault lines in
 `resources/aquifer/`, TTB's Llano Uplift AVA in `resources/ttb/`, the shifted geology). `docs/assets/aquifer/record.json`
 records every input's SHA-256, the generator's parameters (`src/site/aquifer/params.py` and a digest of the privacy
 rules) and every file written with its size. `./build.sh` (and so the build workflow) only checks it
@@ -560,7 +600,28 @@ deliberate change: download the file, put its date (`snapshot`: the date of the 
 zip; `fetched`: today), byte count and SHA-256 (`shasum -a 256`) in its row of `resources/aquifer/inputs.csv`, put the
 file in `resources/aquifer/cache/` under the row's `file` name (or delete the cached one and let the run fetch it),
 run `./build.sh site-data`, look at the figures in `docs/assets/aquifer/stats.json` and commit the data, the record and
-the manifest in one pull request. A changed fault-line or vineyard file in `resources/` makes the data stale the same way.
+the manifest in one pull request. A changed fault-line file in `resources/` makes the data stale the same way.
+
+The vineyards' data, `docs/assets/vineyards/`, is made apart by `src/site/make_vineyards.py`, from committed files only:
+`resources/vineyards/vineyards-EPSG4269.geojson`, the 3D page's well tiles (`docs/assets/aquifer/wells/index.json` and
+`draw-*.json`) and its county lines (`context.geojson`). It writes `vineyards.geojson` (the blocks), `vineyard-wells.json`
+(the wells within a kilometre of each block, nearest first), `register.json` (one entry per vineyard, with the year
+first planted and the varieties when given, for the vineyards page), `counties.geojson` (the seven Llano Uplift counties
+closed into polygons, for the form's county guess), `stats.json` (the figures, which the 3D page merges with its own) and
+`record.json` (the inputs' SHA-256s, the parameters and the files). So a vineyard can be added anywhere, GitHub's runners
+among them, without the 3D page's downloads: `./build.sh` checks it (`--check`, exit 3 when stale), `./build.sh
+site-data` makes it again after the aquifer's data (new well tiles make it stale too), and the `vineyard-approve` Action
+runs it for its pull request. Like the aquifer's generator, it reads the private words (`.private-words`, or the
+`PRIVATE_WORDS` secret on the runners) and refuses a vineyard field that holds one, a person's name, a title, an e-mail
+address or a telephone number.
+
+The vineyards page's form, "Add your vineyard", sends a vineyard to the Supabase Edge Function `vineyard-submit`
+(`src/vineyards/functions/vineyard-submit/`), which checks it with the page's own rules (`docs/assets/vineyard-blocks.js`),
+keeps the sender's contact in one locked table (`hsd_vineyard_contacts`: row level security on, no policies, written only
+by the function, each row deleted a year after its issue is closed) and opens a public issue with the public fields only.
+The two Actions above check it and, on the owner's label, open the pull request. Dan sets it up once and deploys the
+function from the Supabase dashboard as one file (`src/vineyards/bundle_function.py`); `src/vineyards/SETUP.md` gives
+every click, and `src/vineyards/check_function.py` checks the deployed function from outside.
 
 The land page's geologic timeline (#117) is plain HTML in `docs/land.html`: eight stages, oldest first, each with its
 age, its uncertainty in words and numbered citations to the Sources list at its end. `docs/assets/timeline.js` only adds

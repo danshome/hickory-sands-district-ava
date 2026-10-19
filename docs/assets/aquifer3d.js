@@ -3,7 +3,8 @@
 // with TWDB's well reports, the vineyards, the proposed district, TTB's
 // proposed Llano Uplift AVA, the counties and towns.
 //
-// The data is assets/aquifer/ (made by src/site/make_aquifer_3d.py) and the
+// The data is assets/aquifer/ (made by src/site/make_aquifer_3d.py), the
+// vineyards are assets/vineyards/ (made by src/site/make_vineyards.py) and the
 // district is data/boundary.geojson. The aquifer's body is built here from
 // blocks of 2 x 2 (half a mile, large screens) or 4 x 4 (a mile, phones)
 // model cells, each from its bottom to its top, with walls only where a
@@ -13,12 +14,14 @@
 // Esri's ground cannot be loaded, the ground is flat and every height is drawn
 // from the model's own ground instead; when the basemap cannot be loaded, the
 // layers are drawn on the page's background. Every figure the page shows is
-// read from assets/aquifer/stats.json. Text from the data is only ever set as
-// text, never parsed as HTML.
+// read from assets/aquifer/stats.json and, for the vineyards,
+// assets/vineyards/stats.json. Text from the data is only ever set as text,
+// never parsed as HTML.
 import { apiKey } from "./map-config.js";
 import { setupWells, wellAttributes, CLASS_NAMES, FAR_HEADS_MAX } from "./aquifer-wells.js";
 
 const DATA = "assets/aquifer/";
+const VINEYARDS = "assets/vineyards/";
 document.documentElement.classList.add("js");
 
 const setText = (id, text) => {
@@ -49,8 +52,8 @@ async function json(path) {
   return response.json();
 }
 
-// ---- The figures: every element marked data-stat gets its text from
-// stats.json, in the format its data-format names.
+// ---- The figures: every element marked data-stat gets its text from the two
+// stats.json files, in the format its data-format names.
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July",
   "August", "September", "October", "November", "December"];
 const FORMATS = {
@@ -73,7 +76,8 @@ export function formatStat(value, format) {
 }
 let stats = {};
 try {
-  stats = (await json(`${DATA}stats.json`)).figures;
+  const [aquifer, vines] = await Promise.all([json(`${DATA}stats.json`), json(`${VINEYARDS}stats.json`)]);
+  stats = { ...aquifer.figures, ...vines.figures };
   for (const element of document.querySelectorAll("[data-stat]")) {
     element.textContent = formatStat(stats[element.dataset.stat], element.dataset.format);
   }
@@ -481,7 +485,7 @@ let wells = null;
 let nearWells = null;
 function loadNear() {
   if (!nearWells) {
-    nearWells = json(`${DATA}vineyard-wells.json`).catch((error) => {
+    nearWells = json(`${VINEYARDS}vineyard-wells.json`).catch((error) => {
       nearWells = null;
       throw error;
     });
@@ -551,7 +555,7 @@ const VINEYARD_STYLES = {
 const vineyardLayer = (category, title) => {
   const look = VINEYARD_STYLES[category];
   return new GeoJSONLayer({
-    url: `${DATA}vineyards.geojson`,
+    url: `${VINEYARDS}vineyards.geojson`,
     title,
     definitionExpression: `category = '${category}'`,
     geometryType: "polygon",

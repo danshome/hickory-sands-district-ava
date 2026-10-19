@@ -1,12 +1,14 @@
-# resources/vineyards: the vineyard outlines on the 3D aquifer page
+# resources/vineyards: the vineyard outlines on the site
 
-Read by `src/site/make_aquifer_3d.py` (`src/site/aquifer/vineyards.py`) for `docs/aquifer.html` (#135). NAD83
-(EPSG:4269), longitude first. Map context only: no boundary geometry comes from it.
+Read by `src/site/make_vineyards.py` (`src/site/aquifer/vineyards.py`), which writes `docs/assets/vineyards/` for the
+3D aquifer page, `docs/aquifer.html` (#135), and the vineyards page. NAD83 (EPSG:4269), longitude first. Map context
+only: no boundary geometry comes from it.
 
 `vineyards-EPSG4269.geojson`: one feature per vine block, with its vineyard's `name`, its `category`, its `block` (where a
 vineyard has several: its number or a planned block's name, always as text, since the page's map takes a field's type
 from its first value), the `acres` of its outline (not of planted vines) and `source`, a short note of where the name
-and the outline come from. Vineyard names and outlines are published as they
+and the outline come from. A block sent through the website's form also has the `year` its vineyard was first planted
+and its `varieties`, as the sender gave them (either may be empty). Vineyard names and outlines are published as they
 are; no field holds a person's name, an e-mail, a telephone number or a street address, and the generator refuses one
 that does.
 
@@ -33,6 +35,14 @@ Sources (each block's `source` says which):
   acres, to be planted in 2027 and 2028. The Streeter Road block is kept within the surveyed tract (the plan draws it further south, pending the
   owners' word). Only the two blocks are kept, never the plan or the tract's boundary. The blocks' `source` says
   "the vineyard's preliminary planting plan", because the generator refuses the word "owner" in the vineyard data.
+- the website's form ("Add your vineyard" on the vineyards page): each block drawn by the sender on Esri World Imagery
+  (or, for a pin, by the petitioners from imagery), checked by the petitioner and added by the `vineyard-approve`
+  Action's pull request once the issue has the label `approved` (`src/vineyards/SETUP.md`). Its `source` reads "Sent
+  through the website's vineyard form (GitHub issue #n) and checked by the petitioner, <date>; drawn by ...". Its
+  category follows the blocks and the sender: planned is `under-development`; planted, `hsd` inside the proposed
+  district and `llano-uplift` outside it (a block across the line takes the category of most of the acres, for the
+  petitioner to confirm); the form never chooses `historical`. The file's layout is kept (one feature per line, sorted
+  by category and name), so the pull request's diff is only the new lines.
 
 Left out: the 2022 outlines of the vineyards outlined again here (each is replaced by its blocks); the west Peters
 Prairie block (left off, the petitioners' decision); Heart of Art's larger 2022 outline (Comment 9's block is used);
@@ -41,5 +51,6 @@ A vineyard whose place is not yet known is not drawn.
 
 Not a survey: only the named vineyards were looked at, so other vineyards may exist; summer 2022 photographs may show
 recent plantings, very young vines or dead blocks wrongly. Made from the vineyard check's outputs, Comment 9's block
-file and the trace of the Paisano planting plan, kept outside the repository; to add or move a vineyard, edit this
-file (a `category` from the table, a `source` note) and run `./build.sh site-data`.
+file and the trace of the Paisano planting plan, kept outside the repository; to add or move a vineyard by hand, edit
+this file (a `category` from the table, a `source` note) and run `./build.sh site-data` (or
+`src/site/make_vineyards.py`, which needs nothing downloaded).

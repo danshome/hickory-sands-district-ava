@@ -28,6 +28,7 @@ from src.site.aquifer import vineyards
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DOCS = os.path.join(ROOT, "docs")
 DATA = os.path.join(DOCS, "assets", "aquifer")
+VINES = os.path.join(DOCS, "assets", "vineyards")
 SCRIPTS = ("aquifer3d.js", "aquifer-wells.js")
 SDK = "https://js.arcgis.com/5.1/"
 FORMATS = ("int", "pct", "num", "deg", "date", "scale")
@@ -101,8 +102,9 @@ def test_scripts_never_parse_text_as_html(scripts, name):
 
 
 def test_every_file_the_scripts_name_exists(scripts):
-    # Each script names its files after its own DATA folder; the tiles and
-    # the reports, named by key, are the next test's.
+    # Each script names its files after its own DATA folder (and the 3D
+    # script the vineyards' after VINEYARDS); the tiles and the reports,
+    # named by key, are the next test's.
     named = set()
     for name, folder in (("aquifer3d.js", ""), ("aquifer-wells.js", "wells/")):
         found = re.findall(
@@ -114,11 +116,19 @@ def test_every_file_the_scripts_name_exists(scripts):
         "hickory-k2.json",
         "hickory-k4.json",
         "drill-grid.bin",
-        "vineyard-wells.json",
         "wells/index.json",
     } <= named
     for name in named:
         assert os.path.isfile(os.path.join(DATA, name)), name
+    vines = set(
+        re.findall(
+            r"\$\{VINEYARDS\}([\w.-]+\.(?:json|geojson))",
+            scripts["aquifer3d.js"],
+        )
+    )
+    assert vines == {"stats.json", "vineyard-wells.json", "vineyards.geojson"}
+    for name in vines:
+        assert os.path.isfile(os.path.join(VINES, name)), name
     assert '"data/boundary.geojson"' in scripts["aquifer3d.js"]
     assert os.path.isfile(os.path.join(DOCS, "data", "boundary.geojson"))
 
@@ -143,7 +153,10 @@ def test_every_tile_and_report_cell_exists(index):
         assert len(records) == index["tiles"][key]["count"], key
         cells |= {r[8] for r in records}
     cells |= {r[8] for r in index["overview"]}
-    near = load("vineyard-wells.json")["vineyards"]
+    with open(
+        os.path.join(VINES, "vineyard-wells.json"), encoding="utf-8"
+    ) as fh:
+        near = json.load(fh)["vineyards"]
     cells |= {r[9] for found in near.values() for r in found}
     for cell in cells:
         assert os.path.isfile(os.path.join(wells, f"detail-{cell}.json")), cell
@@ -152,7 +165,13 @@ def test_every_tile_and_report_cell_exists(index):
 
 
 def test_every_figure_the_page_shows_is_in_the_stats(page):
+    # The aquifer's figures and the vineyards' (src/site/make_vineyards.py),
+    # which the page merges; no name is in both.
     figures = load("stats.json")["figures"]
+    with open(os.path.join(VINES, "stats.json"), encoding="utf-8") as fh:
+        vines = json.load(fh)["figures"]
+    assert not set(figures) & set(vines)
+    figures.update(vines)
     marks = re.findall(
         r'data-stat="([a-z0-9_]+)"(?: data-format="(\w+)")?', page
     )
@@ -381,7 +400,7 @@ VINEYARDS = os.path.join(
 
 
 @pytest.mark.parametrize(
-    "path", [VINEYARDS, os.path.join(DATA, "vineyards.geojson")]
+    "path", [VINEYARDS, os.path.join(VINES, "vineyards.geojson")]
 )
 def test_the_vineyards_name_no_one(path):
     features = json.loads(read(path))["features"]
@@ -392,7 +411,7 @@ def test_the_vineyards_name_no_one(path):
 
 
 @pytest.mark.parametrize(
-    "path", [VINEYARDS, os.path.join(DATA, "vineyards.geojson")]
+    "path", [VINEYARDS, os.path.join(VINES, "vineyards.geojson")]
 )
 def test_every_vineyard_field_keeps_one_type(path):
     # The page's GeoJSONLayer takes a field's type from its values: a block
@@ -425,7 +444,7 @@ HSD_NAMES = {
 
 
 @pytest.mark.parametrize(
-    "path", [VINEYARDS, os.path.join(DATA, "vineyards.geojson")]
+    "path", [VINEYARDS, os.path.join(VINES, "vineyards.geojson")]
 )
 def test_the_district_s_vineyards_keep_the_petition_s_names(path):
     features = json.loads(read(path))["features"]
@@ -446,7 +465,7 @@ def test_the_vineyard_check_refuses_a_name():
 
 
 def test_every_vineyard_has_a_category_and_a_layer(page, scripts):
-    categories = [c for c, _ in params.VINEYARD_CATEGORIES]
+    categories = [c for c, _ in vineyards.CATEGORIES]
     features = json.loads(read(VINEYARDS))["features"]
     assert {f["properties"]["category"] for f in features} <= set(categories)
     for f in features:

@@ -18,7 +18,8 @@
 #                         the live site, or HSD_SITE_URL; --local serves this checkout's docs/ on 127.0.0.1 for the run
 #                         (before a website change is merged); after a deploy, run it without --local (read-only)
 #   ./build.sh site-data  refresh the website's map data (docs/data/, walk.html, the pages' figures, the survey map, the 3D
-#                         aquifer page's data in docs/assets/aquifer/) from the last build; commit it
+#                         aquifer page's data in docs/assets/aquifer/, the vineyards' in docs/assets/vineyards/) from the
+#                         last build; commit it
 #
 # No manual steps, on macOS or Linux: missing tools are installed with Homebrew (GDAL, poppler, Python 3.14; on macOS
 # also Google Chrome, which Linux needs installed); every Python package in the lock files is checked against the OSV
@@ -157,12 +158,14 @@ checks() {
 SITE_DATA=(src/site/make_site_data.py --gis "$WORK/gis" --stats "$WORK/review/grit-change-stats.json" --out docs/data --walk src/site/walk.template.html docs/walk.html --pages docs)
 SURVEY_MAP=(src/site/make_survey_map.py --pages docs)   # the quads under the boundary drawing on Home and The boundary
 AQUIFER_3D=(src/site/make_aquifer_3d.py)   # the 3D aquifer page's data (docs/assets/aquifer/), from resources/aquifer/inputs.csv
+VINEYARDS=(src/site/make_vineyards.py)     # the vineyards' data (docs/assets/vineyards/), from resources/vineyards/ and the well tiles
 
 site_data() {
     step "the website's map data (docs/data/, walk.html, figures) against this build"   # hard, after the package: a boundary change must reach the site
     run "${SITE_DATA[@]}" --check            # exits 3 when docs/data/ is stale, and says how to refresh it
     run "${SURVEY_MAP[@]}" --check           # exits 3 when the survey map's frame, line or quads changed (never on pixel values)
     run "${AQUIFER_3D[@]}" --check           # exits 3 when an input snapshot, a parameter or a file changed; no download (#135)
+    run "${VINEYARDS[@]}" --check            # exits 3 when the vineyards, the well tiles or a parameter changed
 }
 
 documents() {
@@ -279,7 +282,8 @@ case "${1:-all}" in
                 env_setup; check_site "${2:-}" ;;
     site-data) env_setup; [ -f "$WORK/.checks-passed" ] || { echo "no checked build: run ./build.sh first"; exit 1; }
                step "the website's map data (docs/data/), walk page and figures from the last build"; run "${SITE_DATA[@]}"; run "${SURVEY_MAP[@]}"
-               run "${AQUIFER_3D[@]}" ;;            # made again only when stale: fetches missing inputs into resources/aquifer/cache/
+               run "${AQUIFER_3D[@]}"               # made again only when stale: fetches missing inputs into resources/aquifer/cache/
+               run "${VINEYARDS[@]}" ;;             # after the aquifer: it reads the aquifer's well tiles
     audit)     env_setup; audit ;;
     upgrade)   upgrade ;;
     lint)      env_setup; step "pre-commit hooks on every file"; PRE_COMMIT_HOME="$TARGET/pre-commit" "$VENV/bin/pre-commit" run --all-files ;;

@@ -132,7 +132,8 @@ src/
   package/               make_package.sh (the zip)
   site/                  make_site_data: the website's map data (docs/data/) from the boundary build; make_survey_map
                          (with survey_frame): the quads under the boundary drawing on Home and The boundary;
-                         make_aquifer_3d (with aquifer/): the 3D aquifer page's data (docs/assets/aquifer/)
+                         make_aquifer_3d (with aquifer/): the 3D aquifer page's data (docs/assets/aquifer/);
+                         make_land (with land/): The land's slice and maps (docs/assets/land/)
   publish/               ArcGIS Online: agol_publish, agol_layer, agol_dashboard, agol_org_categories, agol_share (what
                          is sent); agol_dryrun + agol_dryrun_checks (the dry run); agol_check (the live site)
 resources/
@@ -145,7 +146,8 @@ resources/
                          AVAs_Production record and polygon snapshot, and the proposed Llano Uplift AVA's (3D page)
   geology/               USGS SGMC units shifted to the outcrops, for the map only; see resources/geology/README.md
   aquifer/               the 3D aquifer page's inputs: inputs.csv (the pinned downloads), cache/ (them, not in git),
-                         TWDB's fault lines; see resources/aquifer/README.md
+                         TWDB's fault lines; and The land's: land-inputs.csv (3DEP tiles), TWDB's row 239 line;
+                         see resources/aquifer/README.md
   vineyards/             the vineyard outlines the 3D aquifer page draws; see resources/vineyards/README.md
   quads/                 quads-manifest.csv, cropped/ (neatline VRT templates); geotiff/ and geopdf/ are downloaded
 documents/               hand-written texts: README.template.txt ({AREA_SQMI} filled by the build),
@@ -199,7 +201,8 @@ research/                research, audits, design proposals and prototypes until
    (`src/site/make_survey_map.py`) is checked by its record, `docs/assets/survey-map.json` (its frame, the drawn line's
    box and its quads) and the image's size, never by its pixel values. The 3D aquifer page's data
    (`src/site/make_aquifer_3d.py --check`) is checked by its record, `docs/assets/aquifer/record.json`, with no
-   download (see The website below).
+   download (see The website below), and The land's slice and maps (`src/site/make_land.py --check`) by theirs,
+   `docs/assets/land/record.json`, the same way.
 
 ## Python packages and security
 
@@ -288,6 +291,14 @@ for Python; 2-space YAML and TOML). By hand: `.venv/bin/ruff format .` and `.ven
   owner's initials, short names and "&" names are found (the review of #139); `stats.json` holds every figure the page
   marks, the wells' scales among them; the Wells group's controls and the groups' order; every file is under 2 MB; the
   wording; and, on made-up records, what the check calls stale;
+- `test_land.py`: The land's slice and maps: the data is up to date with its record (the build's check); `section.json`
+  agrees with `stats.json`, and both with the class rule run again on the 3D page's committed well files (the slice's
+  logs and map 03's counts); only a report number and its driller's cleaned words leave the build; every file within its
+  budget; every figure the two sections show is a `data-figure` the build fills, and no other number is typed there;
+  every drawing exists at the size the page gives it and carries its own patterns; Comment 9 is never a statement's only
+  source; `land.js` sets text only as text and agrees with `land.css` on a phone held upright; the wording; and, on
+  made-up records, the class rule (the fact-check's fixes among them), the logs, the figures' formats and what the
+  check calls stale;
 - `test_site.py`: every page of the website in `docs/` is a complete HTML document (doctype, language, character set,
   phone viewport, title), every local file it links to or loads is in `docs/`, and every link off the site is https;
 - `test_publish_dryrun.py`: the publish dry run's checks pass on a dry run of the current build
@@ -508,6 +519,26 @@ zip; `fetched`: today), byte count and SHA-256 (`shasum -a 256`) in its row of `
 file in `resources/aquifer/cache/` under the row's `file` name (or delete the cached one and let the run fetch it),
 run `./build.sh site-data`, look at the figures in `docs/assets/aquifer/stats.json` and commit the data, the record and
 the manifest in one pull request. A changed fault-line or vineyard file in `resources/` makes the data stale the same way.
+
+The land page opens with two sections drawn from data. **Sand, height and water**: four small maps of one frame (USGS
+3DEP 1 arc-second ground at 1,500 feet and higher; the shifted geology's Hickory Sandstone Member formation and the
+Precambrian outcrop of TWDB's model; every logged well in the frame, coloured by the first rock its driller names at its
+deepest water-bearing zone, else at the bottom of its log; the formation at 1,500 feet and higher). **A slice through
+the district**: part of TWDB's section line A–A′, model row 239 (columns 150 to 290), to scale (40 times exaggerated),
+with the model's layers, the 3DEP ground, TWDB's fault lines, the district, and the deepest logged well within 800 m in
+each mile that has one, its log in the driller's words; six steps reveal it layer by layer, scrolled as the timeline is
+(`docs/assets/land.js`, `land.css`), and the build's static `section.svg` stands in without JavaScript. Their data,
+`docs/assets/land/`, is made by `src/site/make_land.py` (with `src/site/land/`) from the downloads
+`resources/aquifer/land-inputs.csv` pins (the four 3DEP tiles), TWDB's model archive (the 3D page's, from the same
+cache, `resources/aquifer/cache/`), TWDB's row 239 and fault lines, the shifted geology, `docs/data/boundary.geojson` and
+the 3D page's Precambrian outcrop, stats and cleaned well files; `record.json` records them as the 3D page's does. The
+build only checks it (`make_land.py --check`, no download; GitHub Actions never download the tiles or the model), and
+`./build.sh site-data` makes it again when it is stale, after the boundary and the 3D page's data, then writes the page's
+`land_` figures from its `stats.json` (`make_site_data.py`). Two hard checks come first: each well carries only its
+report number and its driller's words as the 3D page's cleaned report gives them (the privacy rules' scan, and the
+private words), and `section.json` agrees with `stats.json`. The class rule (`src/site/land/rules.py`: the first rock a
+driller names, a bare "sand" its own class) is not yet the 3D page's, so a well's colour here can differ from its colour
+on The water.
 
 The land page's geologic timeline (#117) is plain HTML in `docs/land.html`: eight stages, oldest first, each with its
 age, its uncertainty in words and numbered citations to the Sources list at its end. `docs/assets/timeline.js` only adds

@@ -50,7 +50,10 @@ On the phones:
   scrolls the page and leaves the map still; two fingers move the map; Home
   goes back to the whole boundary;
 - The land: the drawing steps to the stage on the reading line as the page
-  scrolls, and still does when the reader scrolls right after tapping Later.
+  scrolls, and still does when the reader scrolls right after tapping Later;
+  so does the slice through the district, at every viewport, with no
+  sideways scrolling, after tapping Next too (screenshots of the maps, each
+  step and the questions).
 Screenshots: target/browser-tests/site/<page>-<viewport>-<test>.png
 (-FAILED.png when it failed), and <page>-<viewport>-loaded.png after each
 load.
@@ -283,19 +286,42 @@ AWAY = """async (sel) => { const v = document.querySelector(sel).view;
 # (a third of the way down the screen left under the stuck panel, as
 # timeline.js draws it on a phone held upright)
 LAND = """() => {
-  const fig = document.querySelector('.geo-figure');
+  const fig = document.querySelector('#deep-time .geo-figure');
   const panel = fig.getBoundingClientRect().height;
   const line = panel + (innerHeight - panel) / 3;
   const items = [...document.querySelectorAll('.geo-stage')];
   const on = items.findIndex(li => { const r = li.getBoundingClientRect();
     return r.top <= line && r.bottom > line; });
-  return {shown: parseInt(document.querySelector('.geo-count').textContent,
-                          10),
+  return {shown: parseInt(
+            document.querySelector('#deep-time .geo-count').textContent, 10),
           online: on + 1, stuck: getComputedStyle(fig).position}; }"""
 
 # scrolls stage n's top to just under the stuck panel (its scroll margin)
 TO_STAGE = """(n) => { document.querySelectorAll('.geo-stage')[n - 1]
   .scrollIntoView({block: 'start'}); }"""
+
+
+# The land's slice (land.js): the step the drawing shows, and the step on its
+# reading line (the middle of a wide screen; on a phone, a third of the way
+# down the screen left under the stuck panel)
+SLICE = """() => {
+  const fig = document.querySelector('.lnd-fig');
+  const wide = matchMedia('(min-width: 1000px)').matches;
+  const panel = wide ? 0 : fig.getBoundingClientRect().height;
+  const line = wide ? innerHeight * 0.455 : panel + (innerHeight - panel) / 3;
+  const items = [...document.querySelectorAll('.lnd-step')];
+  const on = items.findIndex(li => { const r = li.getBoundingClientRect();
+    return r.top <= line && r.bottom > line; });
+  return {shown: parseInt(
+            document.querySelector('.lnd-sec .geo-count').textContent, 10),
+          online: on + 1, stuck: getComputedStyle(fig).position,
+          over: document.documentElement.scrollWidth - innerWidth}; }"""
+
+# scrolls step n onto the reading line: its top just under the stuck panel
+# on a phone (its scroll margin), its middle at the middle of a wide screen
+TO_STEP = """(n) => { const wide = matchMedia('(min-width: 1000px)').matches;
+  document.querySelectorAll('.lnd-step')[n - 1]
+  .scrollIntoView({block: wide ? 'center' : 'start'}); }"""
 
 
 # --------------------------------------------------------------- the browser
@@ -856,12 +882,65 @@ def test_land_timeline_steps_on_scroll(site_page):
     # ends
     page.evaluate(TO_STAGE, 2)
     page.wait_for_timeout(1500)
-    page.locator(".geo-step").nth(1).tap()  # Later
+    page.locator("#deep-time .geo-step").nth(1).tap()  # Later
     page.wait_for_timeout(300)
     page.evaluate(TO_STAGE, 6)
     try:
         view.wait(functools.partial(follows, 6), timeout=5)
     except AssertionError as e:
         problems.append(f"scrolling right after Later: {e}")
+    problems += view.problems()
+    assert not problems, f"{view.name}:\n  " + "\n  ".join(problems)
+
+
+@pytest.mark.parametrize(
+    "site_page",
+    cells(["land.html"], [*PHONES, "desktop-1440x900"]),
+    indirect=True,
+)
+def test_land_slice_steps_on_scroll(site_page):
+    # The maps, then the slice step by step, as the reader scrolls (the
+    # screenshots show each), then the questions; then a scroll right after
+    # a tap on Next. No console error and no sideways scrolling throughout.
+    view, page = site_page, site_page.page
+    page.wait_for_selector(".lnd-has-figure", timeout=30_000)
+    problems = []
+    page.evaluate(
+        "document.querySelector('.lnd-maps').scrollIntoView({block:'start'})"
+    )
+    page.wait_for_timeout(800)
+    view.shot("maps")
+
+    def follows(n):
+        got = page.evaluate(SLICE)
+        assert got["stuck"] == "sticky", f"the drawing is not stuck: {got}"
+        assert got["online"] == n, f"step {n} is not on the line: {got}"
+        assert got["shown"] == n, f"step {n} on the line, drawn: {got}"
+        assert got["over"] <= 0, f"sideways scrolling: {got}"
+
+    for n in range(1, 7):
+        page.evaluate(TO_STEP, n)
+        try:
+            view.wait(functools.partial(follows, n), timeout=5)
+        except AssertionError as e:
+            problems.append(f"scrolling: {e}")
+        view.shot(f"step-{n}")
+    page.evaluate(
+        "document.querySelector('.lnd-qa').scrollIntoView({block:'start'})"
+    )
+    page.wait_for_timeout(300)
+    view.shot("questions")
+
+    # a scroll right after a tap: the drawing follows it once the tap's hold
+    # ends
+    page.evaluate(TO_STEP, 2)
+    page.wait_for_timeout(1500)
+    tap(view, page.locator(".lnd-sec .geo-step").nth(1))  # Next
+    page.wait_for_timeout(300)
+    page.evaluate(TO_STEP, 5)
+    try:
+        view.wait(functools.partial(follows, 5), timeout=5)
+    except AssertionError as e:
+        problems.append(f"scrolling right after Next: {e}")
     problems += view.problems()
     assert not problems, f"{view.name}:\n  " + "\n  ".join(problems)

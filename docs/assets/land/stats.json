@@ -1,0 +1,130 @@
+{
+ "about": "Every figure docs/land.html's slice and maps show, made by src/site/make_land.py; src/site/make_site_data.py writes them into the page's data-figure marks (land_<name>)",
+ "figures": {
+  "cell_ft": 1320,
+  "depth_top_nw_ft": 2240,
+  "district_stretches": 2,
+  "geology_shift_m": 400,
+  "line_mi": 35.25,
+  "mile_stretches": 36,
+  "model_row": 239,
+  "rule_ft": 1500,
+  "ve": 40,
+  "well_buffer_m": 800,
+  "wells_on_map": 2594,
+  "wells_on_section": 25,
+  "wells_snapshot": "2026-10-16"
+ },
+ "counts": {
+  "columns": 141,
+  "core_mi": [
+   [
+    17.75,
+    23.75
+   ],
+   [
+    28.75,
+    35.25
+   ]
+  ],
+  "depth_top_nw_exact_ft": 2235.4,
+  "district_mi": [
+   [
+    15.28,
+    18.09
+   ],
+   [
+    23.54,
+    29.29
+   ]
+  ],
+  "ends_nad83": [
+   [
+    -99.423635,
+    31.128206
+   ],
+   [
+    -99.005956,
+    30.764602
+   ]
+  ],
+  "faults": 10,
+  "ground_in_district_ft": [
+   1554.7,
+   1866.6
+  ],
+  "ground_nw_ft": 1749.3,
+  "hickory_top_nw_ft": -486.1,
+  "map_classes": {
+   "other": 293,
+   "limestone": 198,
+   "metamorphic": 473,
+   "granite": 1078,
+   "sand": 46,
+   "sandstone": 506
+  },
+  "map_reclassed": {
+   "granite->other": 1,
+   "granite->sandstone": 3,
+   "limestone->other": 11,
+   "limestone->sand": 1,
+   "metamorphic->other": 1,
+   "other->limestone": 14,
+   "other->sand": 39,
+   "sandstone->limestone": 8,
+   "sandstone->other": 1,
+   "sandstone->sand": 6
+  },
+  "surface_hickory_mi": [
+   [
+    16.47,
+    17.65
+   ],
+   [
+    23.63,
+    25.16
+   ],
+   [
+    25.32,
+    25.64
+   ],
+   [
+    27.43,
+    27.89
+   ],
+   [
+    28.13,
+    28.62
+   ]
+  ],
+  "wells_largest_offset_m": 744,
+  "wells_near_line": 99,
+  "wells_on_section_uids": [
+   "S445463",
+   "S156117",
+   "S352873",
+   "S304209",
+   "S237032",
+   "S299380",
+   "S563808",
+   "S651769",
+   "S196777",
+   "S348810",
+   "S509785",
+   "S386646",
+   "S4187",
+   "S703389",
+   "S250364",
+   "S2567",
+   "S248889",
+   "S642975",
+   "S716304",
+   "S628893",
+   "S676994",
+   "S579241",
+   "S118947",
+   "S342740",
+   "S610502"
+  ]
+ }
+}

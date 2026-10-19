@@ -7,7 +7,8 @@ numbered in the order the page first cites its sources, and every entry is
 cited and is a full reference (authors, year, title, a link). The page keeps
 the site's wording: "the Hickory Sandstone Member", never a bare "Hickory
 Sandstone" (a source's own title, in <cite>, keeps its own wording); "Hickory
-Sands" only as "Hickory Sands District"; never "agreed". timeline.js, an
+Sands" only as "Hickory Sands District", outside a quotation (the petition's
+"Hickory Sands soils"); never "agreed". timeline.js, an
 enhancement only, makes every element and sets every text itself, never from
 an HTML string, and timeline.css styles only its own geo- classes; the two
 agree on when a phone is held upright (the figure stuck to the top of the
@@ -49,6 +50,7 @@ AGE = re.compile(
     r"^(?:Today|.*\d[\d,.]* million years(?: ago)?|.*half a billion years ago)$"
 )
 YEAR = re.compile(r"\b(?:1[89]\d\d|20\d\d)\b|\bn\.d\.")
+QUOTED = re.compile(r"“[^”]*”")  # a quotation, in the page's curly quotes
 
 
 class Land(HTMLParser):
@@ -264,7 +266,10 @@ def test_hickory_sandstone_is_always_the_member(land):
 
 
 def test_hickory_sands_is_only_the_district(land):
-    text = plain(land.words + land.titles)
+    # A quotation keeps its source's words (the petition's "Hickory Sands
+    # soils", Notice No. 243's "Hickory Sands" standing alone): the rule is
+    # the site's own wording, outside quotation marks.
+    text = QUOTED.sub("", plain(land.words + land.titles))
     assert not re.findall(r"Hickory Sands\b(?! District).{0,30}", text)
 
 

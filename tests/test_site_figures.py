@@ -1,12 +1,14 @@
 """The website's figures (#124): every boundary figure a page shows is built.
 
 A figure in a page is an element marked data-figure (the area, the step and
-point counts, the line's length, the revision date); the build writes its text
-from docs/data/ (src/site/make_site_data.py --pages). These check that every
-page's marked figures are what the committed data gives, and that no page types
-one of those figures without the mark. A journal note is history and is left as
-written; a dated step in the status timeline keeps its date, but its figures
-describe the current proposed revision, so they are marked.
+point counts, the line's length, the revision date, and the land page's
+land_ figures); the build writes its text from docs/data/ and
+docs/assets/land/stats.json (src/site/make_site_data.py --pages). These
+check that every page's marked figures are what the committed data gives, and
+that no page types one of those figures without the mark. A journal note is
+history and is left as written; a dated step in the status timeline keeps its
+date, but its figures describe the current proposed revision, so they are
+marked.
 Standard library only, so the lint workflow runs these.
 """
 
@@ -36,7 +38,10 @@ def read(path):
 @pytest.fixture(scope="module")
 def figs():
     names = ("boundary.geojson", "steps.geojson", "points.geojson")
-    return msd.figures({n: read(os.path.join(DOCS, "data", n)) for n in names})
+    found = msd.figures({n: read(os.path.join(DOCS, "data", n)) for n in names})
+    # The land page's slice and maps (src/site/make_land.py).
+    found.update(msd.land_figures(DOCS))
+    return found
 
 
 @pytest.mark.parametrize("page", PAGES, ids=os.path.basename)

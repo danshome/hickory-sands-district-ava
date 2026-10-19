@@ -61,6 +61,9 @@ M_PER_MILE = 1609.344
 # The walk page's template holds this once, for the list of steps
 # (src/site/walk.template.html); its figures are data-figure elements.
 WALK_TOKENS = ("@STEPS@",)
+# The land page's slice and maps: their figures, under --pages
+# (src/site/make_land.py writes them).
+LAND_STATS = ("assets", "land", "stats.json")
 # A figure in a page: an element marked data-figure="name" holding only text,
 # such as <span data-figure="area_sqmi">193.83</span>; the build writes it.
 FIGURE = re.compile(
@@ -707,6 +710,49 @@ def figures(files):
     }
 
 
+def land_figures(pages_dir):
+    """Returns the land page's figures, from its slice and maps' stats.
+
+    src/site/make_land.py writes docs/assets/land/stats.json: every figure
+    the slice and the maps show, named here land_<name> (the page's marks).
+
+    Args:
+        pages_dir: The site's folder (docs).
+
+    Returns:
+        A dict from figure name to (text, ISO date or None): a whole number
+        with its thousands separated ("2,594"), a fraction to two decimals
+        ("35.25"), and a date ("2026-10-16") as "October 16, 2026" with its
+        ISO date for a <time>; empty when there is no stats file yet.
+
+    Raises:
+        SystemExit: A figure is neither a number nor a date.
+    """
+    path = os.path.join(pages_dir, *LAND_STATS)
+    if not os.path.exists(path):
+        return {}
+    with open(path, encoding="utf-8") as fh:
+        stats = json.load(fh)["figures"]
+    out = {}
+    for name, value in stats.items():
+        if isinstance(value, bool):
+            sys.exit(f"{path}: {name} is not a number or a date")
+        if isinstance(value, int):
+            out[f"land_{name}"] = (f"{value:,}", None)
+        elif isinstance(value, float):
+            out[f"land_{name}"] = (f"{value:,.2f}", None)
+        elif isinstance(value, str) and re.fullmatch(r"\d{4}-\d\d-\d\d", value):
+            dated = datetime.date.fromisoformat(value)
+            month = revision.LONG_MONTHS[dated.month - 1]
+            out[f"land_{name}"] = (
+                f"{month} {dated.day}, {dated.year}",
+                dated.isoformat(),
+            )
+        else:
+            sys.exit(f"{path}: {name} is not a number or a date")
+    return out
+
+
 def fill_figures(text, figs, where):
     """Returns a page with each marked figure written from figs.
 
@@ -938,6 +984,7 @@ def main():
                 stale = True
         if args.pages and not stale:
             figs = figures(committed(files, args.out))
+            figs.update(land_figures(args.pages))
             for path, text in site_pages(args.pages, skip).items():
                 wrong = stale_figures(text, fill_figures(text, figs, path))
                 if wrong:
@@ -957,6 +1004,7 @@ def main():
     pages = {}
     if args.pages:
         figs = figures(files)
+        figs.update(land_figures(args.pages))
         for path, text in site_pages(args.pages, skip).items():
             filled = fill_figures(text, figs, path)
             if filled != text:

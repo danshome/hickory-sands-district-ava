@@ -1,0 +1,5 @@
+name,file,url,snapshot,fetched,bytes,sha256
+usgs-3dep-1-n31w100,USGS_1_n31w100.tif,https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1/TIFF/current/n31w100/USGS_1_n31w100.tif,2022-08-30,2026-10-19,53386164,4bcbad9fccba369ab8e525c23b62f14b7f60cea55b1579b325bb208031d84d94
+usgs-3dep-1-n32w100,USGS_1_n32w100.tif,https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1/TIFF/current/n32w100/USGS_1_n32w100.tif,2022-08-30,2026-10-19,51193290,e645713ed5c949c3284f4e56bf25a3eace55b2440d6940fa551fef807f154769
+usgs-3dep-1-n31w099,USGS_1_n31w099.tif,https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1/TIFF/current/n31w099/USGS_1_n31w099.tif,2025-05-12,2026-10-19,54655786,0b2c4954144ea1e2ffec682a6fbed64de20a6f7330717115ce4e84cfecfedf1c
+usgs-3dep-1-n32w099,USGS_1_n32w099.tif,https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1/TIFF/current/n32w099/USGS_1_n32w099.tif,2025-05-12,2026-10-19,54032055,f9b01fd4736847d304ee10182e08af233c436afb302b0b665d8197ef43a9d2bd

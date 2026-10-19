@@ -20,13 +20,22 @@ HOOK = os.path.join(ROOT, "src", "checks", "check_private_words.py")
 pytestmark = pytest.mark.skipif(shutil.which("git") is None, reason="needs git")
 
 
+# The environment without git's own variables, so a test run from inside a
+# git hook (which sets GIT_DIR and friends) never touches the real repository.
+CLEAN_ENV = {
+    k: v
+    for k, v in os.environ.items()
+    if k not in ("GIT_DIR", "GIT_INDEX_FILE", "GIT_WORK_TREE", "GIT_PREFIX")
+}
+
+
 def git(*args, cwd):
     subprocess.run(
         ["git", *args],
         cwd=cwd,
         check=True,
         capture_output=True,
-        env={**os.environ, "GIT_CONFIG_GLOBAL": os.devnull},
+        env={**CLEAN_ENV, "GIT_CONFIG_GLOBAL": os.devnull},
     )
 
 
@@ -67,6 +76,7 @@ def run_hook(checkout, text):
         capture_output=True,
         text=True,
         check=False,
+        env=CLEAN_ENV,
     )
 
 

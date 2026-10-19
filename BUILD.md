@@ -135,8 +135,9 @@ src/
   checks/                hard checks: quads vs manifest, every pin on its line, no self-crossing, valid polygon;
                          check_outputs: what reaches TTB (PDF fonts, compare text, figures, wording, GIS, zip paths)
   package/               make_package.sh (the zip)
-  site/                  make_site_data: the website's map data (docs/data/) from the boundary build; make_survey_map
-                         (with survey_frame): the quads under the boundary drawing on Home and The boundary;
+  site/                  make_site_data: the website's map data (docs/data/) from the boundary build, and (with
+                         boundary_drawing) the boundary drawing on Home and The boundary; make_survey_map
+                         (with survey_frame): the quads under that drawing;
                          make_aquifer_3d (with aquifer/): the 3D aquifer page's data (docs/assets/aquifer/);
                          stamp_assets: the scripts' and stylesheets' version stamps (#138)
   publish/               ArcGIS Online: agol_publish, agol_layer, agol_dashboard, agol_org_categories, agol_share (what
@@ -174,8 +175,11 @@ research/                research, audits, design proposals and prototypes until
 2. **quads** - the 13 quads checked against their MD5s in `quads-manifest.csv`; missing or altered ones downloaded.
 3. **stage** - a fresh `target/work/`; the inputs are read in place from `resources/`.
 4. **trace** - every follow step traced onto the ink (`src/boundary/ink_centerline.py`), pins from `tracing/pin-moves.json`,
-   route hints from `tracing/route-overrides-EPSG4269.geojson`. Deterministic: two runs on one machine give identical lines (two
-   machines can place a vertex differently along the same ink: #116).
+   route hints from `tracing/route-overrides-EPSG4269.geojson`. Deterministic: two runs on one machine give identical lines.
+   The tracer's Gaussian weights come from the C library's `exp`, not NumPy's, which NumPy picks by the CPU (an AVX-512
+   kernel where there is one): on a straight north-south or east-west road the first centring pass reads the ink exactly
+   on cell edges, where the last bit of a weight decides the cell, and two of GitHub's Linux runners placed step 13
+   0.34 m apart that way (#116). A Mac (Apple's C library) and Linux (glibc) may still differ in a last digit.
 5. **hand patches** - spliced onto the traces; a patch whose ends no longer lie on the trace stops the build (redo
    that patch). Patch joins that turn more than 25 degrees are rounded.
 6. **boundary** - pins, straight-line steps, traced steps, polygon, points, GeoPackage, shapefiles.
@@ -197,7 +201,8 @@ research/                research, audits, design proposals and prototypes until
    failure: zip paths longer than Windows' 260-character limit when Explorer extracts the zip under
    `C:\Users\<name>\Downloads\` (Dan: leave the names for now).
 11. **site data** - last, so it never holds back the package: the website's map data (`src/site/make_site_data.py`),
-   hard. `docs/data/`, the walk page `docs/walk.html` and every figure marked `data-figure` in the site's pages must
+   hard. `docs/data/`, the walk page `docs/walk.html`, every figure marked `data-figure` and every path marked
+   `data-figure-path` (the boundary drawing on Home and The boundary, and its scale bar) in the site's pages must
    match this build, so a boundary change stops the build until `./build.sh site-data` refreshes them and they are
    committed with the change. Only the traced lines may differ, and only a little: two machines
    (even two of GitHub's Linux runners) can place a vertex differently along the same ink (#116), so lines within 5 m
@@ -272,12 +277,23 @@ for Python; 2-space YAML and TOML). By hand: `.venv/bin/ruff format .` and `.ven
 - `test_grit_change.py`: geodesic line lengths on GRS 1980 (#35), totals summed unrounded and rounded once (#33);
 - `test_compare_ttb.py`: a big difference's acres are the whole pieces its ring touches, even inside a hole in the
   ring (#26), and the helpers that find the stretches;
+- `test_centerline.py`: the tracer's smoothing, its road offsets and the first centring pass on a north-south road give
+  the same bits whether NumPy's `exp` is the C library's or one ulp higher, as another CPU's may be (#116), and its
+  Gaussian filter is SciPy's;
 - `test_make_readme.py`: README.txt's headings ("WHAT WE PROPOSE TO CHANGE IN NOTICE NO. 243 (...)") on the read-me page;
   every placeholder filled; the Web Mercator area against GDAL's for a one-degree square;
 - `test_site_data.py`: the website's map data in `docs/data/`: every step from the Beginning point, each ending at its
   own point, around to the Beginning again; only the properties a reader needs; the README's area; a status the site can
   show; and, on a small made-up build, the generator's rounding and refusals and the check's line between a stale
-  folder and platform drift;
+  folder and platform drift, and the drawn paths written, checked and refused;
+- `test_boundary_drawing.py`: Home and The boundary carry exactly the drawing (the line, its fill and the scale bar)
+  that `docs/data/boundary.geojson` gives; The boundary's caption names the drawing's coordinate system, NAD83 / UTM
+  zone 14N (EPSG:26914), as `docs/assets/survey-map.json` records it, and no page names another; the projection agrees
+  with PROJ's values (and, marked `build`, with GDAL's
+  for every point of the boundary, within a millimetre); the simplification keeps what lies beyond 12 m and a ring's
+  first point; the fit centres the box with its margin on the tighter side; the paths are plain closed rings;
+- `test_site_figures.py`: every page's figures and drawn paths are what the committed data gives, and no page types
+  a figure without its mark;
 - `test_site_maps.py`: the map pages load one pinned SDK release; the basemap key is empty or an API key; no map script
   parses text as HTML; the walk page lists every step of `docs/data/` with its own text; Explore's figures are the
   build's;
@@ -472,8 +488,18 @@ writes the marked figures from `docs/data/`; the revision date is the one in the
 boundary's record. `tests/test_site_figures.py` fails when a page types one without the mark. A journal note is history
 and stays as written; a dated step in the status timeline keeps its date, but its figures are marked.
 
-The boundary drawing on Home and The boundary (an inline SVG) sits on a survey map, `docs/assets/survey-map.webp`, made
-by the site-data stage (`src/site/make_survey_map.py`). It shows the ground the drawing's viewBox covers, found by
+The boundary drawing on Home and The boundary (an inline SVG) is made by the site-data stage too (#126): its line and
+fill, `<path … data-figure-path="boundary" d="…">`, are `docs/data/boundary.geojson` carried from NAD83 to UTM zone 14N
+(EPSG:26914), each ring simplified by Douglas–Peucker at 12 m, and fitted to the drawing's viewBox (the boundary's box
+centred, with a margin of 11% of its width, or of its height where that fits tighter, on each side), written to 0.01
+of a unit; its 5 km scale bar (`data-figure-path="scale_bar"`) is drawn at the same scale.
+`src/site/boundary_drawing.py` draws them with the standard library only (the projection is Karney's Krüger series,
+within a micrometre of PROJ's here), so the lint workflow checks the pages (`tests/test_boundary_drawing.py`), and
+`make_site_data.py --pages` writes them, or with `--check` stops the build when one is stale, drawing them from the
+committed data as it makes the walk page.
+
+The drawing sits on a survey map, `docs/assets/survey-map.webp`, made by the site-data stage after the drawing
+(`src/site/make_survey_map.py`). It shows the ground the drawing's viewBox covers, found by
 fitting the drawn line to `docs/data/boundary.geojson` in UTM zone 14N, on the USGS 1:24,000 historical quadrangles:
 the 13 the description names and the 17 around them that fill the frame (`resources/quads/basemap-manifest.csv`, each
 the earliest print of the quad's only 1:24,000 edition, the lowest scan number on a tie, checked against USGS's MD5 and downloaded to

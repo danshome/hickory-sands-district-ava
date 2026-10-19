@@ -18,6 +18,7 @@ import sys
 import pytest
 
 from src import revision
+from src.site import boundary_drawing
 from src.site import make_site_data as msd
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -598,6 +599,41 @@ def test_fill_figures_refuses_an_unknown_or_nested_figure(page, message):
         msd.fill_figures(page, {"area_sqmi": ("1", None)}, "page")
 
 
+# A page with the boundary drawing (#126), its paths stale.
+DRAWING = (
+    '<svg class="boundary-map" viewBox="0 0 600 500">'
+    '<path class="boundary-line" data-figure-path="boundary" d="M1,1 Z"/>'
+    '<g><path data-figure-path="scale_bar" d="M0 0"/></g></svg>\n'
+)
+
+
+def test_fill_paths_draws_the_boundary_and_its_scale_bar(build):
+    files = msd.site_data(build)
+    filled = msd.fill_paths(DRAWING, files["boundary.geojson"], "page")
+    drawn = boundary_drawing.paths(files["boundary.geojson"], (600, 500))
+    assert f'data-figure-path="boundary" d="{drawn["boundary"]}"/>' in filled
+    assert f'data-figure-path="scale_bar" d="{drawn["scale_bar"]}"/>' in filled
+    assert msd.stale_paths(DRAWING, filled) == ["boundary", "scale_bar"]
+    assert msd.fill_paths(filled, files["boundary.geojson"], "page") == filled
+    plain = "<p>no drawing</p>"
+    assert msd.fill_paths(plain, files["boundary.geojson"], "page") == plain
+
+
+@pytest.mark.parametrize(
+    ("page", "message"),
+    [
+        (DRAWING.replace('"scale_bar"', '"nope"'), "no drawn path called nope"),
+        (DRAWING.replace(' d="M0 0"', ""), "needs one d attribute"),
+        (DRAWING.replace('viewBox="0 0 600 500"', ""), "needs the boundary"),
+        ('<g data-figure-path="boundary"></g>', "mark each drawn path"),
+    ],
+)
+def test_fill_paths_refuses_what_it_cannot_draw(build, page, message):
+    files = msd.site_data(build)
+    with pytest.raises(SystemExit, match=message):
+        msd.fill_paths(page, files["boundary.geojson"], "page")
+
+
 def test_revision_comes_from_the_area_file_s_name(tmp_path):
     (tmp_path / "x-area-EPSG4269.geojson").write_text("{}", encoding="utf-8")
     with pytest.raises(SystemExit, match="no dated area file"):
@@ -644,6 +680,29 @@ def test_check_and_write_cover_the_pages(monkeypatch, capsys, build, tmp_path):
     assert (docs / "a.html").read_text(encoding="utf-8") == (
         '<p><span data-figure="step_count">10</span> steps</p>\n'
     )
+    assert "matches the build" in run_main(
+        monkeypatch, capsys, build, out, *pages, "--check"
+    )
+
+
+def test_check_and_write_cover_the_drawn_paths(
+    monkeypatch, capsys, build, tmp_path
+):
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    out = docs / "data"
+    (docs / "index.html").write_text(DRAWING, encoding="utf-8")
+    run_main(monkeypatch, capsys, build, out)  # the data first
+    pages = ("--pages", str(docs))
+    with pytest.raises(SystemExit) as stop:
+        run_main(monkeypatch, capsys, build, out, *pages, "--check")
+    assert stop.value.code == msd.STALE
+    said = capsys.readouterr().out
+    assert "drawn paths differ from the build: boundary, scale_bar" in said
+    run_main(monkeypatch, capsys, build, out, *pages)
+    page = (docs / "index.html").read_text(encoding="utf-8")
+    data = (out / "boundary.geojson").read_text(encoding="utf-8")
+    assert boundary_drawing.paths(data, (600, 500))["boundary"] in page
     assert "matches the build" in run_main(
         monkeypatch, capsys, build, out, *pages, "--check"
     )

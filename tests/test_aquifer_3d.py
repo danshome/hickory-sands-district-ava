@@ -357,6 +357,24 @@ def test_the_vineyards_name_no_one(path):
         assert not re.search(r"\b\d{3,6} (E\.|W\.|N\.|S\.)? ?Hwy", text)
 
 
+@pytest.mark.parametrize(
+    "path", [VINEYARDS, os.path.join(DATA, "vineyards.geojson")]
+)
+def test_every_vineyard_field_keeps_one_type(path):
+    # The page's GeoJSONLayer takes a field's type from its values: a block
+    # number among the block names would make the field a number and blank
+    # every name (Paisano Vineyards' "Streeter Lane frontage").
+    features = json.loads(read(path))["features"]
+    kinds = {}
+    for f in features:
+        for key, value in f["properties"].items():
+            if value is not None:
+                kinds.setdefault(key, set()).add(type(value).__name__)
+    mixed = {k: v for k, v in kinds.items() if len(v) > 1}
+    assert not mixed, mixed
+    assert kinds["block"] == {"str"}
+
+
 def test_the_vineyard_check_refuses_a_name():
     assert vineyards.named('{"source": "the layer of Dan McLaughlin"}')
     assert vineyards.named('{"source": "per the owner"}')

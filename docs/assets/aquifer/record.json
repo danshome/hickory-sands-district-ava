@@ -65,7 +65,7 @@
   },
   "vineyards": {
    "file": "resources/vineyards/vineyards-EPSG4269.geojson",
-   "sha256": "sha256:606cd478e0646d74b5298f21406b035fe9bcdf944cc05cc7c77bbfea85cc4419"
+   "sha256": "sha256:8be5a349d60169142b0979ce11b7c9feb848ce3f6d26331182baeb71eae06d2f"
   }
  },
  "parameters": {
@@ -175,7 +175,7 @@
    ],
    [
     "historical",
-    "Historical vineyard (not visible on NAIP 2022)"
+    "Historical vineyard"
    ]
   ],
   "vineyard_wells_m": 1000.0,
@@ -194,8 +194,8 @@
   "precambrian-buried.geojson": 2932,
   "precambrian.geojson": 21126,
   "stats.json": 3924,
-  "vineyard-wells.json": 200709,
-  "vineyards.geojson": 31351,
+  "vineyard-wells.json": 200866,
+  "vineyards.geojson": 31698,
   "wells/detail--1958_615.json": 9203,
   "wells/detail--1958_616.json": 96057,
   "wells/detail--1958_617.json": 36624,

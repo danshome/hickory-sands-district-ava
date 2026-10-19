@@ -38,9 +38,10 @@ checks). Where this file and CLAUDE.md differ, CLAUDE.md wins.
    boundary layer.
 8. **Say "proposed", never "agreed"**, and use the official names: Notice No. 243, the AVA Map Explorer polygon, the
    proposed revision.
-9. **Never contradict the petition or Comment 9** in anything public. Back every statement with a published source you
-   read; where research and either document disagree, leave the point out and tell Dan.
+9. **Keep everything public consistent with the petition and Comment 9**, and back every statement with a published
+   source you read. Raise any question about either document with Dan privately, never in an issue or PR.
 10. **A new website feature starts as a design and a working prototype in `research/`**, checked by an agent that did
    not make it (facts and sources; usability and security), and is built only after Dan approves the prototype.
+   Confirm a finding independently before it goes to anyone outside (an email, a comment).
 
 Keep each pull request to one change. If you find something else wrong, open an issue for it; don't fix it on the side.

@@ -72,12 +72,12 @@ A new top-level folder needs an issue that agrees to it first.
   between pins, or a trace of the centre of the printed ink.
 - **Wording.** The boundary is "proposed", never "agreed". Use the official names: Notice No. 243 (TTB's published
   text), the AVA Map Explorer polygon (TTB's layer), the proposed revision (this boundary).
-- **The petition and Comment 9.** Nothing public may contradict the petition (as amended June 6, 2023) or Comment 9,
-  the petitioners' response to Comment 8. Back every statement with a published source; where the research and either
-  document disagree, leave the point out and raise it with the maintainer.
+- **The petition and Comment 9.** Everything public agrees with the petition (as amended June 6, 2023) and Comment 9,
+  the petitioners' response to Comment 8, and every statement is backed by a published source. Raise any question
+  about either document with the maintainer privately, never in an issue or pull request.
 - **New website features** start as a design and a working prototype (in `research/`), are checked by someone other
   than their author (facts and sources, usability, security), and are built only after the maintainer approves the
-  prototype.
+  prototype. A finding is confirmed independently before it goes to anyone outside the project.
 - **The website.** Merging a change to `docs/` publishes it at hickorysandsdistrictava.org; `site.yml` tests it first.
   Test every change at phone sizes before the pull request: `./build.sh check-site --local` runs
   `tests/live/test_site_mobile.py` against a local server of your branch; after the deploy, `./build.sh check-site`

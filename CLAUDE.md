@@ -30,8 +30,9 @@ zips the package into `dist/` with `SHA256SUMS.txt` and `build-report.txt`. `./b
   `ttb/` (Notice 243 PDF, AVAs_Production record and polygon snapshot), `geology/` (USGS SGMC units shifted ~400 m to
   the outcrops, map context only), `quads/` (`quads-manifest.csv`, `cropped/`
   VRT templates; `geotiff/` zips and `geopdf/` are downloaded, gitignored; keep each GeoTIFF inside its zip),
-  `aquifer/` (the 3D aquifer page's pinned downloads in `inputs.csv`, fetched into the gitignored `cache/`, and TWDB's
-  fault lines), `vineyards/` (the vineyard outlines that page draws, with their sources; never a person's name).
+  `aquifer/` (the map's aquifer layers' and The land's pinned downloads in `inputs.csv` and `land-inputs.csv`, fetched
+  into the gitignored `cache/`, and TWDB's fault lines), `vineyards/` (the vineyard outlines the map and the vineyards
+  page draw, with their sources; never a person's name).
 - `documents/` README and read-me-first templates (figures filled by the build); `LICENSE.txt` (CC0) at the root.
 - `docs/` the website, hickorysandsdistrictava.org (GitHub Pages; #96). Dan builds it; `site.yml` tests it on a PR and
   deploys it on merge to `main`. Its map data, `docs/data/`, the walk page `docs/walk.html` and every figure marked
@@ -39,11 +40,13 @@ zips the package into `dist/` with `SHA256SUMS.txt` and `build-report.txt`. `./b
   (`./build.sh site-data`; the build stops if they are stale), its status from TTB's AVAs_Production record in
   `resources/ttb/`. Every script and stylesheet the pages load, and every import between the site's own scripts,
   carries a hash of the file (`assets/x.js?v=…`, #138): after changing a script or stylesheet, run `./build.sh stamp`
-  (or `site-data`) and commit what it changes; the build and `tests/test_site.py` fail otherwise. The 3D aquifer page's data, `docs/assets/aquifer/`, and every figure it marks `data-stat` (from its
-  `stats.json`) come from `src/site/make_aquifer_3d.py` the same way (`--check` against its `record.json`, no
-  download; a hard check stops it if a person's name or address survives in the well reports).
-  The maps (`explore.html`, `walk.html`, `aquifer.html`, and the pin map on `vineyards.html`, loaded when asked for)
-  use Esri's SDK and a public, basemaps-only API key in
+  (or `site-data`) and commit what it changes; the build and `tests/test_site.py` fail otherwise. The map's aquifer
+  data, `docs/assets/aquifer/`, and every figure it marks `data-stat` (from its `stats.json`) come from
+  `src/site/make_aquifer_3d.py` the same way (`--check` against its `record.json`, no download; a hard check stops it if
+  a person's name or address survives in the well reports); The land's slice and maps, `docs/assets/land/`, from
+  `src/site/make_land.py`, the same way. Every page loads `docs/assets/analytics.js` (Google Analytics; BUILD.md).
+  The maps (`map.html`, the site's one map; `walk.html`; and the vineyard form's, loaded when asked for) use Esri's
+  SDK and a public, basemaps-only API key in
   `docs/assets/map-config.js`. Every website change is tested at phone sizes before merge, against a local server of
   its branch (`./build.sh check-site --local`), and live after deploy (`./build.sh check-site`); both run
   `tests/live/test_site_mobile.py` (BUILD.md). The survey map

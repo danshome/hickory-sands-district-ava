@@ -60,9 +60,9 @@ def refuse(issues, number, why):
         f"{{repo}}/issues/{number}/comments",
         {
             "body": (
-                f"No pull request: {why} See the check above; once it is "
-                "put right (edit the data block, or ask the sender), remove "
-                "the label `approved` and add it again."
+                f"No pull request: {why} Once it is put right (see the check "
+                "above; edit the data block, or ask the sender), remove the "
+                "label `approved` and add it again."
             )
         },
     )
@@ -123,8 +123,30 @@ def pr_body(number, sub, category, n):
     )
 
 
+class RefusedError(Exception):
+    """No pull request: what stopped it, in a sentence for the issue."""
+
+
+def branch_exists(prs, branch):
+    """Whether the branch is there already.
+
+    Raises:
+        github.GitHubError: GitHub did not say.
+    """
+    try:
+        prs.request("GET", f"{{repo}}/git/ref/heads/{branch}")
+    except github.GitHubError as error:
+        if error.status == 404:
+            return False
+        raise
+    return True
+
+
 def open_pull_request(prs, number, sub, category, files, base):
     """Makes the branch, the commit and the pull request.
+
+    A branch already there (an earlier approval's, perhaps with the
+    petitioner's own commits on it) is never moved: the run stops and says so.
 
     Args:
         prs: A github.GitHub with PR_TOKEN.
@@ -136,57 +158,68 @@ def open_pull_request(prs, number, sub, category, files, base):
 
     Returns:
         The pull request's number and its URL.
+
+    Raises:
+        RefusedError: Something stopped it; the message says what.
     """
-    tree = prs.request("GET", f"{{repo}}/git/commits/{base}")["tree"]["sha"]
-    entries = []
-    for path, data in files.items():
-        blob = prs.request(
-            "POST",
-            "{repo}/git/blobs",
-            {"content": base64.b64encode(data).decode(), "encoding": "base64"},
-        )
-        entries.append(
-            {"path": path, "mode": "100644", "type": "blob", "sha": blob["sha"]}
-        )
-    new_tree = prs.request(
-        "POST", "{repo}/git/trees", {"base_tree": tree, "tree": entries}
-    )
-    name = sub["vineyard"]["name"]
-    commit = prs.request(
-        "POST",
-        "{repo}/git/commits",
-        {
-            "message": (
-                f"Vineyard: {name} (#{number})\n\nAdded from the website's "
-                f"vineyard form, issue #{number}, approved there with the "
-                "label approved; the site's vineyard data made again."
-            ),
-            "tree": new_tree["sha"],
-            "parents": [base],
-        },
-    )
     branch = BRANCH.format(n=number)
+    step = "looking for the branch"
+    made = False
     try:
+        if branch_exists(prs, branch):
+            raise RefusedError(
+                f"the branch `{branch}` is there already, from an earlier "
+                "approval. Merge or close its pull request and delete the "
+                "branch, then add the label again; nothing on it was changed."
+            )
+        step = "reading the commit to build on"
+        tree = prs.request("GET", f"{{repo}}/git/commits/{base}")["tree"]["sha"]
+        step = "sending the files"
+        entries = []
+        for path, data in files.items():
+            blob = prs.request(
+                "POST",
+                "{repo}/git/blobs",
+                {
+                    "content": base64.b64encode(data).decode(),
+                    "encoding": "base64",
+                },
+            )
+            entries.append(
+                {
+                    "path": path,
+                    "mode": "100644",
+                    "type": "blob",
+                    "sha": blob["sha"],
+                }
+            )
+        step = "making the commit"
+        new_tree = prs.request(
+            "POST", "{repo}/git/trees", {"base_tree": tree, "tree": entries}
+        )
+        name = sub["vineyard"]["name"]
+        commit = prs.request(
+            "POST",
+            "{repo}/git/commits",
+            {
+                "message": (
+                    f"Vineyard: {name} (#{number})\n\nAdded from the "
+                    f"website's vineyard form, issue #{number}, approved "
+                    "there with the label approved; the site's vineyard data "
+                    "made again."
+                ),
+                "tree": new_tree["sha"],
+                "parents": [base],
+            },
+        )
+        step = "making the branch"
         prs.request(
             "POST",
             "{repo}/git/refs",
             {"ref": f"refs/heads/{branch}", "sha": commit["sha"]},
         )
-    except github.GitHubError as error:
-        if error.status != 422:  # 422: the branch is there, from before
-            raise
-        prs.request(
-            "PATCH",
-            f"{{repo}}/git/refs/heads/{branch}",
-            {"sha": commit["sha"], "force": True},
-        )
-    owner = prs.repo.split("/")[0]
-    found = prs.request(
-        "GET", f"{{repo}}/pulls?state=open&head={owner}:{branch}"
-    )
-    if found:
-        pull = found[0]
-    else:
+        made = True
+        step = "opening the pull request"
         pull = prs.request(
             "POST",
             "{repo}/pulls",
@@ -198,6 +231,16 @@ def open_pull_request(prs, number, sub, category, files, base):
                 "maintainer_can_modify": True,
             },
         )
+    except github.GitHubError as error:
+        then = (
+            f" The branch `{branch}` was made: open the pull request from it "
+            "by hand, or delete it and add the label again."
+            if made
+            else ""
+        )
+        raise RefusedError(
+            f"GitHub refused {step} ({error.status}).{then}"
+        ) from None
     try:
         prs.request(
             "POST",
@@ -207,6 +250,44 @@ def open_pull_request(prs, number, sub, category, files, base):
     except github.GitHubError as error:
         print(f"the label {vs.DATA_LABEL} was not added: {error}")
     return pull["number"], pull["html_url"]
+
+
+ENVIRONMENT = "vineyard-pr"
+
+
+def environment_guarded(gh):
+    """Whether only main may use the environment that holds the PR App's key.
+
+    A workflow that names a missing environment makes it with no rule, so
+    SETUP.md has Dan limit it to main before the key goes in; this checks it
+    on every approval.
+
+    Args:
+        gh: A github.GitHub (the Actions' token).
+
+    Returns:
+        True when limited to main (or to protected branches), False when any
+        branch may use it, None when GitHub did not say (the log says so).
+    """
+    try:
+        env = gh.request("GET", f"{{repo}}/environments/{ENVIRONMENT}")
+        policy = (env or {}).get("deployment_branch_policy")
+        if not policy:
+            return False
+        if policy.get("protected_branches"):
+            return True
+        rules = gh.request(
+            "GET",
+            f"{{repo}}/environments/{ENVIRONMENT}/deployment-branch-policies",
+        )
+    except github.GitHubError as error:
+        print(f"warning: the environment's rule could not be read: {error}")
+        return None
+    names = [
+        (p.get("name"), p.get("type", "branch"))
+        for p in (rules or {}).get("branch_policies", [])
+    ]
+    return names == [("main", "branch")]
 
 
 def main(argv=None):
@@ -234,6 +315,13 @@ def main(argv=None):
     repo = os.environ["GITHUB_REPOSITORY"]
     issues = github.GitHub(os.environ.get("GH_TOKEN", ""), repo)
     number = event["issue"]["number"]
+    if environment_guarded(issues) is False:
+        return refuse(
+            issues,
+            number,
+            f"the environment `{ENVIRONMENT}` may be used from any branch. "
+            "Limit it to main first (src/vineyards/SETUP.md, step 3.2).",
+        )
     try:
         data = vs.parse_issue(event["issue"].get("body"))
     except vs.SubmissionError as error:
@@ -250,7 +338,12 @@ def main(argv=None):
     )
     if not ok:
         return refuse(issues, number, "the check found something to look at.")
-    new_text, _ = vs.add_blocks(result, number, today, args.root, words)
+    try:
+        new_text, _ = vs.add_blocks(result, number, today, args.root, words)
+    except SystemExit as error:
+        return refuse(
+            issues, number, f"the vineyard file refused it ({error})."
+        )
     with open(
         os.path.join(args.root, vs.VINEYARDS),
         "w",
@@ -258,7 +351,7 @@ def main(argv=None):
         newline="\n",
     ) as fh:
         fh.write(new_text)
-    subprocess.run(
+    made = subprocess.run(
         [
             sys.executable,
             "-I",
@@ -267,17 +360,27 @@ def main(argv=None):
             "--root",
             args.root,
         ],
-        check=True,
+        check=False,
     )
+    if made.returncode:
+        return refuse(
+            issues,
+            number,
+            "the site's vineyard data could not be made "
+            f"(make_vineyards.py ended {made.returncode}; see the run's log).",
+        )
     prs = github.GitHub(os.environ.get("PR_TOKEN", ""), repo)
-    pr_number, url = open_pull_request(
-        prs,
-        number,
-        result["submission"],
-        result["category"],
-        changed_files(args.root),
-        os.environ["GITHUB_SHA"],
-    )
+    try:
+        pr_number, url = open_pull_request(
+            prs,
+            number,
+            result["submission"],
+            result["category"],
+            changed_files(args.root),
+            os.environ["GITHUB_SHA"],
+        )
+    except RefusedError as why:
+        return refuse(issues, number, str(why))
     issues.request(
         "POST",
         f"{{repo}}/issues/{number}/comments",

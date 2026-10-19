@@ -943,6 +943,8 @@ def parse_issue(body):
     """
     if not isinstance(body, str) or MARK not in body:
         raise SubmissionError("not a vineyard submission")
+    # GitHub's editor saves an edited body with CRLF line ends
+    body = body.replace("\r\n", "\n").replace("\r", "\n")
     found = re.findall(r"```json\n(.*?)\n```", body, re.DOTALL)
     if len(found) != 1:
         raise SubmissionError("not one data block")
@@ -1095,7 +1097,8 @@ def review(data, number, others=(), private_words=(), today=None, root=ROOT):
         notes.append(
             "Another open submission has this name: "
             + ", ".join(f"#{n}" for n in twins)
-            + ". Close the extra one."
+            + ". Close the extra one, or say why both are wanted, before "
+            "approving either."
         )
     overlaps = []
     for i, ring in enumerate(sub["blocks"], 1):
@@ -1127,7 +1130,13 @@ def review(data, number, others=(), private_words=(), today=None, root=ROOT):
             "imagery and put them into the data block above before approving "
             "(src/vineyards/SETUP.md, A pin with no outline)."
         )
-    ok = not errors and not same and not overlaps and bool(sub["blocks"])
+    ok = (
+        not errors
+        and not same
+        and not twins
+        and not overlaps
+        and bool(sub["blocks"])
+    )
     head = (
         "### The check: ready for review"
         if ok

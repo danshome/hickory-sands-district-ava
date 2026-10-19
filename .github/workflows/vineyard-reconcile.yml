@@ -1,0 +1,36 @@
+# The vineyard function's daily check (src/vineyards/reconcile.py): it asks the Supabase function vineyard-submit to put
+# its private table right against GitHub (rows tied to their issues; the closings and deletions a failed webhook delivery
+# missed, since GitHub never sends one again; a contact deleted a year after its issue was closed, and a row never tied
+# to an issue after a day; labels GitHub dropped put back). When that fails, it opens or comments on one issue for Dan,
+# and the run fails. It runs only once Dan has set the repository variable VINEYARD_FUNCTION_URL
+# (src/vineyards/SETUP.md, step 3). GitHub's Linux machines only.
+name: vineyard-reconcile
+on:
+  schedule:
+    - cron: "23 11 * * *"   # every day, about 06:23 in Texas
+  workflow_dispatch:
+permissions: {}
+concurrency:
+  group: vineyard-reconcile
+  cancel-in-progress: false
+jobs:
+  reconcile:
+    name: the vineyard function's daily check
+    if: vars.VINEYARD_FUNCTION_URL != ''
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read   # the script
+      issues: write    # the issue for Dan, when the check fails
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: "3.14"
+      - name: Ask the function to reconcile; report a failure on an issue
+        env:
+          FUNCTION_URL: ${{ vars.VINEYARD_FUNCTION_URL }}
+          GH_TOKEN: ${{ github.token }}
+        run: python -I -B src/vineyards/reconcile.py

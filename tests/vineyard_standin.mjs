@@ -28,8 +28,8 @@ export function standIn() {
   const { privateKey, publicKey } = generateKeyPairSync("rsa", { modulusLength: 2048 });
   const state = {
     rows: [], issues: [], logs: [], calls: [], nextIssue: 9001,
-    turnstile: "pass", github: "ok", dropLabels: false, db: "ok",
-    now: new Date("2026-10-19T12:00:00.000Z"), seq: 0,
+    turnstile: "pass", github: "ok", dropLabels: false, labelFails: false, db: "ok",
+    now: new Date("2026-10-19T12:00:00.000Z"), seq: 0, lastTick: null,
   };
   const env = {
     SUPABASE_URL: "https://db.example.invalid",
@@ -55,13 +55,23 @@ export function standIn() {
       const value = rest.join(".");
       if (op === "eq") return String(row[k]) === value;
       if (op === "is" && value === "null") return row[k] === null;
-      if (op === "lt") return row[k] !== null && new Date(row[k]) < new Date(value);
+      if (op === "not" && value === "is.null") return row[k] !== null;
+      if (op === "lt") return row[k] !== null && new Date(row[k]) < new Date(decodeURIComponent(value));
       throw new Error(`filter ${k}=${v}`);
     });
   }
 
   function reserve(a) {
+    if (state.verdict) return [{ id: "row-forced", issue_number: null, verdict: state.verdict }];
     const again = state.rows.find((r) => r.submission_id === a.p_submission);
+    if (again && again.held) return [{ id: again.id, issue_number: null, verdict: "held" }];
+    // as hsd_vineyard_contacts.sql: a row without its issue for two minutes
+    // belongs to a send that died, and is sent anew
+    if (again && again.issue_number === null && state.now.getTime() - new Date(again.created_at).getTime() > 120000) {
+      Object.assign(again, { created_at: state.now.toISOString(), ip_hash: a.p_ip_hash, contact_name: a.p_name,
+        email: a.p_email, phone: a.p_phone });
+      return [{ id: again.id, issue_number: null, verdict: "new" }];
+    }
     if (again) return [{ id: again.id, issue_number: again.issue_number, verdict: "again" }];
     const dayAgo = state.now.getTime() - 86400000;
     const recent = state.rows.filter((r) => new Date(r.created_at).getTime() > dayAgo);
@@ -74,7 +84,7 @@ export function standIn() {
     const row = {
       id: `row-${++state.seq}`, submission_id: a.p_submission, issue_number: null,
       created_at: state.now.toISOString(), closed_at: null, ip_hash: a.p_ip_hash,
-      contact_name: a.p_name, email: a.p_email, phone: a.p_phone,
+      contact_name: a.p_name, email: a.p_email, phone: a.p_phone, held: null,
     };
     state.rows.push(row);
     return [{ id: row.id, issue_number: null, verdict: "new" }];
@@ -82,14 +92,31 @@ export function standIn() {
 
   function database(url, init) {
     if (state.db === "down") return json(503, { message: "down" });
+    if (state.db === "link" && init.method === "PATCH" && init.body?.includes("issue_number")) {
+      return json(500, { message: "link failed" });
+    }
     if (init.headers.apikey !== env.SUPABASE_SERVICE_ROLE_KEY) return json(401, { message: "no key" });
     const u = new URL(url);
     const path = `${u.pathname}${u.search}`.replace(/^\/rest\/v1\//, "");
     const [name, query] = path.split("?");
     const body = init.body ? JSON.parse(init.body) : null;
     if (name === "rpc/hsd_vineyard_reserve" && init.method === "POST") return json(200, reserve(body));
+    if (name === "rpc/hsd_vineyard_tick" && init.method === "POST") {
+      // as hsd_vineyard_contacts.sql: true, and the time noted, once the last
+      // time is older than p_every_seconds
+      const due = state.lastTick === null || state.now - state.lastTick >= body.p_every_seconds * 1000;
+      if (due) state.lastTick = state.now.getTime();
+      return json(200, due);
+    }
     if (name !== "hsd_vineyard_contacts") return json(404, { message: name });
     const f = filters(query || "");
+    const select = f.select;
+    delete f.select;
+    if (init.method === "GET") {
+      const fields = (select || "").split(",").filter(Boolean);
+      const hit = state.rows.filter((r) => matches(r, f));
+      return json(200, hit.map((r) => (fields.length ? Object.fromEntries(fields.map((k) => [k, r[k]])) : { ...r })));
+    }
     if (init.method === "PATCH") {
       const hit = state.rows.filter((r) => matches(r, f));
       for (const r of hit) Object.assign(r, body);
@@ -113,7 +140,8 @@ export function standIn() {
   }
 
   function github(url, init) {
-    const path = new URL(url).pathname;
+    const u = new URL(url);
+    const path = u.pathname;
     const body = init.body ? JSON.parse(init.body) : null;
     if (path === `/app/installations/${env.GITHUB_APP_INSTALLATION_ID}/access_tokens`) {
       if (state.github === "token-fails" || !verifyJwt(init.headers.Authorization)) return json(401, { message: "Bad credentials" });
@@ -122,10 +150,23 @@ export function standIn() {
     }
     if (init.headers.Authorization !== "Bearer ghs_installation_token_for_tests") return json(401, { message: "Bad credentials" });
     const repo = "/repos/danshome/hickory-sands-district-ava";
+    if (path === `${repo}/issues` && init.method === "GET") {
+      if (state.github === "list-fails") return json(500, { message: "Server Error" });
+      const q = u.searchParams;
+      const since = new Date(q.get("since") || 0).getTime();
+      const found = state.issues
+        .filter((i) => i.user.login === q.get("creator") && new Date(i.updated_at).getTime() >= since)
+        .sort((a, b) => b.number - a.number);
+      const per = Number(q.get("per_page") || 30);
+      const page = Number(q.get("page") || 1);
+      return json(200, found.slice((page - 1) * per, page * per));
+    }
     if (path === `${repo}/issues` && init.method === "POST") {
       if (state.github === "issue-fails") return json(502, { message: "Server Error" });
+      const at = state.now.toISOString();
       const issue = {
-        number: state.nextIssue++, title: body.title, body: body.body,
+        number: state.nextIssue++, title: body.title, body: body.body, state: "open", closed_at: null,
+        created_at: at, updated_at: at,
         labels: state.dropLabels ? [] : body.labels.map((name) => ({ name })),
         user: { login: "hsd-vineyard-form[bot]" },
       };
@@ -135,6 +176,7 @@ export function standIn() {
     }
     const m = path.match(new RegExp(`^${repo}/issues/(\\d+)/labels$`));
     if (m && init.method === "POST") {
+      if (state.labelFails) return json(500, { message: "Server Error" });
       const issue = state.issues.find((i) => i.number === Number(m[1]));
       issue.labels.push(...body.labels.map((name) => ({ name })));
       return json(200, issue.labels);
@@ -144,6 +186,8 @@ export function standIn() {
 
   function turnstile(init) {
     if (state.turnstile === "down") throw new TypeError("network");
+    if (state.turnstile === "5xx") return new Response("<html>Bad gateway</html>", { status: 502 });
+    if (state.turnstile === "html") return new Response("<html>a challenge page</html>", { status: 200 });
     const form = new URLSearchParams(init.body.toString());
     if (form.get("secret") !== env.TURNSTILE_SECRET) return json(200, { success: false });
     const token = form.get("response");
@@ -261,12 +305,122 @@ export async function cases(bundlePath) {
   out.tokenAsked = t.state.calls[0];
   out.again = await look(await t.handle(request(GOOD)));
   out.afterAgain = { rows: t.state.rows.length, issues: t.state.issues.length };
-  out.logs = t.state.logs;
+  out.logs = [...t.state.logs];
 
   // a send still under way: the row is there, its issue number not yet
-  t.state.rows.push({ id: "row-x", submission_id: uuid(99), issue_number: null, created_at: t.state.now.toISOString(),
-    closed_at: null, ip_hash: "f".repeat(32), contact_name: "X", email: "x@example.com", phone: null });
+  const orphan = (id, ms) => ({ id: `row-${id}`, submission_id: uuid(id), issue_number: null,
+    created_at: new Date(t.state.now.getTime() - ms).toISOString(), closed_at: null, ip_hash: "f".repeat(32),
+    contact_name: "X", email: "x@example.com", phone: null, held: null });
+  t.state.rows.push(orphan(99, 30000));
   out.inProgress = await look(await t.handle(request({ ...GOOD, id: uuid(99) })));
+  // a send that died between GitHub and the table, three minutes ago: sent anew
+  t.state.rows.push(orphan(98, 180000));
+  out.stale = await look(await t.handle(request({ ...GOOD, id: uuid(98) })));
+  out.staleRow = t.state.rows.find((r) => r.submission_id === uuid(98));
+  // rows never tied to an issue go after a day
+  t.state.rows.push(orphan(97, 25 * 3600000), orphan(96, 23 * 3600000));
+  await t.handle(request({ ...GOOD, id: uuid(95) }));
+  out.orphans = t.state.rows.filter((r) => [uuid(97), uuid(96)].includes(r.submission_id)).map((r) => r.submission_id);
+
+  // GitHub's answer lost: the issue was made, the row kept (409); a retry
+  // within two minutes is told to wait; after, it finds the issue by its
+  // marker and ties the row to it: one issue, never two
+  t = fresh();
+  t.state.github = "answer-lost";
+  out.lost = await look(await t.handle(request(GOOD)));
+  out.afterLost = { rows: t.state.rows.map((r) => r.issue_number), issues: t.state.issues.length };
+  t.state.github = "ok";
+  out.lostSoon = await look(await t.handle(request(GOOD)));
+  t.state.now = new Date(t.state.now.getTime() + 180000);
+  out.lostLater = await look(await t.handle(request(GOOD)));
+  out.afterLostLater = { rows: t.state.rows.map((r) => r.issue_number), issues: t.state.issues.length };
+  out.markerInBody = /<!-- hsd-vineyard-ref: [0-9a-f]{24} -->/.test(t.state.issues[0].body);
+
+  // the row not tied to its issue: never reported as sent (503); a retry
+  // after two minutes ties it to the same issue
+  t = fresh();
+  t.state.db = "link";
+  out.linkFails = await look(await t.handle(request(GOOD)));
+  out.afterLinkFails = { rows: t.state.rows.map((r) => r.issue_number), issues: t.state.issues.length };
+  t.state.db = "ok";
+  t.state.now = new Date(t.state.now.getTime() + 180000);
+  out.linkRetry = await look(await t.handle(request(GOOD)));
+  out.afterLinkRetry = { rows: t.state.rows.map((r) => r.issue_number), issues: t.state.issues.length };
+
+  // the label refused: the issue and its row stand (200); the reconciliation
+  // puts the label back
+  t = fresh();
+  t.state.dropLabels = true;
+  t.state.labelFails = true;
+  out.labelFails = await look(await t.handle(request(GOOD)));
+  out.afterLabelFails = { rows: t.state.rows.map((r) => r.issue_number), labels: t.state.issues[0].labels.length };
+  t.state.labelFails = false;
+  out.reconcileLabel = await look(await t.handle(request(null, { origin: null, path: "/reconcile" })));
+  out.afterReconcileLabel = t.state.issues[0].labels.map((l) => l.name);
+
+  // Turnstile itself failing is not a refusal: 503, so the page offers a retry
+  t = fresh();
+  t.state.turnstile = "5xx";
+  out.turnstile5xx = await look(await t.handle(request(GOOD)));
+  t.state.turnstile = "html";
+  out.turnstileHtml = await look(await t.handle(request(GOOD)));
+
+  // the reconciliation: a close the webhook missed, at most once every ten
+  // minutes; a reopening; a deleted issue; a row tied by its marker; the
+  // sweep failing is reported
+  t = fresh();
+  await t.handle(request(GOOD));
+  await t.handle(request({ ...GOOD, id: uuid(2) }, { ip: "198.51.100.2" }));
+  const closeIssue = (n) => {
+    const i = t.state.issues.find((x) => x.number === n);
+    Object.assign(i, { state: "closed", closed_at: "2026-10-19T12:30:00Z", updated_at: t.state.now.toISOString() });
+  };
+  closeIssue(9001);
+  t.state.lastTick = t.state.now.getTime(); // a reconciliation just ran
+  out.recThrottled = await look(await t.handle(request(null, { origin: null, path: "/reconcile" })));
+  t.state.now = new Date(t.state.now.getTime() + 11 * 60000);
+  out.recClosed = await look(await t.handle(request(null, { origin: null, path: "/reconcile" })));
+  out.afterRecClosed = t.state.rows.map((r) => [r.issue_number, r.closed_at]);
+  Object.assign(t.state.issues[0], { state: "open", closed_at: null });
+  t.state.issues = t.state.issues.filter((i) => i.number !== 9002); // 9002 deleted
+  t.state.now = new Date(t.state.now.getTime() + 11 * 60000);
+  out.recReopened = await look(await t.handle(request(null, { origin: null, path: "/reconcile" })));
+  out.afterRecReopened = t.state.rows.map((r) => [r.issue_number, r.closed_at === null]);
+  t = fresh();
+  t.state.github = "answer-lost";
+  await t.handle(request(GOOD));
+  t.state.github = "ok";
+  t.state.now = new Date(t.state.now.getTime() + 180000);
+  out.recLinked = await look(await t.handle(request(null, { origin: null, path: "/reconcile" })));
+  out.afterRecLinked = t.state.rows.map((r) => r.issue_number);
+  t.state.db = "down";
+  out.recSweepFails = await look(await t.handle(request(null, { origin: null, path: "/reconcile" })));
+  t.state.db = "ok";
+  t.state.github = "list-fails";
+  t.state.now = new Date(t.state.now.getTime() + 11 * 60000);
+  out.recGithubFails = await look(await t.handle(request(null, { origin: null, path: "/reconcile" })));
+  t = fresh();
+  t.env.IP_SALT = "";
+  out.recNotReady = await look(await t.handle(request(null, { origin: null, path: "/reconcile" })));
+
+  // PRIVATE_WORDS_SILENT (off unless Dan sets it): a private word is held
+  // for the petitioners, thanked as any other, never posted; a retry gets the
+  // same; the held row outlives the day's sweep of rows without an issue
+  t = fresh();
+  t.env.PRIVATE_WORDS_SILENT = "1";
+  const quill = { ...GOOD, vineyard: { ...GOOD.vineyard, name: "Quillfeather Vineyard" } };
+  out.silent = await look(await t.handle(request(quill)));
+  out.silentAgain = await look(await t.handle(request(quill)));
+  out.afterSilent = { rows: t.state.rows.map((r) => [r.issue_number, r.held]), issues: t.state.issues.length };
+  t.state.now = new Date(t.state.now.getTime() + 2 * 86400000);
+  await t.handle(request({ ...GOOD, id: uuid(94) }));
+  out.silentKept = t.state.rows.filter((r) => r.held).length;
+  out.silentLogs = [...t.state.logs];
+
+  // the health check's digest of the address the limits use
+  t = fresh();
+  const probe = async (ip) => (await look(await t.handle(request(null, { method: "GET", path: "/health", ip })))).body.address_digest;
+  out.digests = [await probe("203.0.113.1"), await probe("203.0.113.1"), await probe("198.51.100.2")];
 
   // the limits: 5 a day from one address, 30 a day in all
   t = fresh();
@@ -342,6 +496,14 @@ export async function cases(bundlePath) {
   out.afterClosed = t.state.rows.map((r) => [r.issue_number, r.closed_at]);
   out.hookReopened = await look(await t.handle(hook(t.env, { action: "reopened", issue: issue(9001) })));
   out.afterReopened = t.state.rows.map((r) => [r.issue_number, r.closed_at]);
+  // a closing for an issue with no row shows in the App's delivery log (404)
+  out.hookNoRow = await look(await t.handle(hook(t.env, { action: "closed", issue: issue(9999) })));
+  t.state.db = "down";
+  out.hookDbDown = await look(await t.handle(hook(t.env, { action: "closed", issue: issue(9001) })));
+  t.state.db = "ok";
+  // GitHub's own state follows, as the reconciliation reads it
+  Object.assign(t.state.issues[0], { state: "closed", closed_at: "2026-10-19T13:00:00Z" });
+  t.state.issues = t.state.issues.filter((i) => i.number !== 9002);
   await t.handle(hook(t.env, { action: "closed", issue: issue(9001, { closed_at: "2026-10-19T13:00:00Z" }) }));
   await t.handle(hook(t.env, { action: "deleted", issue: issue(9002) }));
   t.state.now = new Date("2027-10-01T00:00:00Z"); // under a year after closing
@@ -388,6 +550,9 @@ export async function serve(port, bundlePath) {
     // the local page's requests pass as the site's; any other origin as it is
     const local = /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
     const headers = { ...req.headers, origin: local ? SITE : origin };
+    // a gateway that sets the sender's address, as Cloudflare does in front
+    // of Supabase: a forged one never gets through
+    headers["cf-connecting-ip"] = req.socket.remoteAddress || "";
     delete headers.host;
     const answer = await handle(new Request(URL_BASE + req.url.replace(/^\/vineyard-submit/, ""), {
       method: req.method,

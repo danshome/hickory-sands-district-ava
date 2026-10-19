@@ -143,3 +143,15 @@ def test_a_release_is_only_of_main_s_history():
     guard = job["steps"][1]["run"]
     assert "git merge-base --is-ancestor HEAD origin/main" in guard
     assert "exit 1" in guard
+
+
+def test_the_daily_check_runs_only_once_set_up():
+    flow = load("vineyard-reconcile.yml")
+    assert flow["permissions"] == {}
+    assert set(flow[True]) == {"schedule", "workflow_dispatch"}
+    (job,) = flow["jobs"].values()
+    assert job["if"] == "vars.VINEYARD_FUNCTION_URL != ''"
+    assert job["permissions"] == {"contents": "read", "issues": "write"}
+    (run,) = [s for s in steps(flow) if "run" in s]
+    assert run["run"] == "python -I -B src/vineyards/reconcile.py"
+    assert run["env"]["FUNCTION_URL"] == "${{ vars.VINEYARD_FUNCTION_URL }}"

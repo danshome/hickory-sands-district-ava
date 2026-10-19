@@ -80,6 +80,12 @@ class GitHubStandIn(http.server.ThreadingHTTPServer):
         self.refs = set()
         self.blobs = {}
         self.pulls = []
+        self.pulls_fail = False
+        self.policy = {
+            "protected_branches": False,
+            "custom_branch_policies": True,
+        }
+        self.branch_policies = [{"name": "main", "type": "branch"}]
 
     @property
     def url(self):
@@ -110,6 +116,10 @@ class Handler(http.server.BaseHTTPRequestHandler):
         base = f"/repos/{REPO}"
         path = url.path.removeprefix(base)
         query = dict(urllib.parse.parse_qsl(url.query))
+        if method == "POST" and path == "/issues":
+            made = {"number": 500 + len(gh.issues), **body, "state": "open"}
+            gh.issues.append(made)
+            return self._send(201, made)
         if method == "GET" and path == "/issues":
             return self._send(
                 200, gh.issues if query.get("page") == "1" else []
@@ -136,6 +146,17 @@ class Handler(http.server.BaseHTTPRequestHandler):
                         item["body"] = body["body"]
                         return self._send(200, item)
             return self._send(404, {"message": "Not Found"})
+        if method == "GET" and path == "/environments/vineyard-pr":
+            return self._send(200, {"deployment_branch_policy": gh.policy})
+        if method == "GET" and path.endswith("/deployment-branch-policies"):
+            return self._send(200, {"branch_policies": gh.branch_policies})
+        if method == "GET" and path.startswith("/git/ref/heads/"):
+            ref = "refs/heads/" + path.removeprefix("/git/ref/heads/")
+            if ref in gh.refs:
+                return self._send(200, {"ref": ref})
+            return self._send(404, {"message": "Not Found"})
+        if method == "POST" and path == "/pulls" and gh.pulls_fail:
+            return self._send(422, {"message": "Validation Failed"})
         if method == "GET" and path.startswith("/git/commits/"):
             return self._send(200, {"tree": {"sha": "tree-base"}})
         if method == "POST" and path == "/git/blobs":
@@ -275,12 +296,12 @@ def test_an_opened_submission_gets_one_check_and_an_edit_updates_it(
     github.issues = [the_issue, issue(13, user=vs.BOT)]
     done = run("check_issue.py", github, tmp_path, event("opened", the_issue))
     assert done.returncode == 0, done.stderr
-    assert "posted: ready for review" in done.stdout
+    # the other open submission, #13, has the same name: Dan looks first
+    assert "posted: something to look at" in done.stdout
     first = comments(github)
     assert len(first) == 1
     assert first[0].startswith(vs.CHECK_MARK)
-    assert "ready for review" in first[0]
-    # the other open submission, #13, has the same name: said, not hidden
+    assert "something to look at" in first[0]
     assert "Another open submission has this name: #13." in first[0]
     assert "the private list was checked" in first[0]
     assert "quillfeather" not in first[0]
@@ -295,9 +316,10 @@ def test_an_opened_submission_gets_one_check_and_an_edit_updates_it(
     )
     done = run("check_issue.py", github, tmp_path, event("edited", changed))
     assert done.returncode == 0, done.stderr
-    assert "edited" in done.stdout
+    assert "edited: ready for review" in done.stdout
     assert len(comments(github)) == 1
     assert "Another open submission" not in comments(github)[0]
+    assert "ready for review" in comments(github)[0]
     # every call with the Actions' token
     assert {c[2] for c in github.calls} == {"Bearer actions-token"}
 
@@ -422,9 +444,8 @@ def test_the_owner_s_label_opens_a_complete_pull_request(
         assert b"jane" not in data.lower()
     # and a comment back with the link
     assert any("pull request #77" in c for c in comments(github))
-    # a second approval, on a main without it yet (the first pull request
-    # not merged), moves the branch and keeps the one pull request
-    github.pulls = [dict(github.pulls[0], state="open")]
+    # a second approval, the first pull request's branch still there: the
+    # branch is never moved (it may hold the petitioner's own commits)
     shutil.copy(os.path.join(ROOT, vs.VINEYARDS), copy_root / vs.VINEYARDS)
     done = run(
         "approve.py",
@@ -434,11 +455,12 @@ def test_the_owner_s_label_opens_a_complete_pull_request(
         "--root",
         str(copy_root),
     )
-    assert done.returncode == 0, done.stdout + done.stderr
-    assert any(
-        m == "PATCH" and p.endswith("/git/refs/heads/vineyard/issue-12")
-        for m, p, _, _ in github.calls
+    assert done.returncode == 1, done.stdout + done.stderr
+    assert "is there already" in comments(github)[-1]
+    assert not any(
+        m == "PATCH" and "/git/refs/" in p for m, p, _, _ in github.calls
     )
+    assert len(github.pulls) == 1
 
 
 @pytest.mark.parametrize(
@@ -538,3 +560,178 @@ def test_a_forged_body_by_the_bot_is_refused(github, tmp_path, copy_root):
     (text,) = comments(github)
     assert text.startswith("No pull request: the issue is not the form's")
     assert github.pulls == []
+
+
+def test_a_pull_request_github_refuses_is_said_on_the_issue(
+    github, tmp_path, copy_root
+):
+    the_issue = issue(labels=(vs.LABEL, vs.APPROVED))
+    github.pulls_fail = True
+    done = run(
+        "approve.py",
+        github,
+        tmp_path,
+        event("labeled", the_issue, label=vs.APPROVED),
+        "--root",
+        str(copy_root),
+    )
+    assert done.returncode == 1
+    (text,) = comments(github)
+    assert text.startswith(
+        "No pull request: GitHub refused opening the pull request (422)."
+    )
+    assert "The branch `vineyard/issue-12` was made" in text
+
+
+@pytest.mark.parametrize(
+    ("policy", "branches"),
+    [
+        (None, []),
+        (
+            {"protected_branches": False, "custom_branch_policies": True},
+            [{"name": "*", "type": "branch"}],
+        ),
+    ],
+)
+def test_no_approval_while_any_branch_may_use_the_key(
+    github, tmp_path, copy_root, policy, branches
+):
+    github.policy = policy
+    github.branch_policies = branches
+    the_issue = issue(labels=(vs.LABEL, vs.APPROVED))
+    done = run(
+        "approve.py",
+        github,
+        tmp_path,
+        event("labeled", the_issue, label=vs.APPROVED),
+        "--root",
+        str(copy_root),
+    )
+    assert done.returncode == 1
+    (text,) = comments(github)
+    assert "may be used from any branch" in text
+    assert github.pulls == []
+
+
+def test_a_body_re_saved_in_the_browser_is_checked_and_approved(
+    github, tmp_path, copy_root
+):
+    crlf = body_of(GOOD).replace("\n", "\r\n")
+    the_issue = issue(body=crlf, labels=(vs.LABEL, vs.APPROVED))
+    github.issues = [the_issue]
+    done = run("check_issue.py", github, tmp_path, event("edited", the_issue))
+    assert done.returncode == 0, done.stderr
+    assert "ready for review" in comments(github)[0]
+    done = run(
+        "approve.py",
+        github,
+        tmp_path,
+        event("labeled", the_issue, label=vs.APPROVED),
+        "--root",
+        str(copy_root),
+    )
+    assert done.returncode == 0, done.stdout + done.stderr
+    assert len(github.pulls) == 1
+
+
+class FunctionStandIn(http.server.ThreadingHTTPServer):
+    """The vineyard function's /reconcile, answering as told."""
+
+    def __init__(self, status, body):
+        """Starts on a free local port."""
+        super().__init__(("127.0.0.1", 0), ReconcileHandler)
+        self.answer = (status, body)
+        self.calls = 0
+
+    @property
+    def url(self):
+        return f"http://127.0.0.1:{self.server_address[1]}/vineyard-submit"
+
+
+class ReconcileHandler(http.server.BaseHTTPRequestHandler):
+    """POST /vineyard-submit/reconcile."""
+
+    def log_message(self, *args):
+        """Keeps the test's output quiet."""
+
+    def do_POST(self):
+        """Answers as the stand-in was told."""
+        self.server.calls += 1
+        status, body = self.server.answer
+        if self.path != "/vineyard-submit/reconcile":
+            status, body = 404, {"error": "not here"}
+        text = json.dumps(body).encode()
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(text)))
+        self.end_headers()
+        self.wfile.write(text)
+
+
+def reconcile(github, function):
+    env = {
+        "PATH": os.environ.get("PATH", ""),
+        "FUNCTION_URL": function.url,
+        "GITHUB_REPOSITORY": REPO,
+        "GITHUB_API_URL": github.url,
+        "GITHUB_SERVER_URL": "https://github.com",
+        "GITHUB_RUN_ID": "4242",
+        "GH_TOKEN": "actions-token",
+    }
+    return subprocess.run(
+        [
+            sys.executable,
+            "-I",
+            "-B",
+            os.path.join(ROOT, "src", "vineyards", "reconcile.py"),
+        ],
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=60,
+        check=False,
+    )
+
+
+@pytest.fixture
+def function_server(request):
+    server = FunctionStandIn(*request.param)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    yield server
+    server.shutdown()
+    server.server_close()
+
+
+@pytest.mark.parametrize(
+    "function_server",
+    [(200, {"ok": True, "ran": True, "linked": 0, "closed": 1})],
+    indirect=True,
+)
+def test_the_daily_check_passing_says_nothing_on_github(
+    github, function_server
+):
+    done = reconcile(github, function_server)
+    assert done.returncode == 0, done.stdout + done.stderr
+    assert "the vineyard function's table is right" in done.stdout
+    assert function_server.calls == 1
+    assert github.calls == []
+
+
+@pytest.mark.parametrize(
+    "function_server",
+    [(500, {"ok": False, "failed": "sweep"})],
+    indirect=True,
+)
+def test_the_daily_check_failing_is_said_on_one_issue(github, function_server):
+    done = reconcile(github, function_server)
+    assert done.returncode == 1
+    (made,) = github.issues
+    assert made["title"] == "Vineyard form: the daily check failed"
+    assert "500, sweep" in made["body"]
+    assert "actions/runs/4242" in made["body"]
+    # failing again comments on that issue; no second issue
+    done = reconcile(github, function_server)
+    assert done.returncode == 1
+    assert len(github.issues) == 1
+    assert "500, sweep" in comments(github, made["number"])[0]

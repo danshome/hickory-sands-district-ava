@@ -20,6 +20,7 @@ add the label `approved` once it says "ready for review".
 import argparse
 import json
 import os
+import re
 import subprocess
 import sys
 
@@ -105,7 +106,10 @@ def outlined(body, rings):
     if errors:
         raise SystemExit("the blocks break a rule: " + " ".join(errors))
     sub["outline"] = "petitioner"
-    return vs.issue_body(sub, data.get("sent") or "")
+    out = vs.issue_body(sub, data.get("sent") or "")
+    # the function's marker, by which it ties the issue to its sender, stays
+    found = re.search(r"<!-- hsd-vineyard-ref: [0-9a-f]{24} -->", body)
+    return out + found.group(0) + "\n" if found else out
 
 
 def main(argv=None):

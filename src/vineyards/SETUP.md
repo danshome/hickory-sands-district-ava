@@ -19,11 +19,11 @@ never into the repository, a pull request, an issue or a chat.
    workflow can use. Two Apps keep a write path to the code out of Supabase. An App's key never expires, unlike a
    personal token, and a pull request opened by an App runs every check. The fallback, if you would rather not make a
    second App, is the proposal's fine-grained token ("token 2"); ask Claude to switch the workflow back.
-2. **The form App also has a webhook.** It is how the function learns that an issue was closed: you asked for a contact
-   to be deleted one year after its issue is closed. The function records the closing date and deletes the rows closed
-   more than a year ago each time it runs: on every send, and every time GitHub tells it about an issue. This repository
-   has issue events most days, so the deletion runs often. If you want it to run at an exact time each day, Supabase's
-   pg_cron can do the same deletion on a schedule; ask Claude.
+2. **The form App also has a webhook, and there is a daily check.** The webhook is how the function learns that an
+   issue was closed: you asked for a contact to be deleted one year after its issue is closed. The function records
+   the closing date and deletes the rows closed more than a year ago each time it runs. GitHub never sends a failed
+   delivery again, so a daily Action (`vineyard-reconcile`) also asks the function to put its table right against
+   GitHub, and opens an issue for you when that fails (step 8.2).
 
 Allow about an hour. Do the steps in order, after the machinery's pull request (the one that adds this file) is merged.
 The page's pull request comes last (step 9).
@@ -75,19 +75,32 @@ request, and your own merges with `--admin` would go on as now. Settings > Rules
 
 1. **Labels.** In the repository: **Issues** > **Labels** > **New label**, three times: `vineyard-submission`,
    `approved` and `vineyard-data`. Any colours. The form's App applies an existing label; it cannot make one.
-2. **The environment, before the first approval** (a workflow that names a missing environment makes it, unprotected).
-   Repository **Settings** > **Environments** > **New environment** > name `vineyard-pr` > **Configure environment**:
-   - **Deployment branches and tags:** choose "Selected branches and tags" > **Add deployment branch or tag rule** >
-     `main` > **Add rule**.
-   - Optional: **Required reviewers:** add yourself. Each approval then waits for one more click in the Actions tab.
-   - **Environment secrets** > **Add environment secret:** name `VINEYARD_PR_PRIVATE_KEY`; value: the whole second
-     `.pem` file. To copy it, run `pbcopy < ~/Downloads/` followed by the file's name (it starts `hsd-vineyard-pr.`).
-   - **Environment variables** > **Add environment variable:** name `VINEYARD_PR_CLIENT_ID`; value: the Client ID from
-     step 2.6.
-3. **The private words** (optional, recommended). **Settings** > **Secrets and variables** > **Actions** > **New
-   repository secret:** name `PRIVATE_WORDS`; value: your `.private-words` list (`pbcopy < .private-words` from the main
-   checkout). The Actions then refuse a public field that holds one of the words, and never print them.
+2. **The environment.** Do this before the first approval: a workflow that names a missing environment makes it
+   with no rule. And do these three in this order.
+   1. Repository **Settings** > **Environments** > **New environment**, name it `vineyard-pr` > **Configure
+      environment**.
+   2. **Deployment branches and tags:** choose "Selected branches and tags" > **Add deployment branch or tag rule** >
+      `main` > **Add rule**. **Look that the page now lists `main` as the only rule.** Optional: **Required
+      reviewers:** add yourself; each approval then waits for one more click in the Actions tab.
+   3. **Only now** add the key. **Environment secrets** > **Add environment secret:** name
+      `VINEYARD_PR_PRIVATE_KEY`; value: the whole second `.pem` file. To copy it, run `pbcopy < ~/Downloads/`
+      followed by the file's name (it starts `hsd-vineyard-pr.`). Then **Environment variables** > **Add environment
+      variable:** name `VINEYARD_PR_CLIENT_ID`; value: the Client ID from step 2.6.
+
+   Before every approval, the approve Action checks that only `main` may use this environment. If any branch may, it
+   comments "may be used from any branch" on the issue and opens nothing.
+3. **The private words** (optional, recommended). Set them in **both** places or in **neither**: here and in Supabase
+   (step 6). With them in only one place, the form and the check disagree about what is refused. Here: **Settings** >
+   **Secrets and variables** > **Actions** > **New repository secret:** name `PRIVATE_WORDS`; value: your
+   `.private-words` list (`pbcopy < .private-words` from the main checkout). The Actions then refuse a public field
+   that holds one of the words, and never print them.
 4. Once the second key is pasted, put that `.pem` file in the Trash and empty it. GitHub can make a new key at any time.
+5. **Optional, recommended: only you may make `v*` tags.** The PR App can push branches and tags. `release.yml`
+   refuses a tag on a commit that is not on `main`'s history, but it runs as it is in the tagged commit, so a tag on a
+   commit of `main` from before that guard would still build. A tag ruleset closes that: **Settings** > **Rules** >
+   **Rulesets** > **New ruleset** > **New tag ruleset**. Name it `release tags`; **Enforcement status:** Active;
+   **Bypass list:** add **Repository admin** (you); **Target tags** > **Add target** > **Include by pattern** `v*`;
+   tick **Restrict creations**, **Restrict updates** and **Restrict deletions** > **Create**.
 
 ## 4. Cloudflare Turnstile (the check that a person is sending)
 
@@ -110,8 +123,8 @@ request, and your own merges with `--admin` would go on as now. Settings > Rules
 4. Click **Run**. You should see "Success. No rows returned".
 5. Check it: **Table Editor** lists `hsd_vineyard_contacts`, marked as having row level security on.
 
-The SQL makes only things named `hsd_vineyard_...`: one table, two indexes and one function. It changes nothing of
-vote-api's, and running it again changes nothing.
+The SQL makes only things named `hsd_vineyard_...`: two tables (the contacts, and when the function last
+reconciled), two indexes and two functions. It changes nothing of vote-api's, and running it again changes nothing.
 
 ## 6. Supabase: the function's secrets
 
@@ -126,7 +139,7 @@ vote-api's, and running it again changes nothing.
    | `GITHUB_WEBHOOK_SECRET` | the webhook secret from step 1.5 |
    | `TURNSTILE_SECRET` | Turnstile's Secret Key (step 4.6) |
    | `IP_SALT` | new random text: `openssl rand -hex 32 \| pbcopy` |
-   | `PRIVATE_WORDS` | optional: the same list as in step 3.3 |
+   | `PRIVATE_WORDS` | optional: the same list as in step 3.3 (both places, or neither) |
 
 3. Put the first `.pem` file in the Trash and empty it.
 
@@ -156,26 +169,36 @@ all, paste and click **Deploy updates**.
 ## 8. Check that it works
 
 1. In Terminal, at the repository's root: `.venv/bin/python -E -s -B src/vineyards/check_function.py`.
-   Success is four lines starting `PASS`, then "All four checks passed.":
+   Success is five lines starting `PASS`, then "All five checks passed.":
    - the function answers and every secret is set (if not, it names the missing secrets; a 401 means JWT
      verification is still on);
    - the site may send to it;
    - another site may not;
-   - a send without the person check is refused.
+   - a send without the person check is refused;
+   - a forged address does not change the address counted. The limit of five sends a day from one connection counts
+     the address the function reads from `cf-connecting-ip` (which Cloudflare sets in front of Supabase), else
+     `x-real-ip`, else `x-forwarded-for`. The check asks the function, twice, with each of those headers forged to a
+     different address, for a digest of the address it would count. If the digest changes, a sender could dodge the
+     limit by forging the header. Send Claude the line; the fix is to count only the header the gateway proves it
+     sets. (A test by sending six vineyards would need the person check six times; this needs none.)
 
-   The first line also shows which address headers reach the function, names only (for example
-   `['cf-connecting-ip', 'x-forwarded-for']`). Tell Claude what it says: the limit of five sends a day from one
-   connection uses the first of these.
-2. GitHub: the form App's page > **Advanced** > **Recent Deliveries**. Open the failed "ping" > **Redeliver**. It
+   The first line also shows which address headers reach the function, names only.
+2. **Turn on the daily check.** Repository **Settings** > **Secrets and variables** > **Actions** > **Variables** >
+   **New repository variable:** name `VINEYARD_FUNCTION_URL`; value
+   `https://yayebhncbagmebwgmezd.supabase.co/functions/v1/vineyard-submit`. Then **Actions** > **vineyard-reconcile** >
+   **Run workflow**: it should end green. Every day it asks the function to put its table right against GitHub (a
+   closing the webhook missed, a row not yet tied to its issue, the year's deletions). If that fails, it opens an
+   issue, "Vineyard form: the daily check failed", or comments on it, and the run fails.
+3. GitHub: the form App's page > **Advanced** > **Recent Deliveries**. Open the failed "ping" > **Redeliver**. It
    should now show 200.
-3. After the page's pull request is merged (step 9), send a test from your phone:
+4. After the page's pull request is merged (step 9), send a test from your phone:
    hickorysandsdistrictava.org/vineyards.html > **Add my vineyard**. Draw one small block on any vineyard, name it
    `Test vineyard`, put in your own phone or email, tick both boxes and **Send**. Success:
    - the thank-you screen gives a reference number, say 160;
    - within a minute, issue #160 appears, opened by `hsd-vineyard-form[bot]` with the label `vineyard-submission`
      and the block drawn on a map, then a comment by `github-actions[bot]` headed "The check: ...";
    - in Supabase's **Table Editor** > `hsd_vineyard_contacts`, one row with your contact and `issue_number` 160.
-4. Close the test issue as "not planned". Within seconds, its row's `closed_at` is filled in (refresh the Table
+5. Close the test issue as "not planned". Within seconds, its row's `closed_at` is filled in (refresh the Table
    Editor). The row is deleted a year later; you may delete the test row now (select it > Delete).
 
 Leaving the test issue without the label keeps the site unchanged. To try the approval as well, add `approved`: a pull
@@ -210,7 +233,16 @@ fallback.
   spam, remove the `TURNSTILE_SECRET` secret in Supabase. The function then answers "not ready" and the page offers
   the email address. Add the secret again to reopen the form.
 - **Contacts:** each row is deleted a year after its issue is closed. A deleted issue counts as closed on the day of
-  its deletion.
+  its deletion. A row never tied to an issue (a send that died between GitHub and the table, and that the daily check
+  could not tie to its issue) is deleted after a day.
+- **The daily check failed:** an issue "Vineyard form: the daily check failed" says what failed. The function's logs
+  are in Supabase (**Edge Functions** > `vineyard-submit` > **Logs**). Run **Actions** > **vineyard-reconcile** >
+  **Run workflow** again once it is put right, and close the issue.
+- **A private word, silently (off; your choice):** a name or variety with one of your private words is now refused
+  with "The register can't show this name as written". The reply names no word, but a stranger could try word after
+  word. Setting the Supabase secret `PRIVATE_WORDS_SILENT` to `1` holds such a vineyard instead: the sender is thanked
+  as usual (with no reference number), nothing is posted, and the row in the Table Editor is marked `held` for you to
+  read. It is deleted a year after it came.
 - **A paused project:** Supabase pauses a free project after a week without activity. The page then offers the email
   address. Restore the project in the dashboard; it pauses vote-api too.
 - **A new key:** on the App's page > **Private keys** > **Generate a private key**, paste it where the old one was
@@ -226,5 +258,6 @@ fallback.
 | IP salt | Supabase | the function: the limits, without keeping any IP address |
 | PR App's private key | GitHub: environment `vineyard-pr` (main only) | vineyard-approve: the branch and the pull request |
 | PR App's Client ID (not secret) | GitHub: environment `vineyard-pr`, a variable | the same |
-| private words (optional) | GitHub: repository secret; Supabase | the Actions and the function: refuse those words |
+| private words (optional) | GitHub: repository secret; Supabase (both, or neither) | the Actions and the function: refuse those words |
+| the function's URL, for the daily check (not secret) | GitHub: repository variable `VINEYARD_FUNCTION_URL` | vineyard-reconcile |
 | Turnstile Site Key, the function's URL (not secret) | `docs/assets/vineyard-config.js` | the page |

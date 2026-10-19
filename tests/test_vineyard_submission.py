@@ -192,7 +192,7 @@ def test_what_is_already_on_the_map_is_flagged(root):
     assert not ok
     assert "A vineyard of this name is already on the map (3 blocks)" in md
     md, ok, _ = reviewed(GOOD, others=[(13, "Prairie Gap Vineyard")], root=root)
-    assert ok  # a twin is said, for Dan to close, and does not stop it
+    assert not ok  # a twin needs Dan's look before either is approved
     assert "Another open submission has this name: #13." in md
 
 
@@ -226,7 +226,12 @@ def test_a_pin_is_drawn_by_the_petitioners_then_ready(root, tmp_path):
         ),
         encoding="utf-8",
     )
-    new_body = outline_issue.outlined(body, outline_issue.drawn_rings(drawn))
+    # as the function wrote it, with its marker, then re-saved in GitHub's
+    # editor, with CRLF line ends
+    ref = "<!-- hsd-vineyard-ref: " + "b" * 24 + " -->"
+    saved = (body + ref + "\n").replace("\n", "\r\n")
+    new_body = outline_issue.outlined(saved, outline_issue.drawn_rings(drawn))
+    assert new_body.endswith(ref + "\n")
     data = vs.parse_issue(new_body)
     assert data["outline"] == "petitioner"
     assert data["pin"] == [-99.294, 30.864]

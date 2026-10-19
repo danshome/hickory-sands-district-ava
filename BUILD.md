@@ -139,7 +139,8 @@ src/
                          make_vineyards (with aquifer/vineyards): the vineyards' data (docs/assets/vineyards/)
   vineyards/             the vineyards page's form, "Add your vineyard": submission (the rules, the issue, the review,
                          the vineyard file's writer), check_issue and approve (the two Actions), functions/vineyard-submit/
-                         (the Supabase Edge Function and its table's SQL), bundle_function, check_function, outline_issue;
+                         (the Supabase Edge Function and its table's SQL), bundle_function, check_function, outline_issue,
+                         reconcile (the daily check);
                          SETUP.md: setting it up (the GitHub Apps, Turnstile, Supabase)
   publish/               ArcGIS Online: agol_publish, agol_layer, agol_dashboard, agol_org_categories, agol_share (what
                          is sent); agol_dryrun + agol_dryrun_checks (the dry run); agol_check (the live site)
@@ -320,14 +321,21 @@ for Python; 2-space YAML and TOML). By hand: `.venv/bin/ruff format .` and `.ven
   issue for every fixture, hostile ones among them, and each limit on each side; the issue holds no contact and nothing
   that can close a code fence or carry HTML;
 - `test_vineyard_function.py`: the Edge Function, bundled as Dan deploys it, run in node (22 or later) against stand-ins
-  for its table, Turnstile and GitHub (`tests/vineyard_standin.mjs`): CORS, size, Turnstile, the trap, the rules and
-  the private words, the row and the issue, a retry, the limits, failures, the App's key in each form, the webhook and
-  the year's deletion; and `check_function.py` passing on it;
+  for its table, Turnstile and GitHub (`tests/vineyard_standin.mjs`): CORS, size, Turnstile (and Cloudflare failing,
+  503), the trap, the rules and the private words (and the silent hold, off by default), the row and the issue, a
+  retry, the limits, GitHub's answer lost (one issue, found again by its marker), the row not tied to its issue (never
+  reported as sent), a dropped label, failures, the App's key in each form, the webhook (no row: 404; the table down:
+  503), the reconciliation (at most every ten minutes; missed closings, reopenings and deletions; rows tied by their
+  marker; failures answered 500) and the deletions; and `check_function.py`'s five checks, passing on it and failing on
+  a forged address;
 - `test_vineyard_sql.py`: the contacts table's SQL in a throwaway PostgreSQL, when one is installed (Supabase's roles
-  kept out, row level security forced, the limits and a send again, only `hsd_vineyard_*` objects);
+  kept out, row level security forced, the limits and a send again, a send that died taken up again after two
+  minutes, a held row, the reconciliation's tick, only `hsd_vineyard_*` objects);
 - `test_vineyard_actions.py`: `check_issue.py` and `approve.py` run as the workflows run them (`python -I -B`) on sample
   issue events, against a stand-in for GitHub's API: opened, edited, labelled by the owner, labelled by someone else, a
-  forged issue, a body not in the layout, an overlap, a pin, a second approval;
+  forged issue, a body not in the layout, a body re-saved in GitHub's editor (CRLF), an overlap, a pin, a second
+  approval (the branch never moved), the pull request refused, the environment open to any branch; and
+  `reconcile.py`, the daily check, against a stand-in for the function (one issue for Dan when it fails);
 - `test_vineyard_submission.py`: the review, and the vineyard file's writer (byte for byte, sorted, clockwise, the file's
   own block numbers, the year and varieties kept, a private word refused); a pin's outline drawn by the petitioners;
 - `test_workflows.py`: every workflow's actions pinned to a commit, Linux only, no event text in a shell; the vineyard
@@ -446,7 +454,7 @@ after each load and `-menu-open.png` with the menu open.
 
 ## GitHub Actions and releases
 
-Six workflows in `.github/workflows/`, every action pinned to a commit:
+Seven workflows in `.github/workflows/`, every action pinned to a commit:
 
 - **lint** (`lint.yml`, GitHub's Linux machines): every pre-commit hook on every file, then the unit tests that need
   only the lint tools, on every pull request and every push to `main`. The lint tools come from `requirements-dev.txt`,
@@ -481,6 +489,10 @@ git tag v2026.10.20 && git push origin v2026.10.20
   the pull request's checks run (`src/vineyards/approve.py`). Every such pull request is reviewed and merged by hand.
   Both read the issue from the event's file, never from an expression in a shell; an issues event runs them as they
   are on `main`. Setting them up: `src/vineyards/SETUP.md`.
+- **vineyard-reconcile** (`vineyard-reconcile.yml`, Linux, daily, once Dan has set the repository variable
+  `VINEYARD_FUNCTION_URL`): asks the vineyard function to put its private table right against GitHub (closings a failed
+  webhook delivery missed, rows not yet tied to their issues, the deletions) and, when that fails, opens or comments on
+  one issue for Dan (`src/vineyards/reconcile.py`).
 - **site** (`site.yml`, Linux): the website. On pull requests that touch `docs/`, its tests (`tests/test_site.py`); on
   a push to `main` that touches `docs/`, and by hand, the same tests and then `docs/` deployed to GitHub Pages as it
   is (no build step: what is in `docs/` is what is served).
@@ -544,8 +556,9 @@ GDAL rounds differently agree. A frame reaching past the listed quads stops `./b
   `wells/heads-<n>.json`; closer in (`WELLS_LINES_SCALE`), every well's line too, around the middle of the view. Its
   code is `aquifer3d.js`,
   `aquifer-wells.js` and `aquifer.css`; its data is `docs/assets/aquifer/`, beside it, not in `docs/data/` (which
-  `make_site_data.py` owns). Every figure it shows comes from `docs/assets/aquifer/stats.json`, read when the page
-  loads (`data-stat` elements, not `data-figure`). When Esri's ground (elevation) cannot be loaded, for example a
+  `make_site_data.py` owns). Every figure it shows comes from `docs/assets/aquifer/stats.json` and, for the
+  vineyards, `docs/assets/vineyards/stats.json` (made by `src/site/make_vineyards.py`), read when the page loads
+  (`data-stat` elements, not `data-figure`). When Esri's ground (elevation) cannot be loaded, for example a
   refused key, the ground is drawn flat and the aquifer and wells at their depths below the model's own ground; when
   the basemap cannot be loaded, the layers are drawn on the page's background; the page says which.
 
@@ -618,7 +631,10 @@ address or a telephone number.
 The vineyards page's form, "Add your vineyard", sends a vineyard to the Supabase Edge Function `vineyard-submit`
 (`src/vineyards/functions/vineyard-submit/`), which checks it with the page's own rules (`docs/assets/vineyard-blocks.js`),
 keeps the sender's contact in one locked table (`hsd_vineyard_contacts`: row level security on, no policies, written only
-by the function, each row deleted a year after its issue is closed) and opens a public issue with the public fields only.
+by the function, each row deleted a year after its issue is closed, or a day after it was made if it was never tied to an
+issue) and opens a public issue with the public fields only, once: a marker in the issue (an HMAC of the submission's id)
+lets a retry after a lost answer find it instead of making a second, and the sender is told it is sent only once the row
+is tied to its issue. Its webhook records closings; the daily check (`vineyard-reconcile`) catches what it missed.
 The two Actions above check it and, on the owner's label, open the pull request. Dan sets it up once and deploys the
 function from the Supabase dashboard as one file (`src/vineyards/bundle_function.py`); `src/vineyards/SETUP.md` gives
 every click, and `src/vineyards/check_function.py` checks the deployed function from outside.

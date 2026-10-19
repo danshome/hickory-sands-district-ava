@@ -6,8 +6,8 @@ District AVA" (ref `yayebhncbagmebwgmezd`) beside vote-api, and leaves vote-api 
 
 | file | what it is |
 |---|---|
-| `index.ts` | the function: the form's POST, the GitHub App's webhook (`/github`) and a health check (`/health`); its header says what it does, step by step |
-| `hsd_vineyard_contacts.sql` | the private table of contacts and `hsd_vineyard_reserve()`, which Dan runs once in the SQL editor |
+| `index.ts` | the function: the form's POST, the GitHub App's webhook (`/github`), the daily check (`/reconcile`) and a health check (`/health`); its header says what it does, step by step |
+| `hsd_vineyard_contacts.sql` | the private table of contacts, `hsd_vineyard_reserve()` and the reconciliation's tick, which Dan runs once in the SQL editor |
 
 `index.ts` imports two files that live elsewhere in the repository and are never copied here: the site's rules,
 `docs/assets/vineyard-blocks.js` (the module the page runs, so the page and the function say the same thing), and TTB's

@@ -557,3 +557,12 @@ def test_a_table_cell_holds_no_escape_or_fence():
     # Public text refuses these characters already; the cell is safe anyway.
     assert vs.code("a\\b|c`d") == "`a\u2216b\uff5cc\u02cbd`"
     assert vs.code("  ") == "_not given_"
+
+
+def test_a_body_edited_in_github_s_editor_still_reads():
+    # GitHub saves an edited body with CRLF line ends; the function's marker
+    # line after the data block is kept and ignored.
+    body = vs.issue_body(vs.check(GOOD, year=2026)[0], SENT)
+    marked = body + "<!-- hsd-vineyard-ref: " + "a" * 24 + " -->\n"
+    for edited in (body.replace("\n", "\r\n"), marked.replace("\n", "\r\n")):
+        assert vs.parse_issue(edited) == vs.parse_issue(body)

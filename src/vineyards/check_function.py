@@ -1,8 +1,7 @@
 """Checks the deployed vineyard function from outside, as the site sees it.
 
-Four requests, each with its own pass or fail line; no secret is needed or
-sent, and nothing is stored or posted (src/vineyards/SETUP.md, "Check that
-it works"):
+Five checks, each with its own pass or fail line; no secret is needed or
+sent, and nothing is stored or posted (src/vineyards/SETUP.md, step 8):
 
 1. GET .../health: the function answers, and every secret is set ("ready");
    it also says which address headers reach it (never their values);
@@ -10,12 +9,17 @@ it works"):
    allowed (CORS);
 3. OPTIONS from another site: 403;
 4. POST from the site without a Turnstile token: 403 "turnstile" (the check
-   that a person sent it runs before anything else is done).
+   that a person sent it runs before anything else is done);
+5. two health checks that claim other addresses (forged cf-connecting-ip,
+   x-real-ip and x-forwarded-for): the digest of the address the limits use
+   must not change with them, or one connection could send without limit.
+   A test of the limits by sending needs the person check, so this asks the
+   function which address it would count instead.
 
     .venv/bin/python -E -s -B src/vineyards/check_function.py [URL]
 
 The URL defaults to the function in the project yayebhncbagmebwgmezd.
-Exit status 0 when all four pass. Standard library only.
+Exit status 0 when all five pass. Standard library only.
 """
 
 import argparse
@@ -28,10 +32,12 @@ URL = "https://yayebhncbagmebwgmezd.supabase.co/functions/v1/vineyard-submit"
 SITE = "https://hickorysandsdistrictava.org"
 
 
-def call(url, method="GET", origin=None, body=None):
+def call(url, method="GET", origin=None, body=None, extra=None):
     """One request: (status, headers, parsed JSON or None)."""
     data = None if body is None else json.dumps(body).encode()
     req = urllib.request.Request(url, data=data, method=method)
+    for name, value in (extra or {}).items():
+        req.add_header(name, value)
     if origin:
         req.add_header("Origin", origin)
     if data is not None:
@@ -54,7 +60,7 @@ def call(url, method="GET", origin=None, body=None):
 
 
 def checks(url):
-    """Runs the four checks.
+    """Runs the five checks.
 
     Args:
         url: The function's URL.
@@ -107,6 +113,26 @@ def checks(url):
             f"{status} {body}",
         )
     )
+    digests = []
+    for forged in ("203.0.113.7", "198.51.100.9"):
+        _, _, body = call(
+            url.rstrip("/") + "/health",
+            extra={
+                "cf-connecting-ip": forged,
+                "x-real-ip": forged,
+                "x-forwarded-for": forged,
+            },
+        )
+        digests.append((body or {}).get("address_digest"))
+    out.append(
+        (
+            None not in digests and digests[0] == digests[1],
+            "a forged address does not change the address counted",
+            "the same"
+            if None not in digests and digests[0] == digests[1]
+            else f"{digests}: tell Claude, the limits must use another header",
+        )
+    )
     return out
 
 
@@ -129,7 +155,7 @@ def main(argv=None):
     for passed, what, detail in results:
         print(f"{'PASS' if passed else 'FAIL'}  {what}: {detail}")
     good = all(passed for passed, _, _ in results)
-    print("All four checks passed." if good else "Not yet: see FAIL above.")
+    print("All five checks passed." if good else "Not yet: see FAIL above.")
     return 0 if good else 1
 
 

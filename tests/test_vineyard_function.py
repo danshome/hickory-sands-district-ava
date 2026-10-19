@@ -138,6 +138,11 @@ def test_a_retry_gets_the_first_answer(out):
     }
     assert out["afterAgain"] == {"rows": 1, "issues": 1}
     assert out["inProgress"]["status"] == 409
+    # a send that died before its issue was known is sent anew, not stuck
+    assert out["stale"]["status"] == 200
+    assert out["staleRow"]["issue_number"] == out["stale"]["body"]["reference"]
+    # and a row that never got an issue goes a week on
+    assert out["orphans"] == ["3f2b8c1e-5d4a-4e6f-9a7b-000000000096"]
 
 
 def test_the_limits(out):
@@ -192,7 +197,7 @@ def test_the_webhook_and_the_year(out):
     assert out["hookBad"]["status"] == 401
     assert out["hookUnsigned"]["status"] == 401
     assert out["hookPing"]["status"] == 200
-    assert out["hookOther"]["status"] == 202
+    assert out["hookOther"]["status"] == 200  # not the form's: no change
     assert out["afterOther"] == [None, None]
     assert out["hookClosed"]["status"] == 200
     assert out["afterClosed"] == [
@@ -262,8 +267,121 @@ def test_dans_check_passes_on_a_ready_function(bundle, capsys):
         url = f"http://127.0.0.1:{port}/vineyard-submit"
         assert check_function.main([url]) == 0
         printed = capsys.readouterr().out
-        assert printed.count("PASS") == 4
-        assert "All four checks passed." in printed
+        assert printed.count("PASS") == 5
+        assert "All five checks passed." in printed
     finally:
         server.terminate()
         server.wait(timeout=10)
+
+
+def test_a_lost_answer_never_makes_a_second_issue(out):
+    # GitHub made the issue but its answer was lost: the row is kept and the
+    # sender told to wait (409); after two minutes a retry finds the issue by
+    # its marker (an HMAC of the submission's id) and ties the row to it.
+    assert out["lost"]["status"] == 409
+    assert out["afterLost"] == {"rows": [None], "issues": 1}
+    assert out["lostSoon"]["status"] == 409
+    assert out["lostLater"]["body"] == {"ok": True, "reference": 9001}
+    assert out["afterLostLater"] == {"rows": [9001], "issues": 1}
+    assert out["markerInBody"] is True
+
+
+def test_success_only_once_the_row_is_tied_to_its_issue(out):
+    assert out["linkFails"] == {
+        "status": 503,
+        "body": {"error": "store"},
+        "acao": SITE,
+    }
+    assert out["afterLinkFails"] == {"rows": [None], "issues": 1}
+    assert out["linkRetry"]["body"] == {"ok": True, "reference": 9001}
+    assert out["afterLinkRetry"] == {"rows": [9001], "issues": 1}
+
+
+def test_a_refused_label_keeps_the_issue_and_is_put_back(out):
+    assert out["labelFails"]["body"] == {"ok": True, "reference": 9001}
+    assert out["afterLabelFails"] == {"rows": [9001], "labels": 0}
+    assert out["reconcileLabel"]["body"]["labelled"] == 1
+    assert out["afterReconcileLabel"] == ["vineyard-submission"]
+
+
+def test_turnstile_failing_is_not_a_refusal(out):
+    for case in ("turnstile5xx", "turnstileHtml"):
+        assert out[case]["status"] == 503, case
+        assert out[case]["body"] == {"error": "turnstile-unreachable"}
+
+
+def test_the_reconciliation_puts_the_table_right(out):
+    assert out["recThrottled"]["body"]["ran"] is False  # once in ten minutes
+    assert out["recClosed"]["body"]["closed"] == 1
+    assert out["afterRecClosed"] == [
+        [9001, "2026-10-19T12:30:00Z"],
+        [9002, None],
+    ]
+    # 9001 reopened, 9002 deleted (counted as closed)
+    assert out["recReopened"]["body"]["reopened"] == 1
+    assert out["recReopened"]["body"]["closed"] == 1
+    assert out["afterRecReopened"] == [[9001, True], [9002, False]]
+    # a row whose send died is tied to its issue by the marker
+    assert out["recLinked"]["body"]["linked"] == 1
+    assert out["afterRecLinked"] == [9001]
+    # failures are answered 500, for the daily Action to report
+    assert out["recSweepFails"]["status"] == 500
+    assert out["recSweepFails"]["body"]["failed"] == "sweep"
+    assert out["recGithubFails"]["status"] == 500
+    assert out["recGithubFails"]["body"]["failed"] == "reconcile"
+    assert out["recNotReady"]["status"] == 503
+
+
+def test_the_webhook_says_when_nothing_matched_or_the_table_failed(out):
+    assert out["hookNoRow"] == {
+        "status": 404,
+        "body": {"error": "no row", "issue": 9999},
+        "acao": None,
+    }
+    assert out["hookDbDown"]["status"] == 503
+
+
+def test_silent_hold_is_ready_but_off(out):
+    # Off by default: a private word is refused (422, no word named). With
+    # PRIVATE_WORDS_SILENT=1 it is held: thanked with no reference, kept for
+    # the petitioners, never posted, never said.
+    assert out["privateWord"]["status"] == 422
+    assert out["silent"]["body"] == {"ok": True, "reference": None}
+    assert out["silentAgain"]["body"] == {"ok": True, "reference": None}
+    assert out["afterSilent"] == {
+        "rows": [[None, "private-word"]],
+        "issues": 0,
+    }
+    assert out["silentKept"] == 1
+    assert "quillfeather" not in json.dumps(out["silentLogs"]).lower()
+
+
+def test_the_health_digest_follows_the_address_only(out):
+    same, again, other = out["digests"]
+    assert re.fullmatch(r"[0-9a-f]{8}", same)
+    assert same == again
+    assert same != other
+
+
+def test_dans_check_fails_when_a_forged_address_counts(monkeypatch, capsys):
+    # A gateway that let the sender's own header through: the digest follows
+    # the forged address, and the check says so.
+    def call(url, method="GET", origin=None, body=None, extra=None):
+        if url.endswith("/health"):
+            forged = (extra or {}).get("cf-connecting-ip", "")
+            return 200, {}, {"ready": True, "address_digest": forged[-8:]}
+        if method == "OPTIONS":
+            ok = origin == SITE
+            return (
+                (204, {"Access-Control-Allow-Origin": SITE}, None)
+                if ok
+                else (403, {}, None)
+            )
+        return 403, {}, {"error": "turnstile"}
+
+    monkeypatch.setattr(check_function, "call", call)
+    assert check_function.main(["https://example.supabase.co/x"]) == 1
+    printed = capsys.readouterr().out
+    assert "FAIL  a forged address does not change the address counted" in (
+        printed
+    )

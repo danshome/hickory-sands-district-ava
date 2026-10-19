@@ -13,8 +13,9 @@
 -- ip_hash is an HMAC of it with the function's secret IP_SALT, for the
 -- limits only. closed_at is set by the function when the issue is closed
 -- (the GitHub App's webhook) and cleared when it is reopened; the function
--- deletes a row a year after its issue was closed. Dan reads the table in the
--- dashboard's Table Editor.
+-- deletes a row a year after its issue was closed, a row never tied to an
+-- issue a day after it was made, and a held row a year after it came. Dan reads the table in the dashboard's
+-- Table Editor.
 create table if not exists public.hsd_vineyard_contacts (
   id             uuid primary key default gen_random_uuid(),
   submission_id  uuid not null unique,     -- made by the page; a retry is the same submission
@@ -30,6 +31,10 @@ create table if not exists public.hsd_vineyard_contacts (
 
 -- (a table made before closed_at was added gets it here)
 alter table public.hsd_vineyard_contacts add column if not exists closed_at timestamptz;
+-- held: a submission kept for the petitioners and never posted (the function's
+-- PRIVATE_WORDS_SILENT, off unless Dan sets it); null for every other row
+alter table public.hsd_vineyard_contacts add column if not exists held text
+  check (held is null or char_length(held) <= 40);
 alter table public.hsd_vineyard_contacts enable row level security;
 alter table public.hsd_vineyard_contacts force row level security;
 revoke all on table public.hsd_vineyard_contacts from public, anon, authenticated;
@@ -43,17 +48,34 @@ create index if not exists hsd_vineyard_contacts_closed
 -- One transaction for each send, under one lock, so parallel sends cannot
 -- slip past the limits: 'again' (this submission was seen: its row and issue
 -- number, if any), else 'limit-ip' or 'limit-day', else 'new' with the new
--- row.
+-- row. A row left without its issue number for two minutes belongs to a send
+-- that died on the way (the function waits at most 8 seconds for GitHub, and
+-- frees the row when it fails): a retry takes it up again as 'new', so no
+-- submission waits for ever. (The function deletes a row still without an
+-- issue a week on.)
 create or replace function public.hsd_vineyard_reserve(
   p_submission uuid, p_ip_hash text, p_name text, p_email text, p_phone text,
   p_per_ip integer, p_per_day integer)
 returns table (id uuid, issue_number integer, verdict text)
 language plpgsql security definer set search_path = public as $$
+declare
+  seen public.hsd_vineyard_contacts%rowtype;
 begin
   perform pg_advisory_xact_lock(hashtext('hsd_vineyard_contacts'));
-  return query select c.id, c.issue_number, 'again'::text
-    from hsd_vineyard_contacts c where c.submission_id = p_submission;
-  if found then return; end if;
+  select * into seen from hsd_vineyard_contacts c where c.submission_id = p_submission;
+  if found then
+    if seen.held is not null then
+      return query select seen.id, null::integer, 'held'::text; return;
+    end if;
+    if seen.issue_number is null and seen.created_at < now() - interval '2 minutes' then
+      update hsd_vineyard_contacts as c
+        set created_at = now(), ip_hash = p_ip_hash, contact_name = p_name,
+            email = p_email, phone = p_phone
+        where c.id = seen.id;
+      return query select seen.id, null::integer, 'new'::text; return;
+    end if;
+    return query select seen.id, seen.issue_number, 'again'::text; return;
+  end if;
   if (select count(*) from hsd_vineyard_contacts c
       where c.ip_hash = p_ip_hash and c.created_at > now() - interval '1 day') >= p_per_ip then
     return query select null::uuid, null::integer, 'limit-ip'::text; return;
@@ -70,3 +92,27 @@ revoke all on function public.hsd_vineyard_reserve(uuid, text, text, text, text,
   from public, anon, authenticated;
 grant execute on function public.hsd_vineyard_reserve(uuid, text, text, text, text, integer, integer)
   to service_role;
+
+-- When the function last put the table right against GitHub (its
+-- reconciliation), so it does that at most once every so often however often
+-- it is called: true, and the time noted, when the last time is older than
+-- p_every_seconds. Locked like the contacts: service role only.
+create table if not exists public.hsd_vineyard_ticks (
+  name  text primary key check (char_length(name) between 1 and 40),
+  at    timestamptz not null
+);
+alter table public.hsd_vineyard_ticks enable row level security;
+alter table public.hsd_vineyard_ticks force row level security;
+revoke all on table public.hsd_vineyard_ticks from public, anon, authenticated;
+
+create or replace function public.hsd_vineyard_tick(p_name text, p_every_seconds integer)
+returns boolean
+language plpgsql security definer set search_path = public as $$
+begin
+  insert into hsd_vineyard_ticks as t (name, at) values (p_name, now())
+    on conflict (name) do update set at = excluded.at
+    where t.at < now() - make_interval(secs => p_every_seconds);
+  return found;
+end $$;
+revoke all on function public.hsd_vineyard_tick(text, integer) from public, anon, authenticated;
+grant execute on function public.hsd_vineyard_tick(text, integer) to service_role;

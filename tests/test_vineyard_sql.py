@@ -169,6 +169,21 @@ def test_a_send_again_the_limits_and_a_way_to_reach(psql):
     )
     assert done.returncode
     assert "hsd_vineyard_contacts_reach" in done.stderr
+    # a send that died before its issue was known: again for two minutes,
+    # then taken up anew, so it never waits for ever
+    assert reserve(psql, 2) == "again"
+    psql(
+        "update public.hsd_vineyard_contacts set created_at = now() - "
+        "interval '3 minutes' where submission_id = "
+        "'00000000-0000-4000-8000-000000000002';"
+    )
+    assert reserve(psql, 2, per_ip=99) == "new"
+    out = psql(
+        "select count(*) from public.hsd_vineyard_contacts where "
+        "submission_id = '00000000-0000-4000-8000-000000000002' and "
+        "created_at > now() - interval '1 minute';"
+    )
+    assert out.stdout.strip() == "1"
     # the function's sweep: a year after the issue was closed
     psql(
         "update public.hsd_vineyard_contacts set issue_number = 1, "
@@ -183,6 +198,40 @@ def test_a_send_again_the_limits_and_a_way_to_reach(psql):
     )
     out = psql("select count(*) from public.hsd_vineyard_contacts;")
     assert out.stdout.strip() == "4"
+
+
+def test_a_held_submission_stays_held(psql):
+    # PRIVATE_WORDS_SILENT's rows: answered "held" however often it is sent,
+    # never taken up again as a new send
+    assert reserve(psql, 300, ip="h") == "new"
+    psql(
+        "update public.hsd_vineyard_contacts set held = 'private-word', "
+        "created_at = now() - interval '1 hour' where submission_id = "
+        "'00000000-0000-4000-8000-000000000300';"
+    )
+    assert reserve(psql, 300, ip="h") == "held"
+
+
+def test_the_reconciliation_runs_at_most_once_in_a_while(psql):
+    def tick():
+        out = psql(
+            "select public.hsd_vineyard_tick('reconcile', 600);",
+            role="service_role",
+        )
+        return out.stdout.strip()
+
+    assert tick() == "t"
+    assert tick() == "f"
+    psql(
+        "update public.hsd_vineyard_ticks set at = now() - interval '11 "
+        "minutes';"
+    )
+    assert tick() == "t"
+    for role in ("anon", "authenticated"):
+        done = psql(
+            "select public.hsd_vineyard_tick('x', 1);", role=role, check=False
+        )
+        assert "permission denied" in done.stderr
 
 
 def test_the_script_makes_only_its_own_objects():

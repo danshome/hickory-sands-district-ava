@@ -1,9 +1,11 @@
 # A release: push a tag such as v2026.10.20 (git tag v2026.10.20 && git push origin v2026.10.20) and this builds that
 # commit on one of GitHub's Linux machines with `./build.sh` (the same Homebrew tools as build.yml) and attaches dist/ to a GitHub release of the same name: the
 # package zip, its README, SHA256SUMS.txt and build-report.txt. Run it by hand (Actions > release > Run workflow) to
-# rebuild a tag; the release's files are then replaced. A tag that is not on main's history is refused, so no token that
-# can push tags (the vineyard PR App's can) can release other code. Publishing to ArcGIS Online stays
-# `./build.sh publish`, by Dan.
+# rebuild a tag; the release's files are then replaced. The guard below refuses a tag on a commit that is not on
+# main's history, such as a branch the vineyard pull request App made. It runs as this file is in the tagged commit,
+# so a tag on a commit of main from before the guard is not stopped by it; only a tag ruleset that lets Dan alone
+# create v* tags stops that (src/vineyards/SETUP.md, step 3.5). Publishing to ArcGIS Online stays `./build.sh
+# publish`, by Dan.
 name: release
 on:
   push:
@@ -33,7 +35,7 @@ jobs:
           ref: refs/tags/${{ inputs.tag || github.ref_name }}
           fetch-depth: 0   # main's history too, for the next step
           persist-credentials: false
-      - name: Only a tag on main's history is released (a branch's tag, pushed by any token, is refused)
+      - name: Only a tag on main's history is released (a tag on another branch's commit is refused)
         run: |
           git merge-base --is-ancestor HEAD origin/main || { echo "::error::$TAG is not on main's history: no release"; exit 1; }
       - name: Homebrew's tools from the last run (installing them takes about 13 minutes)

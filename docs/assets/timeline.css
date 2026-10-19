@@ -43,3 +43,28 @@
 @media print{.geo-controls,.geo-live{display:none}.geo-has-figure .geo-figure{position:static}.geo-stage,.geo-figure{break-inside:avoid}.geo-source-list li:target{background:none}}
 /* The aquifer in its own colour, so the key tells it from the unconformity. */
 .geo-aquifer{stroke:#5b716a}.geo-sw-aquifer{border-top-color:#5b716a}
+
+/* Where the figure stays in view, scrolling steps the drawing; a phone held upright gets this too. The figure becomes a short panel stuck to the top of the screen (the drawing, eight progress marks, the stage's name, two small buttons that stay put), and each stage's key moves into the stage.
+   Nothing here applies without JavaScript: every rule needs .geo-has-figure or an element timeline.js makes (.geo-hint, .geo-progress, .geo-stage-key, .geo-step). */
+/* One quiet line above the figure, in the eyebrow's voice, made by timeline.js. */
+.geo-hint{margin:0 0 1rem;font-size:.6875rem;font-weight:500;letter-spacing:.15em;line-height:1.55;text-transform:uppercase;color:var(--paper-muted)}
+/* Eight equal marks: the series, and where in it the drawing is. */
+.geo-progress{display:flex;gap:3px;margin:.6rem 0 0;padding:0;list-style:none}.geo-progress li{flex:1;height:3px;background:var(--geo-scale)}.geo-progress li.geo-past{background:var(--paper-line)}.geo-progress li.geo-on{background:var(--paper-ink)}
+.geo-stage-key{display:none}
+/* A tapped button keeps no hover underline on a touch screen. */
+@media(hover:none){.geo-step:hover{text-decoration:none}}
+/* A phone held upright: the same query as timeline.js's "tall". Screens only, and taller than wide, so a printed page and a phone on its side keep the figure in the flow. */
+@media screen and (max-width:999px) and (min-height:520px) and (orientation:portrait){
+  .geo-has-figure .geo-figure{position:sticky;top:0;z-index:3;margin:0 -7vw;padding:.6rem 7vw .35rem;background:var(--bone);border-bottom:1px solid var(--paper-line);box-shadow:0 6px 14px -12px #282b2466}.geo-has-figure .geo-svg{border-color:#b1a79799}
+  /* The panel keeps only what is read while the stage text scrolls under it. */
+  .geo-has-figure .geo-scale,.geo-has-figure .geo-figure .geo-key,.geo-has-figure .geo-note,.geo-has-figure .geo-now-age{display:none}
+  .geo-has-figure .geo-figure figcaption{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:.75rem;margin-top:.15rem}.geo-has-figure .geo-now{display:block;min-width:0;margin:0}.geo-has-figure .geo-now-title{display:block;overflow:hidden;font-size:1.3rem;white-space:nowrap;text-overflow:ellipsis}
+  .geo-has-figure .geo-controls{gap:.15rem;margin:0;border:0}.geo-has-figure .geo-step{justify-content:center;gap:0;width:44px;height:44px;padding:0;font-size:0}.geo-has-figure .geo-step span{font-size:1.25rem;line-height:1}.geo-has-figure .geo-count{min-width:3.6em;text-align:center;font-size:.6875rem;letter-spacing:.12em}
+  /* The stage's top lands just under the panel when a button scrolls to it; timeline.js measures the panel into --geo-panel. */
+  .geo-has-figure .geo-stage{scroll-margin-top:calc(var(--geo-panel,240px) + .5rem)}.geo-has-figure .geo-stage-key{display:flex;margin-top:1rem}.geo-has-figure .geo-current .geo-index{color:var(--paper-ink)}
+  /* The citation links the keyboard focuses in the list, and the stage headings, stop just under the panel when scrolled into view (WCAG 2.4.11). */
+  .geo-has-figure .geo-stages a,.geo-has-figure .geo-stages h3{scroll-margin-top:calc(var(--geo-panel,240px) + 1rem)}
+}
+/* On a wide screen the time scale shows the stage, and the hint spans the grid, just above the figure and the list. */
+@media(min-width:1000px){.geo-progress{display:none}.geo-body.geo-has-figure{row-gap:1rem}.geo-has-figure .geo-hint{grid-column:1/-1;margin-bottom:0}}
+@media print{.geo-hint,.geo-progress{display:none}.geo-has-figure .geo-figure{position:static;box-shadow:none}}

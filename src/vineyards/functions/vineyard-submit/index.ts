@@ -177,6 +177,7 @@ export function makeHandler(deps: Deps): (req: Request) => Promise<Response> {
   const silent = () => env("PRIVATE_WORDS_SILENT") === "1";
   const now = () => deps.now().getTime();
   const iso = (ms: number) => new Date(ms).toISOString();
+  // An error's detail, for the log only: no reply ever carries one.
   const short = (error: unknown) => String(error).slice(0, 80);
 
   const headers = (origin: string | null): Record<string, string> => {
@@ -572,7 +573,7 @@ export function makeHandler(deps: Deps): (req: Request) => Promise<Response> {
       return answer(200, { ok: true, ...(await reconcile()) });
     } catch (error) {
       deps.log("vineyard: the reconciliation failed", short(error));
-      return answer(500, { ok: false, failed: "reconcile", why: short(error) });
+      return answer(500, { ok: false, failed: "reconcile" }); // the detail is in the log
     }
   }
 

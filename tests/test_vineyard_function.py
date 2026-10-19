@@ -385,3 +385,56 @@ def test_dans_check_fails_when_a_forged_address_counts(monkeypatch, capsys):
     assert "FAIL  a forged address does not change the address counted" in (
         printed
     )
+
+
+# Every error reply is one of these fixed words: never an error's message or
+# stack (the log has the detail).
+FIXED = {
+    "error": {
+        "origin",
+        "JSON only",
+        "too large",
+        "not-ready",
+        "unreadable",
+        "turnstile",
+        "turnstile-unreachable",
+        "store",
+        "in-progress",
+        "limit-ip",
+        "limit-day",
+        "github",
+        "signature",
+        "no row",
+        "sweep",
+        "POST only",
+        "GET only",
+    },
+    "failed": {"not-ready", "sweep", "reconcile"},
+}
+
+
+def test_no_reply_carries_an_error_s_detail(out):
+    replies = [
+        v
+        for v in out.values()
+        if isinstance(v, dict) and isinstance(v.get("status"), int)
+    ]
+    assert len(replies) > 40
+    for reply in replies:
+        body = reply["body"]
+        if reply["status"] < 400 or not isinstance(body, dict):
+            continue
+        for key in ("error", "failed"):
+            if key in body:
+                assert body[key] in FIXED[key], body
+        assert set(body) <= {
+            "ok",
+            "error",
+            "failed",
+            "missing",
+            "issue",
+            "errors",
+        }, body
+        text = json.dumps(body)
+        for leak in ("Error", "stack", " at ", "database", "github "):
+            assert leak not in text, body

@@ -49,7 +49,8 @@ VOID = {
     "wbr",
 }
 AGE = re.compile(
-    r"^(?:Today|.*\d[\d,.]* million years(?: ago)?|.*half a billion years ago)$"
+    r"^(?:Today|.*\d[\d,.]* million years(?: ago)?"
+    r"|.*half a billion years ago|More than a billion years ago)$"
 )
 YEAR = re.compile(r"\b(?:1[89]\d\d|20\d\d)\b|\bn\.d\.")
 # A quotation in the page's curly quotes; one opening quote never reaches
@@ -254,6 +255,9 @@ def test_every_stage_s_dates_are_the_ones_its_age_gives(land, n):
     }
     if "half a billion" in stage["age"]:
         numbers.update(range(490, 511))  # "roughly half a billion": 500 +-2%
+    if "More than a billion" in stage["age"]:
+        # the ages it gives are in its sources (#163): any over 1,000
+        numbers.update(range(1001, 4000))
     for end in ("data-from", "data-to"):
         value = int(float(stage[end]))
         assert value == 0 or value in numbers, (

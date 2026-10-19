@@ -25,6 +25,16 @@ html:not(.js) .aq-stage{display:none}
 .lp-head .eyebrow{font-size:.625rem;letter-spacing:.16em}
 .lp-title{font-family:var(--serif);font-weight:400;font-size:1.875rem;line-height:1.02;letter-spacing:-.02em;margin:.35rem 0 0}
 .lp-sheet-toggle,.lp-handle{display:none}
+/* Wider than a phone: the panel minimizes to its title (#179), out of the view's way. */
+.lp-head{position:relative;padding-right:3.5rem}
+.lp-min{position:absolute;top:.55rem;right:.55rem;display:grid;place-items:center;width:44px;height:44px;padding:0;color:var(--bone);background:none;border:1px solid transparent;cursor:pointer}
+.lp-min:hover,.lp-min:focus-visible{border-color:var(--line)}
+.lp-min-icon{width:14px;border-top:1.5px solid currentColor}
+.lp.is-min .lp-min-icon{height:14px;border:1.5px solid currentColor}
+.lp.is-min{width:auto;max-width:344px}
+.lp.is-min .lp-body,.lp.is-min .lp-head .eyebrow{display:none}
+.lp.is-min .lp-head{padding:.55rem 3.5rem .55rem 1rem;min-height:56px;display:flex;align-items:center}
+.lp.is-min .lp-title{margin:0;font-size:1.25rem}
 .lp-body{overflow:auto;overscroll-behavior:contain;padding:0 1.25rem 1rem;scrollbar-width:thin;scrollbar-color:var(--line) transparent}
 .lp-intro{padding:.85rem 0 .9rem}
 .lp-lede{font-size:.8125rem;color:var(--muted)}
@@ -159,6 +169,7 @@ html:not(.js) .about-close{display:none}
 
 /* A phone: the panel is a bottom sheet; closed, only its bar shows, so the view stays in sight. */
 @media(max-width:640px){
+  .lp-min{display:none}
   .aq-stage arcgis-scene{bottom:calc(var(--peek) + env(safe-area-inset-bottom))}
   .aq-status{top:10px;right:10px;bottom:auto;max-width:calc(100% - 20px)}
   .lp{top:auto;left:0;right:0;bottom:0;width:auto;height:min(60%,560px);max-height:none;border:0;border-top:1px solid var(--line);

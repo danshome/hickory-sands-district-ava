@@ -5,9 +5,10 @@ walk.html from it), has the header's menu (the nav in details.navigation)
 with the same links as Home's, in the same order; each link opens a page
 that is in docs/; and the page's own link, and only it, is marked
 aria-current="page" (a page that is not in the menu, such as Home or the
-map, marks none). A link's page is its address with its query: The water is
-map.html?layers=aquifer,vineyards,places, which the map marks by script
-from its address, so map.html itself marks none in its HTML. A page that has
+map, marks none). A link's page is its address with its query: The aquifer
+is map.html?layers=aquifer,vineyards,places and The map is map.html (both in
+"The maps", #179); map.html marks The map in its HTML, and its script marks
+The aquifer instead when opened with the aquifer on. A page that has
 moved (explore.html, aquifer.html: a meta refresh to the map) has no menu.
 404.html links from the site's root (/boundary.html), so it works at any
 depth; its links are read from there.
@@ -112,8 +113,8 @@ def target(href):
 def address(href):
     """Returns the address in the site a menu link opens, with its query.
 
-    "map.html?layers=aquifer,vineyards,places" (The water) is not
-    "map.html": the map marks The water only when opened as the water.
+    "map.html?layers=aquifer,vineyards,places" (The aquifer) is not
+    "map.html" (The map): the map marks The aquifer only when opened so.
     """
     page = target(href)
     query = urlsplit(href).query
@@ -128,7 +129,8 @@ def links(path):
 def test_home_has_a_menu_of_pages_in_the_site():
     home = links(HOME)
     assert len(home) >= 2, f"Home's menu has {home}"
-    assert len({page for _, page in home}) == len(home), (
+    addresses = [address(href) for _, href, _ in menu(HOME).links]
+    assert len(set(addresses)) == len(addresses), (
         f"a page twice in the menu: {home}"
     )
     missing = [

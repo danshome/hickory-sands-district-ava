@@ -36,6 +36,9 @@
 -- the public (anon) and signed-in (authenticated) roles is revoked: only the
 -- function, with the service role, reads or writes.
 
+-- One transaction: an error anywhere leaves everything as it was.
+begin;
+
 -- The tables as vote-api made them, for a project that has none yet.
 create table if not exists public.hsd_votes (
   design_id    text not null,
@@ -213,7 +216,7 @@ end $$;
 
 -- A new voter id (made and signed by the function): {"verdict": "ok" or
 -- "limit", "carried": n}. At most p_limit new ids per address per day. A
--- Shopify-era id (p_carry, "v" and 10 to 20 lower-case letters and digits)
+-- Shopify-era id (p_carry, "v" and 8 to 40 lower-case letters and digits)
 -- with votes, never exchanged before, hands its votes to the new id, once.
 create or replace function public.hsd_vote_register(
   p_ip_hash text, p_limit integer, p_voter text, p_carry text)
@@ -229,7 +232,7 @@ begin
     return jsonb_build_object('verdict', 'limit', 'carried', 0);
   end if;
   insert into hsd_vote_registrations (ip_hash) values (p_ip_hash);
-  if coalesce(p_carry, '') ~ '^v[0-9a-z]{10,20}$'
+  if coalesce(p_carry, '') ~ '^v[0-9a-z]{8,40}$'
      and not exists (select 1 from hsd_vote_exchanged e
                      where e.old_voter = p_carry)
      and exists (select 1 from hsd_votes v where v.voter_token = p_carry) then
@@ -288,3 +291,5 @@ grant execute on function public.hsd_vote_register(text, integer, text, text)
   to service_role;
 grant execute on function public.hsd_vote_cull(integer, numeric)
   to service_role;
+
+commit;

@@ -660,7 +660,7 @@ function adoptCarried() {
   } catch (e) {
     from = "";
   }
-  if (!/^v[0-9a-z]{10,20}$/.test(carried) || !(config.carryFrom || []).includes(from) ||
+  if (!/^v[0-9a-z]{8,40}$/.test(carried) || !(config.carryFrom || []).includes(from) ||
       load("hsd_carried", false)) return "";
   save("hsd_carried", true);
   if (voter || Object.keys(myVotes).length || outbox.length) return "kept";

@@ -128,7 +128,7 @@ export function standIn({ turnstile = true } = {}) {
     state.registrations.push({ ip_hash: a.p_ip_hash, at: iso() });
     let carried = 0;
     const c = a.p_carry || "";
-    if (/^v[0-9a-z]{10,20}$/.test(c) && !state.exchanged.has(c) && state.votes.some((v) => v.voter_token === c)) {
+    if (/^v[0-9a-z]{8,40}$/.test(c) && !state.exchanged.has(c) && state.votes.some((v) => v.voter_token === c)) {
       state.exchanged.add(c);
       for (const v of state.votes) {
         if (v.voter_token === c) {

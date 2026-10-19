@@ -65,7 +65,7 @@ const BUCKET = "hsd-submissions";
 const PATH = "/functions/v1/vote-api";
 const WAIT_MS = 8000;
 export const SIGNED = /^v2-([0-9a-f]{24})-([0-9a-f]{32})$/;
-const LEGACY = /^v[0-9a-z]{10,20}$/;
+const LEGACY = /^v[0-9a-z]{8,40}$/;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const BUILT_IN = new Set((designs as { id: string }[]).map((d) => d.id));
 

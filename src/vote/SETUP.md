@@ -40,7 +40,8 @@ The change keeps every vote, design, file and retire record. It blanks the names
 1. In Terminal, at the repository's root, on an up-to-date `main`:
    `pbcopy < src/vote/functions/vote-api/hsd_vote_migration.sql`
 2. **SQL Editor** > **New query** (the +), click into the editor and paste. Click **Run**. You should see "Success.
-   No rows returned".
+   No rows returned". If it shows an error instead, stop there and send Claude the error's text (never the tables'
+   data). The change is one transaction, so an error leaves the tables as they were; the Shopify page goes on working.
 3. Check it: **Table Editor** lists `hsd_vote_networks`, `hsd_vote_registrations` and `hsd_vote_exchanged`, and
    `hsd_retired` has the columns `retired_at`, `reason` and `restored_at`.
 
@@ -60,7 +61,8 @@ Running it again changes nothing. The Shopify page and the function as it is tod
 4. Check it: in Terminal,
    `curl -s https://yayebhncbagmebwgmezd.supabase.co/functions/v1/vote-api | head -c 300`
    shows the counts and, at the end, `"rule":{"minVotes":25,"retireRatio":0.35,"votersPerNetwork":10}`, and no
-   `"name"`. An answer of `unavailable` means the database change (step 2) is missing.
+   `"name"`. An answer of `unavailable` means the database change (step 2) is missing. If it shows anything else, put
+   the old function back (below) and send Claude what it showed, and the function's **Logs** (`vote-api` > **Logs**).
 
 If something is wrong, the old function is in the repository's history:
 `git show 1275d9c:vote-backend/vote-api-index.ts | pbcopy`, and paste it back the same way. It still works on the

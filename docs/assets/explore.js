@@ -1,6 +1,6 @@
 // Explore the map (#113): the proposed revision, its steps and points, with a
 // popup for each and, when the site has a basemap key, Esri's basemaps.
-import { boundaryMap, hasBasemap, mapFailed, setBasemap } from "./maps.js";
+import { boundaryMap, hasBasemap, mapFailed, setBasemap } from "./maps.js?v=01ae1ae";
 
 document.documentElement.classList.add("js");
 try {

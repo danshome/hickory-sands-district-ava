@@ -15,8 +15,8 @@
 // layers are drawn on the page's background. Every figure the page shows is
 // read from assets/aquifer/stats.json. Text from the data is only ever set as
 // text, never parsed as HTML.
-import { apiKey } from "./map-config.js";
-import { setupWells, wellAttributes, CLASS_NAMES } from "./aquifer-wells.js";
+import { apiKey } from "./map-config.js?v=999720b";
+import { setupWells, wellAttributes, CLASS_NAMES } from "./aquifer-wells.js?v=f3bdf99";
 
 const DATA = "assets/aquifer/";
 document.documentElement.classList.add("js");

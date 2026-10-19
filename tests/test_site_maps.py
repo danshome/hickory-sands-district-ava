@@ -15,6 +15,7 @@ import re
 import pytest
 
 from src.site import make_site_data as msd
+from src.site.stamp_assets import unstamped
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DOCS = os.path.join(ROOT, "docs")
@@ -36,7 +37,7 @@ def test_map_pages_load_one_pinned_sdk_and_their_script(page):
     text = read("docs", page)
     scripts = re.findall(r'<script type="module" src="([^"]+)"', text)
     assert scripts[0] == SDK
-    assert scripts[1] == f"assets/{page.replace('.html', '.js')}"
+    assert unstamped(scripts[1]) == f"assets/{page.replace('.html', '.js')}"
     assert not re.findall(r"js\.arcgis\.com/(?!5\.1/)", text)
 
 

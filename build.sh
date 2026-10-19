@@ -18,7 +18,9 @@
 #                         the live site, or HSD_SITE_URL; --local serves this checkout's docs/ on 127.0.0.1 for the run
 #                         (before a website change is merged); after a deploy, run it without --local (read-only)
 #   ./build.sh site-data  refresh the website's map data (docs/data/, walk.html, the pages' figures, the survey map, the 3D
-#                         aquifer page's data in docs/assets/aquifer/) from the last build; commit it
+#                         aquifer page's data in docs/assets/aquifer/) from the last build, then stamp; commit it
+#   ./build.sh stamp      version-stamp every script and stylesheet the website loads (assets/x.js?v=<hash>, #138), with
+#                         no build needed: run it after changing one (or merging a branch that did) and commit it
 #
 # No manual steps, on macOS or Linux: missing tools are installed with Homebrew (GDAL, poppler, Python 3.14; on macOS
 # also Google Chrome, which Linux needs installed); every Python package in the lock files is checked against the OSV
@@ -157,12 +159,16 @@ checks() {
 SITE_DATA=(src/site/make_site_data.py --gis "$WORK/gis" --stats "$WORK/review/grit-change-stats.json" --out docs/data --walk src/site/walk.template.html docs/walk.html --pages docs)
 SURVEY_MAP=(src/site/make_survey_map.py --pages docs)   # the quads under the boundary drawing on Home and The boundary
 AQUIFER_3D=(src/site/make_aquifer_3d.py)   # the 3D aquifer page's data (docs/assets/aquifer/), from resources/aquifer/inputs.csv
+# A short hash of each script and stylesheet on every URL the pages (and walk.html's template) and the site's own modules
+# load it by, so a changed file reaches browsers at once (#138: GitHub Pages lets them keep a file 10 minutes)
+STAMP=(src/site/stamp_assets.py --site docs --template src/site/walk.template.html)
 
 site_data() {
-    step "the website's map data (docs/data/, walk.html, figures) against this build"   # hard, after the package: a boundary change must reach the site
+    step "the website's map data (docs/data/, walk.html, figures, stamps) against this build"   # hard, after the package: a boundary change must reach the site
     run "${SITE_DATA[@]}" --check            # exits 3 when docs/data/ is stale, and says how to refresh it
     run "${SURVEY_MAP[@]}" --check           # exits 3 when the survey map's frame, line or quads changed (never on pixel values)
     run "${AQUIFER_3D[@]}" --check           # exits 3 when an input snapshot, a parameter or a file changed; no download (#135)
+    run "${STAMP[@]}" --check                # exits 3 when a script's or stylesheet's version stamp is missing or stale (#138)
 }
 
 documents() {
@@ -264,10 +270,12 @@ case "${1:-all}" in
     check-site) env_setup; check_site "${2:-}" ;;
     site-data) env_setup; [ -f "$WORK/.checks-passed" ] || { echo "no checked build: run ./build.sh first"; exit 1; }
                step "the website's map data (docs/data/), walk page and figures from the last build"; run "${SITE_DATA[@]}"; run "${SURVEY_MAP[@]}"
-               run "${AQUIFER_3D[@]}" ;;            # made again only when stale: fetches missing inputs into resources/aquifer/cache/
+               run "${AQUIFER_3D[@]}"               # made again only when stale: fetches missing inputs into resources/aquifer/cache/
+               run "${STAMP[@]}" ;;                 # last: walk.html is written above, from its template
+    stamp)     env_setup; step "version stamps on the website's scripts and stylesheets (#138)"; run "${STAMP[@]}" ;;
     audit)     env_setup; audit ;;
     upgrade)   upgrade ;;
     lint)      env_setup; step "pre-commit hooks on every file"; PRE_COMMIT_HOME="$TARGET/pre-commit" "$VENV/bin/pre-commit" run --all-files ;;
     test)      env_setup; step "unit tests (tests/, pytest)"; run -m pytest -q tests ;;
-    *)         echo "usage: ./build.sh [all|env|lint|test|audit|upgrade|clean|distclean|publish [--dry-run]|publish-dry-run|check-live|check-site [--local]]"; exit 2 ;;
+    *)         echo "usage: ./build.sh [all|env|lint|test|audit|upgrade|clean|distclean|publish [--dry-run]|publish-dry-run|check-live|check-site [--local]|site-data|stamp]"; exit 2 ;;
 esac

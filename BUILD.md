@@ -78,6 +78,9 @@ Other commands:
   (`tests/live/test_site_mobile.py`, see Tests below): the live site, or `HSD_SITE_URL`; `./build.sh check-site --local`
   serves this checkout's `docs/` on 127.0.0.1 (port 8790, or `HSD_SITE_PORT`) for the run. Run it with `--local` before
   a website change is merged, and without it after the deploy.
+- `./build.sh stamp` gives every script and stylesheet the website loads its version stamp
+  (`src/site/stamp_assets.py`, #138; see The website below), without a build: after changing a script or stylesheet,
+  run `./build.sh site-data` (or the stamper alone, `./build.sh stamp`) and commit what it changes.
 - `./build.sh check-live` checks the public site the way TTB sees it, without signing in (`src/publish/agol_check.py`,
   anonymous read-only requests; it changes nothing, so it is safe to run any time). One line per check, and every failure
   names the item and what is wrong; it exits 1 on any failure:
@@ -132,7 +135,8 @@ src/
   package/               make_package.sh (the zip)
   site/                  make_site_data: the website's map data (docs/data/) from the boundary build; make_survey_map
                          (with survey_frame): the quads under the boundary drawing on Home and The boundary;
-                         make_aquifer_3d (with aquifer/): the 3D aquifer page's data (docs/assets/aquifer/)
+                         make_aquifer_3d (with aquifer/): the 3D aquifer page's data (docs/assets/aquifer/);
+                         stamp_assets: the scripts' and stylesheets' version stamps (#138)
   publish/               ArcGIS Online: agol_publish, agol_layer, agol_dashboard, agol_org_categories, agol_share (what
                          is sent); agol_dryrun + agol_dryrun_checks (the dry run); agol_check (the live site)
 resources/
@@ -199,7 +203,8 @@ research/                research, audits, design proposals and prototypes until
    (`src/site/make_survey_map.py`) is checked by its record, `docs/assets/survey-map.json` (its frame, the drawn line's
    box and its quads) and the image's size, never by its pixel values. The 3D aquifer page's data
    (`src/site/make_aquifer_3d.py --check`) is checked by its record, `docs/assets/aquifer/record.json`, with no
-   download (see The website below).
+   download (see The website below). Last, every script and stylesheet the pages load, and every module a script
+   imports, must carry the version stamp of the file as it is (`src/site/stamp_assets.py --check`, #138).
 
 ## Python packages and security
 
@@ -289,7 +294,13 @@ for Python; 2-space YAML and TOML). By hand: `.venv/bin/ruff format .` and `.ven
   marks, the wells' scales among them; the Wells group's controls and the groups' order; every file is under 2 MB; the
   wording; and, on made-up records, what the check calls stale;
 - `test_site.py`: every page of the website in `docs/` is a complete HTML document (doctype, language, character set,
-  phone viewport, title), every local file it links to or loads is in `docs/`, and every link off the site is https;
+  phone viewport, title), every local file it links to or loads is in `docs/` (a version stamp aside), every link off
+  the site is https, and every script and stylesheet the pages load and every module a script imports carries the
+  stamp of the file as it is now (so a pull request that changes a script without stamping it again fails);
+- `test_stamp_assets.py`: the stamper, on a made-up site: only local scripts and stylesheets stamped, with the hash
+  of the file as served (a module's taken after its imports are stamped, so a change reaches every importer and page);
+  each importer names a module alike; a second run changes nothing; `--check` writes nothing and exits 3; a stale or
+  conflicting stamp replaced; and its refusals (a missing file, another query, an unquoted URL, an import circle);
 - `test_publish_dryrun.py`: the publish dry run's checks pass on a dry run of the current build
   (`tests/fixtures/publish/dry-run/`, a copy of `target/publish/`: copy it there again after changing what the publish
   sends) and each fails on a fault planted in it (a layer left editable, plain CC0 on TTB's text, a phone element
@@ -400,7 +411,8 @@ Four workflows in `.github/workflows/`, every action pinned to a commit:
 git tag v2026.10.20 && git push origin v2026.10.20
 ```
 
-- **site** (`site.yml`, Linux): the website. On pull requests that touch `docs/`, its tests (`tests/test_site.py`); on
+- **site** (`site.yml`, Linux): the website. On pull requests that touch `docs/` (or the stamper, or the walk page's
+  template), its tests (`tests/test_site.py`, the stamps among them); on
   a push to `main` that touches `docs/`, and by hand, the same tests and then `docs/` deployed to GitHub Pages as it
   is (no build step: what is in `docs/` is what is served).
 
@@ -460,10 +472,28 @@ Their code is `docs/assets/maps.js` (shared), `explore.js`, `walk.js` and `maps.
 as text, never parsed as HTML. The basemaps need the ArcGIS Online API key in `docs/assets/map-config.js`. It is public by
 design and limited to the basemap styles service and to the referrers `https://hickorysandsdistrictava.org` and
 `http://localhost:8765` (for previews: `python3 -m http.server 8765 -d docs`). Stored geocoding and other credit-consuming
-services are refused to it. It lasts up to a year: renew it in ArcGIS Online (Content > the API key item) and replace the string
-in `map-config.js`. With the key empty, the maps draw the line on a plain background. A
+services are refused to it. It lasts up to a year: renew it in ArcGIS Online (Content > the API key item), replace the string
+in `map-config.js` and run `./build.sh stamp`. With the key empty, the maps draw the line on a plain background. A
 change to the site is a pull request like any other: `site.yml` tests it on the pull request and deploys it when it is
-merged to `main`. The rest is set outside the repository, once:
+merged to `main`.
+
+**Version stamps (#138).** GitHub Pages serves every file with `cache-control: max-age=600`, so a browser that loaded a
+script shortly before a deploy could keep the old one for ten minutes. So every local `<script src>` and
+`<link rel="stylesheet" href>` in the pages (and in `src/site/walk.template.html`, so `walk.html` comes out stamped)
+carries a short hash of the file it names, `assets/timeline.js?v=3f2a91c`, and so does every import of one of the site's
+own modules by another (`from "./maps.js?v=…"`, and `const MAPS = "./maps.js?v=…"`, which `vineyards.js` imports when
+asked): a changed file gets a new URL, which browsers fetch at once. A module's hash is taken after its own imports are
+stamped, so a change to `map-config.js` changes the stamps of `maps.js`, of the scripts that import it and of their
+pages; and every importer names a module by the same URL, so a page never loads two copies of one.
+`src/site/stamp_assets.py` writes them (standard library only); running it again changes nothing. **After changing a
+script or stylesheet, run `./build.sh site-data` (or the stamper alone, `./build.sh stamp`, which needs no build) and
+commit what it changes.** A branch that merges `main` and meets a conflict in a stamp takes either side and runs it
+again. `./build.sh` checks them
+(`--check`, exit 3 when one is missing or stale), and so do `tests/test_site.py` (the lint and site workflows) on every
+pull request. The pages themselves, the images and the data files (`docs/data/`, `docs/assets/aquifer/`) are not
+stamped: a browser takes a new page once its copy is ten minutes old.
+
+The rest is set outside the repository, once:
 
 - the repository's Pages settings: source GitHub Actions, custom domain hickorysandsdistrictava.org, HTTPS enforced;
 - the danshome account's verified domains (Settings > Pages): hickorysandsdistrictava.org, by the TXT record

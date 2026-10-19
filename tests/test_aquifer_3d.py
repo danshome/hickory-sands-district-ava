@@ -24,6 +24,7 @@ from src.site.aquifer import params
 from src.site.aquifer import privacy
 from src.site.aquifer import record
 from src.site.aquifer import vineyards
+from src.site.stamp_assets import unstamped
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DOCS = os.path.join(ROOT, "docs")
@@ -77,7 +78,7 @@ def test_the_manifest_pins_https_downloads():
 
 def test_the_page_loads_the_pinned_sdk_then_its_script(page):
     found = re.findall(r'<script type="module" src="([^"]+)"', page)
-    assert found == [SDK, "assets/aquifer3d.js"]
+    assert [unstamped(u) for u in found] == [SDK, "assets/aquifer3d.js"]
     assert not re.findall(r"js\.arcgis\.com/(?!5\.1/)", page)
 
 

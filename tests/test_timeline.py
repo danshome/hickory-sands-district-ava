@@ -23,6 +23,8 @@ import re
 
 import pytest
 
+from src.site.stamp_assets import unstamped
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SITE = os.path.join(ROOT, "docs")
 PAGE = os.path.join(SITE, "land.html")
@@ -82,13 +84,14 @@ class Land(HTMLParser):
         """Keeps the head's links and the timeline's stages and sources."""
         a = dict(attrs)
         cls = (a.get("class") or "").split()
-        href = a.get("href") or ""
+        href = unstamped(a.get("href") or "")  # without its version (#138)
         if tag == "meta" and a.get("name") == "robots":
             self.robots = a.get("content")
         elif tag == "link" and a.get("rel") == "stylesheet":
             self.head.append(("css", href, False))
         elif tag == "script":
-            self.head.append(("js", a.get("src"), "defer" in a))
+            src = a.get("src")
+            self.head.append(("js", src and unstamped(src), "defer" in a))
         elif tag == "li" and "geo-stage" in cls:
             self.stages.append(
                 {**a, "age": "", "certainty": "", "title": "", "cites": []}

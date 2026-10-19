@@ -2,7 +2,7 @@
 // build), drawn with Esri's ArcGIS Maps SDK for JavaScript, which the page loads
 // from js.arcgis.com. Text from the data is only ever set as text, never parsed
 // as HTML.
-import { apiKey } from "./map-config.js";
+import { apiKey } from "./map-config.js?v=999720b";
 
 const load = (name) => $arcgis.import(`@arcgis/core/${name}.js`);
 const [config, Map, Basemap, GeoJSONLayer, GraphicsLayer, Graphic, Viewpoint] =

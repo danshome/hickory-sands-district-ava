@@ -14,10 +14,10 @@ import {
   pair,
   plan,
   problems,
-} from "./vineyard-email.js";
+} from "./vineyard-email.js?v=820d34b";
 
 const SDK = "https://js.arcgis.com/5.1/";
-const MAPS = "./maps.js";
+const MAPS = "./maps.js?v=01ae1ae";
 
 const $ = (id) => document.getElementById(id);
 const form = $("vineyard-form");

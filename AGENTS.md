@@ -32,7 +32,8 @@ checks). Where this file and CLAUDE.md differ, CLAUDE.md wins.
    tool's credential store or in environment variables, never in a file, a commit message or an issue.
 6. **Publish nothing without Dan.** Merging to `main` deploys `docs/` to the public website. Test every website change
    at phone sizes first (`./build.sh check-site --local`, see BUILD.md), and live after the deploy
-   (`./build.sh check-site`). ArcGIS Online
+   (`./build.sh check-site`). After changing a script or stylesheet in `docs/`, run `./build.sh stamp` and commit
+   what it changes; `tests/test_site.py` and the build fail on a stale stamp. ArcGIS Online
    (`./build.sh publish`), releases, DNS and the domains are Dan's to change.
 7. **The boundary changes only through `resources/boundary/`, and the build.** No geometry is copied from an existing
    boundary layer.

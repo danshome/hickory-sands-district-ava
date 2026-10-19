@@ -1,6 +1,7 @@
 # The website, hickorysandsdistrictava.org (issue #96): docs/ as it is, served by GitHub Pages. On a pull request that
-# touches docs/, the site's tests (tests/test_site.py: complete pages, every local file there, https links); on a push to
-# main that touches docs/, and by hand (Actions > site > Run workflow), the same tests and then docs/ deployed to Pages.
+# touches docs/, the site's tests (tests/test_site.py: complete pages, every local file there, https links, every script
+# and stylesheet carrying its version stamp, #138); on a push to main that touches docs/, and by hand (Actions > site >
+# Run workflow), the same tests and then docs/ deployed to Pages.
 # The custom domain, its DNS (at Squarespace) and HTTPS are set on the repository's Pages settings, not here; see
 # BUILD.md. Runs on GitHub's Linux machines.
 name: site
@@ -10,12 +11,16 @@ on:
     paths:
       - docs/**
       - tests/test_site.py
+      - src/site/stamp_assets.py
+      - src/site/walk.template.html
       - .github/workflows/site.yml
   push:
     branches: [main]
     paths:
       - docs/**
       - tests/test_site.py
+      - src/site/stamp_assets.py
+      - src/site/walk.template.html
       - .github/workflows/site.yml
 permissions:
   contents: read
@@ -39,7 +44,7 @@ jobs:
           python -I -B src/setup/packages.py audit requirements-dev.txt
           python -m venv .venv
           .venv/bin/python -m pip install -q --disable-pip-version-check --require-hashes -r requirements-dev.txt
-      - name: Every page complete, every local file there, every link off the site https
+      - name: Every page complete, every local file there, every link off the site https, every stamp current
         run: .venv/bin/python -E -s -B -m pytest -q tests/test_site.py
   deploy:
     name: docs/ to GitHub Pages

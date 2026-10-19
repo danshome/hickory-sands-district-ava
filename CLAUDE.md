@@ -20,7 +20,7 @@ every pinned Python package against OSV before installing anything (`src/setup/p
 from the hash-pinned lock `requirements.txt` (compiled from `requirements.in` by `./build.sh upgrade`; never edit the
 `.txt` by hand; all Python runs in `.venv`, `-E -s -B`; nothing global), downloads/verifies the
 13 quads, then stages, traces, splices patches, builds the boundary, checks, makes the documents and quad sheets, and
-zips the package into `dist/` with `SHA256SUMS.txt` and `build-report.txt`. `./build.sh clean | distclean | env | lint | audit | upgrade | site-data | publish | publish-dry-run | check-live | check-site [--local]`.
+zips the package into `dist/` with `SHA256SUMS.txt` and `build-report.txt`. `./build.sh clean | distclean | env | lint | audit | upgrade | site-data | publish | publish-dry-run | check-live | check-site [--local] | stamp`.
 
 - `src/` all code: `quads/`, `tracing/` (the ink tracer), `fixing/` (patchlib, apply_patches), `review/` (tipcheck,
   compare_ttb), `boundary/` (ink_centerline, build_proposed, quad sheets, TTB record), `documents/`, `checks/`,
@@ -37,7 +37,9 @@ zips the package into `dist/` with `SHA256SUMS.txt` and `build-report.txt`. `./b
   deploys it on merge to `main`. Its map data, `docs/data/`, the walk page `docs/walk.html` and every figure marked
   `data-figure` in its pages (never type the area, counts, length or revision date) come from the build
   (`./build.sh site-data`; the build stops if they are stale), its status from TTB's AVAs_Production record in
-  `resources/ttb/`. The 3D aquifer page's data, `docs/assets/aquifer/`, and every figure it marks `data-stat` (from its
+  `resources/ttb/`. Every script and stylesheet the pages load, and every import between the site's own scripts,
+  carries a hash of the file (`assets/x.js?v=…`, #138): after changing a script or stylesheet, run `./build.sh stamp`
+  (or `site-data`) and commit what it changes; the build and `tests/test_site.py` fail otherwise. The 3D aquifer page's data, `docs/assets/aquifer/`, and every figure it marks `data-stat` (from its
   `stats.json`) come from `src/site/make_aquifer_3d.py` the same way (`--check` against its `record.json`, no
   download; a hard check stops it if a person's name or address survives in the well reports).
   The maps (`explore.html`, `walk.html`, `aquifer.html`, and the pin map on `vineyards.html`, loaded when asked for)

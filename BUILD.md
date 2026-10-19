@@ -80,6 +80,9 @@ Other commands:
   a website change is merged, and without it after the deploy. It takes no other argument. With `--local` it waits up to
   15 s for the server to answer (its log: `target/browser-tests/site-server.log`), and stops, printing the log, if the
   server exits (the port is taken, say) or another server answers on the port.
+- `./build.sh stamp` gives every script and stylesheet the website loads its version stamp
+  (`src/site/stamp_assets.py`, #138; see The website below), without a build: after changing a script or stylesheet,
+  run `./build.sh site-data` (or the stamper alone, `./build.sh stamp`) and commit what it changes.
 - `./build.sh check-live` checks the public site the way TTB sees it, without signing in (`src/publish/agol_check.py`,
   anonymous read-only requests; it changes nothing, so it is safe to run any time). One line per check, and every failure
   names the item and what is wrong; it exits 1 on any failure:
@@ -137,6 +140,7 @@ src/
                          (with survey_frame): the quads under that drawing;
                          make_aquifer_3d (with aquifer/): the 3D aquifer page's data (docs/assets/aquifer/);
                          make_land (with land/): The land's slice and maps (docs/assets/land/)
+                         stamp_assets: the scripts' and stylesheets' version stamps (#138)
   publish/               ArcGIS Online: agol_publish, agol_layer, agol_dashboard, agol_org_categories, agol_share (what
                          is sent); agol_dryrun + agol_dryrun_checks (the dry run); agol_check (the live site)
 resources/
@@ -209,7 +213,8 @@ research/                research, audits, design proposals and prototypes until
    box and its quads) and the image's size, never by its pixel values. The 3D aquifer page's data
    (`src/site/make_aquifer_3d.py --check`) is checked by its record, `docs/assets/aquifer/record.json`, with no
    download (see The website below), and The land's slice and maps (`src/site/make_land.py --check`) by theirs,
-   `docs/assets/land/record.json`, the same way.
+   `docs/assets/land/record.json`, the same way. Last, every script and stylesheet the pages load, and every module a
+   script imports, must carry the version stamp of the file as it is (`src/site/stamp_assets.py --check`, #138).
 
 ## Python packages and security
 
@@ -320,7 +325,17 @@ for Python; 2-space YAML and TOML). By hand: `.venv/bin/ruff format .` and `.ven
   and, on made-up records, the class rule (the fact-check's fixes among them), the logs, the figures' formats, an empty
   outline or part that stops the generator, and what the check calls stale;
 - `test_site.py`: every page of the website in `docs/` is a complete HTML document (doctype, language, character set,
-  phone viewport, title), every local file it links to or loads is in `docs/`, and every link off the site is https;
+  phone viewport, title), every local file it links to or loads is in `docs/` (a version stamp aside), every link off
+  the site is https, and every script and stylesheet the pages load and every module a script imports carries the
+  stamp of the file as it is now (so a pull request that changes a script without stamping it again fails);
+- `test_stamp_assets.py`: the stamper, on a made-up site: only local scripts and stylesheets stamped, with the hash
+  of the file as served (a module's taken after its imports are stamped, so a change reaches every importer and page);
+  each importer names a module alike; a second run changes nothing; `--check` writes nothing and exits 3; a stale or
+  conflicting stamp replaced; a `<link>` read as HTML reads it (`rel` without quotes, a `>` inside a quoted value) and a
+  `modulepreload` stamped; Esri's SDK left alone; and each thing it cannot stamp stopping `--check` (a missing file or
+  module, another query or a fragment, a bad stamp, an unquoted or doubled URL, an inline script or import map naming a
+  module, a template-literal, root, bare or variable import, a stylesheet's `@import`, an import circle, a missing site,
+  a site with no pages, a missing template);
 - `test_analytics.py`: every page (and the walk template) loads `docs/assets/analytics.js` once, in its head, and no
   other file names Google's tag; the script's opt-outs and settings; no form or script puts what is typed in the page's
   address; and, in node when it is installed, the script run against made-up browsers (see Analytics below);
@@ -459,7 +474,8 @@ Four workflows in `.github/workflows/`, every action pinned to a commit:
 git tag v2026.10.20 && git push origin v2026.10.20
 ```
 
-- **site** (`site.yml`, Linux): the website. On pull requests that touch `docs/`, its tests (`tests/test_site.py`); on
+- **site** (`site.yml`, Linux): the website. On pull requests that touch `docs/` (or the stamper, or the walk page's
+  template), its tests (`tests/test_site.py`, the stamps among them); on
   a push to `main` that touches `docs/`, and by hand, the same tests and then `docs/` deployed to GitHub Pages as it
   is (no build step: what is in `docs/` is what is served).
 
@@ -530,10 +546,34 @@ Their code is `docs/assets/maps.js` (shared), `explore.js`, `walk.js` and `maps.
 as text, never parsed as HTML. The basemaps need the ArcGIS Online API key in `docs/assets/map-config.js`. It is public by
 design and limited to the basemap styles service and to the referrers `https://hickorysandsdistrictava.org` and
 `http://localhost:8765` (for previews: `python3 -m http.server 8765 -d docs`). Stored geocoding and other credit-consuming
-services are refused to it. It lasts up to a year: renew it in ArcGIS Online (Content > the API key item) and replace the string
-in `map-config.js`. With the key empty, the maps draw the line on a plain background. A
+services are refused to it. It lasts up to a year: renew it in ArcGIS Online (Content > the API key item), replace the string
+in `map-config.js` and run `./build.sh stamp`. With the key empty, the maps draw the line on a plain background. A
 change to the site is a pull request like any other: `site.yml` tests it on the pull request and deploys it when it is
-merged to `main`. The rest is set outside the repository, once:
+merged to `main`.
+
+**Version stamps (#138).** GitHub Pages serves every file with `cache-control: max-age=600`, so a browser that loaded a
+script shortly before a deploy could keep the old one for ten minutes. So every local `<script src>` and every local
+href of a `<link>` whose rel is `stylesheet`, `modulepreload` or `preload` in the pages (read as a browser reads them;
+also in `src/site/walk.template.html`, so `walk.html` comes out stamped) carries a short hash of the file it names,
+`assets/timeline.js?v=3f2a91c`, and so does every relative module path in plain quotes in the site's scripts: the
+imports of its own modules by each other (`from "./maps.js?v=…"`) and `const MAPS = "./maps.js?v=…"`, which
+`vineyards.js` gives `import()` when asked. A changed file gets a new URL, which browsers fetch at once. A module's hash
+is taken after its own imports are stamped, so a change to `map-config.js` changes the stamps of `maps.js`, of the
+scripts that import it and of their pages; and every importer names a module by the same URL, so a page never loads two
+copies of one. Whatever the stamper cannot stamp stops it, naming where, rather than being skipped: a `src` or `href`
+without quotes; a local URL with another query or a fragment; in a script, an import of anything but a relative path in
+plain quotes or Esri's SDK (its https URL or its `@arcgis/core/` modules), a template literal, `import()` of anything
+but such a path or a constant holding one; a stylesheet with `@import`; an inline `<script>` that names a module (move
+it into a file); an import circle; a missing site or template.
+`src/site/stamp_assets.py` writes them (standard library only); running it again changes nothing. **After changing a
+script or stylesheet, run `./build.sh site-data` (or the stamper alone, `./build.sh stamp`, which needs no build) and
+commit what it changes.** A branch that merges `main` and meets a conflict on a stamped line resolves it as any other,
+keeping the code of both sides with either stamp, then runs it again. `./build.sh` checks them (`--check`, exit 3
+when one is missing or stale), and so do `tests/test_site.py` (the lint and site workflows) on every pull request.
+The pages themselves, the images and the data files (`docs/data/`, `docs/assets/aquifer/`) are not stamped: a
+browser takes a new page once its copy is ten minutes old.
+
+The rest is set outside the repository, once:
 
 - the repository's Pages settings: source GitHub Actions, custom domain hickorysandsdistrictava.org, HTTPS enforced;
 - the danshome account's verified domains (Settings > Pages): hickorysandsdistrictava.org, by the TXT record

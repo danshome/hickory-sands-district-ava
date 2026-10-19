@@ -64,7 +64,8 @@ zips the package into `dist/` with `SHA256SUMS.txt` and `build-report.txt`. `./b
   Squarespace beside the Google Workspace mail records (MX, SPF, DKIM, DMARC `p=reject`): never touch those. The other
   Hickory Sands domains forward to it. The vineyard form ("Add your vineyard") sends to a Supabase Edge Function that
   opens a public issue and keeps contacts private (`src/vineyards/`, set up by Dan per its SETUP.md; #166). The logo
-  vote runs on Shopify for now, with its backend in `vote-backend/` (#100).
+  vote (`docs/logo-vote.html`, switched on by `docs/assets/vote-config.js`) talks to the vote-api function in
+  `src/vote/` (set up per its SETUP.md; #100).
 - `target/` (gitignored) everything the build makes: `work/` (recreated each run; GIS in `work/gis/`, reviews in
   `work/review/`), `quads-cropped/` (neatline VRTs for QGIS). `dist/` (gitignored) the distribution.
 - `tobedeleted/` (gitignored) is where things no build uses go for Dan to review and delete. Nothing may depend on it.

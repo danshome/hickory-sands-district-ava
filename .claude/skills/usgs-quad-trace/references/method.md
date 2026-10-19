@@ -168,3 +168,10 @@ highways dropped 30-50 points. Gate on the background; the paper rules were alre
   runners put step 13 0.34 m apart. `smooth` and `robust_offsets` take their Gaussian weights from `libm_exp`
   (`math.exp`, which NumPy itself calls on the Mac, so the lines did not change). The knife edge itself remains: a
   deterministic rule for samples on a cell edge would move step 13 and others, so it waits for a re-trace.
+
+## Oct. 19, 2026: gaps closed along the feature, not across it (#80)
+
+- **`line_se` was mirrored.** It turned its angle towards row 0 while `trace()`'s rows run north, so `directional_fill`
+  closed a diagonal road's or contour's dash gaps along the mirror image of its direction (at 45 degrees, across the
+  line). East-west and north-south features were unaffected; creeks are not gap-closed. Fixed: the angle turns towards
+  the higher rows. It changes the traces of every road and contour step with diagonal stretches, so it waits for Dan.

@@ -1,4 +1,4 @@
-"""src/tracing/centerline.py: the tracer gives the same line on every CPU.
+"""src/tracing/centerline.py: the same line on every CPU; gaps closed along.
 
 Issue #116: two of GitHub's Linux runners placed step 13's vertices 0.34 m
 apart along the same road. NumPy picks its float64 exp by the CPU (an AVX-512
@@ -8,6 +8,10 @@ road-centring pass reads the ink exactly on cell edges, where that last bit
 decides which cell is read. Here NumPy's exp is made the C library's (one
 CPU) and then one ulp higher (another CPU), and the tracer's results must not
 change by a single bit.
+
+Issue #80: dash and dot gaps are closed along the feature's own direction on
+trace()'s grid, whose rows run north (until Oct. 19, 2026 a diagonal feature
+was closed across itself, along its mirror image).
 """
 
 import math
@@ -125,3 +129,53 @@ def test_road_centre_is_the_same_on_every_cpu(monkeypatch):
     (first, width1), (second, width2) = on_two_cpus(monkeypatch, centre)
     assert width1 == width2
     assert np.array_equal(first, second, equal_nan=True)
+
+
+def test_line_se_turns_north_from_east_as_trace_does():
+    """On trace()'s grid rows run north: north-east is up a row, east a col."""
+    se = centerline.line_se(9, math.pi / 4)
+    h = 4
+    assert all(se[h + k, h + k] for k in range(-3, 4))  # 9 cells: 4 sin 45
+    assert not se[h + 3, h - 3]
+    assert not se[h - 3, h + 3]
+
+
+def test_line_se_east_west_and_north_south_are_unchanged():
+    h = 4
+    east = centerline.line_se(9, 0.0)
+    north = centerline.line_se(9, math.pi / 2)
+    assert np.array_equal(np.flatnonzero(east.any(1)), [h])
+    assert east[h].all()
+    assert np.array_equal(np.flatnonzero(north.any(0)), [h])
+    assert north[:, h].all()
+
+
+def diagonal_dashes():
+    """A north-east dashed line on trace()'s grid, with a 3-cell gap.
+
+    Returns:
+        (ink, theta, gap): the ink, the bearing of every cell (north-east)
+        and the cells of the gap.
+    """
+    ink = np.zeros((41, 41), bool)
+    for k in range(5, 36):
+        ink[k, k] = True
+    gap = [(k, k) for k in range(19, 22)]
+    for r, c in gap:
+        ink[r, c] = False
+    return ink, np.full(ink.shape, math.pi / 4, np.float32), gap
+
+
+def test_directional_fill_closes_a_gap_along_a_diagonal_feature():
+    ink, theta, gap = diagonal_dashes()
+    out = centerline.directional_fill(ink, theta, 9)
+    assert all(out[r, c] for r, c in gap)
+
+
+def test_directional_fill_does_not_bridge_across_a_diagonal_feature():
+    ink, theta, _ = diagonal_dashes()
+    # two dots across the line (north-west to south-east), 4 cells apart
+    ink[24, 16] = ink[20, 20] = ink[16, 24] = True
+    out = centerline.directional_fill(ink, theta, 9)
+    assert not out[22, 18]
+    assert not out[18, 22]

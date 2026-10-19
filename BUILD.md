@@ -270,7 +270,7 @@ for Python; 2-space YAML and TOML). By hand: `.venv/bin/ruff format .` and `.ven
   ring (#26), and the helpers that find the stretches;
 - `test_centerline.py`: the tracer's smoothing, its road offsets and the first centring pass on a north-south road give
   the same bits whether NumPy's `exp` is the C library's or one ulp higher, as another CPU's may be (#116), and its
-  Gaussian filter is SciPy's;
+  Gaussian filter is SciPy's; dash gaps are closed along a diagonal feature, not across it (#80);
 - `test_make_readme.py`: README.txt's headings ("WHAT WE PROPOSE TO CHANGE IN NOTICE NO. 243 (...)") on the read-me page;
   every placeholder filled; the Web Mercator area against GDAL's for a one-degree square;
 - `test_site_data.py`: the website's map data in `docs/data/`: every step from the Beginning point, each ending at its

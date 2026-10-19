@@ -504,7 +504,7 @@ EVENTS = {
             "panel_restore",
             "about",
         ],
-        "value": [
+        "choice": [
             "button",
             "imagery",
             "topo",
@@ -613,7 +613,7 @@ def test_the_map_s_switches_are_all_listed():
     assert re.findall(r'"([^"]+)"', listed.group(1)) == MAP_GROUPS
     basemaps = set(re.findall(r'data-basemap="([^"]+)"', text))
     abouts = set(re.findall(r'data-about="([^"]+)"', text))
-    assert basemaps | abouts <= set(EVENTS["map_view"]["value"])
+    assert basemaps | abouts <= set(EVENTS["map_view"]["choice"])
 
 
 def split_top(text, sep=","):
@@ -814,11 +814,11 @@ def test_the_page_is_one_of_the_site_s_pages(run, pathname, page):
             ["vote_cast", {"dir": "like", "page": "map"}], id="page-given"
         ),
         pytest.param(
-            ["map_view", {"action": "about", "value": "a typed name"}],
+            ["map_view", {"action": "about", "choice": "a typed name"}],
             id="free-text",
         ),
         pytest.param(
-            ["map_view", {"action": "basemap", "value": ["dark"]}],
+            ["map_view", {"action": "basemap", "choice": ["dark"]}],
             id="a-list",
         ),
         pytest.param(["walk_step", {"step": -1}], id="negative"),

@@ -1209,7 +1209,7 @@ if (toggle) {
   toggle.addEventListener("click", () => {
     const open = !panel.classList.contains("is-open");
     sheet(open);
-    window.hsdTrack?.("map_view", { action: open ? "panel_restore" : "panel_min", value: "sheet" });
+    window.hsdTrack?.("map_view", { action: open ? "panel_restore" : "panel_min", choice: "sheet" });
   });
   panel.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && phone.matches && panel.classList.contains("is-open")) sheet(false);
@@ -1228,7 +1228,7 @@ function minimized(min) {
 minimize?.addEventListener("click", () => {
   const min = !panel.classList.contains("is-min");
   minimized(min);
-  window.hsdTrack?.("map_view", { action: min ? "panel_min" : "panel_restore", value: "button" });
+  window.hsdTrack?.("map_view", { action: min ? "panel_min" : "panel_restore", choice: "button" });
 });
 const fit = () => {
   if (phone.matches) {
@@ -1290,7 +1290,7 @@ for (const link of document.querySelectorAll("[data-about]")) {
     opener = link;
     aboutDialog.showModal();
     aboutDialog.scrollTop = 0;
-    window.hsdTrack?.("map_view", { action: "about", value: link.dataset.about });
+    window.hsdTrack?.("map_view", { action: "about", choice: link.dataset.about });
     if (link.dataset.about !== "about-district") {
       document.getElementById(link.dataset.about)?.scrollIntoView({ block: "start" });
     }
@@ -1323,7 +1323,7 @@ const filterTimers = {};
 const filterUsed = (value) => {
   clearTimeout(filterTimers[value]);
   filterTimers[value] = setTimeout(() => {
-    window.hsdTrack?.("map_view", { action: "wells_filter", value });
+    window.hsdTrack?.("map_view", { action: "wells_filter", choice: value });
   }, 1000);
 };
 const filters = { uses: true, yield: true, depth: true, hickory: true }; // true: not narrowed
@@ -1454,7 +1454,7 @@ function wireWellFilters(w) {
   // Hickory Aquifer only) back to their defaults; not the Wells switch or the
   // water levels.
   document.getElementById("aq-wells-reset")?.addEventListener("click", () => {
-    window.hsdTrack?.("map_view", { action: "wells_reset", value: "button" });
+    window.hsdTrack?.("map_view", { action: "wells_reset", choice: "button" });
     useBoxes.forEach((b, i) => {
       b.checked = w.defaults.uses.has(i);
     });
@@ -1757,13 +1757,13 @@ reactiveUtils.watch(
 lookButton?.addEventListener("click", () => {
   const threeD = look !== "3d";
   tiltTo(threeD);
-  window.hsdTrack?.("map_view", { action: threeD ? "3d" : "2d", value: "button" });
+  window.hsdTrack?.("map_view", { action: threeD ? "3d" : "2d", choice: "button" });
 });
 for (const button of document.querySelectorAll("button[data-look]")) {
   button.addEventListener("click", () => {
     const threeD = button.dataset.look === "3d";
     tiltTo(threeD);
-    window.hsdTrack?.("map_view", { action: threeD ? "3d" : "2d", value: "button" });
+    window.hsdTrack?.("map_view", { action: threeD ? "3d" : "2d", choice: "button" });
   });
 }
 for (const button of document.querySelectorAll("button[data-basemap]")) {
@@ -1774,7 +1774,7 @@ for (const button of document.querySelectorAll("button[data-basemap]")) {
     map.basemap = basemapFor(basemapName);
     map.basemap?.load().catch(basemapRefused);
     saveAddress();
-    window.hsdTrack?.("map_view", { action: "basemap", value: basemapName });
+    window.hsdTrack?.("map_view", { action: "basemap", choice: basemapName });
   });
 }
 for (const button of document.querySelectorAll("button[data-place]")) {
@@ -1821,7 +1821,7 @@ const home = scene.querySelector("arcgis-home");
 if (home) {
   home.viewpoint = view.viewpoint.clone();
   home.addEventListener("click", () => {
-    window.hsdTrack?.("map_view", { action: "home", value: "button" });
+    window.hsdTrack?.("map_view", { action: "home", choice: "button" });
   });
 }
 // A step or point in the address: its popup opens. One that does not exist

@@ -99,7 +99,7 @@
         "panel_restore",
         "about",
       ],
-      value: [
+      choice: [
         "button",
         "imagery",
         "topo",

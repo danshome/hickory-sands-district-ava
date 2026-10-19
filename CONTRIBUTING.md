@@ -52,6 +52,10 @@ macOS or Linux with [Homebrew](https://brew.sh). From the repository's root:
 
 [BUILD.md](BUILD.md) explains the stages, the checks, the tests and the GitHub Actions workflows.
 
+For the GitHub README, edit `documents/repository-README.template.md`, never the
+root `README.md`. Run `./build.sh readme` and commit both. Build figures are updated
+by `./build.sh site-data`; see [BUILD.md](BUILD.md#editing-the-github-readme).
+
 ## Where things go
 
 | What                                   | Where                                                              |

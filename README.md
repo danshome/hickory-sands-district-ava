@@ -1,3 +1,8 @@
+> **Generated file — do not edit directly.** Edit
+> [documents/repository-README.template.md](documents/repository-README.template.md),
+> then run `./build.sh readme`. To refresh figures from a checked boundary build,
+> run `./build.sh site-data`. Commit the template and regenerated files together.
+
 # Hickory Sands District AVA: the boundary as proposed to TTB
 
 The boundary of the **proposed Hickory Sands District American Viticultural Area** in the Texas Hill Country (Llano,

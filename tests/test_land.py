@@ -451,9 +451,15 @@ def sections(page):
 
 
 def test_the_page_loads_its_styles_and_script(page):
-    css = re.findall(r'<link rel="stylesheet" href="([^"]+)"', page)
+    # Version stamps (?v=..., #138) aside.
+    css = [
+        href.split("?")[0]
+        for href in re.findall(r'<link rel="stylesheet" href="([^"]+)"', page)
+    ]
     assert css.index("assets/land.css") > css.index("assets/timeline.css")
-    assert '<script src="assets/land.js" defer></script>' in page
+    assert re.search(
+        r'<script src="assets/land\.js(\?v=[0-9a-f]+)?" defer>', page
+    )
 
 
 def test_both_sections_come_before_the_timeline(page):

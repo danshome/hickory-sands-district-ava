@@ -37,7 +37,7 @@ def test_direct_edits_fail_without_overwriting(tmp_path, edit):
             else text.replace("193.83", "999.99")
         )
         path.write_text(text, encoding="utf-8")
-    assert readme.generate(root, None, check=True) == 1
+    assert readme.generate(root, None, check=True) == 3
     assert (
         not path.exists()
         if edit == "deleted"
@@ -51,7 +51,7 @@ def test_template_prose_survives_regeneration(tmp_path):
     path.write_text(
         path.read_text("utf-8") + "\nNew prose.\n", encoding="utf-8"
     )
-    assert readme.generate(root, None, check=True) == 1
+    assert readme.generate(root, None, check=True) == 3
     assert readme.generate(root, None, check=False) == 0
     first = (root / "README.md").read_bytes()
     assert first.endswith(b"\nNew prose.\n")
@@ -104,7 +104,7 @@ def test_build_refresh_and_rounding(tmp_path):
     for relative, value in data.items():
         (work / relative).write_text(json.dumps(value), encoding="utf-8")
     before = (root / readme.FIGURES).read_bytes()
-    assert readme.generate(root, work, check=True) == 1
+    assert readme.generate(root, work, check=True) == 3
     assert (root / readme.FIGURES).read_bytes() == before
     assert readme.generate(root, work, check=False) == 0
     figures = json.loads((root / readme.FIGURES).read_text("utf-8"))

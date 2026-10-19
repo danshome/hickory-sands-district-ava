@@ -114,7 +114,7 @@ def generate(root: Path, work: Path | None, *, check: bool) -> int:
         check: Compare without writing when true.
 
     Returns:
-        Zero on success, one for stale generated files.
+        Zero on success, three for stale generated files.
     """
     figures = (
         build_figures(work)
@@ -139,7 +139,7 @@ def generate(root: Path, work: Path | None, *, check: bool) -> int:
                 f"Edit {TEMPLATE}, not README.md; run ./build.sh readme "
                 "for prose, or ./build.sh site-data for new build figures."
             )
-            return 1
+            return 3
         return 0
     for path, text in outputs.items():
         path.write_text(text, encoding="utf-8")

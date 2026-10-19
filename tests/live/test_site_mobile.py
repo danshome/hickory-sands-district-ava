@@ -1026,18 +1026,21 @@ UNTOUCHED = {
     "title": "",
 }
 # Each bad case: what section.json answers (None: the real file), and a
-# script run in the page first (None: none). "late" breaks the slice's scroll
-# watcher once timeline.js has made its own, so land.js fails after it has
-# drawn and added its panel, and must take it all away again.
+# script run in the page first (None: none). "late" makes the scroll
+# watcher refuse the slice's steps (only theirs: the timeline's stages are
+# watched as ever), so land.js fails after it has drawn and added its panel,
+# and must take it all away again.
 BAD_DATA = {
     "not-json": ("{not json", None),
     "malformed": (json.dumps({"length_ft": 1, "ground": []}), None),
     "late": (
         None,
         (
-            "document.addEventListener('DOMContentLoaded', () => {"
-            " window.IntersectionObserver = function () {"
-            " throw new Error('a made-up failure'); }; });"
+            "const watch = IntersectionObserver.prototype.observe;"
+            " IntersectionObserver.prototype.observe = function (target) {"
+            " if (target.classList.contains('lnd-step')) {"
+            " throw new Error('a made-up failure'); }"
+            " return watch.call(this, target); };"
         ),
     ),
 }

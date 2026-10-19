@@ -9,5 +9,5 @@
 // form sends without one.
 //
 // endpoint: https://yayebhncbagmebwgmezd.supabase.co/functions/v1/vineyard-submit
-export const endpoint = "";
+export const endpoint = "https://yayebhncbagmebwgmezd.supabase.co/functions/v1/vineyard-submit";
 export const turnstileSiteKey = "";

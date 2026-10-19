@@ -9,7 +9,7 @@
 // the email instead (vineyard-email.js). Text from the grower is only ever set
 // as text.
 import { apiKey } from "./map-config.js?v=999720b";
-import { endpoint, turnstileSiteKey } from "./vineyard-config.js?v=477d32b";
+import { endpoint, turnstileSiteKey } from "./vineyard-config.js?v=b87e284";
 import * as rules from "./vineyard-blocks.js?v=a8b5daf";
 import { ADDRESS, message, plan } from "./vineyard-email.js?v=7d7e46c";
 

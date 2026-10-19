@@ -197,6 +197,31 @@ def test_the_wells_group_has_the_controls_asked_for(page):
     assert 'data-switch="wells" data-group-switch="wells" checked' in page
 
 
+def test_the_page_says_which_wells_it_shows_at_first(page, scripts):
+    # The wells start filtered (#148): irrigation wells that tested at 25 gpm
+    # or more, none with an unreported yield. The panel and About say so, and
+    # in the script's own terms.
+    wells = scripts["aquifer-wells.js"]
+    defaults = wells[wells.index("const DEFAULTS") :]
+    defaults = defaults[: defaults.index("};")]
+    assert 'index.use_groups.indexOf("Irrigation")' in wells
+    assert "uses: new Set(IRRIGATION >= 0 ? [IRRIGATION]" in defaults
+    assert "noYield: false," in defaults
+    low = re.search(r"yieldLo: (\d+),", defaults).group(1)
+    said = (
+        f"Shown at first: irrigation wells that tested at {low} gpm or "
+        "more; widen the filters to see the rest."
+    )
+    assert page.count(said) == 2
+    # The far-out limit on every head is the script's, set as text.
+    assert 'id="aq-wells-far-max"' in page
+    assert re.search(r"export const FAR_HEADS_MAX = \d+;", wells)
+    assert (
+        'setText("aq-wells-far-max", n(FAR_HEADS_MAX))'
+        in scripts["aquifer3d.js"]
+    )
+
+
 def test_the_panel_lists_the_groups_in_drawing_order(page):
     groups = re.findall(r'<section class="lp-group" data-group="(\w+)"', page)
     assert groups == [

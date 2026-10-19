@@ -16,7 +16,7 @@
 // read from assets/aquifer/stats.json. Text from the data is only ever set as
 // text, never parsed as HTML.
 import { apiKey } from "./map-config.js";
-import { setupWells, wellAttributes, CLASS_NAMES } from "./aquifer-wells.js";
+import { setupWells, wellAttributes, CLASS_NAMES, FAR_HEADS_MAX } from "./aquifer-wells.js";
 
 const DATA = "assets/aquifer/";
 document.documentElement.classList.add("js");
@@ -1174,31 +1174,36 @@ function wireWellFilters(w) {
   showCounts(w.counts());
 }
 
-// Zoomed far out, the wells are thinned; from about the district's scale in,
-// every well's head is drawn; closer in, the lines down the hole near the
-// middle of the view. The note under the Wells heading says which.
+// Only the wells that pass the filters are drawn. Zoomed far out, every one's
+// head while few enough pass, else they are thinned; from about the
+// district's scale in, every one's head; closer in, the lines down the hole
+// near the middle of the view. The note under the Wells heading says which.
 const scaleOf = (key) => (stats[key] ? formatStat(stats[key], "scale") : "the district’s scale");
-function wellNote({ mode, left, failed, loading }) {
+function wellNote({ mode, left, failed, loading, shown, drawn }) {
   const note = document.getElementById("aq-wells-note");
   if (!note || !wells) return;
-  const total = n(wells.index.filter_keys.length);
   const cell = `one well per ${wells.index.overview_cell_degrees}° cell`;
+  const all = shown === 1 ? "The one well that passes the filters is drawn" : `The ${n(shown)} wells that pass the filters are drawn`;
+  const of = shown === 1 ? "the one that passes" : `the ${n(shown)} that pass`;
   if (loading) {
-    note.textContent = `Loading every well; meanwhile ${cell} is drawn.`;
+    note.textContent = `Loading the wells that pass the filters; meanwhile ${cell} is drawn where it passes.`;
+  } else if (!shown) {
+    note.textContent = "No well passes the filters; widen them to see wells.";
   } else if (mode === "overview") {
     note.textContent = failed
-      ? `Not every well could be loaded, so ${cell} is drawn (${n(wells.index.overview.length)} of ${total}).`
-      : `Zoomed out, the wells are thinned: ${cell} (${n(wells.index.overview.length)} of ${total}). Zoom in to about ${scaleOf("wells_all_scale")}, or go to District, to see every well.`;
+      ? `Not every well could be loaded, so ${cell} is drawn where it passes the filters (${n(drawn)} of ${of}).`
+      : `Zoomed out, the wells are thinned: ${cell}, where it passes the filters (${n(drawn)} of ${of}). Zoom in to about ${scaleOf("wells_all_scale")}, or go to District, to see them all.`;
   } else if (mode === "heads") {
-    note.textContent = `Every well’s head is drawn, with the line down the hole of ${cell}. Zoom in to about ${scaleOf("wells_lines_scale")} for every well’s line.`;
+    note.textContent = `${all}, with only some of their lines down the hole. Zoom in to about ${scaleOf("wells_lines_scale")} for every line.`;
   } else if (left > 0) {
-    note.textContent = `Every well’s head is drawn, and every line near the middle of the view; ${n(left)} more wells in view have only their heads drawn. Zoom in or move to see their lines.`;
+    note.textContent = `${all}, and every line near the middle of the view; ${n(left)} more in view have only their heads drawn. Zoom in or move to see their lines.`;
   } else {
     note.textContent = "";
   }
 }
 
 // Wells: TWDB's driller's reports and Groundwater Database.
+setText("aq-wells-far-max", n(FAR_HEADS_MAX));
 try {
   wells = await setupWells({
     map,
@@ -1206,8 +1211,9 @@ try {
     small,
     exaggeration,
     reducedMotion,
-    // Every well's head from about the district's scale in, and the lines
-    // down the hole closer in; further out, the thinned overview.
+    // The head of every well that passes the filters from about the
+    // district's scale in (further out too while few enough pass), and the
+    // lines down the hole closer in; else the thinned overview.
     allScale: stats.wells_all_scale,
     linesScale: stats.wells_lines_scale,
     FeatureLayer,

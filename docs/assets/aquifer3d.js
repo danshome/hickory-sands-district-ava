@@ -578,8 +578,8 @@ const vineyardLayer = (category, title) => {
         symbol: textSymbol(10, [232, 196, 204]),
       },
     ],
-    // The vineyard's name, its category, the acres of its outline and its
-    // source; then the wells near it.
+    // The vineyard's name, its category, this block and its acres (one block,
+    // not the vineyard's whole acreage) and its source; then the wells near it.
     popupTemplate: {
       title: "{name}",
       outFields: ["*"],
@@ -588,7 +588,8 @@ const vineyardLayer = (category, title) => {
           type: "fields",
           fieldInfos: [
             { fieldName: "category_label", label: "Category" },
-            { fieldName: "acres", label: "Acres (of the outline)" },
+            { fieldName: "block", label: "Block" },
+            { fieldName: "acres", label: "Acres of this block (as outlined)" },
             { fieldName: "source", label: "Source" },
           ],
         },

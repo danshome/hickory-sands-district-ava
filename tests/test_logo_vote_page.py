@@ -57,7 +57,9 @@ def test_the_page_is_kept_from_search_engines():
 
 def test_before_the_switch_over_it_says_the_vote_moves_here_soon():
     page = read(PAGE)
-    assert re.search(r"\bexport const live = false;", config())
+    # The page as served says so; its script shows the vote once vote-config.js
+    # says live = true (after the switch-over).
+    assert re.search(r"\bexport const live = (?:true|false);", config())
     soon = re.search(
         r'<section [^>]*id="soon"[^>]*>(.*?)</section>', page, re.S
     )

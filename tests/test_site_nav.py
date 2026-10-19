@@ -1,0 +1,140 @@
+"""The website's menu: the same links, in the same order, on every page.
+
+Every page in docs/, and src/site/walk.template.html (the build makes
+walk.html from it), has the header's menu (the nav in details.navigation)
+with the same links as Home's, in the same order; each link opens a page
+that is in docs/; and the page's own link, and only it, is marked
+aria-current="page" (a page that is not in the menu, such as Home or
+Explore, marks none). 404.html links from the site's root (/boundary.html),
+so it works at any depth; its links are read from there.
+
+Standard library only, so the lint workflow runs it; in Chrome,
+tests/live/test_site_mobile.py checks the menu opens and its links answer.
+"""
+
+from html.parser import HTMLParser
+from pathlib import Path
+import posixpath
+from urllib.parse import unquote
+from urllib.parse import urlsplit
+
+import pytest
+
+ROOT = Path(__file__).resolve().parents[1]
+SITE = ROOT / "docs"
+TEMPLATE = ROOT / "src" / "site" / "walk.template.html"
+# each page and the page it is in the site (the walk's template is walk.html)
+PAGES = {
+    **{path: path.name for path in sorted(SITE.glob("*.html"))},
+    TEMPLATE: "walk.html",
+}
+HOME = SITE / "index.html"
+
+
+class Menu(HTMLParser):
+    """The links of the header's menu: (text, href, aria-current) each."""
+
+    def __init__(self):
+        """Starts outside the menu."""
+        super().__init__(convert_charrefs=True)
+        self.links = []
+        self.menus = 0  # how many details.navigation the page has
+        self._depth = 0  # >0 inside details.navigation
+        self._nav = False  # inside its nav
+        self._link = None  # the link being read
+
+    def handle_starttag(self, tag, attrs):
+        """Enters the menu, its nav and each of its links."""
+        a = dict(attrs)
+        if tag == "details":
+            if self._depth:
+                self._depth += 1
+            elif "navigation" in (a.get("class") or "").split():
+                self._depth = 1
+                self.menus += 1
+        elif tag == "nav" and self._depth:
+            self._nav = True
+        elif tag == "a" and self._nav:
+            self._link = [
+                "",
+                a.get("href") or "",
+                a.get("aria-current"),
+            ]
+
+    def handle_endtag(self, tag):
+        """Leaves a link, the nav or the menu."""
+        if tag == "a" and self._link is not None:
+            text, href, current = self._link
+            self.links.append((" ".join(text.split()), href, current))
+            self._link = None
+        elif tag == "nav":
+            self._nav = False
+        elif tag == "details" and self._depth:
+            self._depth -= 1
+
+    def handle_data(self, data):
+        """Keeps a link's text."""
+        if self._link is not None:
+            self._link[0] += data
+
+
+def menu(path):
+    """Returns the parsed menu of the page at path."""
+    parsed = Menu()
+    parsed.feed(path.read_text(encoding="utf-8"))
+    parsed.close()
+    return parsed
+
+
+def target(href):
+    """Returns the page in docs/ that a menu link opens, such as "land.html".
+
+    Every page is in docs/ itself, so a relative link and one from the
+    site's root ("/land.html", as 404.html has) name the same page. None
+    for a link off the site.
+    """
+    url = urlsplit(href)
+    if url.scheme or url.netloc or not url.path:
+        return None
+    path = posixpath.normpath(unquote(url.path).lstrip("/"))
+    return "index.html" if path in {".", ""} else path
+
+
+def links(path):
+    """Returns the menu's links as (text, page) pairs."""
+    return [(text, target(href)) for text, href, _ in menu(path).links]
+
+
+def test_home_has_a_menu_of_pages_in_the_site():
+    home = links(HOME)
+    assert len(home) >= 2, f"Home's menu has {home}"
+    assert len({page for _, page in home}) == len(home), (
+        f"a page twice in the menu: {home}"
+    )
+    missing = [
+        (text, page)
+        for text, page in home
+        if page is None or not (SITE / page).is_file()
+    ]
+    assert not missing, f"menu links to no page in docs/: {missing}"
+
+
+@pytest.mark.parametrize(
+    "path", list(PAGES), ids=lambda p: str(p.relative_to(ROOT))
+)
+def test_menu_is_home_s_with_this_page_marked(path):
+    page = PAGES[path]
+    parsed = menu(path)
+    assert parsed.menus == 1, f"{parsed.menus} menus (details.navigation)"
+    got = [(text, target(href)) for text, href, _ in parsed.links]
+    home = links(HOME)
+    assert got == home, f"the menu's links are {got}, not Home's {home}"
+    marked = [
+        (text, current)
+        for text, _, current in parsed.links
+        if current is not None
+    ]
+    mine = [(text, "page") for text, linked in home if linked == page]
+    assert marked == mine, (
+        f"aria-current marks {marked}, not {mine or 'no link'} ({page})"
+    )

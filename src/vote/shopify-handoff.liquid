@@ -1,0 +1,27 @@
+{%- comment -%}
+  The growers' logo vote has moved to hickorysandsdistrictava.org/logo-vote.html
+  (issue #100 in danshome/hickory-sands-district-ava; src/vote/SETUP.md, step 5).
+  This replaces the vote script in the Shopify theme's
+  sections/hsd-logo-vote.liquid, at the same page address, so old links keep
+  working. It reads this browser's voter id from the old page (localStorage
+  hsd_voter) and goes on to the new page with it in the fragment (#voter=...):
+  a browser never sends a fragment to a server, in a Referer or to analytics,
+  and the new page reads it and clears it from the address at once, then
+  hands that id's votes to a new voter id, once.
+
+  The new page takes a carried id only when the visit comes from this page:
+  document.referrer's origin must be https://robertclayvineyards.com (or www.).
+  So this page must not set Referrer-Policy: no-referrer. Shopify's default,
+  strict-origin-when-cross-origin, sends the origin, which is all that is
+  checked.
+{%- endcomment -%}
+<script>
+(function () {
+  var id = "";
+  try { id = localStorage.getItem("hsd_voter") || ""; } catch (e) {}
+  var to = "https://hickorysandsdistrictava.org/logo-vote.html";
+  if (/^[A-Za-z0-9_-]{8,80}$/.test(id)) to += "#voter=" + encodeURIComponent(id);
+  location.replace(to);
+})();
+</script>
+<p>The vote has moved to <a href="https://hickorysandsdistrictava.org/logo-vote.html">hickorysandsdistrictava.org</a>.</p>

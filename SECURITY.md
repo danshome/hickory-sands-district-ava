@@ -18,7 +18,7 @@ else's data, and give the maintainer a reasonable time to fix a problem before y
 - the GitHub Actions workflows (`.github/workflows/`);
 - the website at hickorysandsdistrictava.org (`docs/`);
 - the code that publishes to ArcGIS Online (`src/publish/`);
-- the logo vote's backend (`vote-backend/`).
+- the logo vote's page and backend (`docs/logo-vote.html`, `src/vote/`).
 
 Out of scope: the third-party services themselves (GitHub, ArcGIS Online, Supabase, Google Fonts, Squarespace), and the
 content of the proposal. Comments on the proposed boundary belong in TTB's docket, TTB-2026-0005.

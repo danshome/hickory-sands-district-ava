@@ -145,6 +145,10 @@ src/
                          (the Supabase Edge Function and its table's SQL), bundle_function, check_function, outline_issue,
                          reconcile (the daily check);
                          SETUP.md: setting it up (the GitHub Apps, Turnstile, Supabase)
+  vote/                  the growers' logo vote (docs/logo-vote.html, #100): functions/vote-api/ (the Supabase Edge
+                         Function and hsd_vote_migration.sql, its database change), bundle_function (the one file Dan
+                         pastes), shopify-handoff.liquid (the Shopify page's hand-off), sb and sb_deploy (Management
+                         API helpers for another agent's connector); SETUP.md: the switch-over from Shopify
                          make_land (with land/): The land's slice and maps (docs/assets/land/)
                          stamp_assets: the scripts' and stylesheets' version stamps (#138)
   publish/               ArcGIS Online: agol_publish, agol_layer, agol_dashboard, agol_org_categories, agol_share (what
@@ -359,6 +363,18 @@ for Python; 2-space YAML and TOML). By hand: `.venv/bin/ruff format .` and `.ven
 - `test_vineyard_sql.py`: the contacts table's SQL in a throwaway PostgreSQL, when one is installed (Supabase's roles
   kept out, row level security forced, the limits and a send again, a send that died taken up again after two
   minutes, a held row, the reconciliation's tick, only `hsd_vineyard_*` objects);
+- `test_vote_function.py`: the logo vote's Edge Function, bundled as Dan deploys it, run in node (22 or later) against
+  stand-ins for Supabase and Turnstile (`tests/vote_standin.mjs`): CORS for the site only and no JSONP; the person check
+  on and off; signed voter ids (made-up, forged, altered or empty: "bad"); votes only for the page's designs; ten voters
+  per design per address per day and five new ids per address per day, only an HMAC of the address kept; the Shopify
+  carry-over, once; no name kept or returned; images only while approved; nothing deleted (retire records, unretire,
+  the cull skipping a design restored since its last vote, trash, remove, restore); missing secrets, the database down;
+- `test_vote_sql.py`: the logo vote's migration in a throwaway PostgreSQL, when one is installed, on vote-api's tables
+  as they were (run twice) and on an empty database: nothing lost, names blank, Supabase's roles kept out, the two
+  limits, the carry-over, the cull, only `hsd_*` objects and no table, column or row dropped;
+- `test_logo_vote_page.py`: the logo vote page: noindex and out of the sitemap, "The vote moves here soon" until
+  `vote-config.js` says live, the config, the carried id cleared before analytics, the 13 designs with the Shopify
+  page's ids, no HTML written by the script and no name asked;
 - `test_vineyard_actions.py`: `check_issue.py` and `approve.py` run as the workflows run them (`python -I -B`) on sample
   issue events, against a stand-in for GitHub's API: opened, edited, labelled by the owner, labelled by someone else, a
   forged issue, a body not in the layout, a body re-saved in GitHub's editor (CRLF), an overlap, a pin, a second
@@ -468,8 +484,8 @@ HSD_SITE_URL=http://127.0.0.1:8790 .venv/bin/python -m pytest -v -m live tests/l
   failed request for one; no request to Google Analytics (the tests never count a visit); no sideways
   scrolling, with the menu shut or open; the menu is a hamburger named "Menu" that
   opens and closes by a tap (a click on the desktop) and by the keyboard (Enter, Space), a cross while open, inside the
-  screen, with its links in order (The boundary, The land, The water, The vineyards, Status, Journal, About & contact;
-  The water is `map.html?layers=aquifer,vineyards,places`),
+  screen, with its links in order (The boundary, The land, The map, The aquifer, Walk the line, The vineyards, The
+  logo vote, Status, Journal, About & contact; The aquifer is `map.html?layers=aquifer,vineyards,places`),
   the page's own marked `aria-current`, each answering 200; the header's place line reads "Llano Uplift · Texas Hill
   Country", on one line between the home link and the menu where it shows (also checked at 700 px, the narrowest screen
   that shows it);
@@ -775,6 +791,26 @@ is tied to its issue. Its webhook records closings; the daily check (`vineyard-r
 The two Actions above check it and, on the owner's label, open the pull request. Dan sets it up once and deploys the
 function from the Supabase dashboard as one file (`src/vineyards/bundle_function.py`); `src/vineyards/SETUP.md` gives
 every click, and `src/vineyards/check_function.py` checks the deployed function from outside.
+
+The growers' logo vote (`logo-vote.html`, in the menu under "The growers" with The vineyards; `noindex` and not in the
+sitemap) moves the vote from the Shopify page (#100). One design at a time with Like and Pass (or a swipe), Undo, Top
+rated, the grower's own votes (each can be taken back), a photo sent in for the petitioners to check, the rule, and
+the retired designs; no name is asked or shown (`assets/logo-vote.js`, `logo-vote.css`). The page's own 13 designs are
+`assets/logo-vote/designs.json` and `designs/`, with the Shopify page's ids, so their votes stay attached. It talks to
+the Supabase Edge Function `vote-api` (`src/vote/functions/vote-api/`) named in `assets/vote-config.js`, which also holds
+`live` (until it is true the page only says "The vote moves here soon" and links to the Shopify page), the Turnstile site
+key (empty: the person check is off), the Shopify origins a voter id may be carried from (`#voter=`, read and cleared by
+an inline script before analytics.js), and `closed` and `chosen` for the end. The function signs voter ids, limits
+voters per design and new ids per address (kept only as an HMAC), and deletes nothing; its database change is
+`hsd_vote_migration.sql`. Dan deploys it from the dashboard as one file (`src/vote/bundle_function.py`);
+`src/vote/SETUP.md` gives the switch-over, and `src/vote/shopify-handoff.liquid` the Shopify page's hand-off.
+`tests/live/test_logo_vote.py` (marked live) drives the page in Chrome at 390x844 against the real function served with
+stand-ins (`tests/vote_standin.mjs`): the page before the switch-over, voting with the person check off and on, the
+carry-over (and a planted link without the Shopify referrer), the network limit, and sending a design:
+
+```
+.venv/bin/python -m pytest -v -m live tests/live/test_logo_vote.py
+```
 
 The land page opens with two sections drawn from data. **Sand, height and water**: four small maps of one frame (USGS
 3DEP 1 arc-second ground at 1,500 feet and higher; the shifted geology's Hickory Sandstone Member formation and the

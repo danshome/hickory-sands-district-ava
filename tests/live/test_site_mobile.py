@@ -191,6 +191,7 @@ MENU_LINKS = (
     ("The aquifer", WATER),
     ("Walk the line", "walk.html"),
     ("The vineyards", "vineyards.html"),
+    ("The logo vote", "logo-vote.html"),
     ("Status", "status.html"),
     ("Journal", "journal.html"),
     ("About & contact", "about.html"),

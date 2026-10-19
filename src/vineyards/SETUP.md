@@ -158,8 +158,8 @@ reconciled), two indexes and two functions. It changes nothing of vote-api's, an
 
 3. Put the first `.pem` file in the Trash and empty it.
 
-A project's secrets are shared by all its functions. vote-api reads only its own (`OPERATOR_KEY`), and its code is
-not changed.
+A project's secrets are shared by all its functions. vote-api reads only its own (`OPERATOR_KEY` and the `VOTE_*`
+secrets, `src/vote/SETUP.md`), never these.
 
 ## 7. Supabase: deploy the function
 

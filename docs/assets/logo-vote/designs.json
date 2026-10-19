@@ -1,0 +1,80 @@
+[
+ {
+  "id": "current",
+  "name": "The Current Logo",
+  "sub": "The one on the Esri dashboard today",
+  "img": "assets/logo-vote/designs/logo-current-esri-white.jpg"
+ },
+ {
+  "id": "c1",
+  "name": "The Section",
+  "sub": "Concept 1, linocut cross section, roots down to the aquifer",
+  "img": "assets/logo-vote/designs/logo-c1-section.jpg"
+ },
+ {
+  "id": "c3",
+  "name": "The Hickory",
+  "sub": "Concept 3, hand carved woodcut roundel",
+  "img": "assets/logo-vote/designs/logo-c3-hickory.jpg"
+ },
+ {
+  "id": "c4",
+  "name": "The Survey Corner",
+  "sub": "Concept 4, survey monument and vine post",
+  "img": "assets/logo-vote/designs/logo-c4-survey-corner.jpg"
+ },
+ {
+  "id": "c5",
+  "name": "The Windmill",
+  "sub": "Concept 5, windmill over the red sands",
+  "img": "assets/logo-vote/designs/logo-c5-windmill.jpg"
+ },
+ {
+  "id": "c6",
+  "name": "Three Rings Deep",
+  "sub": "Concept 6, three rings for the three nested AVAs",
+  "img": "assets/logo-vote/designs/logo-c6-three-rings.jpg"
+ },
+ {
+  "id": "c7",
+  "name": "Hands in the Sand",
+  "sub": "Concept 7, farmer hands holding the red sand",
+  "img": "assets/logo-vote/designs/logo-c7-hands.jpg"
+ },
+ {
+  "id": "c8",
+  "name": "The Plat",
+  "sub": "Concept 8, the district boundary as a survey plat",
+  "img": "assets/logo-vote/designs/logo-c8-plat.jpg"
+ },
+ {
+  "id": "c10",
+  "name": "The Wellhead",
+  "sub": "Concept 10, wellhead valve and vine cane over the red sand, hand carved linocut",
+  "img": "assets/logo-vote/designs/logo-c10-wellhead.jpg"
+ },
+ {
+  "id": "c12",
+  "name": "The Shovel",
+  "sub": "Concept 12, shovel in the red sand, vine cane on the handle, hand painted gouache",
+  "img": "assets/logo-vote/designs/logo-c12-shovel.jpg"
+ },
+ {
+  "id": "c14",
+  "name": "The Benchmark",
+  "sub": "Concept 14, survey benchmark disk at 1500 FT, vine cane over the red sand, hand stamped",
+  "img": "assets/logo-vote/designs/logo-c14-benchmark.jpg"
+ },
+ {
+  "id": "c15",
+  "name": "The Boot Print",
+  "sub": "Concept 15, boot print in the red sand, vine shoot growing from the print, hand painted brush ink",
+  "img": "assets/logo-vote/designs/logo-c15-boot-print.jpg"
+ },
+ {
+  "id": "c16",
+  "name": "The Transit",
+  "sub": "Concept 16, surveyor transit on tripod in the red sand, vine cane up one leg, hand painted brush ink",
+  "img": "assets/logo-vote/designs/logo-c16-transit.jpg"
+ }
+]

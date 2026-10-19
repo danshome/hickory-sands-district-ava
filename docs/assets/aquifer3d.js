@@ -16,7 +16,7 @@
 // read from assets/aquifer/stats.json. Text from the data is only ever set as
 // text, never parsed as HTML.
 import { apiKey } from "./map-config.js";
-import { setupWells, wellAttributes, CLASS_NAMES } from "./aquifer-wells.js";
+import { setupWells, wellAttributes, CLASS_NAMES, FAR_HEADS_MAX } from "./aquifer-wells.js";
 
 const DATA = "assets/aquifer/";
 document.documentElement.classList.add("js");
@@ -681,12 +681,13 @@ view.environment = {
 window.aquiferView = view; // for the browser tests and anyone curious
 
 // A layer that cannot be drawn: the basemap's are only a note; the rest are
-// logged.
+// logged, but for one taken off the map before it was drawn (the wells'
+// heads, replaced as the filters change), which is no failure.
 view.on("layerview-create-error", ({ layer, error }) => {
   if (map.basemap && map.basemap.baseLayers.includes(layer)) {
     say("basemap", "Esri’s basemap could not be loaded, so the layers are drawn on a plain background.");
     console.warn("the basemap could not be loaded", error);
-  } else {
+  } else if (map.allLayers.includes(layer)) {
     console.error(`the layer “${layer.title}” could not be drawn`, error);
   }
 });
@@ -1058,6 +1059,14 @@ function wireWellFilters(w) {
   const groups = w.index.use_groups;
   const total = w.index.filter_keys.length;
   setText("aq-wells-total", n(total));
+  // The page says the wells start as irrigation wells; without that use
+  // group in the data every use is shown at first (aquifer-wells.js logs
+  // it), and the page says that instead.
+  if (!groups.includes("Irrigation")) {
+    for (const said of document.querySelectorAll("[data-wells-default]")) {
+      said.textContent = `Shown at first: wells of every use that tested at ${n(w.defaults.yieldLo)} gpm or more; widen the filters to see the rest.`;
+    }
+  }
   const box = document.getElementById("aq-uses");
   const useBoxes = [];
   const useCounts = [];
@@ -1066,12 +1075,13 @@ function wireWellFilters(w) {
     filters.uses = uses.size === groups.length;
     showCounts(w.setFilter({ uses }));
   };
+  filters.uses = w.defaults.uses.size === groups.length;
   if (box) {
     groups.forEach((name, i) => {
       const label = document.createElement("label");
       const input = document.createElement("input");
       input.type = "checkbox";
-      input.checked = true;
+      input.checked = w.defaults.uses.has(i);
       input.dataset.use = String(i);
       const text = document.createElement("span");
       text.textContent = SHORT_USES[name] || name;
@@ -1117,8 +1127,14 @@ function wireWellFilters(w) {
       input.max = String(last);
       input.step = "1";
     }
-    lo.value = "0";
-    hi.value = String(last);
+    // Start at the defaults (the highest stop at or below the default's
+    // lower limit, the top stop for no upper limit).
+    const startLo = Math.max(0, stops.findLastIndex((s) => s <= w.defaults[loKey]));
+    const startHi = Number.isFinite(w.defaults[hiKey]) ? Math.max(startLo, stops.findIndex((s) => s >= w.defaults[hiKey])) : last;
+    const startNone = w.defaults[noneKey];
+    lo.value = String(startLo);
+    hi.value = String(startHi);
+    if (none) none.checked = startNone;
     const apply = (moved) => {
       let a = Number(lo.value);
       let b = Number(hi.value);
@@ -1143,52 +1159,63 @@ function wireWellFilters(w) {
     lo.addEventListener("input", () => apply(lo));
     hi.addEventListener("input", () => apply(hi));
     none?.addEventListener("change", () => apply(null));
-    ranges.push({ lo, hi, none, last, apply });
+    ranges.push({ lo, hi, none, startLo, startHi, startNone, apply });
+    apply(null);
   }
   // Reset: the filters only (use, water volume, depth, "include unreported",
-  // Hickory Aquifer only); not the Wells switch or the water levels.
+  // Hickory Aquifer only) back to their defaults; not the Wells switch or the
+  // water levels.
   document.getElementById("aq-wells-reset")?.addEventListener("click", () => {
-    for (const b of useBoxes) b.checked = true;
+    useBoxes.forEach((b, i) => {
+      b.checked = w.defaults.uses.has(i);
+    });
     const only = document.querySelector('input[data-switch="wells-hickory-only"]');
     if (only) only.checked = false;
     w.setFilter({ uses: new Set(w.defaults.uses), hickoryOnly: false });
-    filters.uses = true;
+    filters.uses = w.defaults.uses.size === groups.length;
     filters.hickory = true;
     for (const r of ranges) {
-      r.lo.value = "0";
-      r.hi.value = String(r.last);
-      if (r.none) r.none.checked = true;
+      r.lo.value = String(r.startLo);
+      r.hi.value = String(r.startHi);
+      if (r.none) r.none.checked = r.startNone;
       r.apply(null);
     }
   });
   showCounts(w.counts());
 }
 
-// Zoomed far out, the wells are thinned; from about the district's scale in,
-// every well's head is drawn; closer in, the lines down the hole near the
-// middle of the view. The note under the Wells heading says which.
+// Only the wells that pass the filters are drawn. Zoomed far out, every one's
+// head while few enough pass, else they are thinned; from about the
+// district's scale in, every one's head; closer in, the lines down the hole
+// near the middle of the view. The note under the Wells heading says which.
 const scaleOf = (key) => (stats[key] ? formatStat(stats[key], "scale") : "the district’s scale");
-function wellNote({ mode, left, failed, loading }) {
+function wellNote({ mode, left, failed, loading, shown, drawn }) {
   const note = document.getElementById("aq-wells-note");
   if (!note || !wells) return;
-  const total = n(wells.index.filter_keys.length);
   const cell = `one well per ${wells.index.overview_cell_degrees}° cell`;
+  const all = shown === 1 ? "The one well that passes the filters is drawn" : `The ${n(shown)} wells that pass the filters are drawn`;
+  const of = shown === 1 ? "the one that passes" : `the ${n(shown)} that pass`;
   if (loading) {
-    note.textContent = `Loading every well; meanwhile ${cell} is drawn.`;
+    note.textContent = `Loading the wells that pass the filters; meanwhile ${cell} is drawn where it passes.`;
+  } else if (!shown) {
+    note.textContent = "No well passes the filters; widen them to see wells.";
   } else if (mode === "overview") {
     note.textContent = failed
-      ? `Not every well could be loaded, so ${cell} is drawn (${n(wells.index.overview.length)} of ${total}).`
-      : `Zoomed out, the wells are thinned: ${cell} (${n(wells.index.overview.length)} of ${total}). Zoom in to about ${scaleOf("wells_all_scale")}, or go to District, to see every well.`;
+      ? `Not every well could be loaded or drawn, so ${cell} is drawn where it passes the filters (${n(drawn)} of ${of}).`
+      : `Zoomed out, the wells are thinned: ${cell}, where it passes the filters (${n(drawn)} of ${of}). Zoom in to about ${scaleOf("wells_all_scale")}, or go to District, to see them all.`;
+  } else if (failed) {
+    note.textContent = "Not every well that passes the filters could be drawn. Move the view or change a filter to try again.";
   } else if (mode === "heads") {
-    note.textContent = `Every well’s head is drawn, with the line down the hole of ${cell}. Zoom in to about ${scaleOf("wells_lines_scale")} for every well’s line.`;
+    note.textContent = `${all}, with only some of their lines down the hole. Zoom in to about ${scaleOf("wells_lines_scale")} for every line.`;
   } else if (left > 0) {
-    note.textContent = `Every well’s head is drawn, and every line near the middle of the view; ${n(left)} more wells in view have only their heads drawn. Zoom in or move to see their lines.`;
+    note.textContent = `${all}, and every line near the middle of the view; ${n(left)} more in view have only their heads drawn. Zoom in or move to see their lines.`;
   } else {
     note.textContent = "";
   }
 }
 
 // Wells: TWDB's driller's reports and Groundwater Database.
+setText("aq-wells-far-max", n(FAR_HEADS_MAX));
 try {
   wells = await setupWells({
     map,
@@ -1196,8 +1223,9 @@ try {
     small,
     exaggeration,
     reducedMotion,
-    // Every well's head from about the district's scale in, and the lines
-    // down the hole closer in; further out, the thinned overview.
+    // The head of every well that passes the filters from about the
+    // district's scale in (further out too while few enough pass), and the
+    // lines down the hole closer in; else the thinned overview.
     allScale: stats.wells_all_scale,
     linesScale: stats.wells_lines_scale,
     FeatureLayer,

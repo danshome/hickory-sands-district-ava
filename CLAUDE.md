@@ -40,7 +40,8 @@ zips the package into `dist/` with `SHA256SUMS.txt` and `build-report.txt`. `./b
   `resources/ttb/`. The 3D aquifer page's data, `docs/assets/aquifer/`, and every figure it marks `data-stat` (from its
   `stats.json`) come from `src/site/make_aquifer_3d.py` the same way (`--check` against its `record.json`, no
   download; a hard check stops it if a person's name or address survives in the well reports).
-  The maps (`explore.html`, `walk.html`, `aquifer.html`) use Esri's SDK and a public, basemaps-only API key in
+  The maps (`explore.html`, `walk.html`, `aquifer.html`, and the pin map on `vineyards.html`, loaded when asked for)
+  use Esri's SDK and a public, basemaps-only API key in
   `docs/assets/map-config.js`. Every website change is tested at phone sizes before merge, against a local server of
   its branch (`./build.sh check-site --local`), and live after deploy (`./build.sh check-site`); both run
   `tests/live/test_site_mobile.py` (BUILD.md). The survey map

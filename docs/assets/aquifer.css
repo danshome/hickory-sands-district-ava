@@ -1,0 +1,188 @@
+/* The Hickory Aquifer in 3D (aquifer.html, #135): the stage, the layer panel (lp-) and "About this map".
+   Only site.css's tokens, plus the scene's own colours for the swatches. The panel's design:
+   research/design-3d-panel-2026-10-18 (#135). */
+.aq{--panel:rgba(20,21,18,.9);--hair:#3b3d34;--soft:#ddd5c6;--peek:64px;
+  --sw-water-out:rgba(134,184,206,.6);--sw-water-top:#34627c;--sw-water:#608aa0;--sw-model-only:rgba(150,178,190,.5);
+  --sw-member:rgba(122,88,58,.95);--sw-outcrop:rgba(141,180,199,.6);--sw-pc:rgba(150,116,112,.85);--sw-pc-buried:rgba(104,76,72,.9);
+  --sw-wine:rgba(176,82,104,.8);--sw-wine-light:rgba(200,132,152,.45);--sw-wine-line:#ffd6e0;--sw-wine-line-c9:#ffecf0;
+  --sw-county:rgba(185,175,161,.7);--sw-wellwater:rgba(120,222,244,.75);
+  --rk-sand:#f0d648;--rk-granite:#e86078;--rk-meta:#a878e8;--rk-lime:#6ec46e;--rk-other:#c4a880;--rk-none:#808080}
+
+/* The stage: the scene fills it, under the site's header; the panel floats over it. */
+.aq-stage{position:relative;height:calc(100svh - 104px);min-height:540px;border-block:1px solid var(--line);overflow:hidden;background:var(--ink)}
+.aq-stage arcgis-scene{position:absolute;inset:0;display:block;--calcite-font-family:var(--sans)}
+.aq-status{position:absolute;right:16px;bottom:16px;z-index:4;max-width:min(32rem,calc(100% - 392px));margin:0;font-size:.75rem;line-height:1.45;color:var(--muted);background:rgba(20,21,18,.8)}
+.aq-status:not(:empty){padding:.3rem .6rem;border:1px solid var(--line)}
+html:not(.js) .aq-stage{display:none}
+.aq>.map-nojs{margin-block:2rem}
+
+/* The panel: a floating column on a wide screen. */
+.lp{position:absolute;top:16px;left:16px;z-index:5;width:344px;max-height:calc(100% - 32px);display:flex;flex-direction:column;
+  background:var(--panel);border:1px solid var(--line);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);font-size:.875rem;line-height:1.45}
+.lp p{margin:0}
+.lp-head{padding:1.1rem 1.25rem .85rem;border-bottom:1px solid var(--line)}
+.lp-head .eyebrow{font-size:.625rem;letter-spacing:.16em}
+.lp-title{font-family:var(--serif);font-weight:400;font-size:1.875rem;line-height:1.02;letter-spacing:-.02em;margin:.35rem 0 0}
+.lp-sheet-toggle,.lp-handle{display:none}
+.lp-body{overflow:auto;overscroll-behavior:contain;padding:0 1.25rem 1rem;scrollbar-width:thin;scrollbar-color:var(--line) transparent}
+.lp-intro{padding:.85rem 0 .9rem}
+.lp-lede{font-size:.8125rem;color:var(--muted)}
+.lp-link{display:inline-flex;align-items:center;gap:.5rem;min-height:32px;margin-top:.35rem;font-size:.8125rem;color:var(--bone);text-decoration:none;border-bottom:1px solid currentColor}
+.lp-link:hover{color:var(--sand)}
+
+/* Groups: a hairline, a serif name, a chevron; the switch sits beside the name, never inside it. */
+.lp-group{border-top:1px solid var(--hair)}
+.lp-gh{display:flex;align-items:center;gap:.25rem;min-height:48px}
+.lp-gh h2{flex:1;margin:0;font:inherit}
+.lp-gt{display:flex;align-items:center;gap:.6rem;width:100%;min-height:44px;padding:.5rem 0;font:inherit;color:var(--bone);background:none;border:0;cursor:pointer;text-align:left}
+.lp-gt .chev,.lp-subh .chev{flex:none;width:7px;height:7px;border:solid var(--muted);border-width:0 1.5px 1.5px 0;transform:rotate(-45deg);margin:0 .2rem 0 .1rem;transition:transform .15s}
+.lp-gt[aria-expanded="true"] .chev,.lp-subh[aria-expanded="true"] .chev{transform:rotate(45deg) translate(-2px,-1px)}
+.lp-gt .name{font-family:var(--serif);font-size:1.3125rem;line-height:1.1}
+.lp-gt .meta{margin-left:auto;font-size:.6875rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);white-space:nowrap}
+.lp-gt .meta[data-wells-meta]{text-transform:none;letter-spacing:.02em;font-size:.75rem;font-variant-numeric:tabular-nums}
+.lp-gt:hover .name{color:var(--sand)}
+.lp-gb{padding:0 0 .75rem}
+.lp-gb[hidden]{display:none}
+.lp-group.is-off .lp-gb>:not(.lp-master){opacity:.45}
+.lp-group.is-off .lp-gt .name{color:var(--muted)}
+
+/* The group switch: a real checkbox (role=switch) in a 44 px label. */
+.lp-swhit{flex:none;display:grid;place-items:center;width:44px;height:44px;margin-right:-6px;cursor:pointer}
+.lp-switch{appearance:none;-webkit-appearance:none;position:relative;width:32px;height:18px;margin:0;border:1px solid var(--muted);border-radius:9px;background:transparent;cursor:pointer}
+.lp-switch::after{content:"";position:absolute;top:3px;left:3px;width:10px;height:10px;border-radius:50%;background:var(--muted);transition:transform .15s}
+.lp-switch:checked{background:var(--sand);border-color:var(--sand)}
+.lp-switch:checked::after{transform:translateX(14px);background:var(--ink)}
+
+/* Rows: checkbox, swatch, a short label, and an "i" beside (not inside) the label. */
+.lp-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center}
+.lp-row>label,.lp-check{display:grid;grid-template-columns:16px 22px minmax(0,1fr);gap:.6rem;align-items:center;min-height:32px;color:var(--soft);cursor:pointer}
+.lp-row>label:hover{color:var(--bone)}
+.lp-row[hidden]{display:none}
+.lp input[type=checkbox]:not([role=switch]){appearance:none;-webkit-appearance:none;display:grid;place-content:center;width:16px;height:16px;margin:0;border:1px solid var(--muted);background:transparent;cursor:pointer}
+.lp input[type=checkbox]:not([role=switch]):checked{background:var(--bone);border-color:var(--bone)}
+.lp input[type=checkbox]:not([role=switch]):checked::after{content:"";width:9px;height:5px;border:solid var(--ink);border-width:0 0 2px 2px;transform:translateY(-1px) rotate(-45deg)}
+.lp :focus-visible{outline:2px solid var(--sand);outline-offset:2px}
+.lp-i{display:grid;place-items:center;width:30px;height:30px;padding:0;color:var(--muted);background:none;border:0;cursor:pointer}
+.lp-i span{display:grid;place-items:center;width:17px;height:17px;border:1px solid currentColor;border-radius:50%;font:italic 500 .875rem/1 var(--serif);padding-bottom:1px}
+.lp-i:hover,.lp-i[aria-expanded="true"]{color:var(--sand)}
+.lp-note{grid-column:1/-1;margin:0 0 .45rem 2.35rem!important;font-size:.75rem;line-height:1.5;color:var(--muted)}
+.lp-note-flush{margin-left:0!important}
+/* "Show wells": the Wells group's switch again, with its name, first in the group. */
+.lp-row.lp-master{margin:.1rem 0 .25rem}
+.lp-row.lp-master>label{grid-template-columns:32px minmax(0,1fr);min-height:44px;font-weight:500;color:var(--bone)}
+.lp-wnote{margin:0 0 .4rem!important;font-size:.75rem;line-height:1.45;color:var(--muted)}
+
+/* Swatches. */
+.sw{display:block;width:22px;height:12px}
+.sw-fill{background:var(--c)}
+.sw-out{box-shadow:inset 0 0 0 1px var(--o)}
+.sw-line{height:0;border-top:var(--w,2px) var(--s,solid) var(--c)}
+.sw-dot{width:9px;height:9px;border-radius:50%;background:var(--c);box-shadow:0 0 0 1px var(--ink);margin-left:6px}
+.sw-drill{height:16px;background:linear-gradient(90deg,transparent 9px,#ecf8fc 9px 13px,transparent 13px)}
+.sw-ring{width:12px;height:12px;border-radius:50%;background:var(--rk-sand);box-shadow:0 0 0 2px #fff;margin-left:5px}
+.sw-water{height:16px;background:radial-gradient(circle at 17px 8px,var(--sw-wellwater) 0 2px,transparent 2.4px),linear-gradient(90deg,transparent 6px,var(--sw-wellwater) 6px 11px,transparent 11px)}
+
+/* Wells: the rock legend, the filters and the count. */
+.lp-legend{margin:.15rem 0 .35rem}
+.lp-cap{display:flex;align-items:center;justify-content:space-between;font-size:.6875rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.lp-chips{list-style:none;margin:.2rem 0 0;padding:0;display:grid;grid-template-columns:repeat(3,auto);justify-content:start;gap:.2rem 1rem;font-size:.75rem;color:var(--soft)}
+.lp-chips li{display:flex;align-items:center;gap:.4rem;white-space:nowrap}
+.lp-chips i{width:9px;height:9px;border-radius:50%;background:var(--c);box-shadow:0 0 0 1px var(--ink)}
+.lp-subh{display:flex;align-items:center;gap:.6rem;width:100%;min-height:36px;margin-top:.35rem;padding:0;font:inherit;font-size:.6875rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);background:none;border:0;border-top:1px solid var(--hair);cursor:pointer;text-align:left}
+.lp-subh .meta{margin-left:auto;letter-spacing:.06em;text-transform:none;font-size:.75rem}
+.lp-subh:hover{color:var(--bone)}
+.lp-filters[hidden]{display:none}
+.lp-fh{display:flex;align-items:center;gap:.5rem;margin:.55rem 0 .1rem;font-size:.8125rem;color:var(--soft)}
+.lp-fh output{margin-left:auto;color:var(--bone);font-weight:500}
+.lp-fh .lp-i{width:26px;height:26px;margin-left:-.35rem}
+.lp-allnone{margin-left:auto;display:flex;gap:.1rem}
+.lp-allnone button,.lp-small{min-height:28px;padding:0 .55rem;font:inherit;font-size:.75rem;color:var(--bone);background:none;border:1px solid var(--line);cursor:pointer}
+.lp-allnone button:hover,.lp-small:hover{border-color:var(--bone)}
+.lp-uses label{display:grid;grid-template-columns:16px minmax(0,1fr) auto;gap:.6rem;align-items:center;min-height:28px;font-size:.8125rem;color:var(--soft);cursor:pointer}
+.lp-uses b{font-weight:400;font-size:.75rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.lp-check.small{grid-template-columns:16px minmax(0,1fr);min-height:28px;font-size:.75rem;color:var(--muted)}
+.dual{--lo:0%;--hi:100%;position:relative;height:28px;background:linear-gradient(90deg,var(--line) var(--lo),var(--sand) var(--lo) var(--hi),var(--line) var(--hi)) 0 13px/100% 2px no-repeat}
+.dual input[type=range]{position:absolute;inset:0;width:100%;height:100%;margin:0;background:none;pointer-events:none;-webkit-appearance:none;appearance:none}
+.dual input[type=range]::-webkit-slider-runnable-track{background:none;height:100%}
+.dual input[type=range]::-webkit-slider-thumb{pointer-events:auto;-webkit-appearance:none;width:18px;height:18px;margin-top:5px;border-radius:50%;background:var(--bone);border:2px solid var(--ink);cursor:pointer}
+.dual input[type=range]::-moz-range-thumb{pointer-events:auto;width:16px;height:16px;border-radius:50%;background:var(--bone);border:2px solid var(--ink);cursor:pointer}
+.dual input[type=range]:focus-visible{outline:none}
+.dual input[type=range]:focus-visible::-webkit-slider-thumb{outline:2px solid var(--sand);outline-offset:2px}
+.dual input[type=range]:focus-visible::-moz-range-thumb{outline:2px solid var(--sand);outline-offset:2px}
+.lp-count{display:flex;align-items:center;justify-content:space-between;gap:.5rem;margin-top:.55rem!important;padding-top:.55rem;border-top:1px solid var(--hair);font-size:.8125rem;color:var(--muted)}
+.lp-count b{color:var(--bone);font-weight:500;font-variant-numeric:tabular-nums}
+
+/* View: segmented buttons; a pressed one turns sand, as maps.css draws the basemap buttons. */
+.lp-view{display:grid;grid-template-columns:6.2rem minmax(0,1fr);align-items:center;gap:.45rem .5rem}
+.lp-view>span{font-size:.8125rem;color:var(--muted)}
+.seg{display:flex}
+.seg button,.lp-locate{min-height:34px;padding:0 .75rem;font:inherit;font-size:.8125rem;color:var(--bone);background:none;border:1px solid var(--line);cursor:pointer;white-space:nowrap}
+.seg button+button{margin-left:-1px}
+.seg button[aria-pressed="true"]{position:relative;color:var(--sand);border-color:var(--sand)}
+.seg button:hover,.lp-locate:hover{color:var(--sand)}
+.lp-loc{grid-column:1/-1;display:flex;align-items:center;gap:.75rem;margin-top:.2rem}
+.lp-locate{display:inline-flex;align-items:center;gap:.5rem}
+.lp-locate svg{width:14px;height:14px}
+.lp-loc small{font-size:.75rem;color:var(--muted)}
+.lp-drill{grid-column:1/-1;margin-top:.35rem;padding:.55rem .7rem;border-left:2px solid var(--bone);background:rgba(238,232,219,.06);font-size:.8125rem;color:var(--bone)}
+.lp-drill[hidden]{display:none}
+.lp-drill p+p{margin-top:.25rem}
+.lp-foot{padding:.9rem 0 .2rem;border-top:1px solid var(--hair)}
+
+/* "About this map": every explanation, source and caveat, in one dialog (read in the page without JavaScript). */
+.aq-about{position:fixed;inset:0 0 0 auto;margin:0;width:min(30rem,100%);height:100%;max-height:none;max-width:none;padding:0;color:var(--bone);background:var(--deep);border:0;border-left:1px solid var(--line);overflow:auto;overscroll-behavior:contain}
+.aq-about::backdrop{background:rgba(20,21,18,.45)}
+html:not(.js) .aq-about{display:block;position:static;width:auto;height:auto;border:0;background:none}
+html:not(.js) .about-close{display:none}
+.about-head{position:sticky;top:0;z-index:1;display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;padding:1.5rem 1.75rem 1rem;background:var(--deep);border-bottom:1px solid var(--line)}
+.about-head h2{font-size:2.25rem;line-height:1.05;margin-top:.4rem}
+.about-close{flex:none;min-height:44px;padding:0 1rem;font:inherit;font-size:.875rem;color:var(--bone);background:none;border:1px solid var(--line);cursor:pointer}
+.about-close:hover{color:var(--sand);border-color:var(--sand)}
+.about-close:focus-visible,.about-toc a:focus-visible{outline:2px solid var(--sand);outline-offset:2px}
+.about-toc{display:flex;flex-wrap:wrap;gap:.25rem 1.25rem;padding:.9rem 1.75rem 0;font-size:.8125rem}
+.about-toc a{display:inline-flex;align-items:center;min-height:32px;color:var(--muted)}
+.about-toc a:hover{color:var(--sand)}
+.about-body{padding:0 1.75rem 3rem}
+.about-body section{padding-top:1.75rem;scroll-margin-top:7rem}
+.about-body h3{font-size:1.625rem;margin-bottom:.75rem}
+.about-body p{font-size:.875rem;line-height:1.65;color:var(--soft)}
+.about-body p+p{margin-top:.8rem}
+.about-body b{font-weight:500;color:var(--bone)}
+.about-body .src p,.about-body.src p{color:var(--muted);font-size:.8125rem}
+.about-body a{color:var(--bone)}
+
+/* A phone: the panel is a bottom sheet; closed, only its bar shows, so the view stays in sight. */
+@media(max-width:640px){
+  .aq-stage arcgis-scene{bottom:calc(var(--peek) + env(safe-area-inset-bottom))}
+  .aq-status{top:10px;right:10px;bottom:auto;max-width:calc(100% - 20px)}
+  .lp{top:auto;left:0;right:0;bottom:0;width:auto;height:min(60%,560px);max-height:none;border:0;border-top:1px solid var(--line);
+      transform:translateY(calc(100% - var(--peek) - env(safe-area-inset-bottom)));transition:transform .28s cubic-bezier(.2,.7,.2,1);font-size:.9375rem}
+  .lp.is-open{transform:none;box-shadow:0 -16px 40px #0006}
+  .lp-handle{display:block;position:absolute;top:6px;left:50%;width:36px;height:4px;margin-left:-18px;border-radius:2px;background:var(--line)}
+  .lp-head{display:flex;align-items:center;gap:1rem;min-height:var(--peek);padding:.6rem 16px .5rem}
+  .lp-head .eyebrow{display:none}
+  .lp-title{flex:1;margin:0;font-size:1.5rem}
+  .lp-sheet-toggle{display:inline-flex;align-items:center;gap:.55rem;min-height:44px;padding:0 1rem;font:inherit;font-size:.9375rem;color:var(--bone);background:none;border:1px solid var(--bone);cursor:pointer}
+  .lp-sheet-toggle .bars{width:14px;height:10px;border-block:1.5px solid currentColor;position:relative}
+  .lp-sheet-toggle .bars::after{content:"";position:absolute;left:0;right:0;top:3px;border-top:1.5px solid currentColor}
+  .lp-body{padding:0 16px calc(1.5rem + env(safe-area-inset-bottom))}
+  .lp-gh,.lp-gt{min-height:52px}
+  .lp-gt .name{font-size:1.4375rem}
+  .lp-row>label,.lp-check{min-height:44px}
+  .lp-i{width:44px;height:44px;margin-right:-8px}
+  .lp-fh .lp-i{width:44px;height:44px;margin:-8px 0}
+  .lp-uses label,.lp-check.small{min-height:44px;font-size:.875rem}
+  .lp-allnone button,.lp-small,.lp-subh,.lp-link{min-height:44px}
+  .lp-allnone button,.lp-small{padding:0 .9rem}
+  .dual{height:44px;background-position:0 21px}
+  .dual input[type=range]::-webkit-slider-thumb{width:26px;height:26px;margin-top:9px}
+  .dual input[type=range]::-moz-range-thumb{width:22px;height:22px}
+  .lp-view{grid-template-columns:6.4rem minmax(0,1fr)}
+  .seg button,.lp-locate{min-height:44px}
+  .lp-chips{grid-template-columns:repeat(2,auto)}
+  .aq-about{width:100%;border-left:0}
+  .about-head{padding:1.1rem 16px .9rem}
+  .about-head h2{font-size:1.875rem}
+  .about-toc,.about-body{padding-inline:16px}
+}
+@media(max-width:640px) and (prefers-reduced-motion:reduce){.lp{transition:none}}

@@ -60,6 +60,12 @@ without an error; The water draws the aquifer and is headed and marked as the
 water; ?step= opens that step's popup; and the old addresses, explore.html and
 aquifer.html, go to the map with their query and #fragment (and, without
 JavaScript, by their meta refresh).
+The map's wells on a phone (390x844) and the desktop (#148), through the
+page's window.aquiferWells, once turned on: at first the default filters'
+wells (irrigation, the default yield and up, counted here from the data),
+every one's head drawn zoomed out; "All" uses thins them to the overview;
+filters widened in quick steps leave one heads layer on the map, in step with
+the filters and the Wells switch; Reset comes back to the first count.
 The land, on the phones: the drawing steps to the stage on the reading line
 as the page scrolls, and still does when the reader scrolls right after
 tapping Later.
@@ -358,6 +364,45 @@ LAND = """() => {
 # scrolls stage n's top to just under the stuck panel (its scroll margin)
 TO_STAGE = """(n) => { document.querySelectorAll('.geo-stage')[n - 1]
   .scrollIntoView({block: 'start'}); }"""
+
+# The map's wells as drawn and counted, through the page's own hooks; the
+# default's counts are counted here from the data the page loaded
+HEADS = """async () => {
+  const w = window.aquiferWells; const v = window.aquiferView;
+  if (!w || !v || document.documentElement.dataset.map !== 'ready')
+    return null;
+  const d = w.defaults; const keys = w.index.filter_keys;
+  const tested = (gpm) => gpm !== null && gpm >= d.yieldLo;
+  const onMap = v.map.allLayers.toArray()
+    .filter(l => l.title === 'Well heads (TWDB reports)');
+  const tracked = w.headLayers();
+  const layer = w.heads();
+  let held = null; let drawn = null;
+  if (layer && layer.visible) {
+    held = await layer.queryFeatureCount();
+    drawn = await (await v.whenLayerView(layer)).queryFeatureCount(); }
+  return {note: w.note(), held, drawn, updating: v.updating,
+    irrigation: d.uses.size === 1 &&
+      d.uses.has(w.index.use_groups.indexOf('Irrigation')),
+    first: keys.filter(([u, , g]) => d.uses.has(u) && tested(g)).length,
+    allUses: keys.filter(([, , g]) => tested(g)).length,
+    anyYield: keys.filter(([u]) => d.uses.has(u)).length,
+    farMax: Number(document.getElementById('aq-wells-far-max')
+      .textContent.replace(/,/g, '')),
+    shown: document.getElementById('aq-wells-shown').textContent,
+    filters: document.getElementById('aq-filters-state').textContent,
+    orphans: onMap.filter(l => !tracked.includes(l)).length,
+    visibleHeads: onMap.filter(l => l.visible).length}; }"""
+
+# widens the yield filter to everything in quick steps, each a new heads
+# layer, some replaced before they are drawn
+WIDEN = """async () => {
+  const lo = document.getElementById('aq-yield-lo');
+  for (const at of ['2', '1', '0']) {
+    lo.value = at; lo.dispatchEvent(new Event('input'));
+    await new Promise(r => setTimeout(r, 40)); }
+  const none = document.getElementById('aq-yield-none');
+  none.checked = true; none.dispatchEvent(new Event('change')); }"""
 
 
 # --------------------------------------------------------------- the browser
@@ -780,6 +825,20 @@ def test_map_popup_leaves_the_tapped_step_in_view(site_page):
     assert not problems, f"{view.name}:\n  " + "\n  ".join(problems)
 
 
+def touch(view, selector):
+    """Taps the middle of an element as a finger does, never scrolling to it.
+
+    Playwright's own tap scrolls the page to reach an element something
+    covers for a moment (a popup docking over the Layers bar), which no
+    finger does.
+    """
+    box = view.page.locator(selector).bounding_box()
+    assert box, f"{selector} is not on the screen"
+    view.page.touchscreen.tap(
+        box["x"] + box["width"] / 2, box["y"] + box["height"] / 2
+    )
+
+
 def north(heading):
     """Degrees between a heading and north."""
     h = heading % 360
@@ -870,8 +929,8 @@ def test_map_on_a_phone(site_page):
     ]
 
     # the Layers sheet, and a popup: never both
-    toggle = page.locator("#aq-sheet-toggle")
-    tap(view, toggle)
+    toggle = "#aq-sheet-toggle"
+    touch(view, toggle)
     page.wait_for_timeout(800)
     if not page.evaluate(MAP3D)["sheet"]:
         problems.append("the Layers button did not open the sheet")
@@ -895,19 +954,21 @@ def test_map_on_a_phone(site_page):
         view.wait(popup_alone, timeout=10)
     except AssertionError as e:
         problems.append(f"a popup opened: {e}")
-    tap(view, toggle)
+    page.wait_for_timeout(1000)  # the popup docks
+    touch(view, toggle)
     try:
         view.wait(sheet_alone, timeout=10)
     except AssertionError as e:
         problems.append(f"the sheet opened: {e}")
-    tap(view, toggle)
+    page.wait_for_timeout(800)  # the sheet slides up
+    touch(view, toggle)
     page.wait_for_timeout(800)
     if page.evaluate(MAP3D)["sheet"]:
         problems.append("the Layers button did not close the sheet")
 
     # 3D tilts the map; 2D brings it back north up and straight down
-    look = page.locator("#map-look")
-    tap(view, look)
+    look = "#map-look"
+    touch(view, look)
 
     def tilted():
         got = page.evaluate(MAP3D)
@@ -925,7 +986,7 @@ def test_map_on_a_phone(site_page):
     try:
         view.wait(tilted, timeout=15)
         view.shot("3d")
-        tap(view, look)
+        touch(view, look)
         view.wait(flat, timeout=15)
     except AssertionError as e:
         problems.append(str(e))
@@ -957,6 +1018,8 @@ def test_map_on_a_phone(site_page):
             view.wait(back, timeout=15)
         except AssertionError as e:
             problems.append(str(e))
+    if scrolled := page.evaluate("scrollY"):
+        problems.append(f"the page scrolled {scrolled:.0f} px under the map")
     problems += view.problems()
     assert not problems, f"{view.name}:\n  " + "\n  ".join(problems)
 
@@ -1235,5 +1298,108 @@ def test_land_timeline_steps_on_scroll(site_page):
         view.wait(functools.partial(follows, 6), timeout=5)
     except AssertionError as e:
         problems.append(f"scrolling right after Later: {e}")
+    problems += view.problems()
+    assert not problems, f"{view.name}:\n  " + "\n  ".join(problems)
+
+
+WELLS_VIEWS = {v: VIEWPORTS[v] for v in ("phone-390x844", "desktop-1440x900")}
+
+
+def open_wells_filters(view):
+    """Opens the panel (a bottom sheet on a phone), Wells and its Filters."""
+    page = view.page
+    sheet = page.locator("#aq-sheet-toggle")
+    if sheet.is_visible() and sheet.get_attribute("aria-expanded") != "true":
+        tap(view, sheet)
+    for target in ("g-wells", "aq-filters"):
+        button = page.locator(f'button[aria-controls="{target}"]')
+        if button.get_attribute("aria-expanded") != "true":
+            tap(view, button)
+
+
+def wells_drawn(page, label, key, filters):
+    """Checks that the wells settled as the filters say.
+
+    Args:
+        page: The map, its wells turned on.
+        label: What was done, for the message.
+        key: Which count of HEADS's must pass ("first", "allUses", ...).
+        filters: What the Filters heading must say ("2 on", ...).
+
+    Returns:
+        HEADS's answer.
+    """
+    got = page.evaluate(HEADS)
+    assert got and not got["updating"], f"{label}: still drawing"
+    assert got["irrigation"], f"the default is not irrigation: {got}"
+    count = got[key]
+    mode = "overview" if count > got["farMax"] else "heads"
+    assert got["shown"] == f"{count:,}", f"{label}: {got}"
+    assert got["filters"] == filters, f"{label}: {got}"
+    note = got["note"]
+    assert note["mode"] == mode, f"{label}: {got}"
+    assert not note.get("loading") and not note.get("failed"), f"{label}: {got}"
+    assert got["orphans"] == 0, f"{label}: a heads layer left behind: {got}"
+    if mode == "heads":
+        assert got["visibleHeads"] == 1, f"{label}: {got}"
+        # its layer holds every one; the view draws those on the screen,
+        # all but a few at its edges (not one per cell)
+        assert got["held"] == count, f"{label}: heads held: {got}"
+        assert 0.9 * count <= got["drawn"] <= count, f"{label}: {got}"
+    else:
+        assert got["visibleHeads"] == 0, f"{label}: {got}"
+    return got
+
+
+def wells_hidden(page):
+    """Checks that no wells' heads layer shows with the Wells switch off."""
+    got = page.evaluate(HEADS)
+    assert got["visibleHeads"] == 0 and got["orphans"] == 0, got
+
+
+@pytest.mark.parametrize(
+    "site_page", cells(["map.html"], WELLS_VIEWS), indirect=True
+)
+def test_the_wells_start_filtered_and_follow_the_filters(site_page):
+    view, page = site_page, site_page.page
+    turn_on(view, "wells")
+    page.wait_for_function("!!window.aquiferWells", timeout=LOAD_S * 1000)
+    # as The water opened before the map: the whole aquifer, from above
+    page.locator('button[data-place="whole"]').dispatch_event("click")
+    page.wait_for_timeout(2500)
+    settle(view, SCENE)
+    problems = []
+    steps = (
+        ("at first", "first", "2 on", None),
+        ("all uses", "allUses", "1 on", "#aq-uses-all"),
+        ("reset", "first", "2 on", "#aq-wells-reset"),
+        ("widened in quick steps", "anyYield", "1 on", WIDEN),
+    )
+    try:
+        for label, key, filters, action in steps:
+            if action == WIDEN:
+                page.evaluate(WIDEN)
+            elif action:
+                open_wells_filters(view)
+                tap(view, page.locator(action))
+            view.wait(
+                functools.partial(wells_drawn, page, label, key, filters),
+                timeout=60,
+            )
+            if label == "at first":
+                view.shot("wells-first")
+        show = page.locator("#aq-wells-show")
+        show.evaluate("(box) => box.click()")
+        view.wait(functools.partial(wells_hidden, page), timeout=15)
+        show.evaluate("(box) => box.click()")
+        tap(view, page.locator("#aq-wells-reset"))
+        view.wait(
+            functools.partial(
+                wells_drawn, page, "reset again", "first", "2 on"
+            ),
+            timeout=60,
+        )
+    except AssertionError as e:
+        problems.append(f"{e}; screenshot: {view.shot('wells-FAILED')}")
     problems += view.problems()
     assert not problems, f"{view.name}:\n  " + "\n  ".join(problems)

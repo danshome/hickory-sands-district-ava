@@ -228,11 +228,21 @@ def test_the_page_says_which_wells_it_shows_at_first(page, scripts):
     assert "uses: new Set(IRRIGATION >= 0 ? [IRRIGATION]" in defaults
     assert "yieldLo: DEFAULT_FILTER.yieldLo," in defaults
     assert "noYield: DEFAULT_FILTER.noYield," in defaults
+    # The data has the use group, and the yield slider a stop at the default.
+    index = json.loads(read(DATA, "wells", "index.json"))
+    assert use in index["use_groups"]
+    stops = re.search(
+        r"const YIELD_STOPS = \[([^\]]+)\];", scripts["map3d.js"]
+    ).group(1)
+    assert low in [s.strip() for s in stops.split(",")], stops
     said = (
         f"Shown at first: {use.lower()} wells that tested at {low} gpm or "
         "more; widen the filters to see the rest."
     )
     assert page.count(said) == 2
+    assert page.count("data-wells-default") == 2
+    # "Include wells with no value" starts unticked for the yield.
+    assert '<input type="checkbox" id="aq-yield-none">' in page
     assert '<span id="aq-wells-start">' in page
     main = scripts["map3d.js"]
     assert re.search(

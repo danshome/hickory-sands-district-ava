@@ -22,7 +22,10 @@ the same ink (#116), so lines that close are reported in metres, not failed.
 Other errors exit 1. With --walk it also makes (or checks) the walk page,
 the story map's text, from its template; with --pages it writes (or checks)
 every figure marked data-figure in the site's pages, so no page types the
-area, the counts, the length or the revision date.
+area, the counts, the length or the revision date, and every path marked
+data-figure-path: the boundary drawing on Home and The boundary and its scale
+bar, drawn from boundary.geojson by src/site/boundary_drawing.py (#126). The
+check draws them from the committed data, as it makes the walk page.
 """
 
 import argparse
@@ -40,7 +43,11 @@ import sys
 sys.path.insert(
     0, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 )  # src/
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # src/site
 import revision
+
+import boundary_drawing
+import survey_frame
 
 DECIMALS = 6
 STALE = 3  # --check's exit status when docs/data/ is stale
@@ -73,6 +80,15 @@ FIGURE = re.compile(
 )
 # Any mark at all, however written, so one the build cannot fill stops it.
 ANY_MARK = re.compile(r"data-figure\s*=", re.IGNORECASE)
+# A drawn path in a page: a <path> marked data-figure-path="name", such as
+# <path class="boundary-line" data-figure-path="boundary" d="M...">; the
+# build writes its d (src/site/boundary_drawing.py's paths(), by name).
+FIGURE_PATH = re.compile(
+    r'<path\b(?P<attrs>[^>]*\sdata-figure-path="(?P<name>[a-z_]+)"[^>]*)>',
+    re.IGNORECASE,
+)
+ANY_PATH_MARK = re.compile(r"data-figure-path\s*=", re.IGNORECASE)
+PATH_D = re.compile(r'(\sd=")[^"]*(")')
 NOTE = (
     "Display copy of the Hickory Sands District boundary for the website "
     "(NAD83 coordinates, rounded to 6 decimal places, shown as WGS 84). The "
@@ -808,6 +824,66 @@ def stale_figures(text, filled):
     return sorted({a["name"] for a, b in pairs if a[0] != b[0]})
 
 
+def fill_paths(text, boundary_text, where):
+    """Returns a page with each marked path drawn from the boundary's data.
+
+    Args:
+        text: The page's HTML.
+        boundary_text: The text of boundary.geojson, as site_data() gives it
+            or as committed in docs/data/.
+        where: The page's name, for errors.
+
+    Returns:
+        The HTML with the d of every <path> marked data-figure-path written
+        by boundary_drawing.paths(), fitted to the viewBox of the page's
+        boundary drawing (<svg class="boundary-map">).
+
+    Raises:
+        SystemExit: When a mark is not on a <path> with one d, names a path
+            the drawing does not make, or the page has no drawing to fit.
+    """
+    marks = list(FIGURE_PATH.finditer(text))
+    if len(ANY_PATH_MARK.findall(text)) != len(marks):
+        sys.exit(
+            f"{where}: mark each drawn path as "
+            '<path data-figure-path="name" d="...">'
+        )
+    if not marks:
+        return text
+    box = survey_frame.VIEWBOX.search(text)
+    if not box:
+        sys.exit(f"{where}: a drawn path needs the boundary drawing's viewBox")
+    size = (float(box["w"]), float(box["h"]))
+    drawn = boundary_drawing.paths(boundary_text, size)
+
+    def write_path(m):
+        name, attrs = m["name"], m["attrs"]
+        if name not in drawn:
+            sys.exit(f"{where}: no drawn path called {name}")
+        if len(PATH_D.findall(attrs)) != 1:
+            sys.exit(f"{where}: the {name} path needs one d attribute")
+        attrs = PATH_D.sub(lambda d: f"{d[1]}{drawn[name]}{d[2]}", attrs)
+        return f"<path{attrs}>"
+
+    return FIGURE_PATH.sub(write_path, text)
+
+
+def stale_paths(text, filled):
+    """Returns the names of the drawn paths a page has wrong.
+
+    Args:
+        text: The page as committed.
+        filled: The page with its paths written by fill_paths().
+
+    Returns:
+        The sorted names of the marked paths that differ.
+    """
+    pairs = zip(
+        FIGURE_PATH.finditer(text), FIGURE_PATH.finditer(filled), strict=True
+    )
+    return sorted({a["name"] for a, b in pairs if a[0] != b[0]})
+
+
 def committed(files, out_dir):
     """Returns the committed copies of the data files, by name.
 
@@ -986,13 +1062,22 @@ def main():
                 print(f"{args.walk[1]}: {page}")
                 stale = True
         if args.pages and not stale:
-            figs = figures(committed(files, args.out))
+            # From the committed data, which compare() accepted: the build's
+            # own lines may differ from it within MAX_DRIFT_M (#116).
+            data = committed(files, args.out)
+            figs = figures(data)
             figs.update(land_figures(args.pages))
             for path, text in site_pages(args.pages, skip).items():
                 wrong = stale_figures(text, fill_figures(text, figs, path))
                 if wrong:
                     names = ", ".join(wrong)
                     print(f"{path}: figures differ from the build: {names}")
+                    stale = True
+                drawn = fill_paths(text, data["boundary.geojson"], path)
+                wrong = stale_paths(text, drawn)
+                if wrong:
+                    names = ", ".join(wrong)
+                    print(f"{path}: drawn paths differ from the build: {names}")
                     stale = True
         if stale:
             print(
@@ -1010,6 +1095,7 @@ def main():
         figs.update(land_figures(args.pages))
         for path, text in site_pages(args.pages, skip).items():
             filled = fill_figures(text, figs, path)
+            filled = fill_paths(filled, files["boundary.geojson"], path)
             if filled != text:
                 pages[path] = filled
     write(files, args.out)

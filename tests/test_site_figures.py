@@ -3,12 +3,13 @@
 A figure in a page is an element marked data-figure (the area, the step and
 point counts, the line's length, the revision date, and the land page's
 land_ figures); the build writes its text from docs/data/ and
-docs/assets/land/stats.json (src/site/make_site_data.py --pages). These
-check that every page's marked figures are what the committed data gives, and
-that no page types one of those figures without the mark. A journal note is
-history and is left as written; a dated step in the status timeline keeps its
-date, but its figures describe the current proposed revision, so they are
-marked.
+docs/assets/land/stats.json (src/site/make_site_data.py --pages). These check
+that every page's marked figures, and its drawn paths marked data-figure-path
+(the boundary drawing and its scale bar, #126), are what the committed data
+gives, and that no page types one of those figures without the mark. A journal
+note is history and is left as written; a dated step in the status timeline
+keeps its date, but its figures describe the current proposed revision, so they
+are marked.
 Standard library only, so the lint workflow runs these.
 """
 
@@ -52,6 +53,14 @@ def test_marked_figures_are_the_build_s(page, figs):
     )
 
 
+@pytest.mark.parametrize("page", PAGES, ids=os.path.basename)
+def test_drawn_paths_are_the_build_s(page):
+    # The boundary drawing and its scale bar (#126), from the committed data.
+    text = read(page)
+    data = read(os.path.join(DOCS, "data", "boundary.geojson"))
+    assert msd.fill_paths(text, data, page) == text, "run ./build.sh site-data"
+
+
 def test_dated_history_keeps_its_figures_as_written():
     # A journal note records what was true then; the next revision must not
     # rewrite it.
@@ -62,7 +71,8 @@ def test_dated_history_keeps_its_figures_as_written():
 
 @pytest.mark.parametrize("page", PAGES, ids=os.path.basename)
 def test_no_figure_is_typed_without_its_mark(page, figs):
-    text = EVENT_DATE.sub("", HISTORY.sub("", msd.FIGURE.sub("", read(page))))
+    text = msd.FIGURE_PATH.sub("", read(page))  # a coordinate is no figure
+    text = EVENT_DATE.sub("", HISTORY.sub("", msd.FIGURE.sub("", text)))
     area, whole = figs["area_sqmi"][0], figs["area_whole"][0]
     steps, points = figs["step_count"][0], figs["point_count"][0]
     typed = [

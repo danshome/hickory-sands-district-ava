@@ -375,6 +375,35 @@ def test_every_vineyard_field_keeps_one_type(path):
     assert kinds["block"] == {"str"}
 
 
+# The district's vineyards by the names the petition's Exhibit 3 uses (Two
+# Tales Vineyards, not the 2022 layer's "Verasion Hills"); Spiller Mine is
+# historical, Paisano and I Don't Know are under development.
+HSD_NAMES = {
+    "Blackmon Vineyard",
+    "Certenburg Vineyard",
+    "Parr Vineyards",
+    "Peters Prairie Vineyard",
+    "Pontotoc Vineyard",
+    "Robert Clay Vineyards",
+    "Tallent Vineyards",
+    "Two Tales Vineyards",
+}
+
+
+@pytest.mark.parametrize(
+    "path", [VINEYARDS, os.path.join(DATA, "vineyards.geojson")]
+)
+def test_the_district_s_vineyards_keep_the_petition_s_names(path):
+    features = json.loads(read(path))["features"]
+    names = {
+        f["properties"]["name"]
+        for f in features
+        if f["properties"]["category"] == "hsd"
+    }
+    assert names == HSD_NAMES
+    assert "verasion" not in read(path).lower()
+
+
 def test_the_vineyard_check_refuses_a_name():
     assert vineyards.named('{"source": "the layer of Dan McLaughlin"}')
     assert vineyards.named('{"source": "per the owner"}')

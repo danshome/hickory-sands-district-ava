@@ -680,12 +680,13 @@ view.environment = {
 window.aquiferView = view; // for the browser tests and anyone curious
 
 // A layer that cannot be drawn: the basemap's are only a note; the rest are
-// logged.
+// logged, but for one taken off the map before it was drawn (the wells'
+// heads, replaced as the filters change), which is no failure.
 view.on("layerview-create-error", ({ layer, error }) => {
   if (map.basemap && map.basemap.baseLayers.includes(layer)) {
     say("basemap", "Esri’s basemap could not be loaded, so the layers are drawn on a plain background.");
     console.warn("the basemap could not be loaded", error);
-  } else {
+  } else if (map.allLayers.includes(layer)) {
     console.error(`the layer “${layer.title}” could not be drawn`, error);
   }
 });
@@ -1057,6 +1058,14 @@ function wireWellFilters(w) {
   const groups = w.index.use_groups;
   const total = w.index.filter_keys.length;
   setText("aq-wells-total", n(total));
+  // The page says the wells start as irrigation wells; without that use
+  // group in the data every use is shown at first (aquifer-wells.js logs
+  // it), and the page says that instead.
+  if (!groups.includes("Irrigation")) {
+    for (const said of document.querySelectorAll("[data-wells-default]")) {
+      said.textContent = `Shown at first: wells of every use that tested at ${n(w.defaults.yieldLo)} gpm or more; widen the filters to see the rest.`;
+    }
+  }
   const box = document.getElementById("aq-uses");
   const useBoxes = [];
   const useCounts = [];
@@ -1117,7 +1126,7 @@ function wireWellFilters(w) {
       input.max = String(last);
       input.step = "1";
     }
-    // Start at the defaults (the lowest stop at or below the default's
+    // Start at the defaults (the highest stop at or below the default's
     // lower limit, the top stop for no upper limit).
     const startLo = Math.max(0, stops.findLastIndex((s) => s <= w.defaults[loKey]));
     const startHi = Number.isFinite(w.defaults[hiKey]) ? Math.max(startLo, stops.findIndex((s) => s >= w.defaults[hiKey])) : last;
@@ -1191,8 +1200,10 @@ function wellNote({ mode, left, failed, loading, shown, drawn }) {
     note.textContent = "No well passes the filters; widen them to see wells.";
   } else if (mode === "overview") {
     note.textContent = failed
-      ? `Not every well could be loaded, so ${cell} is drawn where it passes the filters (${n(drawn)} of ${of}).`
+      ? `Not every well could be loaded or drawn, so ${cell} is drawn where it passes the filters (${n(drawn)} of ${of}).`
       : `Zoomed out, the wells are thinned: ${cell}, where it passes the filters (${n(drawn)} of ${of}). Zoom in to about ${scaleOf("wells_all_scale")}, or go to District, to see them all.`;
+  } else if (failed) {
+    note.textContent = "Not every well that passes the filters could be drawn. Move the view or change a filter to try again.";
   } else if (mode === "heads") {
     note.textContent = `${all}, with only some of their lines down the hole. Zoom in to about ${scaleOf("wells_lines_scale")} for every line.`;
   } else if (left > 0) {

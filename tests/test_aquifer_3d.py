@@ -197,22 +197,31 @@ def test_the_wells_group_has_the_controls_asked_for(page):
     assert 'data-switch="wells" data-group-switch="wells" checked' in page
 
 
-def test_the_page_says_which_wells_it_shows_at_first(page, scripts):
+def test_the_page_says_which_wells_it_shows_at_first(page, scripts, index):
     # The wells start filtered (#148): irrigation wells that tested at 25 gpm
     # or more, none with an unreported yield. The panel and About say so, and
-    # in the script's own terms.
+    # in the script's own terms; the data has the use group, and the yield
+    # slider a stop at the default.
     wells = scripts["aquifer-wells.js"]
     defaults = wells[wells.index("const DEFAULTS") :]
     defaults = defaults[: defaults.index("};")]
+    assert "Irrigation" in index["use_groups"]
     assert 'index.use_groups.indexOf("Irrigation")' in wells
     assert "uses: new Set(IRRIGATION >= 0 ? [IRRIGATION]" in defaults
     assert "noYield: false," in defaults
     low = re.search(r"yieldLo: (\d+),", defaults).group(1)
+    stops = re.search(
+        r"const YIELD_STOPS = \[([^\]]+)\];", scripts["aquifer3d.js"]
+    ).group(1)
+    assert low in [s.strip() for s in stops.split(",")], stops
     said = (
         f"Shown at first: irrigation wells that tested at {low} gpm or "
         "more; widen the filters to see the rest."
     )
     assert page.count(said) == 2
+    assert page.count("data-wells-default") == 2
+    # "Include wells with no value" starts unticked for the yield.
+    assert '<input type="checkbox" id="aq-yield-none">' in page
     # The far-out limit on every head is the script's, set as text.
     assert 'id="aq-wells-far-max"' in page
     assert re.search(r"export const FAR_HEADS_MAX = \d+;", wells)

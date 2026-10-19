@@ -51,9 +51,11 @@ const BASIS = ["its logged water-bearing zone", "its deepest logged interval", "
 // while no more than this many pass; beyond it, the thinned overview. It is
 // about three times the overview's heads: at the "Whole aquifer" view on a
 // phone an overview cell is under 20 px across and a head 6 px, so about
-// three heads to a cell still read as wells, and more run together. It is
-// also about as many features as the overview draws (its heads and their
-// lines), so a phone makes and draws no more at first than before.
+// three heads to a cell still read as wells, and more run together. At
+// most it is about as many features as the overview draws (its heads and
+// their lines). It has a cost: when few enough pass, as at the default
+// filters, the first view downloads both heads files (they alone place
+// every well) and makes the small layer of those wells beside the overview.
 export const FAR_HEADS_MAX = 3000;
 
 // A well's head's values (wells/heads-<n>.json, index.heads.fields), by
@@ -86,6 +88,10 @@ export async function setupWells(opts) {
   // or more (a well with no reported yield is left out); the panel's filters
   // widen it.
   const IRRIGATION = index.use_groups.indexOf("Irrigation");
+  if (IRRIGATION < 0) {
+    // The page then says so (aquifer3d.js, the stated default).
+    console.error("wells/index.json has no Irrigation use group: every use is shown at first");
+  }
   const DEFAULTS = {
     on: true,
     water: false,
@@ -406,61 +412,74 @@ export async function setupWells(opts) {
     return recordsLoading;
   }
 
-  // A layer of wells' heads, drawn filtered. A scene draws only so many
-  // features of a layer; these draw all of theirs.
+  // A layer of wells' heads, drawn filtered, on the map: { layer, drawn },
+  // drawn kept once the layer is drawn. A scene draws only so many features
+  // of a layer; these draw all of theirs.
   let headSize = HEAD_FAR;
   function headLayer(records) {
     const f = features(records, false);
     const layer = pointLayer(f.heads, headSize, "Well heads (TWDB reports)");
     layer.visible = false;
     map.add(layer, insertAt());
-    view
-      .whenLayerView(layer)
-      .then((layerView) => {
-        if ("maximumNumberOfFeatures" in layerView) {
-          layerView.maximumNumberOfFeatures = Math.max(layerView.maximumNumberOfFeatures, f.heads.length);
-        }
+    const drawn = view.whenLayerView(layer).then((layerView) => {
+      if ("maximumNumberOfFeatures" in layerView) {
+        layerView.maximumNumberOfFeatures = Math.max(layerView.maximumNumberOfFeatures, f.heads.length);
+      }
+      return reactiveUtils.whenOnce(() => !layerView.updating);
+    });
+    return { layer, drawn };
+  }
+  // The heads on the map, each { layer, drawn, ids } (ids: the indices in
+  // headRecords of its wells, null for every well): shownHeads, the layer
+  // drawn last, and nextHeads, one being drawn to take its place. Both are
+  // shown, hidden and filtered together (show, refilter), so neither is ever
+  // left on the map out of step.
+  let shownHeads = null;
+  let nextHeads = null;
+  const newestHeads = () => nextHeads || shownHeads;
+  // Puts a new heads layer in place: the one drawn last goes once the new
+  // one is drawn, so there is no gap; one still being drawn goes at once
+  // (none of it is on the screen yet). If the new one cannot be drawn, it
+  // goes, the one before stays, and the note says so.
+  function swapIn(made) {
+    if (nextHeads) map.remove(nextHeads.layer);
+    nextHeads = made;
+    made.drawn
+      .then(() => {
+        if (nextHeads !== made) return; // replaced, and removed, meanwhile
+        if (shownHeads) map.remove(shownHeads.layer);
+        shownHeads = made;
+        nextHeads = null;
       })
-      .catch((error) => console.error("the wells' heads could not be drawn", error));
-    return layer;
+      .catch((error) => {
+        if (nextHeads !== made) return;
+        map.remove(made.layer);
+        nextHeads = null;
+        console.error("the wells' heads could not be drawn", error);
+        show();
+        tell({ mode, failed: true });
+      });
   }
   // The heads drawn: every well's, in one layer made once when more than
   // FAR_HEADS_MAX pass; until then only those that pass, in a small layer
   // made again only when the filters let in a well it lacks (a phone makes
   // a few hundred features at once, not every well's). Once every well's
   // layer is made, it alone is used.
-  let heads = null;
-  let few = null; // { layer, ids: the indices of its wells in headRecords }
-  let active = null;
   function chooseHeads() {
-    if (!heads && shown <= FAR_HEADS_MAX) {
-      const ids = [];
-      headKeys.forEach(([, use, hick, gpm, depth], i) => {
-        if (passes(use, hick, gpm, depth)) ids.push(i);
-      });
-      if (!few || !ids.every((i) => few.ids.has(i))) {
-        const old = few;
-        few = { layer: headLayer(ids.map((i) => headRecords[i])), ids: new Set(ids) };
-        // The old layer goes once the new one is drawn: no gap between.
-        if (old) {
-          view
-            .whenLayerView(few.layer)
-            .then((layerView) => reactiveUtils.whenOnce(() => !layerView.updating))
-            .catch(() => {})
-            .finally(() => map.remove(old.layer));
-        }
-      }
-      active = few.layer;
-    } else {
-      if (!heads) {
-        heads = headLayer(headRecords);
-        if (few) map.remove(few.layer);
-        few = null;
-      }
-      active = heads;
+    const newest = newestHeads();
+    if (newest && newest.ids === null) return;
+    if (shown > FAR_HEADS_MAX) {
+      swapIn({ ...headLayer(headRecords), ids: null });
+      return;
     }
-    return active;
+    const ids = [];
+    headKeys.forEach(([, use, hick, gpm, depth], i) => {
+      if (passes(use, hick, gpm, depth)) ids.push(i);
+    });
+    if (newest && ids.every((i) => newest.ids.has(i))) return;
+    swapIn({ ...headLayer(ids.map((i) => headRecords[i])), ids: new Set(ids) });
   }
+  const headLayers = () => [shownHeads, nextHeads].filter(Boolean).map((h) => h.layer);
 
   // The lines of the wells in the tiles near the middle of the view, by tile:
   // [lines, water levels].
@@ -508,8 +527,8 @@ export async function setupWells(opts) {
       overview.lines.visible = state.on && mode !== "lines";
       overview.points.visible = state.on && mode === "overview";
     }
-    for (const layer of [heads, few?.layer]) {
-      if (layer) layer.visible = state.on && mode !== "overview" && layer === active;
+    for (const layer of headLayers()) {
+      layer.visible = state.on && mode !== "overview";
     }
     for (const [lines, levels] of loaded.values()) {
       lines.visible = state.on;
@@ -552,8 +571,8 @@ export async function setupWells(opts) {
     const size = headSizeFor(view.scale);
     if (size !== headSize) {
       headSize = size;
-      for (const layer of [heads, few?.layer]) {
-        if (layer) layer.renderer = pointRenderer(size);
+      for (const layer of headLayers()) {
+        layer.renderer = pointRenderer(size);
       }
     }
     chooseHeads();
@@ -607,7 +626,15 @@ export async function setupWells(opts) {
         await step();
       } while (again);
     })()
-      .catch((error) => console.error("the wells could not be drawn", error))
+      .catch((error) => {
+        console.error("the wells could not be drawn", error);
+        // The overview, and a note that says so (not "Loading" for good).
+        try {
+          overviewOnly({ failed: true });
+        } catch (fallbackError) {
+          console.error("the wells' overview could not be drawn", fallbackError);
+        }
+      })
       .finally(() => {
         running = null;
       });
@@ -615,7 +642,7 @@ export async function setupWells(opts) {
   }
 
   function refilter() {
-    const layers = [overview?.lines, overview?.points, heads, few?.layer].filter(Boolean);
+    const layers = [overview?.lines, overview?.points, ...headLayers()].filter(Boolean);
     for (const layer of layers) {
       layer.definitionExpression = layer.geometryType === "point" ? pointWhere() : lineWhere();
     }
@@ -681,8 +708,10 @@ export async function setupWells(opts) {
     defaults: DEFAULTS,
     openWell,
     note: () => note,
-    // The layer of the wells' heads in use, once loaded (for the tests).
-    heads: () => active,
+    // The newest layer of the wells' heads, once loaded, and every heads
+    // layer on the map (for the tests).
+    heads: () => newestHeads()?.layer ?? null,
+    headLayers,
     update,
     setExaggeration(value) {
       k = value;

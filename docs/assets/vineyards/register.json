@@ -246,14 +246,20 @@
   },
   {
    "id": "i-don-t-know-vineyard",
-   "name": "I Don't Know Vineyard",
+   "name": "Hartgrove Hill",
    "category": "under-development",
    "category_label": "Under development",
    "vids": [
     "v-62"
    ],
-   "year": null,
-   "varieties": []
+   "year": 2027,
+   "varieties": [
+    "Tannat",
+    "Syrah",
+    "Grenache",
+    "Sangiovese",
+    "Aglianico"
+   ]
   },
   {
    "id": "paisano-vineyards",

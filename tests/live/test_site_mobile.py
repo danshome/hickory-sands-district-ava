@@ -151,6 +151,10 @@ PHONES = {
     "fold-open-690x829": (690, 829, "Galaxy S9+", 2.625),
 }
 VIEWPORTS = {**PHONES, "desktop-1440x900": (1440, 900, None, 1)}
+# the phones that get the map's phone layout (its panel a sheet, a popup
+# docked at the bottom): map3d.js's "(max-width: 640px)". An open Fold held
+# upright (690 wide) gets the side panel, as a tablet does.
+MAP_PHONES = {k: v for k, v in PHONES.items() if v[0] <= 640}
 # a Galaxy Fold unfolded and wider than tall (a Fold5 turned, a Fold7 as it
 # opens): the land page's wide layout, its figures stuck beside the text
 FOLD_SIDE = {
@@ -957,7 +961,7 @@ def test_place_line_fits_at_700px(site_page):
 
 
 @pytest.mark.parametrize(
-    "site_page", cells(["map.html"], PHONES), indirect=True
+    "site_page", cells(["map.html"], MAP_PHONES), indirect=True
 )
 def test_map_popup_leaves_the_tapped_step_in_view(site_page):
     view, page = site_page, site_page.page
@@ -1083,7 +1087,7 @@ THREE = ["phone-390x844", "phone-360x780", "desktop-1440x900"]
 
 
 @pytest.mark.parametrize(
-    "site_page", cells(["map.html"], PHONES), indirect=True
+    "site_page", cells(["map.html"], MAP_PHONES), indirect=True
 )
 def test_map_on_a_phone(site_page):
     view, page = site_page, site_page.page

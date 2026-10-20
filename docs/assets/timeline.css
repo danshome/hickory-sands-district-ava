@@ -37,7 +37,7 @@
 .geo-unconformity{fill:none;stroke:var(--paper-ink);stroke-width:1;stroke-dasharray:5 3}.geo-fault{fill:none;stroke:var(--paper-ink);stroke-width:1.4}.geo-soil{fill:var(--geo-soil)}.geo-aquifer{fill:none;stroke:var(--paper-ink);stroke-width:1.4;stroke-dasharray:7 5}.geo-arrow{fill:var(--paper-ink);stroke:var(--paper-ink);stroke-width:1.2}
 
 @media(min-width:700px){.geo{padding-top:5rem;padding-bottom:7rem}.geo-head{grid-template-columns:1fr 2fr;gap:7vw}.geo-eyebrow{padding-top:.5rem}.geo-stage{grid-template-columns:1fr 2fr;column-gap:7vw;padding-block:2.75rem}.geo-sources{grid-template-columns:1fr 2fr;gap:7vw}}
-@media(min-width:1000px){.geo-body.geo-has-figure{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:5vw;align-items:start}.geo-has-figure .geo-figure{position:sticky;top:1.5rem;margin-bottom:0}.geo-has-figure .geo-stage{grid-template-columns:1fr;row-gap:1rem}.geo-has-figure .geo-certainty{max-width:34rem}.geo-has-figure .geo-current{border-top-color:var(--paper-ink)}}
+@media(min-width:1000px),(min-width:700px) and (min-height:520px) and (orientation:landscape){.geo-body.geo-has-figure{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:5vw;align-items:start}.geo-has-figure .geo-figure{position:sticky;top:1.5rem;margin-bottom:0}.geo-has-figure .geo-stage{grid-template-columns:1fr;row-gap:1rem}.geo-has-figure .geo-certainty{max-width:34rem}.geo-has-figure .geo-current{border-top-color:var(--paper-ink)}}
 /* A new stage fades in; never when the reader asks for less motion (site.css also stops all animation then). */
 @media(prefers-reduced-motion:no-preference){.geo-art{animation:geo-in .45s ease-out both}}
 @keyframes geo-in{from{opacity:.5}to{opacity:1}}
@@ -66,6 +66,7 @@
   /* The citation links the keyboard focuses in the list, and the stage headings, stop just under the panel when scrolled into view (WCAG 2.4.11). */
   .geo-has-figure .geo-stages a,.geo-has-figure .geo-stages h3{scroll-margin-top:calc(var(--geo-panel,240px) + 1rem)}
 }
-/* On a wide screen the time scale shows the stage, and the hint spans the grid, just above the figure and the list. */
-@media(min-width:1000px){.geo-progress{display:none}.geo-body.geo-has-figure{row-gap:1rem}.geo-has-figure .geo-hint{grid-column:1/-1;margin-bottom:0}}
+/* On a wide screen (the same query as timeline.js's "wide": 1000px and up, or a screen at least 700 by 520 held
+   wider than tall, such as an unfolded Galaxy Fold) the time scale shows the stage, and the hint spans the grid, just above the figure and the list. */
+@media(min-width:1000px),(min-width:700px) and (min-height:520px) and (orientation:landscape){.geo-progress{display:none}.geo-body.geo-has-figure{row-gap:1rem}.geo-has-figure .geo-hint{grid-column:1/-1;margin-bottom:0}}
 @media print{.geo-hint,.geo-progress{display:none}.geo-has-figure .geo-figure{position:static;box-shadow:none}}

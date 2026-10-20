@@ -9,11 +9,11 @@
  * the list moves the figure too: on wide screens it stays beside the list; on
  * a phone held upright it becomes a short panel stuck to the top of the
  * screen, the stages scroll under it, and each stage carries its own key. A
- * narrow screen wider than tall (a phone on its side) keeps the figure in the
- * flow, stepped with the buttons. One line made here says which. Every text
- * is set with textContent and every element made with createElement or
- * createElementNS: nothing is parsed as HTML. Smooth scrolling and the fade
- * follow prefers-reduced-motion.
+ * screen wider than tall but under 700 by 520 (a phone on its side) keeps the
+ * figure in the flow, stepped with the buttons. One line made here says
+ * which. Every text is set with textContent and every element made with
+ * createElement or createElementNS: nothing is parsed as HTML. Smooth
+ * scrolling and the fade follow prefers-reduced-motion.
  */
 (function () {
   "use strict";
@@ -34,12 +34,16 @@
     return; // the drawings below are made for these eight stages
   }
   var reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
-  var wide = window.matchMedia("(min-width: 1000px)");
+  // 1000px and up, or a screen at least 700 by 520 held wider than tall (an
+  // unfolded Galaxy Fold): the figure beside the text. The CSS has the same.
+  var wide = window.matchMedia(
+    "(min-width: 1000px), (min-width: 700px) and (min-height: 520px) and " +
+    "(orientation: landscape)");
   // A phone held upright: narrow, taller than wide, and tall enough to keep a
   // stuck figure and still read under it. The height is low enough that a
   // small phone with its browser's toolbars showing (an iPhone SE in Safari)
-  // still counts. A narrow screen wider than tall (a phone on its side, a
-  // small window) and a printed page keep the figure in the flow.
+  // still counts. A screen wider than tall but under 700 by 520 (a phone on
+  // its side, a small window) and a printed page keep the figure in the flow.
   // timeline.css has the same query.
   var tall = window.matchMedia(
     "screen and (max-width: 999px) and (min-height: 520px) and " +

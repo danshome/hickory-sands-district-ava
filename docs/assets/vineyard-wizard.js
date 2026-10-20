@@ -18,7 +18,7 @@
 // the vineyard by its id), and its draft is kept apart from a new vineyard's.
 import { apiKey } from "./map-config.js?v=999720b";
 import { endpoint, turnstileSiteKey } from "./vineyard-config.js?v=b87e284";
-import * as rules from "./vineyard-blocks.js?v=b3f76c1";
+import * as rules from "./vineyard-blocks.js?v=a5a4beb";
 import { ADDRESS, message, plan } from "./vineyard-email.js?v=10df5f5";
 
 // The form sends when the function's address is given (READY). The person

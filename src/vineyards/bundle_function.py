@@ -2,15 +2,14 @@
 
 The function's source (src/vineyards/functions/vineyard-submit/index.ts)
 imports the site's rules (docs/assets/vineyard-blocks.js, the module the
-page runs), TTB's proposed Llano Uplift AVA as the site publishes it
-(docs/assets/aquifer/llano-uplift.geojson) and the listed vineyards, which
-a change must name (docs/assets/vineyards/known.json, made by
-src/site/make_vineyards.py). Supabase's dashboard editor deploys what is
-pasted into it, so this writes one self-contained file,
+page runs) and TTB's proposed Llano Uplift AVA as the site publishes it
+(docs/assets/aquifer/llano-uplift.geojson). Supabase's dashboard editor
+deploys what is pasted into it, so this writes one self-contained file,
 target/vineyard-submit/index.ts: the rules inlined (their exports kept as
-the names the function uses), and the Llano Uplift polygon and the listed
-vineyards as constants. The listed vineyards are a snapshot: make it again
-and deploy it after a vineyard is added or changed.
+the names the function uses), and the Llano Uplift polygon as a constant.
+The listed vineyards, which a change must name, are not bundled: the
+function reads the site's assets/vineyards/known.json when a change comes,
+so a merged vineyard needs no new deploy; only a change to these files does.
 Nothing is sent anywhere. With --copy it also puts the file on the
 clipboard (macOS's pbcopy), ready to paste (src/vineyards/SETUP.md).
 
@@ -42,27 +41,22 @@ IMPORT_RULES = 'import * as rules from "./vineyard-blocks.js";'
 IMPORT_LLANO = (
     'import llanoUplift from "./llano-uplift.json" with { type: "json" };'
 )
-KNOWN = os.path.join(ROOT, "docs", "assets", "vineyards", "known.json")
-IMPORT_KNOWN = (
-    'import knownVineyards from "./vineyards-known.json" with { type: "json" };'
-)
 EXPORT = re.compile(r"^export (const|function|class) (\w+)", re.MULTILINE)
 
 
-def bundle(source=SOURCE, rules=RULES, llano=LLANO, known=KNOWN):
+def bundle(source=SOURCE, rules=RULES, llano=LLANO):
     """The one-file function.
 
     Args:
         source: The function's index.ts.
         rules: The site's vineyard-blocks.js.
         llano: The Llano Uplift polygon (GeoJSON).
-        known: The listed vineyards (the site's known.json).
 
     Returns:
         The file's text.
 
     Raises:
-        SystemExit: The source does not import the three files exactly once
+        SystemExit: The source does not import the two files exactly once
             each, or the rules export something this cannot inline.
     """
     with open(source, encoding="utf-8") as fh:
@@ -71,9 +65,7 @@ def bundle(source=SOURCE, rules=RULES, llano=LLANO, known=KNOWN):
         module = fh.read()
     with open(llano, encoding="utf-8") as fh:
         polygon = json.dumps(json.load(fh), separators=(",", ":"))
-    with open(known, encoding="utf-8") as fh:
-        listed = json.dumps(json.load(fh), separators=(",", ":"))
-    for line in (IMPORT_RULES, IMPORT_LLANO, IMPORT_KNOWN):
+    for line in (IMPORT_RULES, IMPORT_LLANO):
         if code.count(line) != 1:
             raise SystemExit(f"{source}: expected one line {line}")
     names = [m.group(2) for m in EXPORT.finditer(module)]
@@ -96,14 +88,8 @@ def bundle(source=SOURCE, rules=RULES, llano=LLANO, known=KNOWN):
         "// docs/assets/aquifer/llano-uplift.geojson, inlined\n"
         f"const llanoUplift = {polygon};"
     )
-    known_block = (
-        "// docs/assets/vineyards/known.json, inlined: the listed vineyards\n"
-        f"const knownVineyards = {listed};"
-    )
-    code = (
-        code.replace(IMPORT_RULES, rules_block)
-        .replace(IMPORT_LLANO, llano_block)
-        .replace(IMPORT_KNOWN, known_block)
+    code = code.replace(IMPORT_RULES, rules_block).replace(
+        IMPORT_LLANO, llano_block
     )
     head = (
         "// @ts-nocheck\n"

@@ -32,6 +32,12 @@ NODE = shutil.which("node")
 STANDIN = os.path.join(ROOT, "tests", "vineyard_standin.mjs")
 SOURCE = bundle_function.SOURCE
 SITE = "https://hickorysandsdistrictava.org"
+KNOWN = os.path.join(ROOT, "docs", "assets", "vineyards", "known.json")
+KNOWN_URL = f"{SITE}/assets/vineyards/known.json"
+CHANGES_REFUSED = (
+    "This vineyard can't be changed from this page just now. "
+    "Email the petitioners instead."
+)
 
 
 def node_major():
@@ -171,11 +177,10 @@ def test_a_dropped_label_is_added_again(out):
 
 
 def test_a_change_names_a_listed_vineyard_and_shows_both(out):
-    known = json.loads(
-        open(bundle_function.KNOWN, encoding="utf-8").read()  # noqa: SIM115
-    )
+    with open(KNOWN, encoding="utf-8") as fh:
+        known = json.load(fh)
     assert out["changeHealth"]["changes"] is True
-    assert out["changeHealth"]["known_vineyards"] == len(known)
+    assert out["changeHealth"]["known_from"] == KNOWN_URL
     assert out["change"]["body"] == {"ok": True, "reference": 9001}
     issue = out["changeIssue"]
     # the title is the listed name, never what the sender typed
@@ -196,7 +201,7 @@ def test_a_change_names_a_listed_vineyard_and_shows_both(out):
         assert private not in body.split("```json")[0], private
     assert re.search(r"<!-- hsd-vineyard-ref: [0-9a-f]{24} -->", body)
     assert out["changeRow"] == 1
-    # an id not in the bundled list, no note, a pin, a private word: refused
+    # an id not in the site's list, no note, a pin, a private word: refused
     # on their fields, nothing kept; the trap answered as sent
     for case, field in (
         ("changeUnknown", "changes"),
@@ -222,6 +227,65 @@ def test_a_change_names_a_listed_vineyard_and_shows_both(out):
     assert out["changeIssueAsked"] == 1
     # the same limits: five a day from one address, changes and additions
     assert out["changeLimits"] == [200, 200, 200, 200, 200, 429]
+
+
+def test_the_listed_vineyards_are_read_from_the_site(out):
+    # Never bundled: read from the site when a change comes, with a timeout,
+    # and kept five minutes; a new vineyard never asks.
+    assert out["knownGood"]["status"] == 200
+    assert out["knownGoodFetches"] == 0
+    assert out["knownChange"]["body"]["ok"] is True
+    assert out["knownFetched"] == {
+        "url": KNOWN_URL,
+        "method": "GET",
+        "timeout": True,
+    }
+    assert out["knownWithin"] == 1
+    assert out["knownAfter"] == 2
+
+
+@pytest.mark.parametrize(
+    "mode", ["down", "500", "html", "malformed", "array", "badShape"]
+)
+def test_a_list_not_read_or_not_its_shape_refuses_the_change(out, mode):
+    # Refused as an unknown id is (the page offers the email); nothing kept
+    # or posted; a new vineyard is unaffected; a failure is never kept.
+    reply = out[f"known:{mode}"]
+    assert reply["status"] == 422
+    assert reply["body"] == {
+        "errors": [{"field": "changes", "message": CHANGES_REFUSED}]
+    }
+    assert out[f"knownAfter:{mode}"] == {"rows": 0, "issues": 0}
+    logs = out[f"knownLogs:{mode}"]
+    assert len(logs) == 1
+    assert logs[0].startswith(
+        "vineyard change: the listed vineyards could not be read"
+    )
+    assert out[f"knownNew:{mode}"] == 200
+    assert out[f"knownRetry:{mode}"] == 200
+    assert out[f"knownFetches:{mode}"] == 2
+
+
+def test_a_vineyard_listed_since_the_deploy_needs_no_deploy(out):
+    assert out["knownNew"]["body"]["ok"] is True
+    issue = out["knownNewIssue"]
+    assert issue["title"] == "Vineyard change: Newly Listed Vineyard"
+    assert "`Newly Listed Vineyard`" in issue["body"]
+    assert "`Tannat`" in issue["body"]
+    # a field the function does not use never reaches the issue
+    assert "grower@example.com" not in issue["body"]
+    assert out["knownUnknown"]["status"] == 422
+    assert out["knownUnknown"]["body"]["errors"][0]["field"] == "changes"
+
+
+def test_the_list_s_address_may_be_set_for_tests_only_as_https(out):
+    assert out["knownEnv"]["body"]["ok"] is True
+    assert out["knownEnvUrls"] == ["https://known.example.invalid/known.json"]
+    assert out["knownEnvHealth"]["known_from"] == (
+        "https://known.example.invalid/known.json"
+    )
+    assert out["knownEnvHttp"] == 200
+    assert out["knownEnvHttpUrls"] == [KNOWN_URL]
 
 
 def test_missing_secrets_and_the_health_check(out):
@@ -298,6 +362,15 @@ def test_the_bundle_is_the_sources():
         source = fh.read()
     assert source.count(bundle_function.IMPORT_RULES) == 1
     assert source.count(bundle_function.IMPORT_LLANO) == 1
+    # the listed vineyards are never bundled: the function reads the site's
+    assert len(re.findall(r"^import ", source, flags=re.MULTILINE)) == 2
+    assert "vineyards-known" not in source
+    assert f'KNOWN_URL = "{KNOWN_URL}"' in source
+    with open(KNOWN, encoding="utf-8") as fh:
+        known = json.load(fh)
+    for vid, entry in known.items():
+        assert f'"{vid}"' not in text, vid
+        assert json.dumps(entry["name"]) not in text, vid
 
 
 def test_the_source_holds_no_secret_and_logs_no_body():

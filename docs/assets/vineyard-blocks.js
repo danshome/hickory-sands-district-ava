@@ -10,8 +10,8 @@
 //
 // Version 1 adds a vineyard. Version 2 suggests a change to a listed one
 // ("Suggest a change"): it names the vineyard by its id (changes: one of the
-// ids of assets/vineyards/known.json, which the page reads and the function
-// bundles) and carries the sender's short public note on what changed. A
+// ids of assets/vineyards/known.json, which the page and the function both
+// read from the site) and carries the sender's short public note on what changed. A
 // function from before version 2 refuses it as unreadable, so a change is
 // never posted as a new vineyard.
 

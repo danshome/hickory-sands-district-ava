@@ -2,10 +2,10 @@
 // in the project "Hickory Sands District AVA" (ref yayebhncbagmebwgmezd),
 // beside vote-api, which it leaves alone. Dan deploys it from the Supabase
 // dashboard as one file that src/vineyards/bundle_function.py makes from this
-// one, the site's rules (docs/assets/vineyard-blocks.js), TTB's proposed
+// one, the site's rules (docs/assets/vineyard-blocks.js) and TTB's proposed
 // Llano Uplift AVA as the site publishes it
-// (docs/assets/aquifer/llano-uplift.geojson) and the listed vineyards
-// (docs/assets/vineyards/known.json); src/vineyards/SETUP.md says how.
+// (docs/assets/aquifer/llano-uplift.geojson); src/vineyards/SETUP.md says how.
+// It is deployed again only when its own code (or those two files) changes.
 //
 // POST /vineyard-submit, JSON from https://hickorysandsdistrictava.org only.
 // In order:
@@ -32,13 +32,18 @@
 //
 // A change to a listed vineyard ("Suggest a change", version 2 of the rules)
 // goes the same way, under the same rules and limits. The vineyard it names
-// must be one of the site's vineyard data as bundled with the rules
-// (docs/assets/vineyards/known.json; an id not there is a 422 on the field
-// "changes"); its note is public text, checked as the name is. Its issue is
-// titled "Vineyard change: <the listed name>", labelled vineyard-submission
-// and vineyard-change, and shows the listed vineyard beside the suggestion,
-// both outlines on its map. The bundle's list is a snapshot: rebundle and
-// deploy after the vineyard data changes (src/vineyards/SETUP.md).
+// must be one the site lists now: the function reads the site's
+// assets/vineyards/known.json (KNOWN_URL) when a change comes, keeps it for
+// KNOWN_KEEP_MS and waits at most KNOWN_WAIT_MS for it. Its shape is checked
+// and only its public fields are kept; it is untrusted text, as the sender's
+// is. An id not there, or a list that could not be read or checked, is a 422
+// on the field "changes" (the page offers the email): a change is never
+// posted unchecked. A new vineyard never reads the list. GitHub Pages serves
+// the file with a cache of about ten minutes, so for a few minutes after a
+// merge a change may still see the previous list. Its note is public text,
+// checked as the name is. Its issue is titled "Vineyard change: <the listed
+// name>", labelled vineyard-submission and vineyard-change, and shows the
+// listed vineyard beside the suggestion, both outlines on its map.
 //
 // POST /vineyard-submit/github: the App's webhook (Issues events), signed with
 // GITHUB_WEBHOOK_SECRET. A submission's issue closed (or deleted) sets its
@@ -72,6 +77,8 @@
 //                            unset, there is no person check (Dan,
 //                            2026-10-19: added only if bots show up)
 //   PRIVATE_WORDS            optional: words never to publish, one per line
+//   KNOWN_VINEYARDS_URL      optional, for the tests: an https address to read
+//                            the listed vineyards from instead of KNOWN_URL
 //   PRIVATE_WORDS_SILENT     optional, off: "1" holds a submission with a
 //                            private word for the petitioners (a 200 with no
 //                            reference, a row marked held, no issue) instead
@@ -80,7 +87,6 @@
 // Settings: JWT verification off (a public form, like vote-api).
 import * as rules from "./vineyard-blocks.js";
 import llanoUplift from "./llano-uplift.json" with { type: "json" };
-import knownVineyards from "./vineyards-known.json" with { type: "json" };
 
 export const SITE = "https://hickorysandsdistrictava.org";
 const HOSTNAMES = ["hickorysandsdistrictava.org"];
@@ -101,6 +107,14 @@ const PAGES = 10; // of 100 issues, when reconciling
 const WAIT_MS = 8000;
 const WEBHOOK_BYTES = 1048576;
 const TABLE = "hsd_vineyard_contacts";
+// The listed vineyards a change must name: the site's own file, read live.
+export const KNOWN_URL = "https://hickorysandsdistrictava.org/assets/vineyards/known.json";
+export const KNOWN_KEEP_MS = 300000; // five minutes
+export const KNOWN_WAIT_MS = 4000;
+const KNOWN_BYTES = 2097152;
+const KNOWN_MAX = 2000; // vineyards
+const VINEYARD_ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/; // as vineyard-blocks.js
+const CONTROL = /[\u0000-\u001f\u007f-\u009f\u2028\u2029]/;
 export const SECRETS = [
   "GITHUB_APP_ID",
   "GITHUB_APP_INSTALLATION_ID",
@@ -121,6 +135,40 @@ export interface Deps {
 type Json = Record<string, unknown>;
 
 const llano = rules.makeArea(llanoUplift);
+
+// The listed vineyards as fetched, checked: a fresh object of only the fields
+// the rules and the issue use, or null if anything is not as the site makes
+// it (the whole list is refused, never a part of it).
+export function listedVineyards(data: unknown): Record<string, Json> | null {
+  if (!data || typeof data !== "object" || Array.isArray(data)) return null;
+  const text = (v: unknown, max: number, empty = false) =>
+    typeof v === "string" && v.length <= max && (empty || v.trim() !== "") && !CONTROL.test(v);
+  const point = (p: unknown) => Array.isArray(p) && p.length === 2 &&
+    p.every((n) => typeof n === "number" && Number.isFinite(n)) &&
+    Math.abs(p[0] as number) <= 180 && Math.abs(p[1] as number) <= 90;
+  const ring = (r: unknown) => Array.isArray(r) && r.length >= 3 && r.length <= 10000 && r.every(point);
+  const entries = Object.entries(data as Json);
+  if (!entries.length || entries.length > KNOWN_MAX) return null;
+  const out: Record<string, Json> = Object.create(null);
+  for (const [id, v] of entries) {
+    if (id.length > 120 || !VINEYARD_ID.test(id) || !v || typeof v !== "object" || Array.isArray(v)) return null;
+    const e = v as Json;
+    const year = e.year ?? null;
+    const varieties = e.varieties ?? [];
+    if (!text(e.name, 200) || !text(e.category, 60, true)) return null;
+    if (year !== null && !(Number.isInteger(year) && (year as number) >= 1000 && (year as number) <= 9999)) return null;
+    if (!Array.isArray(varieties) || varieties.length > 100 || !varieties.every((x) => text(x, 120))) return null;
+    if (!Array.isArray(e.blocks) || e.blocks.length > 1000 || !e.blocks.every(ring)) return null;
+    out[id] = {
+      name: e.name,
+      category: e.category,
+      year,
+      varieties: [...varieties],
+      blocks: (e.blocks as number[][][]).map((r) => r.map(([x, y]) => [x, y])),
+    };
+  }
+  return out;
+}
 const enc = new TextEncoder();
 
 const hex = (bytes: Uint8Array) => [...bytes].map((b) => b.toString(16).padStart(2, "0")).join("");
@@ -204,7 +252,35 @@ export function makeHandler(deps: Deps): (req: Request) => Promise<Response> {
   };
   const answer = (status: number, body: unknown, origin: string | null = null) =>
     new Response(JSON.stringify(body), { status, headers: headers(origin) });
-  const timed = (url: string, init: RequestInit) => deps.fetch(url, { ...init, signal: AbortSignal.timeout(WAIT_MS) });
+  const timed = (url: string, init: RequestInit, ms = WAIT_MS) =>
+    deps.fetch(url, { ...init, signal: AbortSignal.timeout(ms) });
+
+  // The listed vineyards, read from the site when a change comes and kept for
+  // KNOWN_KEEP_MS; null when they could not be read or checked (never kept).
+  const knownUrl = () => {
+    const url = env("KNOWN_VINEYARDS_URL");
+    return url.startsWith("https://") ? url : KNOWN_URL;
+  };
+  let knownCache: { url: string; at: number; list: Record<string, Json> } | null = null;
+  async function knownVineyards(): Promise<Record<string, Json> | null> {
+    const url = knownUrl();
+    if (knownCache && knownCache.url === url && now() - knownCache.at < KNOWN_KEEP_MS && now() >= knownCache.at) {
+      return knownCache.list;
+    }
+    try {
+      const r = await timed(url, { method: "GET", headers: { Accept: "application/json" } }, KNOWN_WAIT_MS);
+      if (!r.ok) throw new Error(`status ${r.status}`);
+      const text = await r.text();
+      if (text.length > KNOWN_BYTES) throw new Error("too large");
+      const list = listedVineyards(JSON.parse(text));
+      if (!list) throw new Error("not the listed vineyards' shape");
+      knownCache = { url, at: now(), list };
+      return list;
+    } catch (error) {
+      deps.log("vineyard change: the listed vineyards could not be read", short(error));
+      return null;
+    }
+  }
 
   // The table, through Supabase's REST API with the service role (row level
   // security keeps every other role out). Throws on any error.
@@ -421,9 +497,13 @@ export function makeHandler(deps: Deps): (req: Request) => Promise<Response> {
       }
     }
 
+    // A change: the listed vineyards, read now. Not read, or not as the site
+    // makes them: none is known, and the rules refuse the change on its field
+    // "changes" as for an id not listed. A new vineyard never asks.
+    const known = raw.version === rules.CHANGE_VERSION ? ((await knownVineyards()) ?? {}) : {};
     let checked;
     try {
-      checked = rules.check(raw, { llano, known: knownVineyards, year: deps.now().getUTCFullYear() });
+      checked = rules.check(raw, { llano, known, year: deps.now().getUTCFullYear() });
     } catch (error) {
       if (error instanceof rules.Invalid && error.message === "trap") {
         return answer(200, { ok: true, reference: null }, origin);
@@ -433,7 +513,7 @@ export function makeHandler(deps: Deps): (req: Request) => Promise<Response> {
     const sub = checked.submission;
     const publicText = [sub.vineyard.name, ...sub.vineyard.varieties, sub.note || ""].join(" ").toLowerCase();
     // A change: the listed vineyard it names (the rules checked it is one)
-    const listed = sub.changes ? (knownVineyards as Record<string, Json>)[sub.changes] : null;
+    const listed = sub.changes && Object.prototype.hasOwnProperty.call(known, sub.changes) ? known[sub.changes] : null;
     const labels = listed ? [LABEL, CHANGE_LABEL] : [LABEL];
     const held = privateWords().some((w) => publicText.includes(w));
     if (held && !silent()) checked.errors.push(["name", rules.NAME_PROBLEMS.personal]);
@@ -619,7 +699,7 @@ export function makeHandler(deps: Deps): (req: Request) => Promise<Response> {
         missing: missing(),
         person_check: personCheck(),
         changes: true, // takes a change to a listed vineyard (version 2)
-        known_vineyards: Object.keys(knownVineyards).length,
+        known_from: knownUrl(), // read when a change comes, never here
         address_headers: ["cf-connecting-ip", "x-real-ip", "x-forwarded-for"].filter((n) => h.has(n)),
         forwarded_entries: (h.get("x-forwarded-for") || "").split(",").filter((s) => s.trim()).length,
         address_digest: env("IP_SALT") ? (await hmacHex(env("IP_SALT"), enc.encode(`probe:${clientIp(req)}`))).slice(0, 8) : null,

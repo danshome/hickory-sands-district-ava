@@ -748,7 +748,7 @@ else drops the whole call. Never free text, a place, an id or anything typed. It
 |---|---|---|
 | `map_layer` | `group` (the panel's group: district, places, wells, vineyards, boundaries, geology, aquifer), `layer` (the switch's `data-switch`, or `all` for the group's own switch), `state` (on, off) | a group or layer switch on the map, by the reader |
 | `map_open_item` | `kind` (step, point, well, vineyard, aquifer, other) | a popup opens on a new feature |
-| `map_view` | `action` (3d, 2d, home, basemap, wells_filter, wells_reset, panel_min, panel_restore, about), `choice` (button; the basemap: imagery, topo, dark; the filter: use, yield, depth, unreported, hickory_only; the about link: about-district, about-sources; sheet, the phone's Layers sheet) | the map's buttons; a filter one second after it last moved, once |
+| `map_view` | `action` (3d, 2d, home, basemap, wells_filter, wells_reset, panel_min, panel_restore, about), `choice` (button; the basemap: imagery, topo, dark; the filter: use, yield, depth, unreported, hickory_only; the about link: about-district, about-sources, about-figures; sheet, the phone's Layers sheet) | the map's buttons; a filter one second after it last moved, once |
 | `map_mode` | `mode` (map, aquifer: opened with the aquifer on) | once, when the map opens |
 | `walk_step` | `step`, `total` (numbers) | a step on Walk the line's reading line for a second, once per step |
 | `walk_complete` | `total` | the last step reached so |

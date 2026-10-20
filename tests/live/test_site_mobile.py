@@ -59,6 +59,12 @@ to the map.
 The map (map.html), at every viewport: its panel's links (on a phone, with
 the Layers sheet opened) and, opened from "About this map", the About
 panel's contents links and Close button are 44 px each way.
+About these figures (#169), on a phone (390x844) and the desktop: on Status
+and Walk the line, the "About these figures" link opens The boundary page
+with the note in view, and Back returns to the page; the asterisk marks
+beside the figures (The boundary's two captions, the map's panel and its
+About panel) are at least 24 px each way, and each one shows its note: The
+boundary's in view, the map's in its About panel, opened at the note.
 The map, on the phones:
 - tapping three steps, a quarter, a half and three quarters of the way along
   the line (docs/data/steps.geojson), opens each one's popup, docked along the
@@ -1809,6 +1815,117 @@ def test_map_panel_and_about_links_are_44px(site_page):
         page.wait_for_timeout(300)
         if page.locator("#aq-about[open]").count():
             problems.append("Close did not close the About panel")
+    problems += view.problems()
+    assert not problems, f"{view.name}:\n  " + "\n  ".join(problems)
+
+
+# ------------------------------------------------- About these figures (#169)
+NOTE_ID = "about-these-figures"  # the full note, on The boundary page
+NOTE_LINK = "main .figures-inline .text-link"  # Status's and Walk's link
+MARK = "main .fig-note a"  # an asterisk mark, beside the figures
+MARK_TARGET = 24  # px: an asterisk mark's smallest box, each way
+# whether the note's top has come to the upper half of the screen (the page
+# scrolls there smoothly; a note just showing at the bottom does not count)
+NOTE_SHOWN = """(id) => { const e = document.getElementById(id);
+  if (!e) return false; const r = e.getBoundingClientRect();
+  return r.top >= -1 && r.top < innerHeight / 2 && r.height > 0; }"""
+
+
+def small_marks(boxes):
+    """The asterisk marks smaller than MARK_TARGET either way, described."""
+    return [
+        f"{b['sel']} {b['text']!r} {b['w']:.0f}x{b['h']:.0f}"
+        for b in boxes
+        if b["w"] < MARK_TARGET - SUBPIXEL or b["h"] < MARK_TARGET - SUBPIXEL
+    ]
+
+
+@pytest.mark.parametrize(
+    "site_page",
+    cells(["status.html", "walk.html"], ["phone-390x844", "desktop-1440x900"]),
+    indirect=True,
+)
+def test_about_these_figures_reaches_the_note_and_back_returns(site_page):
+    view, page = site_page, site_page.page
+    problems = []
+    start = page.url
+    link = page.locator(NOTE_LINK)
+    if link.count() != 1:
+        pytest.fail(
+            f"{view.name}: {link.count()} About these figures links, not 1",
+            pytrace=False,
+        )
+    link.scroll_into_view_if_needed()
+    tap(view, link)
+    try:
+        page.wait_for_url(f"**/boundary.html#{NOTE_ID}", timeout=30_000)
+        page.wait_for_function(NOTE_SHOWN, arg=NOTE_ID, timeout=10_000)
+    except PlaywrightTimeout:
+        problems.append(
+            f"the link did not open the note in view: at {page.url}"
+        )
+    view.shot("figures-note")
+    page.go_back(wait_until="load")
+    if page.url != start:
+        problems.append(f"Back went to {page.url}, not {start}")
+    problems += view.problems()
+    assert not problems, f"{view.name}:\n  " + "\n  ".join(problems)
+
+
+@pytest.mark.parametrize(
+    "site_page",
+    cells(["boundary.html", "map.html"], ["phone-390x844", "desktop-1440x900"]),
+    indirect=True,
+)
+def test_about_these_figures_marks_are_24px(site_page):
+    view, page = site_page, site_page.page
+    problems = []
+    if view.page_name == "boundary.html":
+        marks = page.evaluate(BOXES, [MARK])
+        if len(marks) != 2:
+            problems.append(f"{len(marks)} marks on the captions, not 2")
+        problems += [f"under {MARK_TARGET} px: {s}" for s in small_marks(marks)]
+        tap(view, page.locator(MARK).first)
+        try:
+            page.wait_for_function(NOTE_SHOWN, arg=NOTE_ID, timeout=10_000)
+        except PlaywrightTimeout:
+            problems.append(
+                "the caption's mark did not bring the note into view"
+            )
+    else:
+        # the panel's mark: the sheet opened on a phone, The district shown
+        sheet = page.locator("#aq-sheet-toggle")
+        if (
+            sheet.is_visible()
+            and sheet.get_attribute("aria-expanded") != "true"
+        ):
+            tap(view, sheet)
+            page.wait_for_timeout(500)  # it slides up in 0.28 s
+        group = page.locator('button[aria-controls="g-district"]')
+        if group.get_attribute("aria-expanded") != "true":
+            tap(view, group)
+        page.locator(".lp-figs .fig-note a").scroll_into_view_if_needed()
+        marks = page.evaluate(BOXES, [".lp-figs .fig-note a"])
+        if len(marks) != 1:
+            problems.append(f"{len(marks)} marks in the panel, not 1")
+        problems += [f"under {MARK_TARGET} px: {s}" for s in small_marks(marks)]
+        tap(view, page.locator(".lp-figs .fig-note a"))
+        try:
+            page.wait_for_selector("#aq-about[open]", timeout=10_000)
+        except PlaywrightTimeout:
+            problems.append("the panel's mark did not open the About panel")
+        else:
+            page.wait_for_timeout(300)
+            if not page.evaluate(NOTE_SHOWN, "about-figures"):
+                problems.append("the About panel did not open at the note")
+            inside = page.evaluate(BOXES, [".about-body .fig-note a"])
+            if len(inside) != 1:
+                problems.append(f"{len(inside)} marks in About, not 1")
+            problems += [
+                f"under {MARK_TARGET} px: {s}" for s in small_marks(inside)
+            ]
+            view.shot("figures-about")
+            tap(view, page.locator("#aq-about-close"))
     problems += view.problems()
     assert not problems, f"{view.name}:\n  " + "\n  ".join(problems)
 

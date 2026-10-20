@@ -1,11 +1,11 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<script src="assets/analytics.js?v=b20300b" defer></script>
+<script src="assets/analytics.js?v=a0acbee" defer></script>
 
 <meta name="theme-color" content="#141512"><meta name="description" content="The proposed Hickory Sands District on the map: the line, every step and every point; and, when you turn them on, the Hickory Aquifer in 3D, wells, vineyards and geology.">
 <title>The map · Hickory Sands District</title><link rel="canonical" href="https://hickorysandsdistrictava.org/map.html">
 <meta property="og:type" content="website"><meta property="og:site_name" content="Hickory Sands District"><meta property="og:title" content="The map · Hickory Sands District"><meta property="og:description" content="The proposed Hickory Sands District on the map: the line, every step and every point; and, when you turn them on, the Hickory Aquifer in 3D, wells, vineyards and geology."><meta property="og:url" content="https://hickorysandsdistrictava.org/map.html"><meta property="og:image" content="https://hickorysandsdistrictava.org/assets/share.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="Sandy ground, small stones and dry stems, photographed close to the surface."><meta name="twitter:card" content="summary_large_image">
-<link rel="icon" type="image/svg+xml" href="assets/favicon.svg"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&amp;family=Source+Sans+3:wght@400;500;600&amp;display=swap" rel="stylesheet"><link rel="stylesheet" href="assets/site.css?v=821589a"><link rel="stylesheet" href="assets/maps.css?v=77746de"><link rel="stylesheet" href="assets/map3d.css?v=6fb0ed6">
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&amp;family=Source+Sans+3:wght@400;500;600&amp;display=swap" rel="stylesheet"><link rel="stylesheet" href="assets/site.css?v=50dc037"><link rel="stylesheet" href="assets/maps.css?v=77746de"><link rel="stylesheet" href="assets/map3d.css?v=6fb0ed6">
 <script type="module" src="https://js.arcgis.com/5.1/"></script><script type="module" src="assets/map3d.js?v=8b5246e"></script></head><body class="dark page-map calcite-mode-dark">
 <a class="skip" href="#main">Skip to content</a>
 <header class="site-header"><a class="identity" href="index.html" aria-label="Hickory Sands District home"><img src="assets/mark.svg" width="30" height="32" alt=""><span>Hickory Sands<br><span class="identity-small">District</span></span></a>
@@ -87,7 +87,7 @@
           <button type="button" class="lp-i" aria-expanded="false" aria-controls="n-steps" aria-label="About steps and points"><span aria-hidden="true">i</span></button>
           <p class="lp-note" id="n-steps" hidden>Select a step or a point to read it. The points show from about a 1:400,000 scale in.</p>
         </div>
-        <p class="lp-figs"><span data-figure="area_sqmi">193.83</span> sq mi · <span data-figure="step_count">104</span> steps · <span data-figure="point_count">105</span> points</p>
+        <p class="lp-figs"><span data-figure="area_sqmi">193.83</span> sq mi · <span data-figure="step_count">104</span> steps · <span data-figure="point_count">105</span> points<sup class="fig-note"><a href="#aq-about" data-about="about-figures" role="doc-noteref" aria-label="About these figures">*</a></sup></p>
         <div class="lp-docs">
           <a class="lp-link" href="walk.html">Walk the line, step by step <span aria-hidden="true">→</span></a>
           <p class="lp-dl"><span>GeoJSON, CC0</span><a href="data/boundary.geojson" download>Boundary</a><a href="data/steps.geojson" download>Steps</a><a href="data/points.geojson" download>Points</a></p>
@@ -283,17 +283,22 @@
     <div><p class="eyebrow">The map</p><h2 id="aq-about-title">About this map</h2></div>
     <button type="button" class="about-close" id="aq-about-close">Close</button>
   </div>
-  <nav class="about-toc" aria-label="In this panel"><a href="#about-district">The district</a><a href="#about-data">The data</a><a href="#about-reading">Reading the 3D view</a><a href="#about-wells">Wells</a><a href="#about-outline">Model and outline</a><a href="#about-location">Your location</a><a href="#about-sources">Sources and limits</a></nav>
+  <nav class="about-toc" aria-label="In this panel"><a href="#about-district">The district</a><a href="#about-data">The data</a><a href="#about-figures">About these figures</a><a href="#about-reading">Reading the 3D view</a><a href="#about-wells">Wells</a><a href="#about-outline">Model and outline</a><a href="#about-location">Your location</a><a href="#about-sources">Sources and limits</a></nav>
   <div class="about-body">
     <section id="about-district" aria-labelledby="h-district">
       <h3 id="h-district">The district</h3>
-      <p>The sand line is the proposed revision: the boundary description as proposed, drawn on the USGS historical survey maps it names, <span data-figure="step_count">104</span> steps and <span data-figure="point_count">105</span> points around <span data-figure="area_sqmi">193.83</span> square miles. Select a step or a point for its text; each one links to the same place in Walk the line, which reads every step in order.</p>
+      <p>The sand line is the proposed revision: the boundary description as proposed, drawn on the USGS historical survey maps it names, <span data-figure="step_count">104</span> steps and <span data-figure="point_count">105</span> points around <span data-figure="area_sqmi">193.83</span> square miles.<sup class="fig-note"><a href="#about-figures" role="doc-noteref" aria-label="About these figures">*</a></sup> Select a step or a point for its text; each one links to the same place in Walk the line, which reads every step in order.</p>
       <p>The map opens straight down, as a paper map reads. 3D tilts it; on a touch screen, two fingers drag up or down to tilt and turn to rotate. The other layers are off until you turn them on in the panel; each loads only then.</p>
     </section>
     <section id="about-data" aria-labelledby="h-data">
       <h3 id="h-data">The data</h3>
       <p>NAD83 coordinates shown as WGS 84. The boundary data is dedicated to the public domain under CC0 1.0; the record is the boundary package for TTB, revision of <time data-figure="revision_date" datetime="2026-10-15">October 15, 2026</time>.</p>
       <div class="document-list about-docs"><a class="text-link" href="data/boundary.geojson" download>The boundary <small>GeoJSON</small><span aria-hidden="true">↓</span></a><a class="text-link" href="data/steps.geojson" download>The steps <small>GeoJSON</small><span aria-hidden="true">↓</span></a><a class="text-link" href="data/points.geojson" download>The points <small>GeoJSON</small><span aria-hidden="true">↓</span></a><a class="text-link" href="walk.html">Walk the line<span aria-hidden="true">→</span></a><a class="text-link" href="boundary.html#documents">The boundary documents<span aria-hidden="true">→</span></a></div>
+    </section>
+    <section id="about-figures" aria-labelledby="h-figures">
+      <h3 id="h-figures">About these figures</h3>
+      <p>The figures here are measured on the proposed revision. Because it changes the boundary description, they can differ slightly from those in earlier documents; the petition and the comments in the docket stay as filed.</p>
+      <div class="document-list about-docs"><a class="text-link" href="boundary.html#about-these-figures">Read the full note on The boundary<span aria-hidden="true">→</span></a></div>
     </section>
     <section id="about-reading" aria-labelledby="h-reading">
       <h3 id="h-reading">Reading the 3D view</h3>

@@ -3,7 +3,7 @@
  "local": {
   "vineyards": {
    "file": "resources/vineyards/vineyards-EPSG4269.geojson",
-   "sha256": "sha256:6eb0ea4f553a6aafa61cd908de104ecadcb2a50a42ef2d9529138a282ab132cc"
+   "sha256": "sha256:524dea37915718c12fffdc3a2df27b4c6276cb6e55d05dfa724ceb3680476f64"
   },
   "wells": {
    "file": "docs/assets/aquifer/wells/index.json and draw-*.json",

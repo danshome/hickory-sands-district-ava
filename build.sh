@@ -19,10 +19,14 @@
 #                         (before a website change is merged); after a deploy, run it without --local (read-only)
 #   ./build.sh site-data  refresh the website's map data (docs/data/, walk.html, the pages' figures, the survey map, the 3D
 #                         aquifer page's data in docs/assets/aquifer/, the vineyards' in docs/assets/vineyards/, The land's
-#                         slice and maps in docs/assets/land/) from the last build, then stamp; commit it
+#                         slice and maps in docs/assets/land/) from the last build, then the site's meta files
+#                         (site-meta) and stamp; commit it
 #   ./build.sh readme     render the root README from its editable template and committed build figures
 #   ./build.sh stamp      version-stamp every script and stylesheet the website loads (assets/x.js?v=<hash>, #138), with
 #                         no build needed: run it after changing one (or merging a branch that did) and commit it
+#   ./build.sh site-meta  write docs/llms.txt, each indexable page's JSON-LD and docs/.well-known/security.txt from the
+#                         pages, SECURITY.md, LICENSE.txt and ABOUT.md, with no build needed: run it after changing a
+#                         page's title, description or canonical, the sitemap, or those files, and commit it
 #
 # No manual steps, on macOS or Linux: missing tools are installed with Homebrew (GDAL, poppler, Python 3.14; on macOS
 # also Google Chrome, which Linux needs installed); every Python package in the lock files is checked against the OSV
@@ -165,6 +169,7 @@ VINEYARDS=(src/site/make_vineyards.py)     # the vineyards' data (docs/assets/vi
 # A short hash of each script and stylesheet on every URL the pages (and walk.html's template) and the site's own modules
 # load it by, so a changed file reaches browsers at once (#138: GitHub Pages lets them keep a file 10 minutes)
 STAMP=(src/site/stamp_assets.py --site docs --template src/site/walk.template.html)
+SITE_META=(src/site/make_site_meta.py)   # llms.txt, the pages' JSON-LD and security.txt, from the pages themselves
 LAND=(src/site/make_land.py)   # The land page's slice and maps (docs/assets/land/), from resources/aquifer/land-inputs.csv and the 3D page's data
 
 site_data() {
@@ -175,6 +180,7 @@ site_data() {
     run "${AQUIFER_3D[@]}" --check           # exits 3 when an input snapshot, a parameter or a file changed; no download (#135)
     run "${VINEYARDS[@]}" --check            # exits 3 when the vineyards, the well tiles or a parameter changed
     run "${LAND[@]}" --check                 # the same for The land's slice and maps; no download
+    run "${SITE_META[@]}" --check            # exits 3 when llms.txt, a page's JSON-LD or security.txt is stale or expired
     run "${STAMP[@]}" --check                # exits 3 when a script's or stylesheet's version stamp is missing or stale (#138)
 }
 
@@ -299,11 +305,13 @@ case "${1:-all}" in
                run "${VINEYARDS[@]}"                # after the aquifer: it reads the aquifer's well tiles
                run "${LAND[@]}"                     # after the boundary and the 3D page's data, which it reads; the same cache
                run "${SITE_DATA[@]}"                # again, for The land's figures, which make_land.py may have changed
+               run "${SITE_META[@]}"                # after walk.html is written from its template; renews security.txt's Expires
                run "${STAMP[@]}" ;;                 # last: walk.html is written above, from its template
+    site-meta) env_setup; step "llms.txt, the pages' JSON-LD and security.txt"; run "${SITE_META[@]}" ;;
     stamp)     env_setup; step "version stamps on the website's scripts and stylesheets (#138)"; run "${STAMP[@]}" ;;
     audit)     env_setup; audit ;;
     upgrade)   upgrade ;;
     lint)      env_setup; step "pre-commit hooks on every file"; PRE_COMMIT_HOME="$TARGET/pre-commit" "$VENV/bin/pre-commit" run --all-files ;;
     test)      env_setup; step "unit tests (tests/, pytest)"; run -m pytest -q tests ;;
-    *)         echo "usage: ./build.sh [all|env|lint|test|audit|upgrade|clean|distclean|publish [--dry-run]|publish-dry-run|check-live|check-site [--local]|site-data|readme|stamp]"; exit 2 ;;
+    *)         echo "usage: ./build.sh [all|env|lint|test|audit|upgrade|clean|distclean|publish [--dry-run]|publish-dry-run|check-live|check-site [--local]|site-data|site-meta|readme|stamp]"; exit 2 ;;
 esac

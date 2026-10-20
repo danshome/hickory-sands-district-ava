@@ -20,6 +20,7 @@ import re
 import pytest
 
 from src.site import make_site_data as msd
+from src.site import make_site_meta as msm
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DOCS = os.path.join(ROOT, "docs")
@@ -73,6 +74,9 @@ def test_dated_history_keeps_its_figures_as_written():
 def test_no_figure_is_typed_without_its_mark(page, figs):
     text = msd.FIGURE_PATH.sub("", read(page))  # a coordinate is no figure
     text = EVENT_DATE.sub("", HISTORY.sub("", msd.FIGURE.sub("", text)))
+    # The JSON-LD block copies the page's own text, marked figures included,
+    # and tests/test_site_meta.py keeps it what the generator makes of it.
+    text = msm.BLOCK.sub("", text)
     area, whole = figs["area_sqmi"][0], figs["area_whole"][0]
     steps, points = figs["step_count"][0], figs["point_count"][0]
     typed = [

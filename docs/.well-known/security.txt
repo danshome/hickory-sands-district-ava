@@ -1,0 +1,8 @@
+# Security contacts for https://hickorysandsdistrictava.org/ (RFC 9116), from SECURITY.md.
+# Made by src/site/make_site_meta.py; do not edit.
+Contact: https://github.com/danshome/hickory-sands-district-ava/security/advisories/new
+Contact: mailto:district@hickorysandsdistrictava.org
+Expires: 2027-10-15T00:00:00Z
+Preferred-Languages: en
+Canonical: https://hickorysandsdistrictava.org/.well-known/security.txt
+Policy: https://github.com/danshome/hickory-sands-district-ava/blob/main/SECURITY.md

@@ -1,0 +1,34 @@
+# Hickory Sands District
+
+> The proposed Hickory Sands District American Viticultural Area in the Texas Hill Country. The land, boundary, vineyards and public record.
+
+A site by the petitioners. Independent of the Alcohol and Tobacco Tax and Trade Bureau.
+
+## Pages
+
+- [A place defined by what lies beneath](https://hickorysandsdistrictava.org/): The proposed Hickory Sands District American Viticultural Area in the Texas Hill Country. The land, boundary, vineyards and public record.
+- [About & contact](https://hickorysandsdistrictava.org/about.html): Who is behind the proposed Hickory Sands District AVA, and how to write to the district.
+- [The boundary](https://hickorysandsdistrictava.org/boundary.html): A static map of the petitioners’ proposed boundary, with the live dashboard, documents and public-domain GIS downloads.
+- [Sources & photography](https://hickorysandsdistrictava.org/colophon.html): The sources, maps, photographs, type and license behind the Hickory Sands District site.
+- [Journal](https://hickorysandsdistrictava.org/journal.html): Notes from the proposed Hickory Sands District: the land, the line and the record.
+- [The land](https://hickorysandsdistrictava.org/land.html): Hickory Sandstone Member formation, sandy ground and the Hickory Aquifer within the proposed district.
+- [The map](https://hickorysandsdistrictava.org/map.html): The proposed Hickory Sands District on the map: the line, every step and every point; and, when you turn them on, the Hickory Aquifer in 3D, wells, vineyards and geology.
+- [Status](https://hickorysandsdistrictava.org/status.html): Where the proposed Hickory Sands District AVA stands: the petition, Notice No. 243, the comment period and the proposed revision.
+- [The vineyards](https://hickorysandsdistrictava.org/vineyards.html): The register of growers in the proposed Hickory Sands District.
+- [Walk the line](https://hickorysandsdistrictava.org/walk.html): The proposed Hickory Sands District boundary, step by step, from the beginning point and back, with a map that follows the text.
+
+## The public record
+
+- [Public docket](https://www.regulations.gov/docket/TTB-2026-0005): TTB-2026-0005
+- [Notice No. 243](https://www.federalregister.gov/d/2026-16670): 91 FR 52576
+- [Boundary description as proposed](https://robertclayvines.maps.arcgis.com/home/item.html?id=48dbe8465d24480ca37e3bf4d1457b1e): PDF
+- [Notice No. 243 as published](https://robertclayvines.maps.arcgis.com/home/item.html?id=d8200c4c94234beb82e54d2ded292917): PDF
+- [Changes side by side](https://robertclayvines.maps.arcgis.com/home/item.html?id=6608413f129a443db72541302fc53d4a): PDF
+- [Boundary & step data](https://robertclayvines.maps.arcgis.com/home/item.html?id=9f836c7ba6f64faea55bb4f09587a886): GeoPackage
+- [All quadrangles & GIS downloads](https://robertclayvines.maps.arcgis.com/apps/dashboards/c5de8bb3fc1348d99f8afd99c11220b2): Dashboard
+
+## Data
+
+- [The boundary](https://hickorysandsdistrictava.org/data/boundary.geojson): GeoJSON, CC0
+- [The steps](https://hickorysandsdistrictava.org/data/steps.geojson): GeoJSON, CC0
+- [The points](https://hickorysandsdistrictava.org/data/points.geojson): GeoJSON, CC0

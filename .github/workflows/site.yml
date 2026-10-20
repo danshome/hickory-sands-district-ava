@@ -13,6 +13,8 @@ on:
       - tests/test_site.py
       - src/site/stamp_assets.py
       - src/site/walk.template.html
+      - src/site/make_site_meta.py
+      - tests/test_site_meta.py
       - .github/workflows/site.yml
   push:
     branches: [main]
@@ -21,6 +23,8 @@ on:
       - tests/test_site.py
       - src/site/stamp_assets.py
       - src/site/walk.template.html
+      - src/site/make_site_meta.py
+      - tests/test_site_meta.py
       - .github/workflows/site.yml
 permissions:
   contents: read
@@ -44,8 +48,8 @@ jobs:
           python -I -B src/setup/packages.py audit requirements-dev.txt
           python -m venv .venv
           .venv/bin/python -m pip install -q --disable-pip-version-check --require-hashes -r requirements-dev.txt
-      - name: Every page complete, every local file there, every link off the site https, every stamp current
-        run: .venv/bin/python -E -s -B -m pytest -q tests/test_site.py
+      - name: Every page complete, every local file there, every link off the site https, every stamp current; llms.txt, the JSON-LD and security.txt current
+        run: .venv/bin/python -E -s -B -m pytest -q tests/test_site.py tests/test_site_meta.py
   deploy:
     name: docs/ to GitHub Pages
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
@@ -67,5 +71,9 @@ jobs:
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9  # v5.0.0
         with:
           path: docs
+          # docs/.well-known/security.txt (RFC 9116): the action leaves out dot-named files and folders unless asked;
+          # tests/test_site_meta.py keeps .well-known/ the only one in docs/. Pages builds with this workflow, not
+          # Jekyll, so no .nojekyll is needed.
+          include-hidden-files: true
       - id: deployment
         uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346  # v5.0.1

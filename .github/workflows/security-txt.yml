@@ -1,0 +1,32 @@
+# The website's security.txt (RFC 9116, docs/.well-known/security.txt) must not lapse. Its Expires is the one value time
+# changes, so the build and the tests only warn about it (src/site/make_site_meta.py --check); this monthly check fails
+# once it is within 60 days or past, and then opens or comments on one issue saying to run ./build.sh site-meta and
+# commit the renewed file. GitHub's Linux machines only.
+name: security-txt
+on:
+  schedule:
+    - cron: "41 12 3 * *"   # the 3rd of each month, about 07:41 in Texas
+  workflow_dispatch:
+permissions: {}
+concurrency:
+  group: security-txt
+  cancel-in-progress: false
+jobs:
+  expires:
+    name: security.txt's Expires
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read   # the file and the script
+      issues: write    # the issue for Dan, when it is near
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: "3.14"
+      - name: Check the Expires; report a near or past one on an issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python -I -B src/site/make_site_meta.py --expires-check --report

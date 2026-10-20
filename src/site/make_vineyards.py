@@ -18,18 +18,23 @@ vineyard sent through the website's form (src/vineyards/approve.py).
 src/site/aquifer/vineyards.py says what each file holds.
 
 docs/assets/vineyards/record.json records the inputs' SHA-256s, the
-parameters and the files written with their sizes. The data is made again
-only when that record would change, or a file it lists is missing or not
-its size; with --check nothing is written, and the exit status is 3 when
-the data is stale. Every file is written into a new folder that replaces
-the old one only when every file is under the hooks' 2 MB. Standard library
-only.
+parameters, the files written with their sizes and the data's stamp: a short
+SHA-256 of every file written, which changes whenever any of them does. The
+pages fetch the record unstamped and revalidated (docs/assets/vineyard-data.js)
+and load each vineyard file as name?v=stamp, so a browser that cached the old
+data for GitHub Pages' ten minutes gets the new data at once after a merge.
+The data is made again only when that record would change, or a file it lists
+is missing or not its size, or the stamp is not the files'; with --check
+nothing is written, and the exit status is 3 when the data is stale. Every
+file is written into a new folder that replaces the old one only when every
+file is under the hooks' 2 MB. Standard library only.
 
 Usage:
     make_vineyards.py [--check] [--root DIR]
 """
 
 import argparse
+import hashlib
 import json
 import os
 import shutil
@@ -41,6 +46,7 @@ from aquifer import record
 from aquifer import vineyards
 
 STALE = 3  # --check's exit status when the data is stale
+STAMP_DIGITS = 7  # hex digits of the stamp, as the scripts' (stamp_assets.py)
 OUT = os.path.join("docs", "assets", "vineyards")
 INPUTS = {
     "vineyards": "resources/vineyards/vineyards-EPSG4269.geojson",
@@ -93,12 +99,33 @@ def parameters():
     return json.loads(json.dumps(out))  # tuples as lists, as read back
 
 
-def expected(local, outputs=None):
+def data_stamp(folder):
+    """The stamp of the vineyard data: a short SHA-256 of every file.
+
+    Every file but the record is hashed with its path, in path order, so the
+    stamp changes whenever any file's name or bytes change.
+
+    Args:
+        folder: The data's folder (docs/assets/vineyards).
+
+    Returns:
+        STAMP_DIGITS hex digits.
+    """
+    digest = hashlib.sha256()
+    for rel in sorted(record.listing(folder)):
+        digest.update(rel.encode("utf-8") + b"\0")
+        digest.update(record.sha256_file(os.path.join(folder, rel)).encode())
+        digest.update(b"\n")
+    return digest.hexdigest()[:STAMP_DIGITS]
+
+
+def expected(local, outputs=None, stamp=None):
     """The record a run would write.
 
     Args:
         local: local_digests().
         outputs: The files written, {path: bytes}; None leaves them out.
+        stamp: data_stamp() of the files written; None leaves it out.
 
     Returns:
         The record, a JSON-ready dict.
@@ -114,6 +141,8 @@ def expected(local, outputs=None):
     }
     if outputs is not None:
         out["outputs"] = dict(sorted(outputs.items()))
+    if stamp is not None:
+        out["stamp"] = stamp
     return out
 
 
@@ -122,7 +151,15 @@ def stale_reasons(root):
     out_dir = os.path.join(root, OUT)
     new = dict(expected(local_digests(root)), inputs={})
     files = record.listing(out_dir) if os.path.isdir(out_dir) else {}
-    return record.differences(record.read_record(out_dir), new, files)
+    old = record.read_record(out_dir)
+    stale = record.differences(old, new, files)
+    if (
+        old is not None
+        and os.path.isdir(out_dir)
+        and old.get("stamp") != data_stamp(out_dir)
+    ):
+        stale.append("stamp is not the data's")
+    return stale
 
 
 def stats(figures):
@@ -161,7 +198,7 @@ def generate(root, words=()):
         )
     record.write_json(
         os.path.join(new, record.RECORD),
-        expected(local_digests(root), files),
+        expected(local_digests(root), files, data_stamp(new)),
         indent=1,
     )
     old = os.path.join(root, "target", "vineyards-old")

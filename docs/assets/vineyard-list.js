@@ -1,6 +1,7 @@
 // The vineyards on this site (vineyards.html): the list and the map, from the
 // site's vineyard data (assets/vineyards/, made by src/site/make_vineyards.py
-// from resources/vineyards/). The list is grouped as The water groups the
+// from resources/vineyards/, read through vineyard-data.js, so always the
+// current data). The list is grouped as The water groups the
 // blocks; each vineyard shows how many blocks it has, the year it was first
 // planted and its varieties when given, a button that shows it on the map and
 // one that opens the form to suggest a change to it (vineyard-wizard.js).
@@ -8,9 +9,9 @@
 // only when it comes near the screen, or when a vineyard is asked for. Text
 // from the data is only ever set as text, never parsed as HTML.
 import { apiKey } from "./map-config.js?v=999720b";
+import { vineyardJson, vineyardUrl } from "./vineyard-data.js?v=3ebd8f3";
 
 const SDK = "https://js.arcgis.com/5.1/";
-const DATA = "assets/vineyards/";
 const GROUPS = [
   ["hsd", "In the proposed Hickory Sands District"],
   ["llano-uplift", "Elsewhere in the proposed Llano Uplift AVA"],
@@ -32,12 +33,6 @@ const el = (tag, cls, text) => {
   if (text !== undefined) e.textContent = text;
   return e;
 };
-
-async function json(path) {
-  const r = await fetch(path);
-  if (!r.ok) throw new Error(`${path}: ${r.status}`);
-  return r.json();
-}
 
 // --- the map ------------------------------------------------------------------
 
@@ -67,7 +62,7 @@ function openMap() {
       renderer: { type: "simple", symbol: { type: "simple-fill", color: [0, 0, 0, 0], outline: { color: [...YELLOW, 0.95], width: 2, style: "dash" } } },
     });
     const blocks = new GeoJSONLayer({
-      url: `${DATA}vineyards.geojson`,
+      url: await vineyardUrl("vineyards.geojson"),
       title: "The vineyards",
       outFields: ["*"],
       renderer: {
@@ -147,7 +142,7 @@ function row(entry) {
 async function list() {
   const box = $("vy-list");
   try {
-    const { vineyards } = await json(`${DATA}register.json`);
+    const { vineyards } = await vineyardJson("register.json");
     box.replaceChildren();
     for (const [category, heading] of GROUPS) {
       const found = vineyards.filter((v) => v.category === category);

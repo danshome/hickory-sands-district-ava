@@ -299,10 +299,33 @@
       shape(g, "geo-arrow", null, coords([[x - 4, s - 14], [x + 4, s - 14], [x, s - 6]]));
       var from = side === 0 ? 16 : run[run.length - 1] + 14;
       var to = side === 0 ? run[0] - 14 : W - 16;
-      line(g, "geo-aquifer", sample(function (u) {
-        return (top(u) + bottom(u)) / 2;
-      }, from, to));
+      held(g, from, to, top, bottom);
     });
+  }
+
+  // The Hickory Aquifer is the water-bearing part of the
+  // Hickory Sandstone Member, so its line keeps to the sandstone: it runs
+  // midway through the member, below the land surface, and breaks where the member pinches out
+  // against a granite knob. Water in the granite is not drawn.
+  function held(g, from, to, top, bottom) {
+    var run = [];
+    function end() {
+      if (run.length > 1) {
+        line(g, "geo-aquifer", run);
+      }
+      run = [];
+    }
+    sample(function (u) {
+      return u;
+    }, from, to).forEach(function (p) {
+      var u = p[0];
+      if (bottom(u) - top(u) > 2 && landNow(u) < top(u)) {
+        run.push([u, (top(u) + bottom(u)) / 2]);
+      } else {
+        end();
+      }
+    });
+    end();
   }
 
   /* The figure. */

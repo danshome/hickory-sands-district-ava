@@ -280,10 +280,48 @@
       }));
     }
 
+    if (stage === 2 || stage === 3) {
+      cambrian(g, stage);
+    }
     if (stage === 8) {
       today(g);
     }
     return g;
+  }
+
+  // A horizontal arrow from x1 to x2 at y, its head at x2.
+  function arrow(g, cls, x1, x2, y) {
+    var dir = x2 > x1 ? 1 : -1;
+    svg("line", { "class": cls, x1: x1, y1: y, x2: x2 - 6 * dir, y2: y }, g);
+    shape(g, cls, null,
+      coords([[x2 - 8 * dir, y - 4], [x2 - 8 * dir, y + 4], [x2, y]]));
+  }
+
+  // Stages 2 and 3 (issue #210): the granite weathered in place to grus;
+  // then, under the sea, its cobbles in the lowest sand, sand brought from
+  // inland by rivers and wind, and the shoreline moving inland. Schematic:
+  // the drawing has no compass, and inland is simply its left side.
+  function cambrian(g, stage) {
+    PLUTONS.forEach(function (pluton) {
+      var reach = pluton[1] * (stage === 2 ? 0.6 : 0.95);
+      for (var x = pluton[0] - reach; x <= pluton[0] + reach; x += 5) {
+        var y = knobs(x);
+        if (stage === 2) {
+          shape(g, "geo-grus", null,
+            coords([[x, y + 1.5], [x + 3.2, y + 4.5], [x - 0.8, y + 5]]));
+        } else if (y > HICKORY + 4) {
+          svg("circle", {
+            "class": "geo-cobble", cx: x.toFixed(1), cy: (y - 3).toFixed(1),
+            r: 2.4
+          }, g);
+        }
+      }
+    });
+    if (stage === 3) {
+      arrow(g, "geo-inflow", 10, 70, SEA[3] + 14);
+      arrow(g, "geo-inflow", 10, 58, SEA[3] + 25);
+      arrow(g, "geo-arrow", W - 12, W - 92, SEA[3] - 5);
+    }
   }
 
   // Stage 8: sandy soil on the outcrop of the Hickory Sandstone Member, rain
@@ -324,6 +362,10 @@
 
   var KEY = {
     water: "Sea",
+    shore: "The shoreline moving inland",
+    inflow: "Sand from inland, by rivers and wind",
+    grus: "Granite weathered to grus",
+    cobble: "Granite cobbles in the lowest sand",
     soil: "Sandy soil",
     aquifer: "Water in the Hickory Aquifer",
     cret: "Cretaceous rock",
@@ -339,8 +381,9 @@
   var KEYS = [
     [],
     ["granite", "gneiss"],
-    ["unconformity", "granite", "gneiss"],
-    ["water", "hickory", "unconformity", "granite", "gneiss"],
+    ["grus", "unconformity", "granite", "gneiss"],
+    ["water", "shore", "inflow", "hickory", "cobble", "unconformity",
+      "granite", "gneiss"],
     ["water", "later", "hickory", "unconformity", "granite", "gneiss"],
     ["later", "hickory", "unconformity", "fault", "granite", "gneiss"],
     ["water", "worn", "cret", "kbase", "later", "hickory", "unconformity",
@@ -439,7 +482,8 @@
   var key = el("ul", "geo-key");
   caption.appendChild(now);
   caption.appendChild(key);
-  var note = el("p", "geo-note");
+  var NOTE = "A schematic section across the uplift, not to scale.";
+  var note = el("p", "geo-note", NOTE);
   caption.appendChild(note);
   figure.appendChild(caption);
 
@@ -529,7 +573,9 @@
     art.appendChild(draw(n));
     nowTitle.textContent = s.title;
     nowAge.textContent = s.age;
-    note.textContent = "A schematic section across the uplift, not to scale." +
+    note.textContent = NOTE +
+      (n === 3 ? " The arrows are schematic: inland is to the left, not a " +
+        "compass direction." : "") +
       (n >= 5 ? " Later Paleozoic layers, laid down after the Ellenburger " +
         "Group and partly worn away, are left out." : "");
     count.textContent = s.index + " / 08";

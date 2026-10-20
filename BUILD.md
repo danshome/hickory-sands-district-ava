@@ -151,6 +151,8 @@ src/
                          API helpers for another agent's connector); SETUP.md: the switch-over from Shopify
                          make_land (with land/): The land's slice and maps (docs/assets/land/)
                          stamp_assets: the scripts' and stylesheets' version stamps (#138)
+                         make_site_meta: docs/llms.txt, each indexable page's JSON-LD and
+                         docs/.well-known/security.txt, from the pages, SECURITY.md, LICENSE.txt and ABOUT.md
   publish/               ArcGIS Online: agol_publish, agol_layer, agol_dashboard, agol_org_categories, agol_share (what
                          is sent); agol_dryrun + agol_dryrun_checks (the dry run); agol_check (the live site)
 resources/
@@ -224,7 +226,10 @@ research/                research, audits, design proposals and prototypes until
    (`src/site/make_aquifer_3d.py --check`) is checked by its record, `docs/assets/aquifer/record.json`, with no
    download, and the vineyards' (`src/site/make_vineyards.py --check`) by theirs,
    `docs/assets/vineyards/record.json` (see The website below), and The land's slice and maps
-   (`src/site/make_land.py --check`) by theirs, `docs/assets/land/record.json`, the same way. Last, every script and
+   (`src/site/make_land.py --check`) by theirs, `docs/assets/land/record.json`, the same way. The site's
+   machine-readable files (`src/site/make_site_meta.py --check`: `docs/llms.txt`, each indexable page's JSON-LD and
+   `docs/.well-known/security.txt`) must be what the pages, SECURITY.md and LICENSE.txt give (an Expires that is near
+   or past only warns; see The website below). Last, every script and
    stylesheet the pages load, and every module a script imports, must carry the version stamp of the file as it is
    (`src/site/stamp_assets.py --check`, #138).
 
@@ -412,6 +417,14 @@ for Python; 2-space YAML and TOML). By hand: `.venv/bin/ruff format .` and `.ven
   stamp of the file as it is now (so a pull request that changes a script without stamping it again fails); a page
   that has moved (`explore.html`, `aquifer.html`) sends the reader to the map by script and by meta refresh, and no
   page links it; no page names or links the 2023 ArcGIS StoryMap (Walk the line is the site's only story map);
+- `test_site_meta.py`: `docs/llms.txt`, the pages' JSON-LD and `docs/.well-known/security.txt` are what
+  `src/site/make_site_meta.py` makes of the site now; llms.txt has the llms.txt proposal's structure and lists every
+  indexed page in the sitemap's order; every JSON-LD block parses and names its page's canonical URL, title and
+  description, and a noindex page has none; the Datasets say "proposed" and name no one; security.txt has RFC 9116's
+  fields and SECURITY.md's two routes, and a near Expires only warns; what stops the generator (a page neither in the
+  sitemap nor noindex, a bad sitemap URL, unpaired markers, a missing section), and `--check` on a copy of `docs/`
+  (exit 3 on a stale file, 1 on a broken page); `.well-known/` is the only dot-named path in `docs/`, and the Pages
+  workflow deploys it;
 - `test_stamp_assets.py`: the stamper, on a made-up site: only local scripts and stylesheets stamped, with the hash
   of the file as served (a module's taken after its imports are stamped, so a change reaches every importer and page);
   each importer names a module alike; a second run changes nothing; `--check` writes nothing and exits 3; a stale or
@@ -588,6 +601,9 @@ git tag v2026.10.20 && git push origin v2026.10.20
   `VINEYARD_FUNCTION_URL`): asks the vineyard function to put its private table right against GitHub (closings a failed
   webhook delivery missed, rows not yet tied to their issues, the deletions) and, when that fails, opens or comments on
   one issue for Dan (`src/vineyards/reconcile.py`).
+- **security-txt** (`security-txt.yml`, Linux, monthly and by hand): `src/site/make_site_meta.py --expires-check
+  --report` fails when `docs/.well-known/security.txt`'s Expires is within 60 days or past, and then opens or
+  comments on one issue, "security.txt expires soon: run ./build.sh site-meta", the same way as vineyard-reconcile.
 - **site** (`site.yml`, Linux): the website. On pull requests that touch `docs/` (or the stamper, or the walk page's
   template), its tests (`tests/test_site.py`, the stamps among them); on
   a push to `main` that touches `docs/`, and by hand, the same tests and then `docs/` deployed to GitHub Pages as it
@@ -713,6 +729,29 @@ keeping the code of both sides with either stamp, then runs it again. `./build.s
 when one is missing or stale), and so do `tests/test_site.py` (the lint and site workflows) on every pull request.
 The pages themselves, the images and the data files (`docs/data/`, `docs/assets/aquifer/`) are not stamped: a
 browser takes a new page once its copy is ten minutes old.
+
+**The site's machine-readable files** come from `src/site/make_site_meta.py` (standard library only), run by
+`./build.sh site-data`, or alone, with no build, by `./build.sh site-meta`; commit what it changes. Each is made from
+what the site already says, so none types a title, a description, a figure or a URL:
+
+- `docs/llms.txt` ([llms.txt](https://llmstxt.org/)): the site's name, the home page's meta description, the footer's
+  line on who makes the site, then every indexable page in the sitemap's order (title, canonical URL, meta
+  description), the public record Status and The boundary link, and the GeoJSON downloads The map links. No
+  `llms-full.txt`: it is not in the proposal, and Google does not use llms.txt.
+- a JSON-LD block (schema.org) before `</head>` in every indexable page and in `src/site/walk.template.html`, between
+  the `SITE-META` comments: WebSite on Home; WebPage on each page, from its head; a Place, "(proposed)", on The
+  boundary, described by that page's sentence on the line; a Dataset for each GeoJSON download on The map, from its
+  sentence on the proposed revision and its paragraph on the data, named "(proposed)" and licensed by LICENSE.txt's
+  CC0 1.0 URL (no creator: The map names no one). The
+  boxes come from `docs/data/boundary.geojson`. Only what the page shows, as Google's structured data policies ask; no
+  Organization, ratings or breadcrumbs.
+- `docs/.well-known/security.txt` ([RFC 9116](https://www.rfc-editor.org/rfc/rfc9116)): SECURITY.md's two routes
+  as Contact, its GitHub URL as Policy, its own URL as Canonical, `Preferred-Languages: en`, and an Expires under a
+  year out. A run keeps the Expires while it is more than 60 days away and otherwise sets it 360 days from today.
+  Time passing never fails `--check`, the build or the tests (a near or past Expires only warns); the monthly
+  **security-txt** workflow does that instead (below). The Pages
+  workflow uploads `docs/` with `include-hidden-files: true`, since `actions/upload-pages-artifact` leaves out
+  dot-named paths otherwise; Pages builds from that workflow, not Jekyll, so no `.nojekyll` is needed.
 
 The rest is set outside the repository, once:
 

@@ -244,7 +244,7 @@ def test_well_known_is_the_only_dot_named_path_in_docs():
     found = []
     for folder, dirs, files in os.walk(SITE):
         for name in dirs + files:
-            if name.startswith("."):
+            if name.startswith(".") and name != ".DS_Store":  # gitignored
                 found.append(os.path.relpath(os.path.join(folder, name), SITE))
     assert found == [".well-known"]
 

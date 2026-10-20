@@ -25,7 +25,7 @@
 #   ./build.sh stamp      version-stamp every script and stylesheet the website loads (assets/x.js?v=<hash>, #138), with
 #                         no build needed: run it after changing one (or merging a branch that did) and commit it
 #   ./build.sh site-meta  write docs/llms.txt, each indexable page's JSON-LD and docs/.well-known/security.txt from the
-#                         pages, SECURITY.md, LICENSE.txt and ABOUT.md, with no build needed: run it after changing a
+#                         pages, SECURITY.md and LICENSE.txt, with no build needed: run it after changing a
 #                         page's title, description or canonical, the sitemap, or those files, and commit it
 #
 # No manual steps, on macOS or Linux: missing tools are installed with Homebrew (GDAL, poppler, Python 3.14; on macOS
@@ -180,7 +180,7 @@ site_data() {
     run "${AQUIFER_3D[@]}" --check           # exits 3 when an input snapshot, a parameter or a file changed; no download (#135)
     run "${VINEYARDS[@]}" --check            # exits 3 when the vineyards, the well tiles or a parameter changed
     run "${LAND[@]}" --check                 # the same for The land's slice and maps; no download
-    run "${SITE_META[@]}" --check            # exits 3 when llms.txt, a page's JSON-LD or security.txt is stale or expired
+    run "${SITE_META[@]}" --check            # exits 3 when llms.txt, a page's JSON-LD or security.txt is stale; a near Expires only warns
     run "${STAMP[@]}" --check                # exits 3 when a script's or stylesheet's version stamp is missing or stale (#138)
 }
 

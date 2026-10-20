@@ -14,16 +14,19 @@ so nothing here types a page's title, a description, a figure or a URL:
   home page; WebPage on each page, from its own head; a Place on the page
   that explains the boundary (The boundary), described by that page's own
   sentence; and a Dataset for each GeoJSON download on the page that offers
-  them with its paragraph on the data (The map), licensed as LICENSE.txt
-  says and credited as ABOUT.md credits the GIS work. The boxes come from
+  them with its paragraph on the data (The map), named and described as the
+  proposed revision and licensed as LICENSE.txt says. The boxes come from
   docs/data/boundary.geojson. A page marked noindex gets no block.
 - docs/.well-known/security.txt (RFC 9116): the two reporting routes in
   SECURITY.md, its GitHub URL as the Policy, the file's own URL as the
   Canonical, and an Expires under a year out. The Expires is the one value
   time changes: a write keeps it while it is more than REFRESH_DAYS away and
-  otherwise sets it EXPIRES_DAYS from today; the check fails only when it
-  has passed or is more than a year away, and warns inside REFRESH_DAYS, so
-  ./build.sh site-data (or site-meta) renews it before it lapses.
+  otherwise sets it EXPIRES_DAYS from today. Time passing never fails
+  --check (it only warns inside REFRESH_DAYS or once Expires has passed), so
+  neither the build nor the tests break on a date; --expires-check, which
+  .github/workflows/security-txt.yml runs each month, fails inside
+  REFRESH_DAYS and, with --report, opens or comments on one issue saying to
+  run ./build.sh site-meta.
 
 Run it after make_site_data.py has written walk.html from its template (the
 template carries the same block, so the two stay identical). Standard
@@ -31,13 +34,16 @@ library only, so the lint workflow can test it.
 
 Usage (the project .venv, -E -s):
   make_site_meta.py [--site DIR] [--template PAGE] [--check]
-With --check nothing is written; it exits 3 when a file is stale. Other
-errors exit 1.
+  make_site_meta.py [--site DIR] --expires-check [--report]
+With --check nothing is written; it exits 3 when a file is stale. With
+--expires-check it reads only security.txt and exits 1 when its Expires is
+missing, past or within REFRESH_DAYS. Other errors exit 1.
 """
 
 import argparse
 import datetime
 import html
+from html.parser import HTMLParser
 import json
 import math
 import os
@@ -52,15 +58,18 @@ SITE = os.path.join(ROOT, "docs")
 TEMPLATE = os.path.join(ROOT, "src", "site", "walk.template.html")
 SECURITY_MD = os.path.join(ROOT, "SECURITY.md")
 LICENSE_TXT = os.path.join(ROOT, "LICENSE.txt")
-ABOUT_MD = os.path.join(ROOT, "ABOUT.md")
 LLMS = "llms.txt"
 SECURITY_TXT = os.path.join(".well-known", "security.txt")
 EXPIRES_DAYS = 360  # RFC 9116 recommends less than a year
 REFRESH_DAYS = 60  # a write renews an Expires this close; the check warns
+PLACE_PAGE = "boundary.html"  # must carry the Place (its explanation)
+DATA_PAGE = "map.html"  # must carry the Datasets (its about-data section)
 GEOJSON_TYPE = "application/geo+json"  # RFC 7946's media type
 START = "<!-- SITE-META: made by src/site/make_site_meta.py; do not edit -->"
 END = "<!-- /SITE-META -->"
 BLOCK = re.compile(re.escape(START) + r".*?" + re.escape(END) + r"\n?", re.S)
+# A robots meta tag that keeps the page out of search engines.
+NOINDEX = re.compile(r'<meta name="robots" content="[^"]*\bnoindex\b')
 # What may not stand bare in a <script> data block, as JSON escapes it.
 SCRIPT_SAFE = {
     "<": "\\u003c",
@@ -181,7 +190,7 @@ def head(path):
         "title": html.unescape(title.group(1)).strip(),
         "description": html.unescape(desc.group(1)),
         "canonical": canon.group(1) if canon else None,
-        "noindex": re.search(r'<meta name="robots"', text) is not None,
+        "noindex": NOINDEX.search(text) is not None,
         "site_name": html.unescape(site.group(1)) if site else None,
         "lang": lang.group(1),
     }
@@ -267,6 +276,10 @@ class Site:
             if page["noindex"] or page["canonical"] != url:
                 sys.exit(f"sitemap: {url} is noindex or not {name}'s canonical")
             out.append((name, page))
+        listed = {name for name, _ in out}
+        for name, page in self.pages.items():
+            if not page["noindex"] and name not in listed:
+                sys.exit(f"docs/{name}: neither in sitemap.xml nor noindex")
         return out
 
     def short_title(self, page):
@@ -302,6 +315,53 @@ def footer_line(page_text, where):
     return plain(para.group(1))
 
 
+class _Anchors(HTMLParser):
+    """Finds every <a>: its attributes by name and its inner HTML."""
+
+    def __init__(self, text):
+        """Parses the text.
+
+        Args:
+            text: The HTML.
+        """
+        super().__init__(convert_charrefs=True)
+        self.text = text
+        self.starts = [0] + [i + 1 for i, c in enumerate(text) if c == "\n"]
+        self.found = []
+        self.open = None
+        self.feed(text)
+        self.close()
+
+    def _offset(self):
+        line, column = self.getpos()
+        return self.starts[line - 1] + column
+
+    def handle_starttag(self, tag, attrs):
+        """Opens an <a>, noting where its content starts."""
+        if tag == "a":
+            start = self._offset() + len(self.get_starttag_text())
+            self.open = (dict(attrs), start)
+
+    def handle_endtag(self, tag):
+        """Closes an <a>, keeping its attributes and inner HTML."""
+        if tag == "a" and self.open is not None:
+            attrs, start = self.open
+            self.found.append((attrs, self.text[start : self._offset()]))
+            self.open = None
+
+
+def anchors(fragment):
+    """Returns every <a> in an HTML fragment.
+
+    Args:
+        fragment: The HTML.
+
+    Returns:
+        [(attributes, inner HTML)], attribute values unescaped.
+    """
+    return _Anchors(fragment).found
+
+
 def external_links(page_text, base):
     """Returns a page's external "text-link" links, in order.
 
@@ -313,12 +373,13 @@ def external_links(page_text, base):
         [(url, name, note)].
     """
     out = []
-    pattern = r'<a class="text-link[^"]*" href="(https://[^"]+)">(.*?)</a>'
-    for m in re.finditer(pattern, page_text, re.S):
-        url = html.unescape(m.group(1))
-        if url.startswith(base):
+    for attrs, inner in anchors(page_text):
+        url = attrs.get("href") or ""
+        if "text-link" not in (attrs.get("class") or "").split():
             continue
-        name, note = link_name(m.group(2))
+        if not url.startswith("https://") or url.startswith(base):
+            continue
+        name, note = link_name(inner)
         out.append((url, name, note))
     return out
 
@@ -337,19 +398,18 @@ def data_section(page_text):
         such section.
     """
     sec = re.search(
-        r'<section id="about-data"[^>]*>(.*?)</section>', page_text, re.S
+        r'<section\b[^>]*\bid="about-data"[^>]*>(.*?)</section>',
+        page_text,
+        re.S,
     )
     if sec is None:
         return None
     para = re.search(r"<p>(.*?)</p>", sec.group(1), re.S)
     links = [
-        (html.unescape(m.group(1)), link_name(m.group(2))[0])
-        for m in re.finditer(
-            r'<a [^>]*href="(data/[^"]+\.geojson)"[^>]*\bdownload\b[^>]*>'
-            r"(.*?)</a>",
-            sec.group(1),
-            re.S,
-        )
+        (attrs["href"], link_name(inner)[0])
+        for attrs, inner in anchors(sec.group(1))
+        if "download" in attrs
+        and re.fullmatch(r"data/[^/?#]+\.geojson", attrs.get("href") or "")
     ]
     if para is None or not links:
         return None
@@ -367,6 +427,30 @@ def download_label(page_text):
     """
     m = re.search(r'<p class="lp-dl"><span>(.*?)</span>', page_text, re.S)
     return plain(m.group(1)) if m else ""
+
+
+def proposed_sentence(page_text):
+    """Returns the map's first sentence on the line that says "proposed".
+
+    The panel's <section id="about-district"> opens with one ("The sand line
+    is the proposed revision: ..."); without one, "The proposed revision."
+
+    Args:
+        page_text: The page.
+
+    Returns:
+        The sentence, ending in a full stop.
+    """
+    sec = re.search(
+        r'<section\b[^>]*\bid="about-district"[^>]*>.*?<p>(.*?)</p>',
+        page_text,
+        re.S,
+    )
+    if sec:
+        for sentence in re.split(r"(?<=\.)\s+(?=[A-Z])", plain(sec.group(1))):
+            if "proposed" in sentence:
+                return sentence
+    return "The proposed revision."
 
 
 def place_sentence(page_text):
@@ -439,28 +523,6 @@ def license_url():
     return m.group(0)
 
 
-def gis_credit():
-    """Returns the name ABOUT.md credits with the GIS work.
-
-    ABOUT.md: "**Name** wrote the boundary narrative, drew the boundary, and
-    did all the spatial work for the GIS layers."
-
-    Returns:
-        The name.
-    """
-    text = " ".join(read(ABOUT_MD).split())
-    m = need(
-        re.search(
-            r"\*\*([^*]+)\*\*[^*]*?drew the boundary, and did all the spatial"
-            r" work for the GIS layers",
-            text,
-        ),
-        ABOUT_MD,
-        "credit for the GIS layers",
-    )
-    return m.group(1)
-
-
 def llms_txt(site):
     """Returns docs/llms.txt.
 
@@ -499,20 +561,24 @@ def llms_txt(site):
                 record.append(
                     f"- [{title}]({url})" + (f": {note}" if note else "")
                 )
-    if record:
-        lines += ["", "## The public record", "", *record]
-    data = []
-    for _, page in site.indexed():
-        found = data_section(page["text"])
-        if found is None:
-            continue
-        label = download_label(page["text"])
-        for href, title in found[1]:
-            entry = f"- [{title}]({site.url}{href})"
-            data.append(entry + (f": {label}" if label else ""))
-        break  # one page offers them
-    if data:
-        lines += ["", "## Data", "", *data]
+    if not record:
+        sys.exit("docs/status.html, boundary.html: no external text-links")
+    lines += ["", "## The public record", "", *record]
+    offers = [
+        (name, page, data_section(page["text"]))
+        for name, page in site.indexed()
+        if data_section(page["text"]) is not None
+    ]
+    if len(offers) != 1:
+        names = ", ".join(name for name, _, _ in offers) or "none"
+        sys.exit(f"one page must offer the GeoJSON downloads, not: {names}")
+    _, page, found = offers[0]
+    label = download_label(page["text"])
+    data = [
+        f"- [{title}]({site.url}{href})" + (f": {label}" if label else "")
+        for href, title in found[1]
+    ]
+    lines += ["", "## Data", "", *data]
     return "\n".join(lines) + "\n"
 
 
@@ -553,6 +619,8 @@ def jsonld(site, name, page, box):
     }
     graph.append(webpage)
     sentence = place_sentence(page["text"])
+    if name == PLACE_PAGE and not sentence:
+        sys.exit(f"docs/{name}: no boundary-explanation sentence")
     if sentence:
         place = f"{url}#place"
         webpage["about"] = {"@id": place}
@@ -566,11 +634,13 @@ def jsonld(site, name, page, box):
             }
         )
     found = data_section(page["text"])
+    if name == DATA_PAGE and not found:
+        sys.exit(f"docs/{name}: no about-data section with GeoJSON downloads")
     if found:
         paragraph, links = found
         if len(paragraph) < 50:
             sys.exit(f"docs/{name}: the data paragraph is under 50 characters")
-        creator = {"@type": "Person", "name": gis_credit()}
+        description = f"{proposed_sentence(page['text'])} {paragraph}"
         licence = license_url()
         for href, title in links:
             stem = os.path.splitext(os.path.basename(href))[0]
@@ -578,11 +648,10 @@ def jsonld(site, name, page, box):
                 {
                     "@type": "Dataset",
                     "@id": f"{url}#{stem}",
-                    "name": f"{site.name}: {title} (GeoJSON)",
-                    "description": paragraph,
+                    "name": f"{site.name} (proposed): {title} (GeoJSON)",
+                    "description": description,
                     "url": url,
                     "license": licence,
-                    "creator": creator,
                     "isAccessibleForFree": True,
                     "spatialCoverage": {
                         "@type": "Place",
@@ -628,6 +697,12 @@ def with_block(text, block, where):
     Returns:
         The page: the block just before </head>, in place of any old one.
     """
+    starts, ends = text.count(START), text.count(END)
+    if starts != ends or starts > 1:
+        sys.exit(
+            f"{os.path.relpath(where, ROOT)}: {starts} SITE-META start and"
+            f" {ends} end markers; mend the page by hand"
+        )
     text = BLOCK.sub("", text)
     at = text.find("</head>")
     if at < 0:
@@ -747,22 +822,39 @@ def new_expires(old, now):
     return today + datetime.timedelta(days=EXPIRES_DAYS)
 
 
-def expires_problem(when, now):
-    """Returns why an Expires fails the check, or None.
+def expires_error(when, now):
+    """Returns what is wrong with an Expires as written, or None.
+
+    Time passing is never an error here (see expires_warning()).
 
     Args:
         when: The Expires, or None.
         now: The time now (aware).
 
     Returns:
-        A message, or None when it is in the future and within a year.
+        A message when it is missing or more than a year away, or None.
     """
     if when is None:
         return "no Expires in RFC 3339 with a time zone"
-    if when <= now:
-        return f"Expires {fmt(when)} has passed"
     if when > now + datetime.timedelta(days=365):
         return f"Expires {fmt(when)} is more than a year away"
+    return None
+
+
+def expires_warning(when, now):
+    """Returns a warning when an Expires has passed or is near, or None.
+
+    Args:
+        when: The Expires (aware).
+        now: The time now (aware).
+
+    Returns:
+        A message when it is within REFRESH_DAYS or past, or None.
+    """
+    if when <= now:
+        return f"security.txt's Expires {fmt(when)} has passed"
+    if when - now < datetime.timedelta(days=REFRESH_DAYS):
+        return f"security.txt expires {fmt(when)}"
     return None
 
 
@@ -807,7 +899,8 @@ def outputs(site_dir, template, now):
 def stale(path, text, now):
     """Returns why a file differs from what it should be, or None.
 
-    security.txt's Expires is checked by expires_problem(), not compared.
+    security.txt's Expires is checked by expires_error(), not compared:
+    time passing makes it no staler.
 
     Args:
         path: The file.
@@ -822,7 +915,7 @@ def stale(path, text, now):
         return f"{where} is missing"
     have = read(path)
     if path.endswith(SECURITY_TXT):
-        problem = expires_problem(parse_expires(have), now)
+        problem = expires_error(parse_expires(have), now)
         if problem:
             return f"{where}: {problem}"
         expires = re.compile(r"^Expires: .*$", re.M)
@@ -830,6 +923,82 @@ def stale(path, text, now):
             return f"{where} differs from SECURITY.md and the site"
         return None
     return None if have == text else f"{where} is stale"
+
+
+ISSUE_TITLE = "security.txt expires soon: run ./build.sh site-meta"
+
+
+def report_expiry(why):
+    """Opens the issue for Dan, or comments on the one already open.
+
+    The same way src/vineyards/reconcile.py reports its daily check, with
+    the Actions' token (GH_TOKEN) on GITHUB_REPOSITORY.
+
+    Args:
+        why: What is wrong, in a sentence.
+
+    Returns:
+        The issue's number.
+    """
+    if ROOT not in sys.path:
+        sys.path.insert(0, ROOT)  # -I leaves the repository off sys.path
+    from src.vineyards import github  # noqa: PLC0415 (only on --report)
+
+    gh = github.GitHub(
+        os.environ.get("GH_TOKEN", ""), os.environ["GITHUB_REPOSITORY"]
+    )
+    run = (
+        f"{os.environ.get('GITHUB_SERVER_URL', 'https://github.com')}/"
+        f"{gh.repo}/actions/runs/{os.environ.get('GITHUB_RUN_ID', '')}"
+    )
+    text = (
+        f"{why}.\n\nThe run: {run}\n\n"
+        "RFC 9116 says a security.txt past its Expires is stale. Run "
+        "`./build.sh site-meta` (it renews the date), commit "
+        "docs/.well-known/security.txt in a pull request, and close this "
+        "issue once it is merged."
+    )
+    for issue in gh.paged("{repo}/issues?state=open"):
+        if issue.get("title") == ISSUE_TITLE and "pull_request" not in issue:
+            gh.request(
+                "POST",
+                f"{{repo}}/issues/{issue['number']}/comments",
+                {"body": text},
+            )
+            return issue["number"]
+    made = gh.request(
+        "POST", "{repo}/issues", {"title": ISSUE_TITLE, "body": text}
+    )
+    return made["number"]
+
+
+def expires_check(site_dir, now, report):
+    """Fails when security.txt's Expires is missing, past or near.
+
+    Args:
+        site_dir: docs/.
+        now: The time now (aware).
+        report: Whether to open or comment on the issue when it fails.
+
+    Returns:
+        0 when it is more than REFRESH_DAYS away, else 1.
+    """
+    path = os.path.join(site_dir, SECURITY_TXT)
+    text = read(path) if os.path.exists(path) else None
+    when = parse_expires(text)
+    if when is None:
+        why = f"security.txt: {expires_error(when, now)}"
+    else:
+        why = expires_warning(when, now)
+    if why is None:
+        print(
+            f"security.txt expires {fmt(when)}: more than {REFRESH_DAYS} days"
+        )
+        return 0
+    print(f"{why}: run ./build.sh site-meta")
+    if report:
+        print(f"said on issue #{report_expiry(why)}")
+    return 1
 
 
 def main():
@@ -840,10 +1009,22 @@ def main():
     ap.add_argument(
         "--check", action="store_true", help="write nothing; exit 3 if stale"
     )
+    ap.add_argument(
+        "--expires-check",
+        action="store_true",
+        help="exit 1 when security.txt's Expires is near or past",
+    )
+    ap.add_argument(
+        "--report",
+        action="store_true",
+        help="with --expires-check: say so on an issue (GH_TOKEN)",
+    )
     args = ap.parse_args()
     site_dir = os.path.abspath(args.site)
     template = os.path.abspath(args.template)
     now = datetime.datetime.now(datetime.UTC)
+    if args.expires_check:
+        sys.exit(expires_check(site_dir, now, args.report))
     made = outputs(site_dir, template, now)
     if args.check:
         problems = [p for p in (stale(k, v, now) for k, v in made.items()) if p]
@@ -852,12 +1033,9 @@ def main():
             print("the site's meta files are stale: run ./build.sh site-meta")
             sys.exit(STALE)
         when = parse_expires(read(os.path.join(site_dir, SECURITY_TXT)))
-        if when - now < datetime.timedelta(days=REFRESH_DAYS):
-            print(
-                f"security.txt expires {fmt(when)}: run ./build.sh site-meta"
-                " to renew it",
-                file=sys.stderr,
-            )
+        warning = expires_warning(when, now)
+        if warning:  # never a failure: a date must not stop the build
+            print(f"{warning}: run ./build.sh site-meta", file=sys.stderr)
         print(f"site meta: {len(made)} files current")
         return
     changed = 0

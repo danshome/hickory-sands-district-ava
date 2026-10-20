@@ -155,3 +155,16 @@ def test_the_daily_check_runs_only_once_set_up():
     (run,) = [s for s in steps(flow) if "run" in s]
     assert run["run"] == "python -I -B src/vineyards/reconcile.py"
     assert run["env"]["FUNCTION_URL"] == "${{ vars.VINEYARD_FUNCTION_URL }}"
+
+
+def test_the_security_txt_check_runs_monthly_and_holds_the_least():
+    flow = load("security-txt.yml")
+    assert flow["permissions"] == {}
+    assert set(flow[True]) == {"schedule", "workflow_dispatch"}
+    (job,) = flow["jobs"].values()
+    assert job["permissions"] == {"contents": "read", "issues": "write"}
+    (run,) = [s for s in steps(flow) if "run" in s]
+    assert run["run"] == (
+        "python -I -B src/site/make_site_meta.py --expires-check --report"
+    )
+    assert run["env"] == {"GH_TOKEN": "${{ github.token }}"}

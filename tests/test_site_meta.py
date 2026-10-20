@@ -13,6 +13,10 @@ import html
 import json
 import os
 import re
+import shutil
+import subprocess
+import sys
+import warnings
 
 import pytest
 
@@ -39,7 +43,7 @@ def head_of(text):
     canon = re.search(r'<link rel="canonical" href="([^"]+)">', text)
     return {
         "canonical": canon.group(1) if canon else None,
-        "noindex": '<meta name="robots"' in text,
+        "noindex": msm.NOINDEX.search(text) is not None,
         "title": html.unescape(re.search(r"<title>(.*?)</title>", text)[1]),
         "description": html.unescape(
             re.search(r'<meta name="description" content="([^"]*)">', text)[1]
@@ -109,6 +113,37 @@ def test_llms_txt_links_the_record_and_the_data():
         assert os.path.isfile(os.path.join(SITE, path or "index.html")), url
 
 
+def section(name):
+    part = llms().split(f"## {name}\n", 1)[1].split("\n## ", 1)[0]
+    return [x for x in part.split("\n") if x.startswith("- ")]
+
+
+def test_llms_txt_s_record_is_the_pages_external_text_links():
+    url = msm.Site(SITE).url
+    want = []
+    for name in ("status.html", "boundary.html"):
+        for link in msm.external_links(read(f"{SITE}/{name}"), url):
+            if link[0] not in [w[0] for w in want]:
+                want.append(link)
+    got = [
+        re.match(r"^- \[([^\]]+)\]\(([^)]+)\)(?:: (.*))?$", x).groups()
+        for x in section("The public record")
+    ]
+    assert [(u, n, o or "") for n, u, o in got] == want
+    # The class may stand anywhere among the attributes.
+    moved = (
+        '<a href="https://example.org/x" rel="external" class="a text-link">'
+        "X <small>PDF</small></a>"
+    )
+    assert msm.external_links(moved, url) == [
+        ("https://example.org/x", "X", "PDF")
+    ]
+
+
+def test_llms_txt_s_data_lists_the_three_downloads():
+    assert len(section("Data")) == 3
+
+
 def test_llms_txt_words():
     assert "agreed" not in llms().lower()
 
@@ -138,6 +173,9 @@ def test_json_ld_parses_and_names_its_page(name):
     for node in graph:
         if node["@type"] == "Dataset":
             assert node["url"] == head["canonical"]
+            assert "(proposed)" in node["name"]
+            assert "proposed" in node["description"]
+            assert "creator" not in node  # The map names no one
             assert 50 <= len(node["description"]) <= 5000
             assert node["license"].startswith("https://creativecommons.org/")
             for d in node["distribution"]:
@@ -167,6 +205,17 @@ def test_a_block_cannot_close_its_script():
     inner = LD.search(block).group(1)
     assert "<" not in inner and ">" not in inner and "&" not in inner
     assert json.loads(inner) == {"x": "</script><b>& "}
+
+
+@pytest.mark.parametrize(
+    "markers",
+    [msm.START, msm.END, msm.START + msm.END + msm.START + msm.END],
+    ids=["start only", "end only", "doubled"],
+)
+def test_unpaired_or_doubled_markers_stop(markers):
+    page = f"<html><head>{markers}</head><body></body></html>"
+    with pytest.raises(SystemExit, match="SITE-META"):
+        msm.with_block(page, msm.script_block({"a": 1}), "p")
 
 
 def test_with_block_replaces_and_removes():
@@ -216,6 +265,31 @@ def test_security_txt_names_security_md_s_routes():
     assert f["Contact"] == [report, f"mailto:{email}"]
 
 
+def test_security_txt_expires_soon_only_warns():
+    # Time passing never fails a test or the build; the monthly workflow
+    # (security-txt.yml) opens the issue instead.
+    when = msm.parse_expires(security())
+    warning = msm.expires_warning(when, NOW)
+    if warning:
+        warnings.warn(f"{warning}: run ./build.sh site-meta", stacklevel=1)
+
+
+def test_stale_ignores_expires_but_not_a_contact(tmp_path):
+    sec = tmp_path / ".well-known" / "security.txt"
+    sec.parent.mkdir()
+    want = security()
+    later = re.sub(
+        r"^Expires: .*$", "Expires: 2027-01-02T00:00:00Z", want, flags=re.M
+    )
+    sec.write_text(later, encoding="utf-8")
+    now = datetime.datetime(2026, 12, 30, tzinfo=datetime.UTC)
+    assert msm.stale(str(sec), want, now) is None
+    past = datetime.datetime(2027, 3, 1, tzinfo=datetime.UTC)
+    assert msm.stale(str(sec), want, past) is None  # passed: a warning only
+    sec.write_text(later.replace("mailto:", "mailto:x"), encoding="utf-8")
+    assert msm.stale(str(sec), want, now)
+
+
 def test_expires_kept_while_far_and_renewed_when_near():
     now = datetime.datetime(2026, 10, 19, 15, 30, tzinfo=datetime.UTC)
     far = now + datetime.timedelta(days=200)
@@ -228,13 +302,175 @@ def test_expires_kept_while_far_and_renewed_when_near():
     assert msm.new_expires(too_far, now) == fresh
 
 
-def test_expires_check_fails_only_when_passed_or_too_far():
+def test_expires_errors_and_warnings():
     now = datetime.datetime(2026, 10, 19, tzinfo=datetime.UTC)
-    assert msm.expires_problem(now + datetime.timedelta(days=10), now) is None
-    assert msm.expires_problem(now - datetime.timedelta(days=1), now)
-    assert msm.expires_problem(now + datetime.timedelta(days=400), now)
-    assert msm.expires_problem(None, now)
+    day = datetime.timedelta(days=1)
+    assert msm.expires_error(now + 10 * day, now) is None
+    assert msm.expires_error(now - day, now) is None  # time is no error
+    assert msm.expires_error(now + 400 * day, now)
+    assert msm.expires_error(None, now)
+    assert msm.expires_warning(now + 100 * day, now) is None
+    assert msm.expires_warning(now + 10 * day, now)
+    assert "passed" in msm.expires_warning(now - day, now)
     assert msm.parse_expires("Expires: 2027-01-01T00:00:00") is None  # no zone
+
+
+def test_expires_check_fails_when_near_or_past(tmp_path, capsys):
+    sec = tmp_path / ".well-known" / "security.txt"
+    sec.parent.mkdir()
+    sec.write_text("Expires: 2027-01-01T00:00:00Z\n", encoding="utf-8")
+    at = datetime.datetime
+    utc = datetime.UTC
+    assert msm.expires_check(str(tmp_path), at(2026, 9, 1, tzinfo=utc), 0) == 0
+    assert msm.expires_check(str(tmp_path), at(2026, 12, 1, tzinfo=utc), 0) == 1
+    assert msm.expires_check(str(tmp_path), at(2027, 2, 1, tzinfo=utc), 0) == 1
+    sec.write_text("Contact: mailto:a@b.c\n", encoding="utf-8")
+    assert msm.expires_check(str(tmp_path), at(2026, 9, 1, tzinfo=utc), 0) == 1
+    assert "site-meta" in capsys.readouterr().out
+
+
+# --- what stops it ------------------------------------------------------------
+
+
+def tiny_site(tmp_path, pages, locs):
+    """A made-up site: {name: (canonical or None, robots or None)}."""
+    for name, (canon, robots) in pages.items():
+        tags = '<html lang="en"><head><title>T · S</title>'
+        tags += '<meta name="description" content="D">'
+        tags += '<meta property="og:site_name" content="S">'
+        if canon:
+            tags += f'<link rel="canonical" href="{canon}">'
+        if robots:
+            tags += f'<meta name="robots" content="{robots}">'
+        (tmp_path / name).write_text(tags + "</head></html>", encoding="utf-8")
+    urls = "".join(f"<url><loc>{u}</loc></url>" for u in locs)
+    (tmp_path / "sitemap.xml").write_text(f"<urlset>{urls}</urlset>")
+    return msm.Site(str(tmp_path))
+
+
+HOME = "https://e.org/"
+
+
+def test_a_page_neither_in_the_sitemap_nor_noindex_stops(tmp_path):
+    site = tiny_site(
+        tmp_path,
+        {"index.html": (HOME, None), "a.html": (HOME + "a.html", None)},
+        [HOME],
+    )
+    with pytest.raises(SystemExit, match=r"a\.html: neither in sitemap"):
+        site.indexed()
+
+
+def test_noindex_is_read_from_the_robots_content(tmp_path):
+    site = tiny_site(
+        tmp_path,
+        {
+            "index.html": (HOME, None),
+            "a.html": (HOME + "a.html", "noindex, nofollow"),
+            "b.html": (HOME + "b.html", "nofollow"),
+        },
+        [HOME, HOME + "b.html"],
+    )
+    assert site.pages["a.html"]["noindex"]
+    assert not site.pages["b.html"]["noindex"]
+    assert [n for n, _ in site.indexed()] == ["index.html", "b.html"]
+
+
+@pytest.mark.parametrize(
+    ("loc", "message"),
+    [
+        ("https://other.org/a.html", "is not on"),
+        (HOME + "missing.html", "has no page"),
+        (HOME + "b.html", "not a.html|not b.html"),
+    ],
+    ids=["off the site", "no page", "canonical mismatch"],
+)
+def test_a_bad_sitemap_url_stops(tmp_path, loc, message):
+    site = tiny_site(
+        tmp_path,
+        {"index.html": (HOME, None), "b.html": (HOME + "a.html", None)},
+        [HOME, loc],
+    )
+    with pytest.raises(SystemExit, match=message):
+        site.indexed()
+
+
+def test_need_and_a_missing_description_stop(tmp_path):
+    with pytest.raises(SystemExit, match="no thing"):
+        msm.need(None, str(tmp_path / "x"), "thing")
+    page = tmp_path / "x.html"
+    page.write_text('<html lang="en"><head><title>T</title></head>')
+    with pytest.raises(SystemExit, match="no meta description"):
+        msm.head(str(page))
+
+
+def copy_site(tmp_path):
+    """The parts of docs/ the generator reads, and the walk template."""
+    docs = tmp_path / "docs"
+    (docs / "data").mkdir(parents=True)
+    for name in os.listdir(SITE):
+        if name.endswith((".html", ".xml", ".txt")):
+            shutil.copy(os.path.join(SITE, name), docs / name)
+    shutil.copytree(os.path.join(SITE, ".well-known"), docs / ".well-known")
+    shutil.copy(os.path.join(SITE, "data", "boundary.geojson"), docs / "data")
+    tpl = tmp_path / "walk.template.html"
+    shutil.copy(msm.TEMPLATE, tpl)
+    return docs, tpl
+
+
+def run_check(docs, tpl):
+    return subprocess.run(
+        [
+            sys.executable, "-I", "-B",
+            os.path.join(ROOT, "src", "site", "make_site_meta.py"),
+            "--site", str(docs), "--template", str(tpl), "--check",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )  # fmt: skip
+
+
+def test_the_check_passes_on_a_copy(tmp_path):
+    result = run_check(*copy_site(tmp_path))
+    assert result.returncode == 0, result.stdout + result.stderr
+
+
+@pytest.mark.parametrize("which", ["llms", "page", "template"])
+def test_the_check_exits_3_when_a_file_is_stale(tmp_path, which):
+    docs, tpl = copy_site(tmp_path)
+    path = {
+        "llms": docs / "llms.txt",
+        "page": docs / "boundary.html",
+        "template": tpl,
+    }[which]
+    text = path.read_text(encoding="utf-8")
+    edited = text.replace('"@type":"WebPage"', '"@type":"WebPage","x":1', 1)
+    if which == "llms":
+        edited = text + "- [Extra](https://e.org/)\n"
+    assert edited != text
+    path.write_text(edited, encoding="utf-8")
+    result = run_check(docs, tpl)
+    assert result.returncode == msm.STALE, result.stdout + result.stderr
+
+
+def test_the_check_exits_1_on_a_broken_page(tmp_path):
+    docs, tpl = copy_site(tmp_path)
+    page = docs / "map.html"
+    text = page.read_text(encoding="utf-8")
+    page.write_text(text.replace('id="about-data"', 'id="x"'), encoding="utf-8")
+    result = run_check(docs, tpl)
+    assert result.returncode == 1
+    assert "GeoJSON downloads" in result.stderr
+
+
+def test_the_template_s_canonical_must_be_walk_s(tmp_path):
+    docs, tpl = copy_site(tmp_path)
+    text = tpl.read_text(encoding="utf-8")
+    tpl.write_text(text.replace('/walk.html"', '/other.html"', 1))
+    result = run_check(docs, tpl)
+    assert result.returncode == 1
+    assert "walk template" in result.stderr
 
 
 # --- deployed -----------------------------------------------------------------
@@ -252,3 +488,24 @@ def test_well_known_is_the_only_dot_named_path_in_docs():
 def test_the_pages_workflow_deploys_dot_named_paths():
     text = read(os.path.join(ROOT, ".github", "workflows", "site.yml"))
     assert re.search(r"^\s+include-hidden-files: true$", text, re.M)
+
+
+def test_a_monthly_workflow_reports_a_near_expires():
+    text = read(os.path.join(ROOT, ".github", "workflows", "security-txt.yml"))
+    assert "--expires-check --report" in text
+    assert "issues: write" in text
+
+
+@pytest.mark.parametrize(
+    ("name", "mark", "message"),
+    [
+        ("boundary.html", "boundary-explanation", "boundary-explanation"),
+        ("map.html", 'id="about-data"', "about-data"),
+    ],
+)
+def test_json_ld_stops_without_the_place_or_the_data(name, mark, message):
+    site = msm.Site(SITE)
+    page = dict(site.pages[name])
+    page["text"] = page["text"].replace(mark, "gone")
+    with pytest.raises(SystemExit, match=message):
+        msm.jsonld(site, name, page, "0 0 1 1")

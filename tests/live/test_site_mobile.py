@@ -2061,3 +2061,70 @@ def test_the_map_says_so_when_the_boundary_does_not_load(chrome):
         problems += unexpected(view, aborted)
         view.close()
     assert not problems, "\n  ".join(problems)
+
+
+# ---- The vineyards: the register reads without JavaScript (#171) -----------
+
+
+def register_names():
+    """The vineyards' names, in order, as this checkout's register has them."""
+    path = ROOT / "docs" / "assets" / "vineyards" / "register.json"
+    vineyards = json.loads(path.read_text("utf-8"))["vineyards"]
+    return [v["name"] for v in vineyards]
+
+
+@pytest.mark.parametrize("phone", sorted(MAP_PHONES))
+@pytest.mark.parametrize("script", [False, True], ids=["no-js", "js"])
+def test_the_vineyard_register_reads_with_and_without_javascript(
+    chrome, phone, script
+):
+    """The page names every vineyard from its own HTML, script or none.
+
+    Without JavaScript the list the build wrote (make_vineyards.py) is the
+    list; with it, vineyard-list.js draws the same list again with its
+    buttons. Either way each vineyard has its Suggest a change, big enough to
+    tap, and the page does not scroll sideways.
+    """
+    p, browser = chrome
+    width, height, device, ratio = PHONES[phone]
+    context = browser.new_context(
+        viewport={"width": width, "height": height},
+        device_scale_factor=ratio,
+        is_mobile=True,
+        has_touch=True,
+        user_agent=p.devices[device]["user_agent"],
+        java_script_enabled=script,
+    )
+    name = f"vineyards-{'js' if script else 'no-js'}-{phone}"
+    view = SiteView(name, context.new_page(), True)
+    problems = []
+    try:
+        view.page.goto(
+            f"{BASE}/vineyards.html", wait_until="load", timeout=LOAD_S * 1000
+        )
+        if script:  # the script's list: its Show on the map buttons
+            view.page.locator("#vy-list .vy-show").first.wait_for()
+        names = view.page.locator("#vy-list .vy-name").all_inner_texts()
+        if names != register_names():
+            problems.append(f"the list names {names}")
+        if "JavaScript" in view.page.locator("#vy-list").inner_text():
+            problems.append("the list says it needs JavaScript")
+        changes = view.page.locator("#vy-list .vy-change")
+        if changes.count() != len(names):
+            problems.append(
+                f"{changes.count()} Suggest a change, not {len(names)}"
+            )
+        for i in range(changes.count()):
+            box = changes.nth(i).bounding_box()
+            if min(box["width"], box["height"]) < TARGET - SUBPIXEL:
+                problems.append(f"Suggest a change {i} is {box}")
+                break
+        wide = view.page.evaluate(SIDEWAYS)
+        if max(wide["page"], wide["body"]) > wide["screen"] + 1:
+            problems.append(f"scrolls sideways: {wide}")
+        view.page.locator("#vy-list").scroll_into_view_if_needed()
+        view.shot("register")
+    finally:
+        problems += view.problems()
+        view.close()
+    assert not problems, f"{name}:\n  " + "\n  ".join(problems)

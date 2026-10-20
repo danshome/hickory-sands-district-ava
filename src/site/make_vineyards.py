@@ -27,7 +27,13 @@ The data is made again only when that record would change, or a file it lists
 is missing or not its size, or the stamp is not the files'; with --check
 nothing is written, and the exit status is 3 when the data is stale. Every
 file is written into a new folder that replaces the old one only when every
-file is under the hooks' 2 MB. Standard library only.
+file is under the hooks' 2 MB.
+
+It also writes the vineyards page's list (#171) between two markers in
+docs/vineyards.html, from register.json, so the page names every vineyard
+without JavaScript; docs/assets/vineyard-list.js draws the list again with
+its buttons. The list is stale, like the data, when it differs from what
+register.json would make. Standard library only.
 
 Usage:
     make_vineyards.py [--check] [--root DIR]
@@ -35,8 +41,10 @@ Usage:
 
 import argparse
 import hashlib
+import html
 import json
 import os
+import re
 import shutil
 import sys
 
@@ -53,6 +61,22 @@ INPUTS = {
     "wells": "docs/assets/aquifer/wells",
     "context": "docs/assets/aquifer/context.geojson",
 }
+
+PAGE = os.path.join("docs", "vineyards.html")
+START = (
+    "<!-- vineyard list: made by src/site/make_vineyards.py from "
+    "the vineyard data's register.json; never edit it by hand -->"
+)
+END = "<!-- end of the vineyard list -->"
+# The list's groups and their headings, as docs/assets/vineyard-list.js has
+# them (GROUPS there; a test checks the two agree).
+GROUPS = (
+    ("hsd", "In the proposed Hickory Sands District"),
+    ("llano-uplift", "Elsewhere in the proposed Llano Uplift AVA"),
+    ("under-development", "Under development"),
+    ("historical", "Historical"),
+)
+SLUG = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 
 
 def paths(root):
@@ -146,7 +170,7 @@ def expected(local, outputs=None, stamp=None):
     return out
 
 
-def stale_reasons(root):
+def data_reasons(root):
     """Why the committed data is stale; empty when it is up to date."""
     out_dir = os.path.join(root, OUT)
     new = dict(expected(local_digests(root)), inputs={})
@@ -160,6 +184,132 @@ def stale_reasons(root):
     ):
         stale.append("stamp is not the data's")
     return stale
+
+
+def stale_reasons(root):
+    """Why the data or the page's list is stale; empty when up to date."""
+    return data_reasons(root) + page_reasons(root)
+
+
+def _row(entry):
+    """One vineyard's row of the list, as vineyard-list.js's row() makes it.
+
+    Args:
+        entry: One entry of register.json.
+
+    Returns:
+        The row's HTML; every text from the data escaped.
+    """
+    name = html.escape(entry["name"], quote=True)
+    n = len(entry["vids"])
+    facts = [f"{n} block{'' if n == 1 else 's'}"]
+    if entry.get("year"):
+        facts.append(f"first planted {int(entry['year'])}")
+    text = (
+        f'<h4 class="vy-name">{name}</h4>'
+        f'<p class="vy-facts">{html.escape(" · ".join(facts))}</p>'
+    )
+    if entry.get("varieties"):
+        varieties = html.escape(", ".join(entry["varieties"]))
+        text += f'<p class="vy-varieties">{varieties}</p>'
+    out = f'<li class="vy-row"><div class="vy-text">{text}</div>'
+    # "Suggest a change": vineyard-wizard.js opens the form from the address
+    vid = entry.get("id")
+    if isinstance(vid, str) and SLUG.match(vid):
+        out += (
+            f'<div class="vy-actions"><a class="vy-change" '
+            f'href="#change={vid}" aria-label="Suggest a change to {name}">'
+            "Suggest a change</a></div>"
+        )
+    return out + "</li>"
+
+
+def render_list(entries):
+    """The page's list of vineyards, grouped as vineyard-list.js groups it.
+
+    Args:
+        entries: register.json's "vineyards".
+
+    Returns:
+        The HTML between the markers, lines ending in a newline.
+    """
+    lines = []
+    for category, heading in GROUPS:
+        found = [e for e in entries if e["category"] == category]
+        if not found:
+            continue
+        hid = f"vy-{category}"
+        lines.append(
+            f'<section class="vy-group" aria-labelledby="{hid}">'
+            f'<h3 class="vy-heading" id="{hid}">{html.escape(heading)}</h3>'
+            '<ul class="vy-rows">'
+        )
+        lines += [_row(e) for e in found]
+        lines.append("</ul></section>")
+    return "".join(f"{line}\n" for line in lines)
+
+
+def _page_parts(text):
+    """The page split at the markers: before, the list, after; or None."""
+    if text.count(START) != 1 or text.count(END) != 1:
+        return None
+    head, rest = text.split(START, 1)
+    body, tail = rest.split(END, 1)
+    if not body.startswith("\n"):
+        return None
+    return head + START + "\n", body[1:], END + tail
+
+
+def _wanted_list(root):
+    """The list register.json makes, or None when it cannot be read."""
+    try:
+        with open(
+            os.path.join(root, OUT, "register.json"), encoding="utf-8"
+        ) as fh:
+            return render_list(json.load(fh)["vineyards"])
+    except OSError, ValueError, KeyError:
+        return None
+
+
+def page_reasons(root):
+    """Why the page's list is stale; empty when it is up to date."""
+    try:
+        with open(os.path.join(root, PAGE), encoding="utf-8") as fh:
+            text = fh.read()
+    except OSError:
+        return [f"{PAGE} is missing"]
+    parts = _page_parts(text)
+    if parts is None:
+        return [f"{PAGE} has not its two vineyard-list markers"]
+    want = _wanted_list(root)
+    if want is None:
+        return []  # no register.json: data_reasons() says so
+    return [] if parts[1] == want else [f"{PAGE}'s vineyard list"]
+
+
+def write_list(root):
+    """Writes the page's list from register.json when it differs.
+
+    Args:
+        root: The repository.
+
+    Raises:
+        SystemExit: The page, its markers or register.json are missing.
+    """
+    where = os.path.join(root, PAGE)
+    with open(where, encoding="utf-8") as fh:
+        text = fh.read()
+    parts = _page_parts(text)
+    if parts is None:
+        raise SystemExit(f"{PAGE}: the vineyard list's markers are missing")
+    want = _wanted_list(root)
+    if want is None:
+        raise SystemExit(f"{OUT}/register.json could not be read")
+    if parts[1] == want:
+        return
+    with open(where, "w", encoding="utf-8", newline="\n") as fh:
+        fh.write(parts[0] + want + parts[2])
+    print(f"{PAGE}: the vineyard list written")
 
 
 def stats(figures):
@@ -242,10 +392,12 @@ def main(argv=None):
             file=sys.stderr,
         )
         return STALE
-    print(f"vineyard data stale ({'; '.join(stale[:8])}): making it again")
-    words = record.private_words()
-    print(f"{len(words)} more words to refuse from the private lists")
-    generate(args.root, words)
+    if data_reasons(args.root):
+        print(f"vineyard data stale ({'; '.join(stale[:8])}): making it again")
+        words = record.private_words()
+        print(f"{len(words)} more words to refuse from the private lists")
+        generate(args.root, words)
+    write_list(args.root)
     return 0
 
 

@@ -219,6 +219,7 @@ def copy_root(tmp_path):
         vs.LLANO,
         vs.DISTRICT,
         "docs/assets/aquifer/context.geojson",
+        "docs/vineyards.html",
     ):
         (tmp_path / rel).parent.mkdir(parents=True, exist_ok=True)
         shutil.copy(os.path.join(ROOT, rel), tmp_path / rel)
@@ -423,6 +424,8 @@ def test_the_owner_s_label_opens_a_complete_pull_request(
     assert vs.VINEYARDS in paths
     assert "docs/assets/vineyards/vineyards.geojson" in paths
     assert "docs/assets/vineyards/record.json" in paths
+    # the page's list, readable without JavaScript (#171)
+    assert b">Prairie Gap Vineyard</h4>" in paths["docs/vineyards.html"]
     added = [
         line
         for line in paths[vs.VINEYARDS].decode().splitlines()

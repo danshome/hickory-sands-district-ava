@@ -14,7 +14,6 @@
 .vy-map-note{margin-top:.6rem;font-size:.9375rem;color:var(--paper-muted)}
 .vy-map>.vy-map-note{position:absolute;left:12px;right:12px;bottom:12px;margin:0;padding:.45rem .7rem;background:#141512d9;color:#fff;border-radius:8px;pointer-events:none}
 .vy-list{margin-top:2rem}
-.vy-empty{font-size:1.0625rem;color:var(--paper-muted)}
 .vy-group+.vy-group{margin-top:2.5rem}
 .vy-heading{font-family:var(--sans);font-size:1rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--paper-muted);padding-bottom:.6rem;border-bottom:1px solid var(--paper-line)}
 .vy-rows{margin:0;padding:0;list-style:none}
@@ -25,8 +24,9 @@
 .vy-show:focus-visible{outline:3px solid #1a5fb4;outline-offset:2px}
 .vy-actions{flex:0 0 auto;display:flex;flex-direction:column;gap:.5rem}
 .vy-change{min-height:48px;min-width:48px;padding:.4rem .9rem;font:inherit;font-size:.9375rem;font-weight:600;color:#5a1e2e;background:transparent;border:2px solid transparent;border-radius:10px;text-decoration:underline;text-underline-offset:3px;cursor:pointer;touch-action:manipulation}
+a.vy-change{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box}
 .vy-change:focus-visible{outline:3px solid #1a5fb4;outline-offset:2px}
-@media(max-width:519px){.vy-row{flex-wrap:wrap;gap:.6rem}.vy-text{flex:1 1 100%}.vy-actions{flex:1 1 100%;flex-direction:row}.vy-actions>button{flex:1 1 0}}
+@media(max-width:519px){.vy-row{flex-wrap:wrap;gap:.6rem}.vy-text{flex:1 1 100%}.vy-actions{flex:1 1 100%;flex-direction:row}.vy-actions>button,.vy-actions>a{flex:1 1 0}}
 .vy-change-missing{font-size:1rem;margin-top:1rem;color:#b3321c}
 .vy-water{margin-top:2rem;font-size:1rem;color:var(--paper-muted)}
 .vy-water .text-link{margin-left:.5rem}

@@ -5,7 +5,7 @@
 <meta name="theme-color" content="#141512"><meta name="description" content="The register of growers in the proposed Hickory Sands District.">
 <title>The vineyards · Hickory Sands District</title><link rel="canonical" href="https://hickorysandsdistrictava.org/vineyards.html">
 <meta property="og:type" content="website"><meta property="og:site_name" content="Hickory Sands District"><meta property="og:title" content="The vineyards · Hickory Sands District"><meta property="og:description" content="The register of growers in the proposed Hickory Sands District."><meta property="og:url" content="https://hickorysandsdistrictava.org/vineyards.html"><meta property="og:image" content="https://hickorysandsdistrictava.org/assets/share.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="Sandy ground, small stones and dry stems, photographed close to the surface."><meta name="twitter:card" content="summary_large_image">
-<link rel="icon" type="image/svg+xml" href="assets/favicon.svg"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&amp;family=Source+Sans+3:wght@400;500;600;700&amp;display=swap" rel="stylesheet"><link rel="stylesheet" href="assets/site.css?v=821589a"><link rel="stylesheet" href="assets/vineyard-form.css?v=2d1cea3"></head><body class="paper page-vineyards">
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&amp;family=Source+Sans+3:wght@400;500;600;700&amp;display=swap" rel="stylesheet"><link rel="stylesheet" href="assets/site.css?v=821589a"><link rel="stylesheet" href="assets/vineyard-form.css?v=07b8378"></head><body class="paper page-vineyards">
 <div id="page">
 <a class="skip" href="#main">Skip to content</a>
 <header class="site-header"><a class="identity" href="index.html" aria-label="Hickory Sands District home"><img src="assets/mark.svg" width="30" height="32" alt=""><span>Hickory Sands<br><span class="identity-small">District</span></span></a>
@@ -16,7 +16,37 @@
 <h2 id="register-title">The vineyards<br>on this site.</h2>
 <p class="vy-lead">Every vineyard on this site's maps, grouped as on The water. Each block is outlined on aerial photographs. Only the named vineyards were looked at, so this is not a survey: other vineyards may exist.</p>
 <div class="vy-map" id="vy-map"><arcgis-map id="vy-arcgis" aria-label="Map of the vineyards and the proposed Hickory Sands District. Tap a block for its vineyard's name."></arcgis-map><p class="vy-map-note" id="vy-map-note">The map loads as you reach it.</p></div>
-<div class="vy-list" id="vy-list"><p class="vy-empty" id="vy-empty">The list of vineyards needs JavaScript. <a href="map.html?layers=aquifer,vineyards,places">The water</a> shows them on its map.</p></div>
+<div class="vy-list" id="vy-list"><!-- vineyard list: made by src/site/make_vineyards.py from the vineyard data's register.json; never edit it by hand -->
+<section class="vy-group" aria-labelledby="vy-hsd"><h3 class="vy-heading" id="vy-hsd">In the proposed Hickory Sands District</h3><ul class="vy-rows">
+<li class="vy-row"><div class="vy-text"><h4 class="vy-name">Blackmon Vineyard</h4><p class="vy-facts">3 blocks</p></div><div class="vy-actions"><a class="vy-change" href="#change=blackmon-vineyard" aria-label="Suggest a change to Blackmon Vineyard">Suggest a change</a></div></li>
+<li class="vy-row"><div class="vy-text"><h4 class="vy-name">Certenburg Vineyard</h4><p class="vy-facts">3 blocks</p></div><div class="vy-actions"><a class="vy-change" href="#change=certenburg-vineyard" aria-label="Suggest a change to Certenburg Vineyard">Suggest a change</a></div></li>
+<li class="vy-row"><div class="vy-text"><h4 class="vy-name">Parr Vineyards</h4><p class="vy-facts">3 blocks</p></div><div class="vy-actions"><a class="vy-change" href="#change=parr-vineyards" aria-label="Suggest a change to Parr Vineyards">Suggest a change</a></div></li>
+<li class="vy-row"><div class="vy-text"><h4 class="vy-name">Peters Prairie Vineyard</h4><p class="vy-facts">4 blocks</p></div><div class="vy-actions"><a class="vy-change" href="#change=peters-prairie-vineyard" aria-label="Suggest a change to Peters Prairie Vineyard">Suggest a change</a></div></li>
+<li class="vy-row"><div class="vy-text"><h4 class="vy-name">Pontotoc Vineyard</h4><p class="vy-facts">1 block</p></div><div class="vy-actions"><a class="vy-change" href="#change=pontotoc-vineyard" aria-label="Suggest a change to Pontotoc Vineyard">Suggest a change</a></div></li>
+<li class="vy-row"><div class="vy-text"><h4 class="vy-name">Robert Clay Vineyards</h4><p class="vy-facts">5 blocks · first planted 1998</p><p class="vy-varieties">Cabernet Sauvignon, Chardonnay, Grenache, Merlot, Mourvèdre, Ruby Cabernet, Syrah, Tempranillo, Viognier, Touriga Nacional, Barbera</p></div><div class="vy-actions"><a class="vy-change" href="#change=robert-clay-vineyards" aria-label="Suggest a change to Robert Clay Vineyards">Suggest a change</a></div></li>
+<li class="vy-row"><div class="vy-text"><h4 class="vy-name">Tallent Vineyards</h4><p class="vy-facts">13 blocks</p></div><div class="vy-actions"><a class="vy-change" href="#change=tallent-vineyards" aria-label="Suggest a change to Tallent Vineyards">Suggest a change</a></div></li>
+<li class="vy-row"><div class="vy-text"><h4 class="vy-name">Two Tales Vineyards</h4><p class="vy-facts">6 blocks</p></div><div class="vy-actions"><a class="vy-change" href="#change=two-tales-vineyards" aria-label="Suggest a change to Two Tales Vineyards">Suggest a change</a></div></li>
+</ul></section>
+<section class="vy-group" aria-labelledby="vy-llano-uplift"><h3 class="vy-heading" id="vy-llano-uplift">Elsewhere in the proposed Llano Uplift AVA</h3><ul class="vy-rows">
+<li class="vy-row"><div class="vy-text"><h4 class="vy-name">1900 Vineyard</h4><p class="vy-facts">1 block</p></div><div class="vy-actions"><a class="vy-change" href="#change=1900-vineyard" aria-label="Suggest a change to 1900 Vineyard">Suggest a change</a></div></li>
+<li class="vy-row"><div class="vy-text"><h4 class="vy-name">Castell Vineyard</h4><p class="vy-facts">3 blocks</p></div><div class="vy-actions"><a class="vy-change" href="#change=castell-vineyard" aria-label="Suggest a change to Castell Vineyard">Suggest a change</a></div></li>
+<li class="vy-row"><div class="vy-text"><h4 class="vy-name">Fall Creek Vineyards</h4><p class="vy-facts">2 blocks</p></div><div class="vy-actions"><a class="vy-change" href="#change=fall-creek-vineyards" aria-label="Suggest a change to Fall Creek Vineyards">Suggest a change</a></div></li>
+<li class="vy-row"><div class="vy-text"><h4 class="vy-name">Heart of Art Vineyard</h4><p class="vy-facts">1 block</p></div><div class="vy-actions"><a class="vy-change" href="#change=heart-of-art-vineyard" aria-label="Suggest a change to Heart of Art Vineyard">Suggest a change</a></div></li>
+<li class="vy-row"><div class="vy-text"><h4 class="vy-name">Loyal Valley Vineyard</h4><p class="vy-facts">3 blocks</p></div><div class="vy-actions"><a class="vy-change" href="#change=loyal-valley-vineyard" aria-label="Suggest a change to Loyal Valley Vineyard">Suggest a change</a></div></li>
+<li class="vy-row"><div class="vy-text"><h4 class="vy-name">Perissos Vineyard and Winery</h4><p class="vy-facts">4 blocks</p></div><div class="vy-actions"><a class="vy-change" href="#change=perissos-vineyard-and-winery" aria-label="Suggest a change to Perissos Vineyard and Winery">Suggest a change</a></div></li>
+<li class="vy-row"><div class="vy-text"><h4 class="vy-name">Purple Calf Vineyard</h4><p class="vy-facts">2 blocks</p></div><div class="vy-actions"><a class="vy-change" href="#change=purple-calf-vineyard" aria-label="Suggest a change to Purple Calf Vineyard">Suggest a change</a></div></li>
+<li class="vy-row"><div class="vy-text"><h4 class="vy-name">Torr Na Lochs Vineyard &amp; Winery</h4><p class="vy-facts">1 block</p></div><div class="vy-actions"><a class="vy-change" href="#change=torr-na-lochs-vineyard-winery" aria-label="Suggest a change to Torr Na Lochs Vineyard &amp; Winery">Suggest a change</a></div></li>
+<li class="vy-row"><div class="vy-text"><h4 class="vy-name">Uplift Vineyard</h4><p class="vy-facts">6 blocks</p></div><div class="vy-actions"><a class="vy-change" href="#change=uplift-vineyard" aria-label="Suggest a change to Uplift Vineyard">Suggest a change</a></div></li>
+</ul></section>
+<section class="vy-group" aria-labelledby="vy-under-development"><h3 class="vy-heading" id="vy-under-development">Under development</h3><ul class="vy-rows">
+<li class="vy-row"><div class="vy-text"><h4 class="vy-name">Hartgrove Hill</h4><p class="vy-facts">1 block · first planted 2027</p><p class="vy-varieties">Tannat, Syrah, Grenache, Sangiovese, Aglianico</p></div><div class="vy-actions"><a class="vy-change" href="#change=i-don-t-know-vineyard" aria-label="Suggest a change to Hartgrove Hill">Suggest a change</a></div></li>
+<li class="vy-row"><div class="vy-text"><h4 class="vy-name">Paisano Vineyards</h4><p class="vy-facts">2 blocks</p></div><div class="vy-actions"><a class="vy-change" href="#change=paisano-vineyards" aria-label="Suggest a change to Paisano Vineyards">Suggest a change</a></div></li>
+</ul></section>
+<section class="vy-group" aria-labelledby="vy-historical"><h3 class="vy-heading" id="vy-historical">Historical</h3><ul class="vy-rows">
+<li class="vy-row"><div class="vy-text"><h4 class="vy-name">Akashic Vineyard</h4><p class="vy-facts">1 block</p></div><div class="vy-actions"><a class="vy-change" href="#change=akashic-vineyard" aria-label="Suggest a change to Akashic Vineyard">Suggest a change</a></div></li>
+<li class="vy-row"><div class="vy-text"><h4 class="vy-name">Spiller Mine Vineyard</h4><p class="vy-facts">1 block</p></div><div class="vy-actions"><a class="vy-change" href="#change=spiller-mine-vineyard" aria-label="Suggest a change to Spiller Mine Vineyard">Suggest a change</a></div></li>
+</ul></section>
+<!-- end of the vineyard list --></div>
 <p class="vy-water">The water shows each block with the TWDB wells near it. <a class="text-link" href="map.html?layers=aquifer,vineyards,places">The water<span aria-hidden="true">↗</span></a></p>
 </section>
 
@@ -166,6 +196,6 @@
 </div>
 <p class="visually-hidden" id="live" aria-live="polite"></p>
 </div>
-<script type="module" src="assets/vineyard-list.js?v=0ffe913"></script>
+<script type="module" src="assets/vineyard-list.js?v=e723565"></script>
 <script type="module" src="assets/vineyard-wizard.js?v=ab5f68b"></script>
 </body></html>

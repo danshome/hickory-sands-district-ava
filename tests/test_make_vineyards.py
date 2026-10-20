@@ -10,8 +10,10 @@ longer depends on the vineyards (its record lists none); and, on made-up
 files, what the check calls stale. Standard library only.
 """
 
+from html.parser import HTMLParser
 import json
 import os
+import re
 import shutil
 
 import pytest
@@ -126,7 +128,7 @@ def test_the_aquifer_data_no_longer_needs_the_vineyards():
 
 
 def test_a_changed_vineyard_file_or_tile_is_stale(tmp_path):
-    for rel in (*mv.INPUTS.values(), mv.OUT):
+    for rel in (*mv.INPUTS.values(), mv.OUT, mv.PAGE):
         src = os.path.join(ROOT, rel)
         dst = tmp_path / rel
         dst.parent.mkdir(parents=True, exist_ok=True)
@@ -144,3 +146,144 @@ def test_a_changed_vineyard_file_or_tile_is_stale(tmp_path):
     os.remove(tmp_path / mv.OUT / "counties.geojson")
     assert "counties.geojson is missing" in mv.stale_reasons(str(tmp_path))
     assert mv.main(["--check", "--root", str(tmp_path)]) == mv.STALE
+
+
+# ---- the page's list, readable without JavaScript (#171) -------------------
+
+
+class ListText(HTMLParser):
+    """The text of #vy-list's names, headings and change links."""
+
+    def __init__(self):
+        super().__init__()
+        self.depth = 0  # inside #vy-list: the open elements' count
+        self.cls = None
+        self.names = []
+        self.headings = []
+        self.links = []
+        self.text = []
+
+    def handle_starttag(self, tag, attrs):
+        attrs = dict(attrs)
+        if self.depth:
+            self.depth += 1
+            self.cls = attrs.get("class")
+            if tag == "a":
+                self.links.append(attrs.get("href"))
+        elif attrs.get("id") == "vy-list":
+            self.depth = 1
+
+    def handle_endtag(self, tag):
+        if self.depth:
+            self.depth -= 1
+            self.cls = None
+
+    def handle_data(self, data):
+        if not self.depth:
+            return
+        self.text.append(data)
+        if self.cls == "vy-name":
+            self.names.append(data)
+        elif self.cls == "vy-heading":
+            self.headings.append(data)
+
+
+def page_text():
+    with open(os.path.join(ROOT, mv.PAGE), encoding="utf-8") as fh:
+        return fh.read()
+
+
+def test_the_page_lists_every_vineyard_without_javascript():
+    entries = load("register.json")["vineyards"]
+    parsed = ListText()
+    parsed.feed(page_text())
+    assert parsed.names == [e["name"] for e in entries]
+    shown = {e["category"] for e in entries}
+    assert parsed.headings == [h for c, h in mv.GROUPS if c in shown]
+    assert parsed.links == [f"#change={e['id']}" for e in entries]
+    text = "".join(parsed.text)
+    assert "JavaScript" not in text
+    for e in entries:
+        n = len(e["vids"])
+        assert f"{n} block{'' if n == 1 else 's'}" in text
+        if e["year"]:
+            assert f"first planted {e['year']}" in text
+        if e["varieties"]:
+            assert ", ".join(e["varieties"]) in text
+
+
+def test_the_page_s_list_is_what_the_register_makes():
+    parts = mv._page_parts(page_text())
+    assert parts is not None
+    assert parts[1] == mv.render_list(load("register.json")["vineyards"])
+    assert mv.page_reasons(ROOT) == []
+
+
+def test_the_groups_are_the_scripts():
+    with open(
+        os.path.join(ROOT, "docs", "assets", "vineyard-list.js"),
+        encoding="utf-8",
+    ) as fh:
+        script = fh.read()
+    block = re.search(r"const GROUPS = \[(.*?)\n\];", script, re.S).group(1)
+    pairs = re.findall(r'\["([^"]+)", "([^"]+)"\]', block)
+    assert tuple(pairs) == mv.GROUPS
+
+
+def test_the_list_s_text_is_escaped():
+    out = mv.render_list(
+        [
+            {
+                "id": "a-b",
+                "name": 'A <b>"bold"</b> & Co',
+                "category": "hsd",
+                "vids": ["v-1", "v-2"],
+                "year": 2001,
+                "varieties": ["<script>x</script>"],
+            },
+            {
+                "id": 'not a slug"><x',
+                "name": "Plain",
+                "category": "historical",
+                "vids": ["v-3"],
+                "year": None,
+                "varieties": [],
+            },
+        ]
+    )
+    assert "<b>" not in out
+    assert "<script>" not in out
+    assert "A &lt;b&gt;&quot;bold&quot;&lt;/b&gt; &amp; Co" in out
+    assert "2 blocks · first planted 2001" in out
+    assert "1 block<" in out
+    assert out.count('class="vy-change"') == 1  # none for an id not a slug
+    assert "Under development" not in out  # an empty group is left out
+
+
+def test_a_stale_or_unmarked_list_is_caught_and_written_again(tmp_path):
+    for rel in (*mv.INPUTS.values(), mv.OUT, mv.PAGE):
+        src = os.path.join(ROOT, rel)
+        dst = tmp_path / rel
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        if os.path.isdir(src):
+            shutil.copytree(src, dst)
+        else:
+            shutil.copy(src, dst)
+    page = tmp_path / mv.PAGE
+    good = page.read_text(encoding="utf-8")
+    page.write_text(
+        good.replace("Blackmon Vineyard</h4>", "Blackmon</h4>", 1),
+        encoding="utf-8",
+    )
+    assert mv.stale_reasons(str(tmp_path)) == [f"{mv.PAGE}'s vineyard list"]
+    assert mv.main(["--check", "--root", str(tmp_path)]) == mv.STALE
+    assert mv.main(["--root", str(tmp_path)]) == 0
+    assert page.read_text(encoding="utf-8") == good
+    assert mv.main(["--check", "--root", str(tmp_path)]) == 0
+    page.write_text(good.replace(mv.END, ""), encoding="utf-8")
+    assert "markers" in mv.stale_reasons(str(tmp_path))[0]
+    assert mv.main(["--check", "--root", str(tmp_path)]) == mv.STALE
+    with pytest.raises(SystemExit):
+        mv.main(["--root", str(tmp_path)])
+    os.remove(page)
+    assert mv.stale_reasons(str(tmp_path)) == [f"{mv.PAGE} is missing"]

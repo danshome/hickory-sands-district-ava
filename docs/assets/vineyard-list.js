@@ -158,8 +158,8 @@ async function list() {
       box.append(group);
     }
   } catch (error) {
+    // the page's own list, written by src/site/make_vineyards.py, stays
     console.error("the list of vineyards could not be loaded", error);
-    $("vy-empty").textContent = "The list of vineyards could not be loaded just now. The water shows them on its map.";
   }
 }
 

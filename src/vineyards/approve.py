@@ -52,6 +52,7 @@ from src.vineyards import submission as vs
 ROOT = vs.ROOT
 
 OUT = "docs/assets/vineyards"
+PAGE = "docs/vineyards.html"  # its list, written by make_vineyards.py
 BRANCH = "vineyard/issue-{n}"
 
 
@@ -73,7 +74,7 @@ def refuse(issues, number, why):
 
 
 def changed_files(root):
-    """The files the pull request carries: the vineyard file and the data.
+    """The files the pull request carries: the vineyard file, data and page.
 
     Args:
         root: The repository, after add_blocks() and make_vineyards.py.
@@ -87,6 +88,8 @@ def changed_files(root):
     for name in sorted(os.listdir(os.path.join(root, OUT))):
         with open(os.path.join(root, OUT, name), "rb") as fh:
             out[f"{OUT}/{name}"] = fh.read()
+    with open(os.path.join(root, PAGE), "rb") as fh:
+        out[PAGE] = fh.read()
     return out
 
 
@@ -130,7 +133,11 @@ def pr_body(number, sub, category, n):
             (
                 f"- `{OUT}/`: the site's vineyard data, made again by"
                 " `src/site/make_vineyards.py` (the blocks' wells from the 3D"
-                " page's committed well tiles)."
+                " page's committed well tiles);"
+            ),
+            (
+                f"- `{PAGE}`: the page's list of vineyards, written again"
+                " from the register by the same script."
             ),
             "",
             (

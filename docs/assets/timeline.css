@@ -44,6 +44,9 @@
 @media print{.geo-controls,.geo-live{display:none}.geo-has-figure .geo-figure{position:static}.geo-stage,.geo-figure{break-inside:avoid}.geo-source-list li:target{background:none}}
 /* The aquifer in its own colour, so the key tells it from the unconformity. */
 .geo-aquifer{stroke:#5b716a}.geo-sw-aquifer{border-top-color:#5b716a}
+/* The base-Cretaceous unconformity, a second one, dotted so the key tells it from the Great Unconformity; and, in stage 6, the dome's top worn away before the Cretaceous, a faint outline. */
+.geo-kbase{fill:none;stroke:var(--paper-ink);stroke-width:1.6;stroke-dasharray:.1 3;stroke-linecap:round}.geo-sw-kbase{height:0;border:0;border-top:3px dotted var(--paper-ink)}
+.geo-worn{fill:none;stroke:var(--paper-muted);stroke-width:1;stroke-dasharray:2 2}.geo-sw-worn{height:0;border:0;border-top:1px dashed var(--paper-muted)}
 
 /* Where the figure stays in view, scrolling steps the drawing; a phone held upright gets this too. The figure becomes a short panel stuck to the top of the screen (the drawing, eight progress marks, the stage's name, two small buttons that stay put), and each stage's key moves into the stage.
    Nothing here applies without JavaScript: every rule needs .geo-has-figure or an element timeline.js makes (.geo-hint, .geo-progress, .geo-stage-key, .geo-step). */

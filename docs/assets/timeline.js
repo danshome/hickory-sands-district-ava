@@ -247,10 +247,14 @@
       });
     }
     if (stage >= 6) {
-      shape(g, "geo-layer", "url(#geo-p-cret)", band(flat(CRETACEOUS),
-        function (x) {
-          return Math.max(CUT, ELLENBURGER + lift(stage, x));
-        }));
+      // The Cretaceous rests on a worn surface that cuts across the tilted
+      // layers: on the Ellenburger on the flanks, on older rock, granite
+      // among it, over the dome. That surface is a second unconformity.
+      var kbase = function (x) {
+        return Math.max(CUT, ELLENBURGER + lift(stage, x));
+      };
+      shape(g, "geo-layer", "url(#geo-p-cret)", band(flat(CRETACEOUS), kbase));
+      line(g, "geo-kbase", sample(kbase));
     }
 
     // Everything above the land surface of the stage is air or sea.
@@ -264,6 +268,17 @@
       line(g, "geo-sea", [[0, SEA[stage]], [W, SEA[stage]]]);
     }
     line(g, stage === 2 ? "geo-unconformity" : "geo-ground", ground);
+
+    // Stage 6: the top of the dome as stage 5 left it, worn away before the
+    // Cretaceous sea came; shown as an outline above the worn surface.
+    if (stage === 6) {
+      line(g, "geo-worn", sample(function (x) {
+        return Math.min(CUT, ELLENBURGER + lift(5, x));
+      }).filter(function (p, i, all) {
+        return p[1] < CUT || (all[i - 1] && all[i - 1][1] < CUT) ||
+          (all[i + 1] && all[i + 1][1] < CUT);
+      }));
+    }
 
     if (stage === 2 || stage === 3) {
       cambrian(g, stage);
@@ -357,6 +372,8 @@
     later: "Later Cambrian and Ordovician rock",
     hickory: "Hickory Sandstone Member",
     unconformity: "Great Unconformity",
+    worn: "Worn away before the Cretaceous",
+    kbase: "Base-Cretaceous unconformity",
     fault: "Faults",
     granite: "Granite",
     gneiss: "Gneiss and schist"
@@ -369,11 +386,12 @@
       "granite", "gneiss"],
     ["water", "later", "hickory", "unconformity", "granite", "gneiss"],
     ["later", "hickory", "unconformity", "fault", "granite", "gneiss"],
-    ["water", "cret", "later", "hickory", "unconformity", "fault", "granite",
+    ["water", "worn", "cret", "kbase", "later", "hickory", "unconformity",
+      "fault", "granite", "gneiss"],
+    ["cret", "kbase", "later", "hickory", "unconformity", "fault", "granite",
       "gneiss"],
-    ["cret", "later", "hickory", "unconformity", "fault", "granite", "gneiss"],
-    ["soil", "aquifer", "cret", "later", "hickory", "unconformity", "fault",
-      "granite", "gneiss"]
+    ["soil", "aquifer", "cret", "kbase", "later", "hickory", "unconformity",
+      "fault", "granite", "gneiss"]
   ];
 
   function el(tag, cls, words) {
@@ -555,10 +573,12 @@
     art.appendChild(draw(n));
     nowTitle.textContent = s.title;
     nowAge.textContent = s.age;
+    note.textContent = NOTE +
+      (n === 3 ? " The arrows are schematic: inland is to the left, not a " +
+        "compass direction." : "") +
+      (n >= 5 ? " Later Paleozoic layers, laid down after the Ellenburger " +
+        "Group and partly worn away, are left out." : "");
     count.textContent = s.index + " / 08";
-    note.textContent = n === 3 ?
-      NOTE + " The arrows are schematic: inland is to the left, not a " +
-      "compass direction." : NOTE;
     while (key.firstChild) {
       key.removeChild(key.firstChild);
     }

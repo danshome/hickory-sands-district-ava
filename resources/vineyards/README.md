@@ -18,12 +18,12 @@ that does.
 |---|---|---|
 | `hsd` | Hickory Sands District vineyards | the confirmed blocks inside the proposed district: Blackmon, Certenburg, Parr, Peters Prairie, Pontotoc, Robert Clay, Tallent and Two Tales (named from the petition's Exhibit 3; the blocks near Pontotoc, which the petitioners' 2022 layer had named otherwise) |
 | `llano-uplift` | Llano Uplift vineyards | outside the district, inside TTB's proposed Llano Uplift AVA: 1900 Vineyard, Castell, Loyal Valley, Fall Creek, Perissos, Uplift, Torr Na Lochs, Purple Calf, and Heart of Art Vineyard |
-| `under-development` | Under development | I Don't Know Vineyard (its 2022 outline) and Paisano Vineyards (two planned blocks, approximate, from its planting plan) |
+| `under-development` | Under development | Hartgrove Hill (its 2022 outline) and Paisano Vineyards (two planned blocks, approximate, from its planting plan) |
 | `historical` | Historical | Spiller Mine and Akashic (their 2022 outlines) |
 
 Sources (each block's `source` says which):
 - the petitioners' vineyard layer of October 2022, its vineyards checked one by one on NAIP 2022 (0.6 m, TxGIO
-  `NAIP22_NCCIR_60cm`) and redrawn by eye as one polygon per vine block, on 2026-10-18; I Don't Know Vineyard and
+  `NAIP22_NCCIR_60cm`) and redrawn by eye as one polygon per vine block, on 2026-10-18; Hartgrove Hill and
   the historical vineyards keep their 2022 outlines;
 - the Llano Uplift AVA petition's Table 1 (regulations.gov TTB-2026-0005-0006), each vineyard found at its Texas Wine
   Lover guide listing and outlined the same way; Purple Calf Vineyard, not in Table 1, was named and placed by the

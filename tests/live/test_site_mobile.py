@@ -1494,6 +1494,64 @@ def test_land_timeline_steps_on_scroll(site_page):
     assert not problems, f"{view.name}:\n  " + "\n  ".join(problems)
 
 
+# The land's stage 8: the points along each Hickory Aquifer line, every
+# drawing unit, that lie outside the Hickory Sandstone Member or inside the
+# granite or the gneiss below it (#207); null until stage 8 is drawn
+AQUIFER_OUT = """() => {
+  const fig = document.querySelector('#deep-time .geo-figure');
+  if (parseInt(fig.querySelector('.geo-count').textContent, 10) !== 8)
+    return null;
+  const art = [...fig.querySelectorAll('.geo-art')].pop();
+  const fill = f => [...art.querySelectorAll('polygon')]
+    .filter(p => p.getAttribute('fill') === 'url(#geo-p-' + f + ')');
+  const sand = fill('hickory'), rock = fill('granite').concat(fill('gneiss'));
+  const lines = [...art.querySelectorAll('.geo-aquifer')];
+  const out = [];
+  const svg = art.ownerSVGElement;
+  for (const l of lines) {
+    for (let d = 0; d <= l.getTotalLength(); d += 1) {
+      const p = l.getPointAtLength(d), q = svg.createSVGPoint();
+      q.x = p.x; q.y = p.y;
+      if (!sand.some(s => s.isPointInFill(q)) ||
+          rock.some(r => r.isPointInFill(q)))
+        out.push([+p.x.toFixed(1), +p.y.toFixed(1)]);
+    }
+  }
+  return {lines: lines.length, out}; }"""
+
+
+@pytest.mark.parametrize(
+    "site_page",
+    cells(["land.html"], [*PHONES, *FOLD_SIDE, "desktop-1440x900"]),
+    indirect=True,
+)
+def test_land_aquifer_keeps_to_the_sandstone(site_page):
+    view, page = site_page, site_page.page
+    page.wait_for_selector(".geo-has-figure", timeout=30_000)
+    later = page.locator("#deep-time .geo-step").nth(1)
+    later.focus()
+    later.press("End")  # the last stage, today
+    got = None
+    for _ in range(50):
+        got = page.evaluate(AQUIFER_OUT)
+        if got is not None:
+            break
+        page.wait_for_timeout(100)
+    problems = []
+    if got is None:
+        problems.append("End did not step the drawing to stage 8")
+    elif not got["lines"]:
+        problems.append("stage 8 draws no Hickory Aquifer line")
+    elif got["out"]:
+        problems.append(
+            "the Hickory Aquifer line leaves the Hickory Sandstone Member "
+            f"at {got['out'][:6]}"
+        )
+    view.shot("stage-8")
+    problems += view.problems()
+    assert not problems, f"{view.name}:\n  " + "\n  ".join(problems)
+
+
 @pytest.mark.parametrize(
     "site_page",
     cells(["land.html"], [*PHONES, *FOLD_SIDE, "desktop-1440x900"]),

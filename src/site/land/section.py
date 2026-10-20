@@ -25,7 +25,7 @@ docs/assets/land/section.json holds it:
         or else the base of the rock above it, and its topmost layer.
     district, surface_hickory, core
         [[s0, s1], ...]: where the slice runs inside the proposed revision,
-        across the formation at the surface (the shifted geologic map), and
+        across the sandstone at the surface (the shifted geologic map), and
         where the model's topmost layer is the Precambrian.
     faults
         [s, ...]: where the fault lines of TWDB's model data cross it.
@@ -406,7 +406,7 @@ def make(paths, details):
         g.TransformTo(gam)
         return g
 
-    # The proposed district, and the formation at the surface.
+    # The proposed district, and the sandstone at the surface.
     (district_f,) = read_geojson(paths["site-boundary"])
     district = clip_join(line.crossings(in_model(geometry(district_f))), length)
     geo = ogr.Open(paths["usgs-sgmc-shifted"])

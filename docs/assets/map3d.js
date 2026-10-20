@@ -654,11 +654,11 @@ const FACTORIES = {
       symbol: { type: "polygon-3d", symbolLayers: [{ type: "fill", material: { color: [141, 180, 199, 0.6] } }] },
     },
   })]],
-  // The Hickory Sandstone Member formation at the surface: the USGS geologic
+  // The Hickory Sandstone Member at the surface: the USGS geologic
   // map, shifted onto the outcrops (the repository's resources/geology).
   member: () => [["member", fillLayer(
     `${DATA}hickory-member.geojson`,
-    "Hickory Sandstone Member formation (USGS geologic map, shifted)",
+    "Hickory Sandstone Member (USGS geologic map, shifted)",
     [...MEMBER, 0.85],
   )]],
   counties: () => [["counties", lineLayer("County lines (Census 2023)", "county", [...MUTED, 0.55], 1)]],

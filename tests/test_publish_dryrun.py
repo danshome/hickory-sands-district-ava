@@ -422,7 +422,7 @@ FAULTS = {
         lambda b: edit_text(
             b,
             "The change near Grit",
-            "Hickory Sandstone Member formation",
+            "Hickory Sandstone Member of the Riley Formation",
             "Hickory Sandstone",
         ),
         r"Hickory Sandstone",

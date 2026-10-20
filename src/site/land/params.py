@@ -37,7 +37,7 @@ GROUND_KEEP = 2
 Z_ABOVE_FT = 150
 Z_BELOW_FT = 250
 Z_ROUND_FT = 100
-# The depth of the formation's top at the slice's north-west end, shown
+# The depth of the sandstone's top at the slice's north-west end, shown
 # rounded to this many feet ("about 2,240 feet").
 DEPTH_ROUND_FT = 10
 # The last of the slice's one-mile stretches is shorter (step 5: "the last
@@ -83,7 +83,7 @@ SIMPLIFY = {
     "high": 0.0006,
     "together": 0.0004,
 }
-# The formation at the surface: the shifted USGS geology's layer.
+# The sandstone at the surface: the shifted USGS geology's layer.
 GEOLOGY_LAYER = "Hickory_Sandstone_Member_formation"
 # The wells' detail files the maps read, by cell (as the 3D page writes
 # them; src/site/aquifer/params.py's DETAIL_DEG).

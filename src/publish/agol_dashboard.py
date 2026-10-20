@@ -563,8 +563,9 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
         f"revision only and {same['map_explorer_only_acres']:,.0f} in the Map "
         f"Explorer polygon only. {map_ringed}. Under them: the USGS geologic "
         "units (Town Mountain Granite, younger granitic intrusions, Hickory "
-        "Sandstone Member formation), shifted about 400 m to sit on the "
-        f"outcrops, and the 13 USGS quadrangles. {map_basemaps}</p></div>"
+        "Sandstone Member of the Riley Formation), shifted about 400 m to sit "
+        "on the outcrops, and the 13 USGS quadrangles. "
+        f"{map_basemaps}</p></div>"
     )
     about_phone = (
         PHONE + '<p style="margin:0 0 4px"><strong>What the proposed revision '
@@ -736,7 +737,7 @@ def build(items, wm, ops, line, area, rings_oid, steps, url):
                 if phone
                 else '<p style="font-size:11px;color:#666;margin-top:2px">'
             )
-            + "* the Hickory Sandstone Member formation</p>"
+            + "* the Hickory Sandstone Member of the Riley Formation</p>"
             '<p style="margin-top:8px">The AVA drawn three ways: Notice No. '
             f"243's text {GRIT['sqmi']['notice_243']:.2f} square miles; the "
             f"petition {GRIT['sqmi']['petition']:.2f}; the proposed revision "

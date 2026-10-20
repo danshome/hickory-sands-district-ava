@@ -35,7 +35,11 @@
   var items = Array.prototype.slice.call(body.querySelectorAll(".lnd-step"));
   var STEPS = items.length;
   var reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
-  var wide = window.matchMedia("(min-width: 1000px)");
+  // 1000px and up, or a screen at least 700 by 520 held wider than tall (an
+  // unfolded Galaxy Fold): the figure beside the text. The CSS has the same.
+  var wide = window.matchMedia(
+    "(min-width: 1000px), (min-width: 700px) and (min-height: 520px) and " +
+    "(orientation: landscape)");
   // A phone held upright, as timeline.js has it; land.css has the same query.
   var tall = window.matchMedia(
     "screen and (max-width: 999px) and (min-height: 520px) and " +

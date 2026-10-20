@@ -66,9 +66,11 @@
   .lnd-map-list{grid-template-columns:1fr 1fr;gap:2.25rem 1.5rem}.lnd-map{display:block}.lnd-map-text{margin-top:.6rem}
   .lnd-qa-list{grid-template-columns:repeat(3,1fr);gap:2.5rem}
 }
-/* A wide screen: the figure sticks beside the steps, and the progress marks show (timeline.css hides its own there). */
-@media(min-width:1000px){
-  .lnd-map-list{grid-template-columns:repeat(4,1fr);gap:1.5rem}
+@media(min-width:1000px){.lnd-map-list{grid-template-columns:repeat(4,1fr);gap:1.5rem}}
+/* A wide screen, the same query as land.js's "wide" (and the timeline's): 1000px and up, or a screen at least 700 by
+   520 held wider than tall, such as an unfolded Galaxy Fold. The figure sticks beside the steps, and the progress marks
+   show (timeline.css hides its own there). */
+@media(min-width:1000px),(min-width:700px) and (min-height:520px) and (orientation:landscape){
   .lnd-sec-body.lnd-has-figure{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:4vw;align-items:start}
   .lnd-has-figure .lnd-fig{position:sticky;top:1.5rem;margin:0}.lnd-has-figure .lnd-progress{display:flex}
 }

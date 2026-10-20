@@ -146,8 +146,30 @@ PHONES = {
     "phone-390x844": (390, 844, "iPhone 13", 3),
     "phone-360x780": (360, 780, "Pixel 7", 3),
     "phone-375x667": (375, 667, "iPhone SE", 2),
+    # a Galaxy Fold folded (its cover screen) and unfolded held upright
+    "fold-cover-344x882": (344, 882, "Galaxy S9+", 2.625),
+    "fold-open-690x829": (690, 829, "Galaxy S9+", 2.625),
 }
 VIEWPORTS = {**PHONES, "desktop-1440x900": (1440, 900, None, 1)}
+# the phones that get the map's phone layout (its panel a sheet, a popup
+# docked at the bottom): map3d.js's "(max-width: 640px)". An open Fold held
+# upright (690 wide) gets the side panel, as a tablet does.
+MAP_PHONES = {k: v for k, v in PHONES.items() if v[0] <= 640}
+# a Galaxy Fold unfolded and wider than tall (a Fold5 turned, a Fold7 as it
+# opens): the land page's wide layout, its figures stuck beside the text
+FOLD_SIDE = {
+    "fold-open-829x690": (829, 690, "Galaxy S9+", 2.625),
+    "fold7-open-749x654": (749, 654, "Galaxy S9+", 2.625),
+    "fold7-open-turned-832x575": (832, 575, "Galaxy S9+", 2.625),
+}
+# The land page's wide layout, as land.js, timeline.js, land.css and
+# timeline.css have it: the figure beside the text, the middle of the screen
+# its reading line. Elsewhere a phone held upright has a short panel stuck to
+# the top.
+WIDE = (
+    "(min-width: 1000px), (min-width: 700px) and (min-height: 520px) and "
+    "(orientation: landscape)"
+)
 # the narrowest screen that shows the header's place line
 NARROW = {"desktop-700x900": (700, 900, None, 1)}
 TARGET = 44  # px: the smallest button or action link, each way
@@ -394,26 +416,35 @@ PANEL_TO = """(sel) => { const b = document.getElementById('aq-panel-body');
     - b.getBoundingClientRect().top - 4; }"""
 
 # The land: the stage the drawing shows, and the stage on its reading line
-# (a third of the way down the screen left under the stuck panel, as
-# timeline.js draws it on a phone held upright)
+# (the middle of a wide screen; on a phone held upright, a third of the way
+# down the screen left under the stuck panel, as timeline.js draws it)
 LAND = """() => {
   const fig = document.querySelector('#deep-time .geo-figure');
-  const panel = fig.getBoundingClientRect().height;
-  const line = panel + (innerHeight - panel) / 3;
+  const wide = matchMedia(WIDE).matches;
+  const panel = wide ? 0 : fig.getBoundingClientRect().height;
+  const line = wide ? innerHeight * 0.455 : panel + (innerHeight - panel) / 3;
   const items = [...document.querySelectorAll('.geo-stage')];
   const on = items.findIndex(li => { const r = li.getBoundingClientRect();
     return r.top <= line && r.bottom > line; });
   return {shown: parseInt(
             document.querySelector('#deep-time .geo-count').textContent, 10),
-          online: on + 1, stuck: getComputedStyle(fig).position}; }"""
+          online: on + 1, stuck: getComputedStyle(fig).position,
+          wide}; }""".replace("WIDE", repr(WIDE))
 
-# scrolls stage n's top to just under the stuck panel (its scroll margin)
-TO_STAGE = """(n) => { document.querySelectorAll('.geo-stage')[n - 1]
-  .scrollIntoView({block: 'start'}); }"""
+# scrolls stage n onto the reading line: its top just under the stuck panel
+# on a phone held upright (its scroll margin), its middle at the middle of a
+# wide screen
+TO_STAGE = """(n) => { const wide = matchMedia(WIDE).matches;
+  document.querySelectorAll('.geo-stage')[n - 1]
+  .scrollIntoView({block: wide ? 'center' : 'start'}); }""".replace(
+    "WIDE", repr(WIDE)
+)
 
 # the same, at once (no smooth scrolling)
-JUMP_TO_STAGE = """(n) => { document.querySelectorAll('.geo-stage')[n - 1]
-  .scrollIntoView({block: 'start', behavior: 'instant'}); }"""
+JUMP_TO_STAGE = """(n) => { const wide = matchMedia(WIDE).matches;
+  document.querySelectorAll('.geo-stage')[n - 1]
+  .scrollIntoView({block: wide ? 'center' : 'start', behavior: 'instant'});
+  }""".replace("WIDE", repr(WIDE))
 
 # The map's wells as drawn and counted, through the page's own hooks; the
 # default's counts are counted here from the data the page loaded
@@ -460,7 +491,7 @@ WIDEN = """async () => {
 # down the screen left under the stuck panel)
 SLICE = """() => {
   const fig = document.querySelector('.lnd-fig');
-  const wide = matchMedia('(min-width: 1000px)').matches;
+  const wide = matchMedia(WIDE).matches;
   const panel = wide ? 0 : fig.getBoundingClientRect().height;
   const line = wide ? innerHeight * 0.455 : panel + (innerHeight - panel) / 3;
   const items = [...document.querySelectorAll('.lnd-step')];
@@ -469,13 +500,16 @@ SLICE = """() => {
   return {shown: parseInt(
             document.querySelector('.lnd-sec .geo-count').textContent, 10),
           online: on + 1, stuck: getComputedStyle(fig).position,
-          over: document.documentElement.scrollWidth - innerWidth}; }"""
+          over: document.documentElement.scrollWidth - innerWidth};
+  }""".replace("WIDE", repr(WIDE))
 
 # scrolls step n onto the reading line: its top just under the stuck panel
 # on a phone (its scroll margin), its middle at the middle of a wide screen
-TO_STEP = """(n) => { const wide = matchMedia('(min-width: 1000px)').matches;
+TO_STEP = """(n) => { const wide = matchMedia(WIDE).matches;
   document.querySelectorAll('.lnd-step')[n - 1]
-  .scrollIntoView({block: wide ? 'center' : 'start'}); }"""
+  .scrollIntoView({block: wide ? 'center' : 'start'}); }""".replace(
+    "WIDE", repr(WIDE)
+)
 
 
 # --------------------------------------------------------------- the browser
@@ -602,7 +636,9 @@ def site_page(request, chrome):
     """
     page_name, viewport = request.param
     p, browser = chrome
-    width, height, device, ratio = {**VIEWPORTS, **NARROW}[viewport]
+    width, height, device, ratio = {**VIEWPORTS, **NARROW, **FOLD_SIDE}[
+        viewport
+    ]
     options = dict(
         viewport={"width": width, "height": height},
         device_scale_factor=ratio,
@@ -925,7 +961,7 @@ def test_place_line_fits_at_700px(site_page):
 
 
 @pytest.mark.parametrize(
-    "site_page", cells(["map.html"], PHONES), indirect=True
+    "site_page", cells(["map.html"], MAP_PHONES), indirect=True
 )
 def test_map_popup_leaves_the_tapped_step_in_view(site_page):
     view, page = site_page, site_page.page
@@ -1051,7 +1087,7 @@ THREE = ["phone-390x844", "phone-360x780", "desktop-1440x900"]
 
 
 @pytest.mark.parametrize(
-    "site_page", cells(["map.html"], PHONES), indirect=True
+    "site_page", cells(["map.html"], MAP_PHONES), indirect=True
 )
 def test_map_on_a_phone(site_page):
     view, page = site_page, site_page.page
@@ -1419,7 +1455,7 @@ def test_old_addresses_go_to_the_map(chrome):
 
 
 @pytest.mark.parametrize(
-    "site_page", cells(["land.html"], PHONES), indirect=True
+    "site_page", cells(["land.html"], [*PHONES, *FOLD_SIDE]), indirect=True
 )
 def test_land_timeline_steps_on_scroll(site_page):
     view, page = site_page, site_page.page
@@ -1454,7 +1490,7 @@ def test_land_timeline_steps_on_scroll(site_page):
 
 @pytest.mark.parametrize(
     "site_page",
-    cells(["land.html"], [*PHONES, "desktop-1440x900"]),
+    cells(["land.html"], [*PHONES, *FOLD_SIDE, "desktop-1440x900"]),
     indirect=True,
 )
 def test_land_slice_steps_on_scroll(site_page):
@@ -1509,6 +1545,66 @@ def test_land_slice_steps_on_scroll(site_page):
         view.wait(functools.partial(follows, 5), timeout=5)
     except AssertionError as e:
         problems.append(f"scrolling right after Next: {e}")
+    problems += view.problems()
+    assert not problems, f"{view.name}:\n  " + "\n  ".join(problems)
+
+
+# Each of The land's two figures, scrolled to a third and then two thirds of
+# the way through its section: where it is, and whether it sits beside the
+# text (left of the list) or above it
+STUCK = """async ([body, fig, list]) => {
+  const b = document.querySelector(body);
+  const f = document.querySelector(fig);
+  const l = document.querySelector(list);
+  const out = [];
+  for (const at of [1 / 3, 2 / 3]) {
+    const r = b.getBoundingClientRect();
+    scrollTo({top: r.top + scrollY + r.height * at - innerHeight / 2,
+              behavior: 'instant'});
+    await new Promise(z => setTimeout(z, 200));
+    const fr = f.getBoundingClientRect();
+    const lr = l.getBoundingClientRect();
+    out.push({position: getComputedStyle(f).position,
+              top: Math.round(fr.top), bottom: Math.round(fr.bottom),
+              beside: fr.right <= lr.left + 1, height: innerHeight,
+              over: document.documentElement.scrollWidth - innerWidth});
+  }
+  return out; }"""
+FIGURES = {
+    "the timeline": (
+        "#deep-time .geo-body",
+        "#deep-time .geo-figure",
+        "#deep-time .geo-stages",
+    ),
+    "the slice": (".lnd-sec-body", ".lnd-fig", ".lnd-steps"),
+}
+
+
+@pytest.mark.parametrize(
+    "site_page", cells(["land.html"], FOLD_SIDE), indirect=True
+)
+def test_land_figures_stick_beside_the_text_on_an_open_fold(site_page):
+    # An unfolded Galaxy Fold wider than tall (#land-fold): both figures sit
+    # beside the text and stay in view, stuck near the top, while their
+    # section scrolls; neither was before (the wide layout began at 1000px
+    # and the stuck panel needs a screen taller than wide).
+    view, page = site_page, site_page.page
+    page.wait_for_selector(".geo-has-figure", timeout=30_000)
+    page.wait_for_selector(".lnd-has-figure", timeout=30_000)
+    problems = []
+    if not page.evaluate(f"() => matchMedia({WIDE!r}).matches"):
+        problems.append("the wide layout's query does not match")
+    for name, sels in FIGURES.items():
+        for got in page.evaluate(STUCK, list(sels)):
+            if got["position"] != "sticky":
+                problems.append(f"{name} is not sticky: {got}")
+            elif not (0 <= got["top"] <= 30 and got["bottom"] <= got["height"]):
+                problems.append(f"{name} is not stuck in view: {got}")
+            if not got["beside"]:
+                problems.append(f"{name} is not beside its text: {got}")
+            if got["over"] > 0:
+                problems.append(f"sideways scrolling: {got}")
+        view.shot(name.replace(" ", "-"))
     problems += view.problems()
     assert not problems, f"{view.name}:\n  " + "\n  ".join(problems)
 
@@ -1619,7 +1715,7 @@ def land_shows(page, online, shown):
 
 
 @pytest.mark.parametrize(
-    "site_page", cells(["land.html"], PHONES), indirect=True
+    "site_page", cells(["land.html"], [*PHONES, *FOLD_SIDE]), indirect=True
 )
 def test_land_a_touch_or_the_wheel_ends_the_hold_at_once(site_page):
     view, page = site_page, site_page.page

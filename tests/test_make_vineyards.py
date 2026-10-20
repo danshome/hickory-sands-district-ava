@@ -14,6 +14,8 @@ import json
 import os
 import shutil
 
+import pytest
+
 from src.site import make_vineyards as mv
 from src.site.aquifer import record
 from src.site.aquifer import vineyards
@@ -71,6 +73,47 @@ def test_the_counties_and_the_register():
         assert stats[f"vineyards_{name}_names"] == sum(
             1 for e in register if e["category"] == key
         )
+
+
+def test_each_vineyard_has_one_stable_id_and_its_known_entry():
+    register = load("register.json")["vineyards"]
+    blocks = load("vineyards.geojson")["features"]
+    known = load("known.json")
+    ids = [e["id"] for e in register]
+    assert len(ids) == len(set(ids))
+    assert set(ids) == set(known)
+    for e in register:
+        assert vineyards.ID.fullmatch(e["id"]), e["id"]
+        mine = [f for f in blocks if f["properties"]["vineyard_id"] == e["id"]]
+        assert sorted(f["properties"]["vid"] for f in mine) == sorted(e["vids"])
+        assert {f["properties"]["name"] for f in mine} == {e["name"]}
+        k = known[e["id"]]
+        assert (k["name"], k["category"]) == (e["name"], e["category"])
+        assert len(k["blocks"]) == len(e["vids"])
+        for ring, f in zip(k["blocks"], mine, strict=True):
+            assert [*ring, ring[0]] == f["geometry"]["coordinates"][0]
+
+
+def test_a_block_without_its_id_or_sharing_another_s_stops_the_run():
+    with open(
+        os.path.join(ROOT, mv.INPUTS["vineyards"]), encoding="utf-8"
+    ) as fh:
+        source = json.load(fh)["features"]
+    assert vineyards.vineyard_ids(source)
+    for bad in (None, "", "Blackmon", "a--b", "-a", "x" * 81, "a\n"):
+        broken = json.loads(json.dumps(source))
+        broken[0]["properties"]["vineyard_id"] = bad
+        with pytest.raises(SystemExit, match="vineyard_id"):
+            vineyards.vineyard_ids(broken)
+    twin = json.loads(json.dumps(source))
+    twin[0]["properties"]["vineyard_id"] = twin[-1]["properties"]["vineyard_id"]
+    with pytest.raises(SystemExit, match="another name"):
+        vineyards.vineyard_ids(twin)
+    assert vineyards.slug("Torr Na Lochs Vineyard & Winery") == (
+        "torr-na-lochs-vineyard-winery"
+    )
+    assert vineyards.slug("Château Pérez") == "chateau-perez"
+    assert vineyards.slug("!!!") == "vineyard"
 
 
 def test_the_aquifer_data_no_longer_needs_the_vineyards():

@@ -124,6 +124,7 @@
     vineyard_form: {
       step: [
         "start",
+        "change_start",
         "blocks",
         "details",
         "review",

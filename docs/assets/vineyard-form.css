@@ -23,6 +23,11 @@
 .vy-facts,.vy-varieties{margin:.25rem 0 0;font-size:.9375rem;line-height:1.45;color:var(--paper-muted)}
 .vy-show{flex:0 0 auto;min-height:48px;min-width:48px;padding:.4rem .9rem;font:inherit;font-size:.9375rem;font-weight:600;color:var(--paper-ink);background:#fff;border:2px solid var(--paper-line);border-radius:10px;cursor:pointer;touch-action:manipulation}
 .vy-show:focus-visible{outline:3px solid #1a5fb4;outline-offset:2px}
+.vy-actions{flex:0 0 auto;display:flex;flex-direction:column;gap:.5rem}
+.vy-change{min-height:48px;min-width:48px;padding:.4rem .9rem;font:inherit;font-size:.9375rem;font-weight:600;color:#5a1e2e;background:transparent;border:2px solid transparent;border-radius:10px;text-decoration:underline;text-underline-offset:3px;cursor:pointer;touch-action:manipulation}
+.vy-change:focus-visible{outline:3px solid #1a5fb4;outline-offset:2px}
+@media(max-width:519px){.vy-row{flex-wrap:wrap;gap:.6rem}.vy-text{flex:1 1 100%}.vy-actions{flex:1 1 100%;flex-direction:row}.vy-actions>button{flex:1 1 0}}
+.vy-change-missing{font-size:1rem;margin-top:1rem;color:#b3321c}
 .vy-water{margin-top:2rem;font-size:1rem;color:var(--paper-muted)}
 .vy-water .text-link{margin-left:.5rem}
 @media(min-width:700px){.vy-register{padding-block:2rem 5rem}.vy-rows{display:grid;grid-template-columns:1fr 1fr;column-gap:3rem}}
@@ -53,6 +58,7 @@ html.wiz-open,html.wiz-open body{overflow:hidden;height:100%}
 .wiz[hidden]{display:none}
 .wiz-top{flex:0 0 auto;padding:.6rem 16px .7rem;padding-top:max(.6rem,env(safe-area-inset-top));background:#fff;border-bottom:1px solid #d6cdbd}
 .wiz-top-row{display:flex;align-items:center;justify-content:space-between;gap:1rem}
+.wiz-change{margin:.35rem 0 0;font-size:.9375rem;line-height:1.35;color:#5a1e2e;font-weight:600}
 .wiz-count{margin:0;font-size:.9375rem;font-weight:600;letter-spacing:.02em;color:#4a4a42}
 .wiz-close{min-height:48px;min-width:72px;padding:0 .8rem;font:inherit;font-size:1rem;font-weight:600;color:#1d1f1a;background:none;border:2px solid #b1a797;border-radius:10px;cursor:pointer}
 .wiz-title{margin:.15rem 0 0;font-family:var(--sans);font-size:1.5rem;font-weight:700;line-height:1.2;letter-spacing:0}
@@ -114,6 +120,7 @@ html.wiz-open,html.wiz-open body{overflow:hidden;height:100%}
 .w-field>label,.w-field>legend{display:block;margin:0 0 .4rem;padding:0;font-size:1.125rem;font-weight:700;line-height:1.35}
 .w-sub{display:block;margin:1rem 0 .4rem;font-size:1.0625rem;font-weight:600}
 .wiz input[type=text],.wiz input[type=search],.wiz input[type=tel],.wiz input[type=email],.wiz select{display:block;width:100%;min-height:56px;margin:0;padding:.6rem .8rem;font:inherit;font-size:1.1875rem;color:#1d1f1a;background:#fff;border:2px solid #6c6259;border-radius:10px;-webkit-appearance:none;appearance:none}
+.wiz textarea{display:block;width:100%;min-height:96px;margin:0;padding:.6rem .8rem;font:inherit;font-size:1.1875rem;line-height:1.4;color:#1d1f1a;background:#fff;border:2px solid #6c6259;border-radius:10px;resize:vertical}
 .wiz select{padding-right:2.6rem;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9'%3E%3Cpath d='M1 1.5l6 6 6-6' fill='none' stroke='%231d1f1a' stroke-width='2'/%3E%3C/svg%3E") no-repeat right 1rem center}
 .wiz [aria-invalid=true]{border-color:#b3321c;border-width:3px}
 .search-row{display:grid;grid-template-columns:1fr auto;gap:8px}

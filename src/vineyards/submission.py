@@ -26,6 +26,13 @@ Submission (version 1), as the page posts it:
      "agree": {"public": true, "permission": true},
      "website": ""}                          # a trap for bots: always empty
 
+A change to a listed vineyard ("Suggest a change", version 2) is the same,
+with "version": 2, "changes": <the vineyard's id, a key of
+docs/assets/vineyards/known.json> and "note": <the sender's short public
+note on what changed>; its blocks are required (no pin). Its issue shows the
+listed vineyard beside the suggestion; approving it replaces that vineyard's
+blocks and fields (add_blocks()) instead of adding a vineyard.
+
 Standard library only, apart from the repository's own src/site/aquifer
 (also standard library only); the Actions run it without installing
 anything. Import it as src.vineyards.submission, with the repository's root
@@ -49,9 +56,11 @@ ROOT = os.path.dirname(
 )  # the repository (src/vineyards/../..)
 FORM = "hsd-vineyard"
 VERSION = 1
+CHANGE_VERSION = 2  # a change to a listed vineyard
 MARK = "<!-- hsd-vineyard-submission: v1 -->"
 CHECK_MARK = "<!-- hsd-vineyard-check: v1 -->"
 LABEL = "vineyard-submission"
+CHANGE_LABEL = "vineyard-change"
 APPROVED = "approved"
 DATA_LABEL = "vineyard-data"
 # The form's GitHub App ("HSD vineyard form") opens every submission's
@@ -117,6 +126,7 @@ LIMITS = {
     "year_min": 1900,
     "year_ahead": 5,
     "body_bytes": 65536,
+    "note": 300,
 }
 TEXAS = (-107.0, 25.0, -93.0, 37.0)  # west, south, east, north
 ACRE_M2 = 4046.8564224
@@ -157,6 +167,22 @@ NAME_PROBLEMS = {
         "wording, or email the petitioners."
     ),
 }
+NOTE_PROBLEMS = {
+    "web": "Leave web addresses out of the note.",
+    "characters": (
+        "Use only letters, numbers and simple punctuation in the note."
+    ),
+    "contact": (
+        "Leave phone numbers and email addresses out of the note. "
+        "There is a place for them in step 4."
+    ),
+    "title": "Leave out titles like Mr., Mrs. or Dr. (write Drive in full).",
+    "personal": (
+        "The register can't show this note as written. Change the "
+        "wording, or email the petitioners."
+    ),
+}
+VINEYARD_ID = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*")  # fullmatch()
 HEADER = (
     '{"type":"FeatureCollection","name":"vineyards","crs":{"type":"name",'
     '"properties":{"name":"urn:ogc:def:crs:EPSG::4269"}},"features":[\n'
@@ -526,8 +552,18 @@ def loads(text):
         raise SubmissionError("not JSON") from error
 
 
-def _where(raw, errors, root):
-    """Step 1-2: the blocks, or a pin. Returns (blocks, facts, pin)."""
+def _where(raw, errors, root, change=False, listed_rings=()):
+    """Step 1-2: the blocks, or a pin (not for a change).
+
+    A change may keep two listed blocks that touch as they are listed
+    (listed_rings: the listed vineyard's blocks).
+
+    Returns:
+        (blocks, facts, pin, whether any block was sent).
+    """
+
+    def as_listed(ring):
+        return any(same_ring(ring, r) for r in listed_rings)
 
     def err(field, message):
         errors.append([field, message])
@@ -586,7 +622,12 @@ def _where(raw, errors, root):
         facts.append(fact)
     for i in range(len(blocks)):
         for j in range(i + 1, len(blocks)):
-            if rings_overlap(blocks[i], blocks[j]):
+            kept = (
+                as_listed(blocks[i])
+                and as_listed(blocks[j])
+                and not same_ring(blocks[i], blocks[j])
+            )
+            if rings_overlap(blocks[i], blocks[j]) and not kept:
                 err(
                     f"block-{j + 1}",
                     f"Blocks {i + 1} and {j + 1} overlap. "
@@ -607,7 +648,13 @@ def _where(raw, errors, root):
                 "proposed Llano Uplift AVA). Move it onto your vineyard.",
             )
             pin = None
-    if not raw_blocks and raw.get("pin") is None:
+    if change and not raw_blocks:
+        err(
+            "where",
+            "A change needs the vineyard's blocks drawn, not a pin: keep "
+            "one block or more.",
+        )
+    elif not raw_blocks and raw.get("pin") is None:
         err("where", "Draw your blocks, or drop a pin on the vineyard.")
     return blocks, facts, pin, bool(raw_blocks)
 
@@ -730,13 +777,61 @@ def _contact(c, errors):
     return {"name": who, "email": email, "phone": phone or ""}
 
 
-def check(raw, year=None, root=ROOT):
+def _change(raw, known, errors):
+    """Step 3 of a change: the vineyard it changes, and the note.
+
+    Returns:
+        (changes, note): the listed vineyard's id (None when it is not
+        one), and the cleaned note.
+    """
+
+    def err(field, message):
+        errors.append([field, message])
+
+    vid = raw.get("changes") if isinstance(raw.get("changes"), str) else ""
+    changes = vid if VINEYARD_ID.fullmatch(vid) and vid in known else None
+    if changes is None:
+        err(
+            "changes",
+            "This vineyard can't be changed from this page just now. Email "
+            "the petitioners instead.",
+        )
+    note = clean(raw.get("note"))
+    if not note:
+        err("note", "Say in a few words what changed.")
+    elif len(note) > LIMITS["note"]:
+        err("note", f"Shorten the note to {LIMITS['note']} letters or fewer.")
+    else:
+        problem = public_text_problem(note)
+        if problem:
+            err("note", NOTE_PROBLEMS[problem])
+    return changes, note[: LIMITS["note"]]
+
+
+def listed_vineyards(root=ROOT):
+    """The listed vineyards by id, as docs/assets/vineyards/known.json.
+
+    Made from the vineyard file itself (places.known()), so the check
+    always compares with the repository's current data.
+
+    Args:
+        root: The repository.
+
+    Returns:
+        {id: {"name", "category", "year", "varieties", "blocks"}}.
+    """
+    return places.known(existing_vineyards(root))
+
+
+def check(raw, year=None, root=ROOT, known=None):
     """Checks a submission the way the page and the function do.
 
     Args:
         raw: The parsed JSON.
         year: This year (the default: now, UTC).
         root: The repository (where the areas are read from).
+        known: The listed vineyards by id, which a change must name (the
+            default: listed_vineyards(root), read only for a change).
 
     Returns:
         (submission, errors, facts): the cleaned submission (what the issue
@@ -750,8 +845,10 @@ def check(raw, year=None, root=ROOT):
     """
     if not isinstance(raw, dict) or raw.get("form") != FORM:
         raise SubmissionError("not a vineyard submission")
-    if raw.get("version") != VERSION:
+    version = raw.get("version")
+    if isinstance(version, bool) or version not in (VERSION, CHANGE_VERSION):
         raise SubmissionError("an unknown version")
+    change = version == CHANGE_VERSION
     sid = raw.get("id")
     if not isinstance(sid, str) or not UUID4.match(sid):
         raise SubmissionError("no submission id")
@@ -760,8 +857,19 @@ def check(raw, year=None, root=ROOT):
     v = raw.get("vineyard") if isinstance(raw.get("vineyard"), dict) else {}
     c = raw.get("contact") if isinstance(raw.get("contact"), dict) else {}
     agree = raw.get("agree") if isinstance(raw.get("agree"), dict) else {}
-    blocks, facts, pin, has_blocks = _where(raw, errors, root)
+    listed_rings = ()
+    if change:
+        if known is None:
+            known = listed_vineyards(root)
+        target = raw.get("changes")
+        if isinstance(target, str) and target in known:
+            listed_rings = known[target].get("blocks") or ()
+    blocks, facts, pin, has_blocks = _where(
+        raw, errors, root, change, listed_rings
+    )
     vineyard = _vineyard(raw, v, has_blocks, errors, year)
+    if change:
+        changes, note = _change(raw, known, errors)
     contact = _contact(c, errors)
     # 5. the two boxes, and the trap
     if agree.get("permission") is not True:
@@ -772,8 +880,9 @@ def check(raw, year=None, root=ROOT):
         raise SubmissionError("trap")
     submission = {
         "form": FORM,
-        "version": VERSION,
+        "version": CHANGE_VERSION if change else VERSION,
         "id": sid,
+        **({"changes": changes, "note": note} if change else {}),
         "vineyard": vineyard,
         "blocks": [[list(p) for p in r] for r in blocks],
         "pin": list(pin) if pin else None,
@@ -830,25 +939,136 @@ def safe_json(value):
 
 def public(submission, sent):
     """The submission without the contact or its id: what the issue holds."""
-    out = {
-        k: submission[k]
-        for k in ("form", "version", "vineyard", "blocks", "pin")
-    }
+    keys = ("form", "version", "vineyard", "blocks", "pin")
+    if submission["version"] == CHANGE_VERSION:
+        keys = ("form", "version", "changes", "note", *keys[2:])
+    out = {k: submission[k] for k in keys}
     out["sent"] = sent
     if submission.get("outline"):
         out["outline"] = submission["outline"]  # drawn by the petitioners
     return out
 
 
-def issue_title(submission):
-    """A neutral title: nothing a stranger typed, only a listed county."""
+def issue_title(submission, listed=None):
+    """A neutral title: nothing a stranger typed.
+
+    Args:
+        submission: check()'s submission.
+        listed: For a change, the listed vineyard (listed_vineyards()'s
+            entry): its name as the site lists it.
+
+    Returns:
+        "Vineyard change: <listed name>", or "Vineyard submission" and the
+        county when it is one of the list.
+    """
+    if listed:
+        return f"Vineyard change: {clean(listed['name'])}"
     county = submission["vineyard"]["county"]
     if county in places.COUNTIES:
         return f"Vineyard submission, {county} County"
     return "Vineyard submission"
 
 
-def issue_body(submission, sent):
+def _blocks_text(n, drawn):
+    return f"{n} block{_s(n)}" + (" drawn" if drawn else "")
+
+
+def _ring_feature(ring, props):
+    return {
+        "type": "Feature",
+        "properties": props,
+        "geometry": {"type": "Polygon", "coordinates": [[*ring, ring[0]]]},
+    }
+
+
+def change_body(submission, sent, listed):
+    """A change's public issue: the listing beside the suggestion.
+
+    Both outlines are on the issue's map: the blocks listed now grey, the
+    suggested ones gold (GitHub draws the simplestyle colours).
+
+    Args:
+        submission: check()'s cleaned change.
+        sent: When it was sent (as issue_body()).
+        listed: The listed vineyard (listed_vineyards()'s entry).
+
+    Returns:
+        Markdown.
+    """
+    v = submission["vineyard"]
+    planted = {"planted": "Planted", "planned": "Planned"}
+    old_year = "" if listed.get("year") is None else str(listed["year"])
+    old_planted = (
+        "Planned" if listed["category"] == "under-development" else "Planted"
+    )
+    acres = "" if v["acres"] is None else f"{js_numbers(v['acres'])}"
+    year = "" if v["year"] is None else str(v["year"])
+    not_listed = "_not listed_"
+    rows = [
+        ("Vineyard", code(listed["name"]), code(v["name"])),
+        ("County", not_listed, code(v["county"])),
+        (
+            "Planted or planned",
+            code(old_planted),
+            code(planted.get(v["planted"], "")),
+        ),
+        ("Acres planted (as given)", not_listed, code(acres)),
+        ("Year first planted", code(old_year), code(year)),
+        (
+            "Varieties",
+            code(", ".join(listed.get("varieties") or [])),
+            code(", ".join(v["varieties"])),
+        ),
+        (
+            "Where",
+            code(_blocks_text(len(listed["blocks"]), False)),
+            code(_blocks_text(len(submission["blocks"]), True)),
+        ),
+    ]
+
+    def look(listing, colour):
+        return {"listing": listing, "stroke": colour, "fill": colour}
+
+    feats = [
+        _ring_feature(r, {"block": i, **look("listed now", "#6e7781")})
+        for i, r in enumerate(listed["blocks"], 1)
+    ] + [
+        _ring_feature(r, {"block": i, **look("suggested", "#bf8700")})
+        for i, r in enumerate(submission["blocks"], 1)
+    ]
+    lines = [
+        MARK,
+        (
+            "A change to a vineyard listed on hickorysandsdistrictava.org,"
+            " sent through its form, as the sender typed it. Nothing on the"
+            " site changes until the petitioners have checked it. The"
+            " sender's contact details are kept privately, not here."
+        ),
+        "",
+        f"| | Listed now (`{submission['changes']}`) | Suggested |",
+        "|---|---|---|",
+        *[f"| {k} | {a} | {b} |" for k, a, b in rows],
+        f"| What changed (the sender's note) | | {code(submission['note'])} |",
+        f"| Sent | | {code(sent[:16].replace('T', ' ') + ' UTC')} |",
+        "",
+        "The map: the blocks listed now in grey, the suggested blocks in gold.",
+        "",
+        "```geojson",
+        safe_json({"type": "FeatureCollection", "features": feats}),
+        "```",
+        "",
+        "<details><summary>The submission's data, read by the check</summary>",
+        "",
+        "```json",
+        safe_json(public(submission, sent)),
+        "```",
+        "",
+        "</details>",
+    ]
+    return "\n".join(lines) + "\n"
+
+
+def issue_body(submission, sent, listed=None):
     """The public issue: the fixed layout, with no contact details.
 
     Args:
@@ -856,10 +1076,14 @@ def issue_body(submission, sent):
             never written).
         sent: When it was sent, ISO 8601 UTC with milliseconds, as
             JavaScript's toISOString() writes it.
+        listed: For a change, the listed vineyard it changes
+            (listed_vineyards()'s entry): change_body().
 
     Returns:
         Markdown.
     """
+    if submission["version"] == CHANGE_VERSION and listed:
+        return change_body(submission, sent, listed)
     v = submission["vineyard"]
     n = len(submission["blocks"])
     if not n:
@@ -1024,6 +1248,119 @@ def _s(n):
     return "" if n == 1 else "s"
 
 
+def change_source_text(number, date):
+    """The source note of a block a change from issue #number drew anew."""
+    return (
+        "Changed through the website's vineyard form (GitHub issue "
+        f"#{number}) and checked by the petitioner, {date}; drawn by the "
+        "sender on Esri World Imagery."
+    )
+
+
+def kept_source_text(source, number, date):
+    """The source of a block a change kept, with the change noted once."""
+    base = re.sub(
+        r" Updated through the website's vineyard form \(GitHub issue #\d+\)"
+        r"[^.]*\.$",
+        "",
+        source or "",
+    )
+    return (
+        f"{base} Updated through the website's vineyard form (GitHub issue "
+        f"#{number}) and checked by the petitioner, {date}."
+    ).strip()
+
+
+def _key(ring):
+    return [f"{p[0]:.6f},{p[1]:.6f}" for p in ring]
+
+
+def same_ring(a, b):
+    """Whether two open rings are the same block: any start, either way.
+
+    Compared to the 6 decimal places a submission keeps, as the rules'
+    sameRing() compares them.
+    """
+    a, b = _key(a), _key(b)
+    if len(a) != len(b) or not a:
+        return False
+    for ring in (a, a[::-1]):
+        for k in range(len(ring)):
+            if ring[k:] + ring[:k] == b:
+                return True
+    return False
+
+
+def compare(target, sub, cat):
+    """The listed vineyard beside a change, for the check's comment.
+
+    Args:
+        target: The listed vineyard (listed_vineyards()'s entry).
+        sub: check()'s change.
+        cat: The category it would take.
+
+    Returns:
+        (Markdown table lines, whether anything would change).
+    """
+    v = sub["vineyard"]
+    labels = dict(places.CATEGORIES)
+    kept = sum(
+        any(same_ring(r, old) for old in target["blocks"])
+        for r in sub["blocks"]
+    )
+
+    def acres(rings):
+        return sum(area_acres([tuple(p) for p in r]) for r in rings)
+
+    def year(value):
+        return "" if value is None else str(value)
+
+    rows = [
+        ("Name", code(target["name"]), code(v["name"])),
+        (
+            "Category",
+            f"{labels[target['category']]} (`{target['category']}`)",
+            f"{labels[cat]} (`{cat}`)",
+        ),
+        (
+            "Year first planted",
+            code(year(target["year"])),
+            code(year(v["year"])),
+        ),
+        (
+            "Varieties",
+            code(", ".join(target["varieties"])),
+            code(", ".join(v["varieties"])),
+        ),
+        (
+            "Blocks",
+            (
+                f"{len(target['blocks'])}, {acres(target['blocks']):.2f} acres "
+                "of outline"
+            ),
+            (
+                f"{len(sub['blocks'])}, {acres(sub['blocks']):.2f} acres of "
+                f"outline; {kept} drawn as listed"
+            ),
+        ),
+    ]
+    changed = (
+        target["name"] != v["name"]
+        or target["category"] != cat
+        or target["year"] != v["year"]
+        or target["varieties"] != v["varieties"]
+        or kept != len(sub["blocks"])
+        or kept != len(target["blocks"])
+    )
+    lines = [
+        "| | Listed now | Suggested |",
+        "|---|---|---|",
+        *[f"| {k} | {a} | {b} |" for k, a, b in rows],
+        f"| What changed (the sender's note) | | {code(sub['note'])} |",
+    ]
+    return lines, changed
+
+
 def not_layout(reason):
     """The check's comment on an issue that is not in the form's layout."""
     return (
@@ -1064,8 +1401,12 @@ def review(data, number, others=(), private_words=(), today=None, root=ROOT):
         contact={"name": "Checked", "email": "check@example.com"},
         agree={"public": True, "permission": True},
     )
+    for key in ("changes", "note"):
+        if key in data:
+            raw[key] = data[key]
+    listed = listed_vineyards(root)
     try:
-        sub, errors, facts = check(raw, root=root)
+        sub, errors, facts = check(raw, root=root, known=listed)
     except SubmissionError as error:
         return not_layout(error), False, None
     outline = (
@@ -1074,9 +1415,30 @@ def review(data, number, others=(), private_words=(), today=None, root=ROOT):
     sub["outline"] = outline
     errors = [e for e in errors if not e[0].startswith(("contact", "agree"))]
     v = sub["vineyard"]
+    change = sub["version"] == CHANGE_VERSION
+    target_id = sub.get("changes")
+    target = listed.get(target_id) if change and target_id else None
+    if change and not target_id:
+        errors = [e for e in errors if e[0] != "changes"]
+        errors.append(
+            [
+                "changes",
+                (
+                    "The vineyard this changes is not in the vineyard file (it "
+                    "may have been renamed or removed since): decline this, or "
+                    "make the change by hand."
+                ),
+            ]
+        )
     cat, straddles = category(sub, facts)
+    if target and target["category"] == "historical":
+        cat, straddles = "historical", False  # the form never chooses it
     notes = []
-    known = existing_vineyards(root)
+    known = [
+        f
+        for f in existing_vineyards(root)
+        if not (change and f["properties"].get("vineyard_id") == target_id)
+    ]
     same = [
         f
         for f in known
@@ -1120,22 +1482,31 @@ def review(data, number, others=(), private_words=(), today=None, root=ROOT):
             "request if that is wrong."
         )
     words = [w for w in private_words if w.strip()]
-    if words and places.named(" ".join([v["name"], *v["varieties"]]), words):
+    public_words = [v["name"], *v["varieties"], sub.get("note") or ""]
+    if words and places.named(" ".join(public_words), words):
         errors.append(
             ["name", "A public field holds a word on the private list."]
         )
-    if not sub["blocks"]:
+    if not sub["blocks"] and not change:
         notes.append(
             "No outline: only a pin. The petitioners draw the blocks from "
             "imagery and put them into the data block above before approving "
             "(src/vineyards/SETUP.md, A pin with no outline)."
         )
+    compared = []
+    if target:
+        compared, changed = compare(target, sub, cat)
+        if not changed:
+            notes.append(
+                "Nothing would change: the suggestion is what is listed now."
+            )
     ok = (
         not errors
         and not same
         and not twins
         and not overlaps
         and bool(sub["blocks"])
+        and (not change or (target is not None and changed))
     )
     head = (
         "### The check: ready for review"
@@ -1143,6 +1514,16 @@ def review(data, number, others=(), private_words=(), today=None, root=ROOT):
         else "### The check: something to look at"
     )
     lines = [CHECK_MARK, head, ""]
+    if target:
+        lines += [
+            (
+                f"A change to **{code(target['name'])}** (`{target_id}`), "
+                "compared with the vineyard file as it is now:"
+            ),
+            "",
+            *compared,
+            "",
+        ]
     if facts:
         word = {"in": "yes", "out": "no", "both": "partly: it crosses the line"}
         lines += [
@@ -1170,7 +1551,18 @@ def review(data, number, others=(), private_words=(), today=None, root=ROOT):
         "- Inside TTB's proposed Llano Uplift AVA: "
         + ("no (see below)." if outside else "yes.")
     )
-    if sub["blocks"]:
+    if sub["blocks"] and target:
+        n = len(sub["blocks"])
+        lines.append(
+            f"- If approved, the {len(target['blocks'])} listed "
+            f"block{_s(len(target['blocks']))} and the fields of "
+            f"`{target_id}` are replaced by these {n} block{_s(n)}, as "
+            f"**{dict(places.CATEGORIES)[cat]}** (`{cat}`); a block drawn "
+            "as it is listed keeps its source, with a note of this change "
+            "added; a new block gets the source "
+            f"“{change_source_text(number, today)}”"
+        )
+    elif sub["blocks"]:
         n = len(sub["blocks"])
         lines.append(
             f"- If approved, it is added as **{dict(places.CATEGORIES)[cat]}** "
@@ -1194,12 +1586,17 @@ def review(data, number, others=(), private_words=(), today=None, root=ROOT):
     if errors or notes:
         lines += ["", "#### To look at", ""]
         lines += [f"- {m}" for _, m in errors] + [f"- {m}" for m in notes]
+    what = (
+        f"replaces the vineyard's blocks and fields in `{VINEYARDS}` and"
+        " makes the site's vineyard data again"
+        if change
+        else f"adds the blocks to `{VINEYARDS}` and the site's vineyard data"
+    )
     lines += [
         "",
         (
-            "To approve, add the label `approved`: a pull request then adds"
-            f" the blocks to `{VINEYARDS}` and the site's vineyard data. To"
-            " decline, close this as not planned. The sender's contact"
+            f"To approve, add the label `approved`: a pull request then {what}."
+            " To decline, close this as not planned. The sender's contact"
             " details are kept privately, not here."
         ),
     ]
@@ -1208,6 +1605,7 @@ def review(data, number, others=(), private_words=(), today=None, root=ROOT):
         "facts": facts,
         "category": cat,
         "outline": outline,
+        "changes": target_id if change else None,
     }
     return "\n".join(lines) + "\n", ok, result
 
@@ -1239,7 +1637,15 @@ def add_blocks(result, number, today=None, root=ROOT, extra_words=()):
     Python's compact JSON, sorted by category then name (stable, so blocks
     keep their order), rings clockwise. A block's number is written the way
     the file writes them (text when any block is text). The new features
-    also keep the year first planted and the varieties, as given.
+    also keep the year first planted and the varieties, as given. A new
+    vineyard gets a new vineyard_id, a slug of its name not yet taken.
+
+    A change (result["changes"], a vineyard_id) replaces that vineyard's
+    blocks instead, never adding a second entry: every block it had goes,
+    and the change's blocks come in with its fields and the same id. A
+    block drawn as it was listed keeps its outline, label, acres and
+    source, with the change noted in the source (kept_source_text()); a
+    new one gets the next free label and change_source_text().
 
     Args:
         result: review()'s result.
@@ -1252,7 +1658,8 @@ def add_blocks(result, number, today=None, root=ROOT, extra_words=()):
         (new text, unified diff).
 
     Raises:
-        SystemExit: A new block's fields name someone or give a contact.
+        SystemExit: A new block's fields name someone or give a contact, or
+            the vineyard a change names is not in the file.
     """
     today = today or datetime.datetime.now(datetime.UTC).date().isoformat()
     path = os.path.join(root, VINEYARDS)
@@ -1264,18 +1671,69 @@ def add_blocks(result, number, today=None, root=ROOT, extra_words=()):
     )
     sub = result["submission"]
     v = sub["vineyard"]
-    for i, ring in enumerate(sub["blocks"], 1):
-        closed = [list(p) for p in ring] + [list(ring[0])]
-        if _signed(closed) > 0:  # the file's rings run clockwise
-            closed.reverse()
+    changes = result.get("changes")
+    if changes:
+        olds = [
+            f for f in features if f["properties"].get("vineyard_id") == changes
+        ]
+        if not olds:
+            raise SystemExit(f"no vineyard {changes} in the vineyard file")
+        features = [f for f in features if f not in olds]
+        vid = changes
+    else:
+        olds = []
+        taken = {f["properties"].get("vineyard_id") for f in features}
+        base = places.slug(v["name"])
+        vid, k = base, 1
+        while vid in taken:
+            k += 1
+            vid = f"{base[: places.ID_MAX - 1 - len(str(k))]}-{k}"
+    labels = []  # the blocks' labels, kept or new
+    blocks = []
+    for ring in sub["blocks"]:
+        was = next(
+            (
+                f
+                for f in olds
+                if same_ring(ring, f["geometry"]["coordinates"][0][:-1])
+            ),
+            None,
+        )
+        blocks.append((ring, was))
+        if was is not None:
+            labels.append(was["properties"].get("block"))
+    for i, (ring, was) in enumerate(blocks, 1):
+        if was is not None:
+            closed = was["geometry"]["coordinates"][0]
+            label = was["properties"].get("block")
+            acres = was["properties"].get("acres")
+            source = kept_source_text(
+                was["properties"].get("source"), number, today
+            )
+        else:
+            closed = [list(p) for p in ring] + [list(ring[0])]
+            if _signed(closed) > 0:  # the file's rings run clockwise
+                closed.reverse()
+            n = i if not changes else 1
+            while changes and (str(n) in map(str, labels)):
+                n += 1
+            labels.append(str(n) if as_text else n)
+            label = labels[-1]
+            acres = round(area_acres([tuple(p) for p in ring]), 2)
+            source = (
+                change_source_text(number, today)
+                if changes
+                else source_text(number, today, result.get("outline"))
+            )
         props = {
             "name": v["name"],
+            "vineyard_id": vid,
             "category": result["category"],
-            "block": str(i) if as_text else i,
-            "acres": round(area_acres([tuple(p) for p in ring]), 2),
+            "block": label,
+            "acres": acres,
             "year": v["year"],
             "varieties": list(v["varieties"]),
-            "source": source_text(number, today, result.get("outline")),
+            "source": source,
         }
         places.checked(props, f"issue #{number} block {i}", extra_words)
         features.append(

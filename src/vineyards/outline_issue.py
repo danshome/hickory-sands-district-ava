@@ -91,6 +91,8 @@ def outlined(body, rings):
         raise SystemExit(
             f"not a vineyard submission's issue: {error}"
         ) from None
+    if data.get("version") == vs.CHANGE_VERSION:
+        raise SystemExit("a change to a listed vineyard has its blocks drawn")
     raw = {
         **{k: data.get(k) for k in ("form", "version", "vineyard", "pin")},
         "blocks": rings,

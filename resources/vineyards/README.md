@@ -4,7 +4,9 @@ Read by `src/site/make_vineyards.py` (`src/site/aquifer/vineyards.py`), which wr
 map, `docs/map.html` (#135), and the vineyards page. NAD83 (EPSG:4269), longitude first. Map context only: no boundary
 geometry comes from it.
 
-`vineyards-EPSG4269.geojson`: one feature per vine block, with its vineyard's `name`, its `category`, its `block` (where a
+`vineyards-EPSG4269.geojson`: one feature per vine block, with its vineyard's `name`, its `vineyard_id` (the vineyard's
+stable id: a slug of its name when it was first listed, the same on every block of the vineyard and kept when the
+vineyard is renamed; the website's "Suggest a change" names a vineyard by it), its `category`, its `block` (where a
 vineyard has several: its number or a planned block's name, always as text, since the page's map takes a field's type
 from its first value), the `acres` of its outline (not of planted vines) and `source`, a short note of where the name
 and the outline come from. A block sent through the website's form also has the `year` its vineyard was first planted
@@ -42,7 +44,10 @@ Sources (each block's `source` says which):
   category follows the blocks and the sender: planned is `under-development`; planted, `hsd` inside the proposed
   district and `llano-uplift` outside it (a block across the line takes the category of most of the acres, for the
   petitioner to confirm); the form never chooses `historical`. The file's layout is kept (one feature per line, sorted
-  by category and name), so the pull request's diff is only the new lines.
+  by category and name), so the pull request's diff is only the new lines. A new vineyard gets a new `vineyard_id`.
+  A change to a listed vineyard ("Suggest a change") replaces that vineyard's blocks and fields under the same
+  `vineyard_id`; a block left as it was keeps its outline and source, with the change noted in the source, and a
+  historical vineyard stays historical.
 
 Left out: the 2022 outlines of the vineyards outlined again here (each is replaced by its blocks); the west Peters
 Prairie block (left off, the petitioners' decision); Heart of Art's larger 2022 outline (Comment 9's block is used);
@@ -52,5 +57,6 @@ A vineyard whose place is not yet known is not drawn.
 Not a survey: only the named vineyards were looked at, so other vineyards may exist; summer 2022 photographs may show
 recent plantings, very young vines or dead blocks wrongly. Made from the vineyard check's outputs, Comment 9's block
 file and the trace of the Paisano planting plan, kept outside the repository; to add or move a vineyard by hand, edit
-this file (a `category` from the table, a `source` note) and run `./build.sh site-data` (or
+this file (a `category` from the table, a `source` note, a new vineyard's `vineyard_id` not yet taken, a listed one's
+kept) and run `./build.sh site-data` (or
 `src/site/make_vineyards.py`, which needs nothing downloaded).

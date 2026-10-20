@@ -8,10 +8,18 @@
 // is not set up (vineyard-config.js) or does not answer, the grower is offered
 // the email instead (vineyard-email.js). Text from the grower is only ever set
 // as text.
+//
+// "Suggest a change" (a button beside each vineyard in the list,
+// vineyard-list.js, or vineyards.html#change=<id> from the map's popup) opens
+// the same form filled with that listed vineyard's public fields and blocks
+// (assets/vineyards/known.json), at its blocks; the grower changes what is
+// wrong, says in a short public note what has changed, and gives a contact as
+// for a new vineyard. It is sent as a change (version 2 of the rules, naming
+// the vineyard by its id), and its draft is kept apart from a new vineyard's.
 import { apiKey } from "./map-config.js?v=999720b";
 import { endpoint, turnstileSiteKey } from "./vineyard-config.js?v=b87e284";
-import * as rules from "./vineyard-blocks.js?v=a8b5daf";
-import { ADDRESS, message, plan } from "./vineyard-email.js?v=7d7e46c";
+import * as rules from "./vineyard-blocks.js?v=b3f76c1";
+import { ADDRESS, message, plan } from "./vineyard-email.js?v=10df5f5";
 
 // The form sends when the function's address is given (READY). The person
 // check (Cloudflare Turnstile) is loaded and required only when its site key
@@ -27,8 +35,11 @@ const DATA = {
   llano: "assets/aquifer/llano-uplift.geojson",
   district: "data/boundary.geojson",
   counties: "assets/vineyards/counties.geojson",
+  known: "assets/vineyards/known.json",
 };
 const DRAFT = "hsd-vineyard-draft-v1";
+const CHANGE_DRAFT = "hsd-vineyard-change-draft-v1"; // a change's, kept apart
+const VINEYARD_ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const DRAFT_DAYS = 7; // an untouched draft is forgotten after a week
 const PRIVATE = ["cname", "phone", "email"]; // never kept on the device
 const HIT_PX = 30; // a finger's reach around a corner dot
@@ -45,6 +56,7 @@ const TITLES = {
   done: "Thank you.",
   failed: "Not sent yet",
 };
+const CHANGE_TITLES = { ...TITLES, 2: "Check the blocks" };
 
 const $ = (id) => document.getElementById(id);
 const wiz = $("wiz");
@@ -61,19 +73,24 @@ const fresh = () => ({
   name: "", county: "", countyPicked: false, planted: "", acres: "", year: "",
   varieties: [], other: "", cname: "", phone: "", email: "",
   permission: false, public: false,
+  changes: null, listedName: "", note: "", // a change: the listed vineyard's id and name
 });
 let state = fresh();
 let token = null;
 let shot = null; // a picture of the blocks for the review, kept in memory only
 let areas = null;
 let counties = [];
+let known = null; // the listed vineyards by id, once loaded
 
-function readDraft() {
+// Where this state's draft is kept: a change's apart from a new vineyard's.
+const draftKey = () => (state.changes ? CHANGE_DRAFT : DRAFT);
+
+function readDraft(where = DRAFT) {
   try {
-    const saved = JSON.parse(localStorage.getItem(DRAFT) || "null");
+    const saved = JSON.parse(localStorage.getItem(where) || "null");
     if (!saved || typeof saved !== "object") return null;
     if (!(Date.now() - (saved.savedAt || 0) < DRAFT_DAYS * 86400000)) {
-      localStorage.removeItem(DRAFT);
+      localStorage.removeItem(where);
       return null;
     }
     const kept = { ...fresh(), ...saved };
@@ -90,7 +107,7 @@ let saving = 0;
 let keeps = true;
 function store(kept) {
   try {
-    localStorage.setItem(DRAFT, JSON.stringify(kept));
+    localStorage.setItem(kept.changes ? CHANGE_DRAFT : DRAFT, JSON.stringify(kept));
     keeps = true;
   } catch (error) {
     if (keeps) console.warn("this browser will not keep the draft", error);
@@ -113,10 +130,10 @@ function saveNow() {
   for (const key of PRIVATE) delete kept[key];
   store(kept);
 }
-function forget() {
+function forget(key = draftKey()) {
   clearTimeout(saving);
   try {
-    localStorage.removeItem(DRAFT);
+    localStorage.removeItem(key);
   } catch (error) {
     console.warn("the draft could not be forgotten", error);
   }
@@ -158,7 +175,7 @@ if (draft) {
   $("draft-note").hidden = false;
 }
 $("draft-discard").addEventListener("click", () => {
-  forget();
+  forget(DRAFT);
   state = fresh();
   shot = null;
   fillFields();
@@ -212,8 +229,14 @@ function open() {
   window.hsdTrack?.("vineyard_form", { step: "start" });
   const kept = readDraft();
   if (kept) state = kept;
-  else if (state.step === "done") state = fresh();
+  else if (state.step === "done" || state.changes) state = fresh(); // never a change's state
+  shot = null;
+  enter();
+}
+// The form over the page, at the state's step.
+function enter() {
   if (state.step === "failed") state.step = 5;
+  $("change-missing").hidden = true;
   wiz.hidden = false;
   depth = 0;
   remember(state.step);
@@ -222,7 +245,95 @@ function open() {
   $("page").inert = true;
   fillFields();
   show(state.step, { focus: true });
-  loadAreas().catch((error) => console.error("the areas did not load", error)).then(() => openMap());
+  loadAreas().catch((error) => console.error("the areas did not load", error)).then(() => openMap())
+    .then(() => {
+      if (state.changes) fitBlocks();
+    });
+}
+
+// "Suggest a change" to a listed vineyard: the form, filled with its public
+// fields and blocks, at its blocks; a change's draft for the same vineyard
+// is taken up again. A vineyard not in the site's data is said on the page.
+let opening = false; // a second tap while the list loads opens it once
+async function openChange(id) {
+  if (!wiz.hidden || opening) return;
+  opening = true;
+  try {
+    await startChange(id);
+  } finally {
+    opening = false;
+  }
+}
+async function startChange(id) {
+  opener =document.activeElement instanceof HTMLElement && document.activeElement !== document.body
+    ? document.activeElement
+    : null;
+  counted = new Set();
+  window.hsdTrack?.("vineyard_form", { step: "change_start" });
+  const listed = typeof id === "string" && VINEYARD_ID.test(id) ? (await loadKnown())?.[id] : null;
+  if (!listed || !Object.prototype.hasOwnProperty.call(known, id)) {
+    console.error("no listed vineyard to change", String(id).slice(0, 80));
+    $("change-missing").hidden = false;
+    $("change-missing").scrollIntoView({ block: "center" });
+    return;
+  }
+  const kept = readDraft(CHANGE_DRAFT);
+  state = kept && kept.changes === id ? kept : prefilled(id, listed);
+  if (state.step === "done") state.step = 2;
+  shot = null;
+  enter();
+}
+addEventListener("hsd-vineyard-change", (e) => openChange(e.detail));
+
+// A fresh change's state, from the listed vineyard (known.json's entry).
+function prefilled(id, listed) {
+  const s = fresh();
+  const varieties = Array.isArray(listed.varieties) ? listed.varieties.map(String) : [];
+  Object.assign(s, {
+    changes: id,
+    listedName: String(listed.name),
+    name: String(listed.name),
+    planted: listed.category === "under-development" ? "planned" : "planted",
+    year: Number.isInteger(listed.year) ? String(listed.year) : "",
+    varieties: varieties.filter((v) => rules.VARIETIES.includes(v)),
+    other: varieties.filter((v) => !rules.VARIETIES.includes(v)).join(", "),
+    blocks: listed.blocks.map((ring) => ring.map((p) => [Number(p[0]), Number(p[1])])),
+    current: null,
+    step: 2,
+  });
+  const all = s.blocks.flat();
+  const mean = (i) => all.reduce((t, p) => t + p[i], 0) / all.length;
+  if (all.length) s.view = { center: [mean(0), mean(1)], zoom: 16 };
+  return s;
+}
+
+// The map on the blocks (a change opens on the vineyard).
+function fitBlocks() {
+  const all = state.blocks.flat();
+  if (!view || !all.length) return;
+  const xs = all.map((p) => p[0]), ys = all.map((p) => p[1]);
+  const pad = 0.2 * Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys), 0.001);
+  view.goTo({
+    type: "extent", xmin: Math.min(...xs) - pad, ymin: Math.min(...ys) - pad, xmax: Math.max(...xs) + pad,
+    ymax: Math.max(...ys) + pad, spatialReference: { wkid: 4326 },
+  }, { animate: false }).catch(moved);
+}
+
+// The listed vineyards (known.json), loaded once; null when they could not be.
+let knownLoading = null;
+function loadKnown() {
+  knownLoading ||= fetch(DATA.known).then((r) => {
+    if (!r.ok) throw new Error(`${DATA.known}: ${r.status}`);
+    return r.json();
+  }).then((data) => {
+    known = data && typeof data === "object" && !Array.isArray(data) ? data : {};
+    return known;
+  }).catch((error) => {
+    console.error("the listed vineyards did not load", error);
+    knownLoading = null; // asked again, it tries again
+    return null;
+  });
+  return knownLoading;
 }
 function close() {
   const back = depth;
@@ -236,17 +347,21 @@ function hide() {
   $("page").inert = false;
   if (state.step !== "done") {
     saveNow();
-    $("start").textContent = "Continue adding your vineyard";
-    $("draft-note").hidden = false; // says whether this browser keeps them
+    if (!state.changes) {
+      $("start").textContent = "Continue adding your vineyard";
+      $("draft-note").hidden = false; // says whether this browser keeps them
+    }
   }
-  $("start").focus();
+  (opener?.isConnected ? opener : $("start")).focus();
+  opener = null;
 }
+let opener = null; // the button a change was opened from, focused again after
 
 // --- steps -----------------------------------------------------------------------------
 
 const STEP_ERRORS = {
   2: (f) => f.startsWith("block") || ["where", "pin", "blocks"].includes(f),
-  3: (f) => ["name", "county", "planted", "acres", "year", "varieties"].includes(f),
+  3: (f) => ["name", "county", "planted", "acres", "year", "varieties", "note"].includes(f),
   4: (f) => f.startsWith("contact"),
   5: (f) => f.startsWith("agree"),
 };
@@ -254,6 +369,7 @@ const FIELD_ELEMENT = {
   name: "w-name", county: "w-county", planted: "w-planted", acres: "w-acres", year: "w-year",
   varieties: "w-other", "contact-name": "w-cname", "contact-email": "w-email",
   "contact-phone": "w-phone", "agree-permission": "w-agree-permission", "agree-public": "w-agree-public",
+  note: "w-note",
 };
 
 function show(step, { focus = true, fromHistory = false } = {}) {
@@ -266,7 +382,8 @@ function show(step, { focus = true, fromHistory = false } = {}) {
   for (const s of wiz.querySelectorAll(".step")) s.hidden = s.dataset.step !== String(step);
   const n = typeof step === "number" ? step : 5;
   $("wiz-count").textContent = typeof step === "number" ? `Step ${step} of 5` : step === "done" ? "Sent" : "Step 5 of 5";
-  $("wiz-title").textContent = TITLES[step];
+  $("wiz-title").textContent = (state.changes ? CHANGE_TITLES : TITLES)[step];
+  changeMode();
   wiz.querySelectorAll(".wiz-progress li").forEach((li, i) => li.classList.toggle("on", i < n));
   const mapped = step === 1 || step === 2;
   $("wiz-map").hidden = !mapped;
@@ -284,6 +401,21 @@ function show(step, { focus = true, fromHistory = false } = {}) {
   if (focus) $("wiz-title").focus({ preventScroll: true });
   $("wiz-body").scrollTop = 0;
   save();
+}
+// What differs in a change: the vineyard named at the top, the note, the
+// pin left out (a change keeps blocks), and the words of the last screens.
+function changeMode() {
+  const on = Boolean(state.changes);
+  $("wiz-change").hidden = !on;
+  $("wiz-change").textContent = on ? `Suggesting a change to ${state.listedName}` : "";
+  $("note-field").hidden = !on;
+  $("public-change").hidden = !on;
+  $("to-pin").parentElement.hidden = on;
+  $("another").hidden = on;
+  $("done-say").textContent = on ? "Your change is with the petitioners." : "Your vineyard is with the petitioners.";
+  $("next-map").textContent = on
+    ? "Once it's checked, the change appears on this website's map. We'll review it within about a week."
+    : "Once it's checked, your vineyard appears on this website's map. We'll review it within about a week.";
 }
 $("done-close").addEventListener("click", close);
 $("another").addEventListener("click", () => {
@@ -327,8 +459,9 @@ function payload() {
   const others = state.other.split(",").map((s) => s.trim()).filter(Boolean);
   return {
     form: rules.FORM,
-    version: rules.VERSION,
+    version: state.changes ? rules.CHANGE_VERSION : rules.VERSION,
     id: state.id,
+    ...(state.changes ? { changes: state.changes, note: state.note } : {}),
     vineyard: {
       name: state.name,
       county: state.county,
@@ -349,7 +482,7 @@ function allErrors() {
   if (!areas) return [];
   try {
     // the trap is the server's business: a grower is never stopped by it here
-    return rules.check({ ...payload(), website: "" }, { llano: areas.llano, district: areas.district }).errors;
+    return rules.check({ ...payload(), website: "" }, { llano: areas.llano, district: areas.district, known: known || {} }).errors;
   } catch {
     return [["where", "Something in the form could not be read. Close it and start again."]];
   }
@@ -415,7 +548,10 @@ for (const name of rules.VARIETIES) {
   });
   $("chips").append(chip);
 }
-const BIND = { "w-name": "name", "w-acres": "acres", "w-other": "other", "w-cname": "cname", "w-phone": "phone", "w-email": "email" };
+const BIND = {
+  "w-name": "name", "w-acres": "acres", "w-other": "other", "w-cname": "cname", "w-phone": "phone", "w-email": "email",
+  "w-note": "note",
+};
 for (const [id, key] of Object.entries(BIND)) {
   $(id).addEventListener("input", () => {
     state[key] = $(id).value;
@@ -462,6 +598,9 @@ function fillFields() {
   for (const [id, key] of Object.entries(BIND)) $(id).value = state[key] ?? "";
   $("w-county").value = state.county;
   $("w-county-note").hidden = !state.countyPicked;
+  if (state.year && ![...$("w-year").options].some((o) => o.value === String(state.year))) {
+    $("w-year").add(new Option(String(state.year), String(state.year))); // a listed year before the list's
+  }
   $("w-year").value = state.year;
   for (const r of document.querySelectorAll('input[name="planted"]')) r.checked = r.value === state.planted;
   for (const chip of $("chips").children) chip.setAttribute("aria-pressed", String(state.varieties.includes(chip.dataset.variety)));
@@ -538,6 +677,7 @@ function review() {
     ["Acres", p.vineyard.acres === null ? "" : String(p.vineyard.acres)],
     ["Planted in", p.vineyard.year ? String(p.vineyard.year) : ""],
     ["Varieties", p.vineyard.varieties.join(", ")],
+    ...(state.changes ? [["What has changed", state.note.trim()]] : []),
   ]);
   card("You (private)", 4, [["Name", state.cname], ["Phone", state.phone], ["Email", state.email]]);
   if (CHECK_ON) loadTurnstile();
@@ -800,7 +940,11 @@ function drawUi(errors = null) {
   $("after-row").hidden = on || state.blocks.length === 0;
   bottom();
   $("draw-say").textContent = !on
-    ? state.blocks.length ? "Your blocks are drawn. Tap Next, or add another block." : "Tap each corner of your block, one after another."
+    ? state.blocks.length
+      ? state.changes
+        ? "These are the blocks listed now. Drag a corner to move it, remove a block or add one, then tap Next."
+        : "Your blocks are drawn. Tap Next, or add another block."
+      : "Tap each corner of your block, one after another."
     : n === 0
       ? state.blocks.length ? "Tap each corner of the next block." : "Tap each corner of your block, one after another."
       : n < 3 ? "Keep tapping the corners, all the way round." : "Tap Done when you've been all the way round.";
@@ -1129,8 +1273,16 @@ function retryTurnstile() {
 // send still under way) before the email is offered instead.
 const SEND_RETRIES = 3;
 let refusals = 0;
+// A change the function cannot take (a vineyard it does not know, or a
+// function from before changes): no box can put it right, so the email.
+const CANNOT_CHANGE = "This vineyard can't be changed from this page just now.";
 async function send() {
   const errors = allErrors();
+  if (errors.some(([f]) => f === "changes")) {
+    $("fail-say").textContent = CANNOT_CHANGE;
+    console.error("the change names no listed vineyard");
+    return failed();
+  }
   if (errors.length) {
     const step = [2, 3, 4, 5].find((s) => errors.some(([f]) => STEP_ERRORS[s](f)));
     if (step !== 5) show(step);
@@ -1187,6 +1339,12 @@ async function send() {
     refusals = 0;
     return sent(answer);
   }
+  if (state.changes && (status === 400 || (status === 422 && answer?.errors?.some?.((e) => e?.field === "changes")))) {
+    refusals = 0;
+    console.error("the change was not taken", status);
+    $("fail-say").textContent = CANNOT_CHANGE;
+    return failed();
+  }
   if (status === 422 && Array.isArray(answer?.errors) && answer.errors.length) {
     const list = answer.errors.map((e) => [e.field, e.message]);
     const step = [2, 3, 4, 5].find((s) => list.some(([f]) => STEP_ERRORS[s](f))) || 5;
@@ -1231,18 +1389,23 @@ function sent(answer) {
   state.step = "done";
   show("done");
   say(answer.reference ? `Sent. Your reference number is ${answer.reference}.` : "Sent.");
+  const change = Boolean(state.changes);
   state = { ...fresh(), step: "done" };
   shot = null;
-  $("start").textContent = "Add another vineyard";
-  $("draft-note").hidden = true;
+  if (!change) {
+    $("start").textContent = "Add another vineyard";
+    $("draft-note").hidden = true;
+  }
 }
 
 // The email fallback (vineyard-email.js): the whole message in the email when
 // it fits; else the details are copied, and the email asks for them to be
 // pasted. The screen says which happened, and a failure is logged.
 let mail = null;
+// The email's message: for a change, it names the listed vineyard.
+const email = () => message(payload(), state.changes ? { id: state.changes, name: state.listedName } : null);
 function failed() {
-  mail = plan(message(payload()));
+  mail = plan(email());
   $("mail").href = mail.url;
   $("mail-note").textContent = mail.long
     ? "The details are too long for an email link: tapping it copies them, and the email asks you to paste them in."
@@ -1250,15 +1413,18 @@ function failed() {
   $("copy-status").textContent = "";
   // Not set up yet: trying again cannot help, so only the email is offered.
   $("retry").hidden = !READY;
+  const cannot = $("fail-say").textContent === CANNOT_CHANGE;
+  if (cannot) $("retry").hidden = true; // nor for a change the function cannot take
   saveNow();
   const kept = keeps ? "Your answers are kept on this device." : "Your answers stay only while this page is open.";
-  $("fail-lead").textContent = READY
+  const after = state.changes ? "the petitioners make the change" : "the petitioners add your vineyard";
+  $("fail-lead").textContent = READY && !cannot
     ? `${kept} Try again in a minute, or send them by email instead.`
-    : `${kept} Send them by email instead, and the petitioners add your vineyard.`;
+    : `${kept} Send them by email instead, and ${after}.`;
   show("failed");
 }
 function copyDetails(after) {
-  const text = message(payload()).body.replace(/\r\n/g, "\n");
+  const text = email().body.replace(/\r\n/g, "\n");
   if (!navigator.clipboard?.writeText) {
     console.error("this browser cannot copy");
     $("copy-status").textContent = `Your browser would not copy them. Email ${ADDRESS} with the details instead.`;
@@ -1283,4 +1449,13 @@ $("mail").addEventListener("click", () => {
 });
 
 // Opened from a link to vineyards.html#add-vineyard: straight into the form.
+// From vineyards.html#change=<id> (a vineyard's popup on the map): the form
+// for a change to that vineyard; followed on this page, the same. The address
+// is left as it came (no script writes it).
+function changeFromAddress() {
+  if (!location.hash.startsWith("#change=")) return;
+  openChange(location.hash.slice("#change=".length));
+}
 if (location.hash === "#add-vineyard") open();
+else changeFromAddress();
+addEventListener("hashchange", changeFromAddress);

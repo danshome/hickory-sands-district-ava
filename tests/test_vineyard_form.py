@@ -129,21 +129,29 @@ def test_every_field_the_rules_name_has_its_place_and_message(page, wizard):
     known = ids(page)
     block = re.search(r"const FIELD_ELEMENT = \{(.*?)\};", wizard, re.DOTALL)
     pairs = re.findall(r'"?([\w-]+)"?: "([\w-]+)"', block.group(1))
-    assert len(pairs) == 11
+    assert len(pairs) == 12
     for field, element in pairs:
         assert element in known, element
         assert f"err-{field}" in known, field
-    # every field the Python twin can name, the page shows
+    # every field the Python twin can name, the page shows; a change's
+    # "changes" (a vineyard the function does not know) ends at the email
     raw = {
         "form": vs.FORM,
         "version": 1,
         "id": "0" * 8 + "-0000-4000-8000-" + "0" * 12,
     }
-    _, errors, _ = vs.check(dict(raw, blocks=[], pin=None), year=2026)
-    named = {f for f, _ in errors}
+    named = set()
+    for version in (vs.VERSION, vs.CHANGE_VERSION):
+        _, errors, _ = vs.check(
+            dict(raw, version=version, blocks=[], pin=None), year=2026
+        )
+        named |= {f for f, _ in errors}
+    assert {"note", "changes"} <= named
     for field in named:
-        assert field in dict(pairs) or field in {"where"}, field
+        assert field in dict(pairs) or field in {"where", "changes"}, field
     assert "err-where" in known
+    assert 'errors.some(([f]) => f === "changes")' in wizard
+    assert '(e) => e?.field === "changes"' in wizard
 
 
 def test_the_counties_and_varieties_are_the_rules(html):
@@ -256,7 +264,7 @@ def test_the_data_the_scripts_read_is_there(wizard):
 
 
 TARGETS = re.compile(
-    r"\.(w-button|w-link|map-button|chip|vy-show|wiz-close|w-check|card)"
+    r"\.(w-button|w-link|map-button|chip|vy-show|vy-change|wiz-close|w-check|card)"
     r"(?![\w-])"
 )
 # the main buttons are larger than the least, 44 px
@@ -286,6 +294,7 @@ def test_targets_are_big_enough_to_tap():
         assert int(found.group(1)) >= size, cls
     assert ".review-card .w-link" in seen
     assert ".vy-show" in seen
+    assert ".vy-change" in seen
 
 
 def test_the_wording(html, wizard):
@@ -374,6 +383,25 @@ def test_every_line_is_there_in_order(js):
         "Phone: ",
         "Email: jane@example.com",
     ]
+
+
+def test_a_change_names_the_vineyard_it_changes(js):
+    change = dict(
+        SENT, version=2, changes="blackmon-vineyard", note="New\nname"
+    )
+    listed = {"id": "blackmon-vineyard", "name": "Blackmon Vineyard"}
+    built = js("message", change, listed)
+    assert built["subject"] == "Vineyard change: Blackmon Vineyard"
+    lines = built["body"].split("\r\n")
+    assert lines[:3] == [
+        "Changes the listed vineyard: Blackmon Vineyard (blackmon-vineyard)",
+        "What has changed: New name",
+        "",
+    ]
+    # then every line of a new vineyard's email, in the same order
+    assert lines[3:] == js("message", SENT)["body"].split("\r\n")
+    # a new vineyard's email is as it was
+    assert js("message", change)["subject"].startswith("Vineyard submission")
 
 
 def test_an_empty_form_says_nothing_wrong(js):

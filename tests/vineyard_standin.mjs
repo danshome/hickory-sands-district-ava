@@ -177,6 +177,9 @@ export function standIn() {
     const m = path.match(new RegExp(`^${repo}/issues/(\\d+)/labels$`));
     if (m && init.method === "POST") {
       if (state.labelFails) return json(500, { message: "Server Error" });
+      if (state.labelMissing && body.labels.includes(state.labelMissing)) {
+        return json(422, { message: "Validation Failed" }); // a label not made yet
+      }
       const issue = state.issues.find((i) => i.number === Number(m[1]));
       issue.labels.push(...body.labels.map((name) => ({ name })));
       return json(200, issue.labels);
@@ -532,6 +535,43 @@ export async function cases(bundlePath) {
   t.state.now = new Date("2027-10-20T12:00:00Z"); // a year and a day on
   await t.handle(hook(t.env, { action: "labeled", issue: issue(9001) }));
   out.aYearOn = t.state.rows.map((r) => r.issue_number);
+
+  // a change to a listed vineyard: the same rules and limits; the vineyard it
+  // names must be in the bundled list; its issue is titled by the listed name
+  // and labelled as a change, the listing beside the suggestion
+  const CHANGE = { ...GOOD, version: 2, id: uuid(500), changes: "blackmon-vineyard", note: "Added a block in 2024." };
+  t = fresh();
+  out.changeHealth = (await look(await t.handle(request(null, { method: "GET", path: "/health" })))).body;
+  out.change = await look(await t.handle(request(CHANGE)));
+  out.changeIssue = t.state.issues[0];
+  out.changeRow = t.state.rows.length;
+  out.changeUnknown = await look(await t.handle(request({ ...CHANGE, id: uuid(501), changes: "no-such-vineyard" })));
+  out.changeProto = await look(await t.handle(request({ ...CHANGE, id: uuid(502), changes: "__proto__" })));
+  out.changeNoNote = await look(await t.handle(request({ ...CHANGE, id: uuid(503), note: "" })));
+  out.changePin = await look(await t.handle(request({ ...CHANGE, id: uuid(504), blocks: [], pin: [-99.294, 30.864] })));
+  out.changePrivateWord = await look(await t.handle(request({ ...CHANGE, id: uuid(505), note: "Quillfeather planted it" })));
+  out.changeTrap = await look(await t.handle(request({ ...CHANGE, id: uuid(506), website: "x" })));
+  out.afterChangeRefusals = { rows: t.state.rows.length, issues: t.state.issues.length };
+  out.changeAgain = await look(await t.handle(request(CHANGE)));
+  // a change GitHub dropped the labels of: both added again
+  t = fresh();
+  t.state.dropLabels = true;
+  out.changeDropped = await look(await t.handle(request(CHANGE)));
+  out.changeDroppedLabels = t.state.issues[0].labels.map((l) => l.name);
+  // the label vineyard-change not made yet: the issue stands, with the other
+  t = fresh();
+  t.state.labelMissing = "vineyard-change";
+  out.changeNoLabel = await look(await t.handle(request(CHANGE)));
+  out.changeNoLabelLabels = t.state.issues[0].labels.map((l) => l.name);
+  out.changeIssueAsked = t.state.issues.length;
+  // the limits count changes and additions together
+  t = fresh();
+  const mixed = [];
+  for (let i = 1; i <= 6; i++) {
+    const body = i % 2 ? { ...GOOD, id: uuid(600 + i) } : { ...CHANGE, id: uuid(600 + i) };
+    mixed.push((await look(await t.handle(request(body)))).status);
+  }
+  out.changeLimits = mixed;
   return out;
 }
 

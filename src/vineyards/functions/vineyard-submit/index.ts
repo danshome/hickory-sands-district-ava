@@ -2,9 +2,10 @@
 // in the project "Hickory Sands District AVA" (ref yayebhncbagmebwgmezd),
 // beside vote-api, which it leaves alone. Dan deploys it from the Supabase
 // dashboard as one file that src/vineyards/bundle_function.py makes from this
-// one, the site's rules (docs/assets/vineyard-blocks.js) and TTB's proposed
+// one, the site's rules (docs/assets/vineyard-blocks.js), TTB's proposed
 // Llano Uplift AVA as the site publishes it
-// (docs/assets/aquifer/llano-uplift.geojson); src/vineyards/SETUP.md says how.
+// (docs/assets/aquifer/llano-uplift.geojson) and the listed vineyards
+// (docs/assets/vineyards/known.json); src/vineyards/SETUP.md says how.
 //
 // POST /vineyard-submit, JSON from https://hickorysandsdistrictava.org only.
 // In order:
@@ -28,6 +29,16 @@
 //      then is the sender told it is sent. GitHub refusing frees the row (502);
 //      a lost answer keeps it (409); the row not tied answers 503.
 // Answers {ok: true, reference: <issue number>}.
+//
+// A change to a listed vineyard ("Suggest a change", version 2 of the rules)
+// goes the same way, under the same rules and limits. The vineyard it names
+// must be one of the site's vineyard data as bundled with the rules
+// (docs/assets/vineyards/known.json; an id not there is a 422 on the field
+// "changes"); its note is public text, checked as the name is. Its issue is
+// titled "Vineyard change: <the listed name>", labelled vineyard-submission
+// and vineyard-change, and shows the listed vineyard beside the suggestion,
+// both outlines on its map. The bundle's list is a snapshot: rebundle and
+// deploy after the vineyard data changes (src/vineyards/SETUP.md).
 //
 // POST /vineyard-submit/github: the App's webhook (Issues events), signed with
 // GITHUB_WEBHOOK_SECRET. A submission's issue closed (or deleted) sets its
@@ -69,6 +80,7 @@
 // Settings: JWT verification off (a public form, like vote-api).
 import * as rules from "./vineyard-blocks.js";
 import llanoUplift from "./llano-uplift.json" with { type: "json" };
+import knownVineyards from "./vineyards-known.json" with { type: "json" };
 
 export const SITE = "https://hickorysandsdistrictava.org";
 const HOSTNAMES = ["hickorysandsdistrictava.org"];
@@ -76,6 +88,7 @@ const ACTION = "vineyard-submit";
 export const OWNER = "danshome";
 export const REPO = "hickory-sands-district-ava";
 export const LABEL = "vineyard-submission";
+export const CHANGE_LABEL = "vineyard-change"; // a change to a listed vineyard, beside LABEL
 export const BOT = "hsd-vineyard-form[bot]";
 export const PER_IP_PER_DAY = 5;
 export const PER_DAY = 30;
@@ -282,9 +295,9 @@ export function makeHandler(deps: Deps): (req: Request) => Promise<Response> {
   }
 
   const labelled = (issue: Json) => ((issue.labels as Json[] | undefined) || []).some((l) => l.name === LABEL);
-  async function addLabel(token: string, number: number): Promise<boolean> {
+  async function addLabel(token: string, number: number, labels: string[] = [LABEL]): Promise<boolean> {
     try {
-      const { status } = await github(token, "POST", `/issues/${number}/labels`, { labels: [LABEL] });
+      const { status } = await github(token, "POST", `/issues/${number}/labels`, { labels });
       if (status === 200) return true;
       deps.log("vineyard: the label was not added", number, status);
     } catch (error) {
@@ -410,7 +423,7 @@ export function makeHandler(deps: Deps): (req: Request) => Promise<Response> {
 
     let checked;
     try {
-      checked = rules.check(raw, { llano, year: deps.now().getUTCFullYear() });
+      checked = rules.check(raw, { llano, known: knownVineyards, year: deps.now().getUTCFullYear() });
     } catch (error) {
       if (error instanceof rules.Invalid && error.message === "trap") {
         return answer(200, { ok: true, reference: null }, origin);
@@ -418,7 +431,10 @@ export function makeHandler(deps: Deps): (req: Request) => Promise<Response> {
       return answer(400, { error: "unreadable" }, origin);
     }
     const sub = checked.submission;
-    const publicText = [sub.vineyard.name, ...sub.vineyard.varieties].join(" ").toLowerCase();
+    const publicText = [sub.vineyard.name, ...sub.vineyard.varieties, sub.note || ""].join(" ").toLowerCase();
+    // A change: the listed vineyard it names (the rules checked it is one)
+    const listed = sub.changes ? (knownVineyards as Record<string, Json>)[sub.changes] : null;
+    const labels = listed ? [LABEL, CHANGE_LABEL] : [LABEL];
     const held = privateWords().some((w) => publicText.includes(w));
     if (held && !silent()) checked.errors.push(["name", rules.NAME_PROBLEMS.personal]);
     if (checked.errors.length) {
@@ -482,9 +498,9 @@ export function makeHandler(deps: Deps): (req: Request) => Promise<Response> {
       let made;
       try {
         made = await github(app, "POST", "/issues", {
-          title: rules.issueTitle(sub),
-          body: `${rules.issueBody(sub, deps.now().toISOString())}${markerLine(ref)}\n`,
-          labels: [LABEL],
+          title: rules.issueTitle(sub, listed),
+          body: `${rules.issueBody(sub, deps.now().toISOString(), listed)}${markerLine(ref)}\n`,
+          labels: [LABEL], // a change's own label after, so it can never stop the issue
         });
       } catch (error) {
         // No answer: the issue may have been made. The row is kept; a retry
@@ -510,8 +526,13 @@ export function makeHandler(deps: Deps): (req: Request) => Promise<Response> {
       return answer(503, { error: "store" }, origin);
     }
     // The label, last: if GitHub drops it, the issue and its row stand, and
-    // the reconciliation adds it.
-    if (!labelled(issue)) await addLabel(app, number);
+    // the reconciliation adds it. A change's label is added here too, each
+    // label on its own, so one GitHub refuses (vineyard-change not made yet)
+    // never stops the issue or the other.
+    const has = new Set(((issue.labels as Json[] | undefined) || []).map((l) => l.name));
+    for (const name of labels) {
+      if (!has.has(name)) await addLabel(app, number, [name]);
+    }
     deps.log("vineyard submission", number);
     await sweep();
     return answer(200, { ok: true, reference: number }, origin);
@@ -597,6 +618,8 @@ export function makeHandler(deps: Deps): (req: Request) => Promise<Response> {
         ready: missing().length === 0,
         missing: missing(),
         person_check: personCheck(),
+        changes: true, // takes a change to a listed vineyard (version 2)
+        known_vineyards: Object.keys(knownVineyards).length,
         address_headers: ["cf-connecting-ip", "x-real-ip", "x-forwarded-for"].filter((n) => h.has(n)),
         forwarded_entries: (h.get("x-forwarded-for") || "").split(",").filter((s) => s.trim()).length,
         address_digest: env("IP_SALT") ? (await hmacHex(env("IP_SALT"), enc.encode(`probe:${clientIp(req)}`))).slice(0, 8) : null,

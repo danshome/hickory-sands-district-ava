@@ -5,10 +5,11 @@ or labelled (python -I -B src/vineyards/check_issue.py). It reads the issue
 from $GITHUB_EVENT_PATH; acts only on the form's issues (opened by the
 form's App, labelled vineyard-submission, open: actions.check_gate());
 checks the submission again with the repository's current data
-(submission.review()); and posts one comment, marked CHECK_MARK, which it
-edits when the issue changes. It needs GH_TOKEN (the Actions' token, Issues
-write) and GITHUB_REPOSITORY; PRIVATE_WORDS, an optional secret, is never
-printed. Standard library only.
+(submission.review(); a change to a listed vineyard is compared with that
+vineyard's entry in the vineyard file as it is now); and posts one comment,
+marked CHECK_MARK, which it edits when the issue changes. It needs GH_TOKEN
+(the Actions' token, Issues write) and GITHUB_REPOSITORY; PRIVATE_WORDS, an
+optional secret, is never printed. Standard library only.
 """
 
 import os

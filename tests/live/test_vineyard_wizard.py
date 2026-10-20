@@ -177,7 +177,8 @@ class Grower:
             f'export const turnstileSiteKey = "{key}";\n'
         )
         self.context.route(
-            "**/assets/vineyard-config.js",
+            # with or without its ?v= stamp (./build.sh stamp)
+            "**/assets/vineyard-config.js*",
             lambda route: route.fulfill(
                 status=200, content_type="text/javascript", body=config
             ),
@@ -763,3 +764,176 @@ def test_search_finds_a_road_and_says_when_it_cannot(grower, standin):
     )
     assert "Nothing found" not in g.text("#search-results")
     assert any("search did not answer" in e for e in g.errors), g.errors
+
+
+# ---- "Suggest a change" to a listed vineyard (#181) -------------------------
+
+CHANGE_BUTTON = 'button[aria-label="Suggest a change to Blackmon Vineyard"]'
+
+
+def wait_change_open(g):
+    g.page.wait_for_function(
+        "!document.getElementById('wiz').hidden"
+        " && document.getElementById('map-loading').hidden",
+        timeout=90_000,
+    )
+    g.at_step(2)
+    g.page.wait_for_timeout(1500)
+
+
+@pytest.mark.parametrize("viewport", ["phone-390x844", "phone-360x780"])
+def test_suggest_a_change_from_the_list_and_send(grower, standin, viewport):
+    control(standin, reset=True, env={"TURNSTILE_SECRET": ""})
+    g = grower(viewport, key="")
+    button = g.page.locator(CHANGE_BUTTON)
+    button.wait_for(timeout=30_000)
+    # the list's buttons are big enough to tap, at phone width too
+    for loc in (button, g.page.locator(".vy-show").first):
+        box = loc.bounding_box()
+        assert box["width"] >= 44 and box["height"] >= 44, box
+    g.shot("change-0-list")
+    g.press(CHANGE_BUTTON)
+    wait_change_open(g)
+    assert g.text("#wiz-change") == "Suggesting a change to Blackmon Vineyard"
+    assert g.text("#wiz-title") == "Check the blocks"
+    assert g.page.locator("#block-list li").count() == 3
+    assert not g.shown("#to-pin")  # a change keeps blocks
+    g.shot("change-2-blocks")
+    small = {"2": g.small_targets()}
+    g.press('button[aria-label="Remove block 3"]')
+    assert g.page.locator("#block-list li").count() == 2
+    g.press("#next")
+    g.at_step(3)
+    assert g.page.locator("#w-name").input_value() == "Blackmon Vineyard"
+    assert g.page.locator('input[value="planted"]').is_checked()
+    assert g.shown("#w-note")
+    g.press("#next")
+    assert g.text("#err-note") == "Say in a few words what changed."
+    g.type_in("#w-note", "Block 3 was pulled out in 2025.")
+    g.page.locator("#w-year").select_option("2012")
+    g.press('.chip[data-variety="Tannat"]')
+    small["3"] = g.small_targets()
+    g.shot("change-3-note")
+    g.press("#next")
+    g.contact_and_send()
+    g.at_step(5)
+    assert "Block 3 was pulled out in 2025." in g.text("#review")
+    assert g.shown("#public-change")
+    g.press("#w-agree-permission")
+    g.press("#w-agree-public")
+    small["5"] = g.small_targets()
+    g.press("#next")
+    g.page.wait_for_function(
+        "!document.querySelector('section[data-step=done]').hidden"
+        " || !document.querySelector('section[data-step=failed]').hidden"
+        " || !document.getElementById('err-send').hidden",
+        timeout=60_000,
+    )
+    g.shot("change-6-thanks")
+    assert g.shown("section[data-step=done]"), (
+        g.errors,
+        g.text("#err-send"),
+        g.text("#fail-say"),
+    )
+    assert g.text("#done-say") == "Your change is with the petitioners."
+    assert not g.shown("#another")
+    assert all(not v for v in small.values()), small
+    data = control(standin)
+    (issue,) = data["issues"]
+    (row,) = data["rows"]
+    assert issue["title"] == "Vineyard change: Blackmon Vineyard"
+    assert [label["name"] for label in issue["labels"]] == [
+        "vineyard-submission",
+        "vineyard-change",
+    ]
+    assert '"changes":"blackmon-vineyard"' in issue["body"]
+    assert issue["body"].count('"listing":"listed now"') == 3
+    assert issue["body"].count('"listing":"suggested"') == 2
+    assert "Jane" not in issue["body"]
+    assert row["contact_name"] == "Jane Grower"
+    assert g.text("#ref") == str(issue["number"])
+    keys = ("hsd-vineyard-change-draft-v1", "hsd-vineyard-draft-v1")
+    for key in keys:
+        assert g.page.evaluate(f"localStorage.getItem('{key}')") is None
+    # closed, the page is as it was: a new vineyard starts afresh
+    g.press("#done-close")
+    assert g.text("#start") == "Add my vineyard"
+    assert g.errors == [], g.errors
+
+
+def test_a_change_from_the_map_s_link_and_its_draft(grower, standin):
+    control(standin, reset=True, env={"TURNSTILE_SECRET": ""})
+    g = grower("phone-390x844", key="")
+    g.page.goto(f"{SITE}/vineyards.html#change=blackmon-vineyard")
+    wait_change_open(g)
+    assert g.text("#wiz-change") == "Suggesting a change to Blackmon Vineyard"
+    g.press("#next")
+    g.at_step(3)
+    g.type_in("#w-note", "New name")
+    g.press("#wiz-close")
+    # a new vineyard's form is not the change's
+    assert g.text("#start") == "Add my vineyard"
+    g.press("#start")
+    g.page.wait_for_function("!document.getElementById('wiz').hidden")
+    assert g.page.locator("#w-name").input_value() == ""
+    assert not g.shown("#wiz-change")
+    g.press("#wiz-close")
+    # the change's draft is taken up again for the same vineyard
+    g.press(CHANGE_BUTTON)
+    g.page.wait_for_function("!document.getElementById('wiz').hidden")
+    g.at_step(3)
+    assert g.page.locator("#w-note").input_value() == "New name"
+    g.press("#wiz-close")
+    # a vineyard the site does not list: said on the page, no form
+    g.page.goto(f"{SITE}/vineyards.html#change=no-such-vineyard")
+    g.page.wait_for_function(
+        "!document.getElementById('change-missing').hidden"
+    )
+    assert g.page.locator("#wiz").is_hidden()
+    assert any("no listed vineyard" in e for e in g.errors), g.errors
+
+
+def test_a_change_an_old_function_refuses_ends_at_the_email(grower, standin):
+    control(standin, reset=True, env={"TURNSTILE_SECRET": ""})
+    g = grower("phone-390x844", key="")
+    cors = {
+        "Access-Control-Allow-Origin": SITE,
+        "Access-Control-Allow-Methods": "POST",
+        "Access-Control-Allow-Headers": "content-type",
+    }
+
+    def old_function(route):
+        # a function from before changes reads version 2 as unreadable
+        if route.request.method == "OPTIONS":
+            route.fulfill(status=204, headers=cors)
+        else:
+            route.fulfill(
+                status=400,
+                headers=cors,
+                content_type="application/json",
+                body='{"error":"unreadable"}',
+            )
+
+    g.context.route("**/vineyard-submit", old_function)
+    g.press(CHANGE_BUTTON)
+    wait_change_open(g)
+    g.press("#next")
+    g.at_step(3)
+    g.type_in("#w-note", "New block in 2024")
+    g.press("#next")
+    g.contact_and_send()
+    g.at_step(5)
+    g.press("#w-agree-permission")
+    g.press("#w-agree-public")
+    g.press("#next")
+    g.failed()
+    g.shot("change-7-old-function")
+    assert g.text("#fail-say") == (
+        "This vineyard can't be changed from this page just now."
+    )
+    assert not g.shown("#retry")
+    href = g.page.locator("#mail").get_attribute("href")
+    assert "Vineyard%20change%3A%20Blackmon%20Vineyard" in href
+    assert "blackmon-vineyard" in href
+    assert control(standin)["issues"] == []
+    assert any("change was not taken" in e for e in g.errors), g.errors

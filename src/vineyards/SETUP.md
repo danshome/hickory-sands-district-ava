@@ -71,8 +71,9 @@ GitHub sends the webhook a "ping" now. It fails until step 5, and that does no h
 
 ## 2. GitHub: the labels and the private words
 
-1. **Labels.** In the repository: **Issues** > **Labels** > **New label**, three times: `vineyard-submission`,
-   `approved` and `vineyard-data`. Any colours. The form's App applies an existing label; it cannot make one.
+1. **Labels.** In the repository: **Issues** > **Labels** > **New label**, four times: `vineyard-submission`,
+   `approved`, `vineyard-data` and `vineyard-change` (a change to a listed vineyard). Any colours. The form's App
+   applies an existing label; it cannot make one.
    Until section A is done, do not add `approved` to an issue: its Action would run without the second App, fail,
    and make the environment `vineyard-pr` with no rule (see step A.2). Approve by telling Claude instead
    ("Day to day").
@@ -282,6 +283,23 @@ send is refused, so it ends at the email.
     it, and the site shows the vineyard.
   - "Something to look at": put it right first. The sender's contact is in Supabase's Table Editor: filter
     `issue_number` by the issue's number. To decline, close the issue as "not planned".
+- **A change to a listed vineyard** ("Suggest a change", beside each vineyard in the list on the vineyards page and
+  in its popup on The map): an issue titled "Vineyard change: <the listed name>", labelled `vineyard-submission` and
+  `vineyard-change` (make that label once, step 2.1; until it is there, the function leaves it off and the issue
+  still comes, with `vineyard-submission`). The issue shows what is listed now beside what the grower
+  suggests, with the grower's short public note on what has changed, and both outlines on its map (listed grey,
+  suggested gold). The check compares it with the vineyard file as it is now ("A change to ..."): it says "Nothing
+  would change" when the suggestion is what is listed, and that the vineyard is not in the file when it was renamed
+  or removed since. Approve it as a new vineyard (the label `approved`, or "approve #n" to Claude): the pull request
+  "Vineyard change: <name> (#n)" replaces that vineyard's blocks and fields in
+  `resources/vineyards/vineyards-EPSG4269.geojson`, under the same `vineyard_id`, never as a second entry. A block
+  the grower left as it was keeps its outline, label, acres and source, with a note of the change added to the source;
+  a block drawn anew gets "Changed through the website's vineyard form (GitHub issue #n) ...". A historical
+  vineyard stays historical. The sender's contact is in the Table Editor, as for a new vineyard.
+- **After a vineyard is added or changed** (its pull request merged): deploy the function again (step 5's "To update
+  the function later"). The function knows the listed vineyards from the site's data as it was when the function was
+  made (`docs/assets/vineyards/known.json`, in the bundle): until it is deployed again, a change to a vineyard added
+  since is refused (the grower is offered the email), and a renamed vineyard's next change is titled by its old name.
 - **A pin with no outline:** the blocks are drawn from imagery before approval.
   1. In QGIS, add Esri World Imagery (XYZ Tiles) and zoom to the pin (the issue's map shows it).
   2. Make a new GeoPackage or scratch polygon layer in EPSG:4326, and draw each block of vines along the rows' outer

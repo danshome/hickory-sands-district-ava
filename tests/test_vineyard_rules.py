@@ -25,25 +25,28 @@ NODE = shutil.which("node")
 MODULE = os.path.join(ROOT, "docs", "assets", "vineyard-blocks.js")
 LLANO = os.path.join(ROOT, vs.LLANO)
 DISTRICT = os.path.join(ROOT, vs.DISTRICT)
+KNOWN = os.path.join(ROOT, "docs", "assets", "vineyards", "known.json")
 SENT = "2026-10-18T23:59:01.123Z"
 # Runs every case through the module: parse, check, title, issue.
 BRIDGE = """
 import { pathToFileURL } from "node:url";
 import { readFileSync } from "node:fs";
-const [path, llanoPath, districtPath] = process.argv.slice(1);
+const [path, llanoPath, districtPath, knownPath] = process.argv.slice(1);
 const m = await import(pathToFileURL(path));
 const llano = m.makeArea(JSON.parse(readFileSync(llanoPath, "utf8")));
 const district = m.makeArea(JSON.parse(readFileSync(districtPath, "utf8")));
+const known = JSON.parse(readFileSync(knownPath, "utf8"));
 let input = "";
 for await (const chunk of process.stdin) input += chunk;
 const out = [];
 for (const [text, sent] of JSON.parse(input)) {
   try {
     const raw = m.parse(text);
-    const r = m.check(raw, { llano, district, year: 2026 });
+    const r = m.check(raw, { llano, district, known, year: 2026 });
+    const listed = r.submission.changes ? known[r.submission.changes] : null;
     out.push({ errors: r.errors, facts: r.facts, submission: r.submission,
-      title: m.issueTitle(r.submission),
-      body: m.issueBody(r.submission, sent) });
+      title: m.issueTitle(r.submission, listed),
+      body: m.issueBody(r.submission, sent, listed) });
   } catch (error) {
     out.push({ invalid: error instanceof m.Invalid,
       message: String(error.message) });
@@ -111,6 +114,32 @@ def district_corner():
         [lon + d, lat - d],
         [lon - d, lat - d],
     ]
+
+
+def change(**changes):
+    """A change to Blackmon Vineyard (GOOD's fields and blocks)."""
+    raw = variant(
+        version=2, changes="blackmon-vineyard", note="Added a block in 2024."
+    )
+    return variant_of(raw, **changes)
+
+
+def variant_of(raw, **changes):
+    """Raw with changes; a__b names raw["a"]["b"]."""
+    raw = copy.deepcopy(raw)
+    for path, value in changes.items():
+        keys = path.split("__")
+        target = raw
+        for k in keys[:-1]:
+            target = target[k]
+        target[keys[-1]] = value
+    return raw
+
+
+def listed_blocks(vid):
+    """A listed vineyard's blocks, as the page fills the form with them."""
+    with open(KNOWN, encoding="utf-8") as fh:
+        return json.load(fh)[vid]["blocks"]
 
 
 B0 = GOOD["blocks"][0]
@@ -262,6 +291,55 @@ FIXTURES = {
     "year-1900": variant(vineyard__year=1900),
     "year-now+5": variant(vineyard__year=2031),
     "year-now+6": variant(vineyard__year=2032),
+    # A change to a listed vineyard (version 2)
+    "change": change(),
+    "change-as-listed": change(
+        blocks=listed_blocks("blackmon-vineyard"),
+        vineyard__name="Blackmon Vineyard",
+        note="The varieties.",
+    ),
+    "change-planned": change(vineyard__planted="planned"),
+    "change-listed-twice": change(
+        blocks=[
+            listed_blocks("blackmon-vineyard")[0],
+            listed_blocks("blackmon-vineyard")[0][::-1],
+        ]
+    ),
+    "change-over-listed": change(
+        blocks=[
+            listed_blocks("blackmon-vineyard")[0],
+            [
+                [p[0] + 0.0001, p[1]]
+                for p in listed_blocks("blackmon-vineyard")[0]
+            ],
+        ]
+    ),
+    "change-two-listed-touching": change(
+        blocks=listed_blocks("blackmon-vineyard")[:2]
+    ),
+    "change-unknown-id": change(changes="no-such-vineyard"),
+    "change-id-shape": change(changes="../blackmon-vineyard"),
+    "change-id-newline": change(changes="blackmon-vineyard\n"),
+    "change-id-number": change(changes=5),
+    "change-id-missing": change(changes=None),
+    "change-id-proto": change(changes="__proto__"),
+    "change-id-constructor": change(changes="constructor"),
+    "change-no-note": change(note="   "),
+    "change-note-list": change(note=["x"]),
+    "change-note-long": change(note="N" * 301),
+    "change-note-300": change(note="N" * 300),
+    "change-note-email": change(note="Write to jane@example.com"),
+    "change-note-phone": change(note="Call 325 555 0100"),
+    "change-note-web": change(note="See www.example.com"),
+    "change-note-owner": change(note="New owner since May"),
+    "change-note-title": change(note="Ask Mrs. Smith"),
+    "change-note-hostile": change(note="</details> @danshome `x` #12"),
+    "change-pin": change(blocks=[], pin=[-99.294, 30.864]),
+    "change-nothing": change(blocks=[]),
+    "change-bad-block": change(
+        blocks=[[[-97.75, 30.27], [-97.74, 30.27], [-97.74, 30.26]]]
+    ),
+    "change-other-vineyard": change(changes="paisano-vineyards"),
 }
 INVALID = {
     "trap": json.dumps(variant(website="http://spam")),
@@ -270,7 +348,10 @@ INVALID = {
     "not-json": "{",
     "array": "[]",
     "wrong-form": json.dumps(variant(form="other")),
-    "wrong-version": json.dumps(variant(version=2)),
+    "wrong-version": json.dumps(variant(version=3)),
+    "version-true": json.dumps(variant(version=True)),
+    "version-text": json.dumps(variant(version="2")),
+    "change-trap": json.dumps(change(website="x")),
     "no-id": json.dumps({k: v for k, v in GOOD.items() if k != "id"}),
     "bad-id": json.dumps(variant(id="1; drop table")),
     "blocks-object": json.dumps(variant(blocks={"a": 1})),
@@ -281,17 +362,19 @@ INVALID = {
 
 def python_side(text, sent):
     """What src/vineyards/submission.py makes of one case."""
+    known = vs.listed_vineyards()
     try:
         raw = vs.loads(text)
-        sub, errors, facts = vs.check(raw, year=2026)
+        sub, errors, facts = vs.check(raw, year=2026, known=known)
     except vs.SubmissionError as error:
         return {"invalid": True, "message": str(error)}
+    listed = known.get(sub["changes"]) if sub.get("changes") else None
     return {
         "errors": errors,
         "facts": facts,
         "submission": json.loads(json.dumps(vs.js_numbers(sub))),
-        "title": vs.issue_title(sub),
-        "body": vs.issue_body(sub, sent),
+        "title": vs.issue_title(sub, listed),
+        "body": vs.issue_body(sub, sent, listed),
     }
 
 
@@ -306,7 +389,16 @@ def results():
         (v if isinstance(v, str) else json.dumps(v), SENT) for _, v in CASES
     ]
     done = subprocess.run(
-        [NODE, "--input-type=module", "-e", BRIDGE, MODULE, LLANO, DISTRICT],
+        [
+            NODE,
+            "--input-type=module",
+            "-e",
+            BRIDGE,
+            MODULE,
+            LLANO,
+            DISTRICT,
+            KNOWN,
+        ],
         input=json.dumps(texts),
         capture_output=True,
         text=True,
@@ -468,7 +560,17 @@ def test_the_issue_holds_no_contact_and_no_live_markup(name):
     assert "Jane" not in body
     assert "555" not in body.split("```json")[0]
     assert GOOD["id"] not in body  # the submission's id stays in the table
-    assert py["title"].startswith("Vineyard submission")
+    if py["submission"]["version"] == vs.CHANGE_VERSION:
+        # the title names the listed vineyard, never what the sender typed
+        listed = vs.listed_vineyards()[py["submission"]["changes"]]
+        assert py["title"] == f"Vineyard change: {listed['name']}"
+        assert "| Listed now (`" in body
+        assert body.count('"listing":"listed now"') == len(listed["blocks"])
+        assert body.count('"listing":"suggested"') == len(
+            py["submission"]["blocks"]
+        )
+    else:
+        assert py["title"].startswith("Vineyard submission")
     # one fence opens and closes each block: nothing typed can end one
     assert body.count("```") == 4
     data = body.split("```json\n")[1].split("\n```")[0]
@@ -476,6 +578,8 @@ def test_the_issue_holds_no_contact_and_no_live_markup(name):
     assert "`" not in data
     back = vs.parse_issue(body)
     assert back["vineyard"] == py["submission"]["vineyard"]
+    assert back.get("changes") == py["submission"].get("changes")
+    assert back.get("note") == py["submission"].get("note")
     assert "contact" not in back
     assert "id" not in back
 
@@ -566,3 +670,28 @@ def test_a_body_edited_in_github_s_editor_still_reads():
     marked = body + "<!-- hsd-vineyard-ref: " + "a" * 24 + " -->\n"
     for edited in (body.replace("\n", "\r\n"), marked.replace("\n", "\r\n")):
         assert vs.parse_issue(edited) == vs.parse_issue(body)
+
+
+def test_every_listed_vineyard_can_be_sent_back_as_it_is_listed():
+    # The form fills a change with the listed blocks: each vineyard, as it is
+    # listed, passes the rules (two listed blocks that touch stay allowed),
+    # so a grower is never stopped by the petitioners' own outlines.
+    known = vs.listed_vineyards()
+    for vid, entry in known.items():
+        raw = change(
+            changes=vid,
+            blocks=entry["blocks"],
+            vineyard__name=entry["name"],
+        )
+        _, errors, _ = vs.check(raw, year=2026, known=known)
+        assert errors == [], (vid, errors)
+    # the same listed block twice, or a new block over a listed one, is still
+    # an overlap
+    blackmon = known["blackmon-vineyard"]["blocks"]
+    raw = change(blocks=[blackmon[0], [[*p] for p in blackmon[0]][::-1]])
+    _, errors, _ = vs.check(raw, year=2026, known=known)
+    assert [f for f, _ in errors] == ["block-2"]
+    moved = [[p[0] + 0.0001, p[1]] for p in blackmon[0]]
+    raw = change(blocks=[blackmon[0], moved])
+    _, errors, _ = vs.check(raw, year=2026, known=known)
+    assert [f for f, _ in errors] == ["block-2"]

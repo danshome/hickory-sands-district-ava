@@ -44,15 +44,26 @@ const where = ([lon, lat]) => `${lat.toFixed(5)}, ${lon.toFixed(5)}`;
 // The email from the form's submission (vineyard-wizard.js's payload()): the
 // subject names the vineyard; the body is "Field: value" lines, every one
 // always there (blank when not given) and in the same order. Each block is
-// its corners, latitude and longitude, one corner a line.
-export function message(p) {
+// its corners, latitude and longitude, one corner a line. For a change to a
+// listed vineyard (listed: { id, name }), the subject and the first lines name
+// the vineyard being changed, and the note on what has changed follows.
+export const CHANGE_SUBJECT = "Vineyard change";
+export function message(p, listed = null) {
   const v = p.vineyard || {};
   const contact = p.contact || {};
   const blocks = (p.blocks || []).flatMap((ring, i) => [
     `Block ${i + 1}:`,
     ...ring.map(where),
   ]);
+  const change = listed
+    ? [
+      `Changes the listed vineyard: ${oneLine(listed.name)} (${oneLine(listed.id)})`,
+      `What has changed: ${oneLine(p.note)}`,
+      "",
+    ]
+    : [];
   const body = [
+    ...change,
     `Vineyard: ${oneLine(v.name)}`,
     `County: ${oneLine(v.county)}`,
     `Planted or planned: ${oneLine(v.planted)}`,
@@ -68,7 +79,9 @@ export function message(p) {
     `Phone: ${oneLine(contact.phone)}`,
     `Email: ${oneLine(contact.email)}`,
   ].map(wellFormed).join("\r\n");
-  const subject = cut(oneLine(`${SUBJECT}: ${oneLine(v.name) || "(no name given)"}`), SUBJECT_MAX);
+  const subject = listed
+    ? cut(oneLine(`${CHANGE_SUBJECT}: ${oneLine(listed.name)}`), SUBJECT_MAX)
+    : cut(oneLine(`${SUBJECT}: ${oneLine(v.name) || "(no name given)"}`), SUBJECT_MAX);
   return { subject, body };
 }
 

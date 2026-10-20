@@ -2,7 +2,8 @@
 // site's vineyard data (assets/vineyards/, made by src/site/make_vineyards.py
 // from resources/vineyards/). The list is grouped as The water groups the
 // blocks; each vineyard shows how many blocks it has, the year it was first
-// planted and its varieties when given, and a button that shows it on the map.
+// planted and its varieties when given, a button that shows it on the map and
+// one that opens the form to suggest a change to it (vineyard-wizard.js).
 // No acres: an outline's acres are not planted acres. The map loads Esri's SDK
 // only when it comes near the screen, or when a vineyard is asked for. Text
 // from the data is only ever set as text, never parsed as HTML.
@@ -126,7 +127,20 @@ function row(entry) {
   show.type = "button";
   show.setAttribute("aria-label", `Show ${entry.name} on the map`);
   show.addEventListener("click", () => showOnMap(entry, show));
-  li.append(text, show);
+  const actions = el("div", "vy-actions");
+  actions.append(show);
+  // "Suggest a change": the form (vineyard-wizard.js), filled with this
+  // vineyard's public fields and blocks
+  if (typeof entry.id === "string" && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(entry.id)) {
+    const change = el("button", "vy-change", "Suggest a change");
+    change.type = "button";
+    change.setAttribute("aria-label", `Suggest a change to ${entry.name}`);
+    change.addEventListener("click", () => {
+      window.dispatchEvent(new CustomEvent("hsd-vineyard-change", { detail: entry.id }));
+    });
+    actions.append(change);
+  }
+  li.append(text, actions);
   return li;
 }
 

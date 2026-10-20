@@ -521,6 +521,23 @@ function nearList(vid) {
   return box;
 }
 
+// "Suggest a change" in a vineyard's popup: the vineyards page's form, filled
+// with that vineyard (vineyards.html#change=<its vineyard_id>), a 44 px target.
+function changeLink(attributes) {
+  const id = String(attributes?.vineyard_id || "");
+  const box = document.createElement("p");
+  box.style.cssText = "margin:.5rem 0 0";
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(id)) return box;
+  const link = document.createElement("a");
+  link.href = `vineyards.html#change=${id}`;
+  link.textContent = "Suggest a change";
+  link.setAttribute("aria-label", `Suggest a change to ${attributes.name || "this vineyard"}`);
+  link.style.cssText = "display:inline-flex;align-items:center;min-height:44px;min-width:44px;padding:0 .9rem;" +
+    "font:inherit;font-weight:600;color:inherit;border:2px solid currentColor;border-radius:10px;text-decoration:none";
+  box.append(link);
+  return box;
+}
+
 // The vineyards in four layers, one per category (resources/vineyards/):
 // the Hickory Sands District's, the Llano Uplift's outside the district,
 // those under development and the historical ones.
@@ -576,6 +593,7 @@ const vineyardLayer = (category, title) => {
             { fieldName: "source", label: "Source" },
           ],
         },
+        new CustomContent({ outFields: ["*"], creator: ({ graphic }) => changeLink(graphic.attributes) }),
         new CustomContent({ outFields: ["*"], creator: ({ graphic }) => nearList(graphic.attributes.vid) }),
       ],
     },

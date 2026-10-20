@@ -7,9 +7,17 @@
 // the same results by tests/test_vineyard_rules.py. No page code and no
 // imports: node and Deno run it as it is. Text from a grower is only ever set
 // as text.
+//
+// Version 1 adds a vineyard. Version 2 suggests a change to a listed one
+// ("Suggest a change"): it names the vineyard by its id (changes: one of the
+// ids of assets/vineyards/known.json, which the page reads and the function
+// bundles) and carries the sender's short public note on what changed. A
+// function from before version 2 refuses it as unreadable, so a change is
+// never posted as a new vineyard.
 
 export const FORM = "hsd-vineyard";
 export const VERSION = 1;
+export const CHANGE_VERSION = 2;
 export const MARK = "<!-- hsd-vineyard-submission: v1 -->";
 export const COUNTIES = ["Blanco", "Burnet", "Gillespie", "Llano", "Mason",
   "McCulloch", "San Saba", "Not sure"];
@@ -25,7 +33,7 @@ export const LIMITS = {
   name: 80, variety: 40, varieties: 20, contactName: 80, email: 120,
   phone: 30, blocks: 20, corners: 100, blockMinAcres: 0.02,
   blockMaxAcres: 300, totalMaxAcres: 2000, acresMax: 2000, yearMin: 1900,
-  yearAhead: 5, bodyBytes: 65536,
+  yearAhead: 5, bodyBytes: 65536, note: 300,
 };
 const TEXAS = [-107, 25, -93, 37];
 export const ACRE_M2 = 4046.8564224;
@@ -45,7 +53,8 @@ const PERSON_TEXT = /^\p{L}+(?:[ .'’-]+\p{L}+)*\.?$/u;
 const EMAIL = /^[^\s@<>()[\],;:"]+@[^\s@<>()[\],;:"]+\.[a-z]{2,}$/i;
 const DIGIT_RUN = /\d{7,}/;
 const SEPARATORS = /[\s().\/-]/g;
-const UUID4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+const VINEYARD_ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const UUID4 =/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 const DROP = /[\p{Cc}\p{Cf}\p{Cs}\p{Co}\p{Cn}]/u;
 const SPACE = /[\t\r\n\p{Zs}\p{Zl}\p{Zp}]/u;
 
@@ -84,6 +93,14 @@ export const NAME_PROBLEMS = {
   contact: "Leave phone numbers and email addresses out of the name. There is a place for them in step 4.",
   title: "Leave out titles like Mr., Mrs. or Dr. (write Drive in full).",
   personal: "The register can't show this name as written. Change the wording, or email the petitioners.",
+};
+
+export const NOTE_PROBLEMS = {
+  web: "Leave web addresses out of the note.",
+  characters: "Use only letters, numbers and simple punctuation in the note.",
+  contact: "Leave phone numbers and email addresses out of the note. There is a place for them in step 4.",
+  title: "Leave out titles like Mr., Mrs. or Dr. (write Drive in full).",
+  personal: "The register can't show this note as written. Change the wording, or email the petitioners.",
 };
 
 // A US telephone number as (325) 555-0100, or null.
@@ -220,6 +237,20 @@ export function ringsOverlap(r1, r2) {
   return pointInRing(r1[0], r2) || pointInRing(r2[0], r1);
 }
 
+// Whether two open rings are the same block, to the 6 decimal places a
+// submission keeps: from any corner, either way round.
+const ringKey = (r) => r.map((p) => `${Number(p[0]).toFixed(6)},${Number(p[1]).toFixed(6)}`);
+export function sameRing(a, b) {
+  const x = ringKey(a), y = ringKey(b).join(" ");
+  if (x.length !== ringKey(b).length || !x.length) return false;
+  for (const r of [x, [...x].reverse()]) {
+    for (let k = 0; k < r.length; k++) {
+      if ([...r.slice(k), ...r.slice(0, k)].join(" ") === y) return true;
+    }
+  }
+  return false;
+}
+
 // --- the submission -----------------------------------------------------------
 
 export class Invalid extends Error {}
@@ -265,12 +296,15 @@ const s = (n) => (n === 1 ? "" : "s");
 
 // Checks a submission: { submission, errors, facts }, as vineyard_check.check().
 // areas: { llano, district } from makeArea(); district may be left out (the
-// function does not need it), and then each fact's district is null.
-export function check(raw, { llano, district = null, year = new Date().getUTCFullYear() }) {
+// function does not need it), and then each fact's district is null. known:
+// the listed vineyards by id (assets/vineyards/known.json), which a change
+// must name.
+export function check(raw, { llano, district = null, known = {}, year = new Date().getUTCFullYear() }) {
   if (!raw || typeof raw !== "object" || Array.isArray(raw) || raw.form !== FORM) {
     throw new Invalid("not a vineyard submission");
   }
-  if (raw.version !== VERSION) throw new Invalid("an unknown version");
+  if (raw.version !== VERSION && raw.version !== CHANGE_VERSION) throw new Invalid("an unknown version");
+  const change = raw.version === CHANGE_VERSION;
   if (typeof raw.id !== "string" || !UUID4.test(raw.id)) throw new Invalid("no submission id");
   const errors = [];
   const err = (field, message) => errors.push([field, message]);
@@ -311,9 +345,14 @@ export function check(raw, { llano, district = null, year = new Date().getUTCFul
     blocks.push(r);
     facts.push(fact);
   });
+  // A change may keep two listed blocks that touch as they are listed.
+  const listedRings = change && typeof raw.changes === "string" &&
+    Object.prototype.hasOwnProperty.call(known, raw.changes) ? known[raw.changes].blocks || [] : [];
+  const asListed = (r) => listedRings.some((l) => sameRing(r, l));
   for (let i = 0; i < blocks.length; i++) {
     for (let j = i + 1; j < blocks.length; j++) {
-      if (ringsOverlap(blocks[i], blocks[j])) {
+      const kept = asListed(blocks[i]) && asListed(blocks[j]) && !sameRing(blocks[i], blocks[j]);
+      if (ringsOverlap(blocks[i], blocks[j]) && !kept) {
         err(`block-${j + 1}`, `Blocks ${i + 1} and ${j + 1} overlap. Move a corner so they don't.`);
       }
     }
@@ -331,7 +370,9 @@ export function check(raw, { llano, district = null, year = new Date().getUTCFul
     }
   }
   const hasPin = raw.pin !== undefined && raw.pin !== null;
-  if (!rawBlocks.length && !hasPin) err("where", "Draw your blocks, or drop a pin on the vineyard.");
+  if (change && !rawBlocks.length) {
+    err("where", "A change needs the vineyard's blocks drawn, not a pin: keep one block or more.");
+  } else if (!rawBlocks.length && !hasPin) err("where", "Draw your blocks, or drop a pin on the vineyard.");
 
   // 3. about the vineyard
   const name = clean(v.name);
@@ -380,6 +421,22 @@ export function check(raw, { llano, district = null, year = new Date().getUTCFul
     varieties.length = LIMITS.varieties;
   }
 
+  // 3, a change: which vineyard it changes, and the note on what (public)
+  let changes = null;
+  let note = "";
+  if (change) {
+    const id = typeof raw.changes === "string" ? raw.changes : "";
+    if (VINEYARD_ID.test(id) && Object.prototype.hasOwnProperty.call(known, id)) changes = id;
+    else err("changes", "This vineyard can't be changed from this page just now. Email the petitioners instead.");
+    note = clean(raw.note);
+    if (!note) err("note", "Say in a few words what changed.");
+    else if (Array.from(note).length > LIMITS.note) err("note", `Shorten the note to ${LIMITS.note} letters or fewer.`);
+    else {
+      const problem = publicTextProblem(note);
+      if (problem) err("note", NOTE_PROBLEMS[problem]);
+    }
+  }
+
   // 4. how to reach them (private)
   const who = clean(c.name);
   const email = clean(c.email);
@@ -409,8 +466,9 @@ export function check(raw, { llano, district = null, year = new Date().getUTCFul
 
   const submission = {
     form: FORM,
-    version: VERSION,
+    version: change ? CHANGE_VERSION : VERSION,
     id: raw.id,
+    ...(change ? { changes, note: Array.from(note).slice(0, LIMITS.note).join("") } : {}),
     vineyard: {
       name: Array.from(name).slice(0, LIMITS.name).join(""),
       county: COUNTIES.includes(county) ? county : "",
@@ -440,12 +498,86 @@ export function code(text) {
 export const safeJson = (value) => JSON.stringify(value)
   .replace(/&/g, "\\u0026").replace(/</g, "\\u003c").replace(/>/g, "\\u003e").replace(/`/g, "\\u0060");
 
-// A neutral title: nothing a stranger typed, only the county from the list.
-export const issueTitle = (sub) => (COUNTIES.slice(0, -1).includes(sub.vineyard.county)
-  ? `Vineyard submission, ${sub.vineyard.county} County`
-  : "Vineyard submission");
+// A neutral title: nothing a stranger typed, only the county from the list,
+// or, for a change, the listed vineyard's name as the site lists it.
+export const issueTitle = (sub, listed = null) => (listed
+  ? `Vineyard change: ${clean(listed.name)}`
+  : COUNTIES.slice(0, -1).includes(sub.vineyard.county)
+    ? `Vineyard submission, ${sub.vineyard.county} County`
+    : "Vineyard submission");
 
-export function issueBody(sub, sent) {
+const PLANTED = { planted: "Planted", planned: "Planned" };
+const blocksText = (n, drawn) => `${n} block${s(n)}${drawn ? " drawn" : ""}`;
+
+// A change's issue: what is listed now beside what the sender suggests, and
+// both outlines on the map (the listed ones grey, the suggested ones gold).
+// listed: the vineyard's entry in assets/vineyards/known.json.
+function changeBody(sub, sent, listed) {
+  const v = sub.vineyard;
+  const old = {
+    name: listed.name,
+    planted: listed.category === "under-development" ? "Planned" : "Planted",
+    year: listed.year === null || listed.year === undefined ? "" : String(listed.year),
+    varieties: (listed.varieties || []).join(", "),
+    where: blocksText(listed.blocks.length, false),
+  };
+  const notListed = "_not listed_";
+  const rows = [
+    ["Vineyard", code(old.name), code(v.name)],
+    ["County", notListed, code(v.county)],
+    ["Planted or planned", code(old.planted), code(PLANTED[v.planted] || "")],
+    ["Acres planted (as given)", notListed, code(v.acres === null ? "" : String(v.acres))],
+    ["Year first planted", code(old.year), code(v.year === null ? "" : String(v.year))],
+    ["Varieties", code(old.varieties), code(v.varieties.join(", "))],
+    ["Where", code(old.where), code(blocksText(sub.blocks.length, true))],
+  ];
+  const look = (listing, colour) => ({ listing, stroke: colour, fill: colour });
+  const features = [
+    ...listed.blocks.map((r, k) => ({
+      type: "Feature",
+      properties: { block: k + 1, ...look("listed now", "#6e7781") },
+      geometry: { type: "Polygon", coordinates: [[...r, r[0]]] },
+    })),
+    ...sub.blocks.map((r, k) => ({
+      type: "Feature",
+      properties: { block: k + 1, ...look("suggested", "#bf8700") },
+      geometry: { type: "Polygon", coordinates: [[...r, r[0]]] },
+    })),
+  ];
+  const pub = {
+    form: sub.form, version: sub.version, changes: sub.changes, note: sub.note,
+    vineyard: sub.vineyard, blocks: sub.blocks, pin: sub.pin, sent,
+  };
+  return [
+    MARK,
+    "A change to a vineyard listed on hickorysandsdistrictava.org, sent through its form, as the sender " +
+      "typed it. Nothing on the site changes until the petitioners have checked it. " +
+      "The sender's contact details are kept privately, not here.",
+    "",
+    `| | Listed now (\`${sub.changes}\`) | Suggested |`,
+    "|---|---|---|",
+    ...rows.map(([k, a, b]) => `| ${k} | ${a} | ${b} |`),
+    `| What changed (the sender's note) | | ${code(sub.note)} |`,
+    `| Sent | | ${code(`${sent.slice(0, 16).replace("T", " ")} UTC`)} |`,
+    "",
+    "The map: the blocks listed now in grey, the suggested blocks in gold.",
+    "",
+    "```geojson",
+    safeJson({ type: "FeatureCollection", features }),
+    "```",
+    "",
+    "<details><summary>The submission's data, read by the check</summary>",
+    "",
+    "```json",
+    safeJson(pub),
+    "```",
+    "",
+    "</details>",
+  ].join("\n") + "\n";
+}
+
+export function issueBody(sub, sent, listed = null) {
+  if (sub.version === CHANGE_VERSION && listed) return changeBody(sub, sent, listed);
   const v = sub.vineyard;
   const n = sub.blocks.length;
   const where = n ? `${n} block${s(n)} drawn` : "a pin (no outline drawn)";
@@ -467,7 +599,11 @@ export function issueBody(sub, sent) {
   if (sub.pin) {
     features.push({ type: "Feature", properties: { pin: true }, geometry: { type: "Point", coordinates: sub.pin } });
   }
-  const pub = { form: sub.form, version: sub.version, vineyard: sub.vineyard, blocks: sub.blocks, pin: sub.pin, sent };
+  const pub = {
+    form: sub.form, version: sub.version,
+    ...(sub.version === CHANGE_VERSION ? { changes: sub.changes, note: sub.note } : {}),
+    vineyard: sub.vineyard, blocks: sub.blocks, pin: sub.pin, sent,
+  };
   return [
     MARK,
     "A vineyard sent through the form on hickorysandsdistrictava.org, as the sender typed it. " +

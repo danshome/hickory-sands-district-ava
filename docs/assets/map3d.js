@@ -9,7 +9,8 @@
 // "The water" opens map.html?layers=aquifer,vineyards,places.
 //
 // The aquifer's data is assets/aquifer/ (made by src/site/make_aquifer_3d.py),
-// the vineyards' assets/vineyards/ (made by src/site/make_vineyards.py), and
+// the vineyards' assets/vineyards/ (made by src/site/make_vineyards.py, read
+// through vineyard-data.js, so always the current data), and
 // the district is data/ (made by the build). The aquifer's body is built
 // here from blocks of 2 x 2 (half a mile, large screens) or 4 x 4 (a mile,
 // phones) model cells. Heights are metres above sea level times the vertical
@@ -23,9 +24,9 @@ import { apiKey } from "./map-config.js?v=999720b";
 import { setupWells, wellAttributes, CLASS_NAMES, DEFAULT_FILTER, FAR_HEADS_MAX } from "./aquifer-wells.js?v=038b3c6";
 import { readState, writeState, GROUPS } from "./map-url.js?v=61d142f";
 import { districtLayers, keepSelectedInView, openFeature } from "./map3d-district.js?v=6eeaf52";
+import { vineyardJson, vineyardUrl } from "./vineyard-data.js?v=3ebd8f3";
 
 const DATA = "assets/aquifer/";
-const VINEYARDS = "assets/vineyards/";
 document.documentElement.classList.add("js");
 
 const setText = (id, text) => {
@@ -109,12 +110,14 @@ export function formatStat(value, format) {
 }
 let stats = {};
 try {
-  const [aquifer, vines] = await Promise.all([json(`${DATA}stats.json`), json(`${VINEYARDS}stats.json`)]);
+  const [aquifer, vines] = await Promise.all([json(`${DATA}stats.json`), vineyardJson("stats.json")]);
   stats = { ...aquifer.figures, ...vines.figures };
 } catch (error) {
   console.error("the page's figures could not be loaded", error);
   say("stats", "Some of the map’s figures could not be loaded, so they are shown as a dash.");
 }
+// The vineyard blocks' URL, with the data's stamp (read once, above).
+const VINEYARD_BLOCKS = await vineyardUrl("vineyards.geojson");
 for (const element of document.querySelectorAll("[data-stat]")) {
   try {
     element.textContent = formatStat(stats[element.dataset.stat], element.dataset.format);
@@ -464,7 +467,7 @@ let wells = null;
 let nearWells = null;
 function loadNear() {
   if (!nearWells) {
-    nearWells = json(`${VINEYARDS}vineyard-wells.json`).catch((error) => {
+    nearWells = vineyardJson("vineyard-wells.json").catch((error) => {
       nearWells = null;
       throw error;
     });
@@ -551,7 +554,7 @@ const VINEYARD_STYLES = {
 const vineyardLayer = (category, title) => {
   const look = VINEYARD_STYLES[category];
   return new GeoJSONLayer({
-    url: `${VINEYARDS}vineyards.geojson`,
+    url: VINEYARD_BLOCKS,
     title,
     definitionExpression: `category = '${category}'`,
     geometryType: "polygon",

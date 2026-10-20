@@ -20,6 +20,7 @@ import { apiKey } from "./map-config.js?v=999720b";
 import { endpoint, turnstileSiteKey } from "./vineyard-config.js?v=b87e284";
 import * as rules from "./vineyard-blocks.js?v=a5a4beb";
 import { ADDRESS, message, plan } from "./vineyard-email.js?v=10df5f5";
+import { vineyardJson } from "./vineyard-data.js?v=3ebd8f3";
 
 // The form sends when the function's address is given (READY). The person
 // check (Cloudflare Turnstile) is loaded and required only when its site key
@@ -34,8 +35,6 @@ const GEOCODE = "https://geocode-api.arcgis.com/arcgis/rest/services/World/Geoco
 const DATA = {
   llano: "assets/aquifer/llano-uplift.geojson",
   district: "data/boundary.geojson",
-  counties: "assets/vineyards/counties.geojson",
-  known: "assets/vineyards/known.json",
 };
 const DRAFT = "hsd-vineyard-draft-v1";
 const CHANGE_DRAFT = "hsd-vineyard-change-draft-v1"; // a change's, kept apart
@@ -322,10 +321,7 @@ function fitBlocks() {
 // The listed vineyards (known.json), loaded once; null when they could not be.
 let knownLoading = null;
 function loadKnown() {
-  knownLoading ||= fetch(DATA.known).then((r) => {
-    if (!r.ok) throw new Error(`${DATA.known}: ${r.status}`);
-    return r.json();
-  }).then((data) => {
+  knownLoading ||= vineyardJson("known.json").then((data) => {
     known = data && typeof data === "object" && !Array.isArray(data) ? data : {};
     return known;
   }).catch((error) => {
@@ -697,7 +693,7 @@ async function loadAreas() {
     if (!r.ok) throw new Error(u);
     return r.json();
   });
-  const [llano, district, county] = await Promise.all([get(DATA.llano), get(DATA.district), get(DATA.counties)]);
+  const [llano, district, county] = await Promise.all([get(DATA.llano), get(DATA.district), vineyardJson("counties.geojson")]);
   areas = { llano: rules.makeArea(llano), district: rules.makeArea(district) };
   counties = county.features.map((f) => ({ name: f.properties.name, area: rules.makeArea(f) }));
 }

@@ -256,10 +256,13 @@ def test_the_data_the_scripts_read_is_there(wizard):
         r'"((?:assets|data)/[\w/.-]+\.(?:geo)?json)"', wizard
     ):
         assert os.path.isfile(os.path.join(DOCS, path)), path
+    for name in ("counties.geojson", "known.json"):
+        assert f'vineyardJson("{name}")' in wizard
+        assert os.path.isfile(os.path.join(ASSETS, "vineyards", name))
     listing = read(ASSETS, "vineyard-list.js")
-    assert 'const DATA = "assets/vineyards/";' in listing
+    assert 'vineyardJson("register.json")' in listing
+    assert 'vineyardUrl("vineyards.geojson")' in listing
     for name in ("register.json", "vineyards.geojson"):
-        assert f"${{DATA}}{name}" in listing
         assert os.path.isfile(os.path.join(ASSETS, "vineyards", name))
 
 

@@ -130,12 +130,14 @@ def test_scripts_never_parse_text_as_html(scripts, name):
 
 def test_every_file_the_scripts_name_exists(scripts):
     # Each script names its files after its own DATA folder (and map3d.js
-    # the vineyards' after VINEYARDS); the tiles and the reports, named by
-    # key, are test_aquifer_3d.py's.
+    # the vineyards' through vineyard-data.js's vineyardJson and vineyardUrl);
+    # the tiles and the reports, named by key, are test_aquifer_3d.py's.
     named = set()
     for name, folder in (("map3d.js", ""), ("aquifer-wells.js", "wells/")):
         found = re.findall(
-            r'(?:\$\{DATA\}|")([\w.-]+\.(?:json|geojson|bin))\b', scripts[name]
+            r'(?:\$\{DATA\}|(?<!vineyardJson\()(?<!vineyardUrl\()")'
+            r"([\w.-]+\.(?:json|geojson|bin))\b",
+            scripts[name],
         )
         named |= {folder + f for f in found}
     assert {
@@ -154,7 +156,8 @@ def test_every_file_the_scripts_name_exists(scripts):
         assert os.path.isfile(os.path.join(DATA, name)), name
     vines = set(
         re.findall(
-            r"\$\{VINEYARDS\}([\w.-]+\.(?:json|geojson))", scripts["map3d.js"]
+            r'vineyard(?:Json|Url)\("([\w.-]+\.(?:json|geojson))"\)',
+            scripts["map3d.js"],
         )
     )
     assert vines == {"stats.json", "vineyard-wells.json", "vineyards.geojson"}

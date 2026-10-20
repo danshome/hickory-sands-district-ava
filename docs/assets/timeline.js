@@ -247,10 +247,14 @@
       });
     }
     if (stage >= 6) {
-      shape(g, "geo-layer", "url(#geo-p-cret)", band(flat(CRETACEOUS),
-        function (x) {
-          return Math.max(CUT, ELLENBURGER + lift(stage, x));
-        }));
+      // The Cretaceous rests on a worn surface that cuts across the tilted
+      // layers: on the Ellenburger on the flanks, on older rock, granite
+      // among it, over the dome. That surface is a second unconformity.
+      var kbase = function (x) {
+        return Math.max(CUT, ELLENBURGER + lift(stage, x));
+      };
+      shape(g, "geo-layer", "url(#geo-p-cret)", band(flat(CRETACEOUS), kbase));
+      line(g, "geo-kbase", sample(kbase));
     }
 
     // Everything above the land surface of the stage is air or sea.
@@ -265,10 +269,59 @@
     }
     line(g, stage === 2 ? "geo-unconformity" : "geo-ground", ground);
 
+    // Stage 6: the top of the dome as stage 5 left it, worn away before the
+    // Cretaceous sea came; shown as an outline above the worn surface.
+    if (stage === 6) {
+      line(g, "geo-worn", sample(function (x) {
+        return Math.min(CUT, ELLENBURGER + lift(5, x));
+      }).filter(function (p, i, all) {
+        return p[1] < CUT || (all[i - 1] && all[i - 1][1] < CUT) ||
+          (all[i + 1] && all[i + 1][1] < CUT);
+      }));
+    }
+
+    if (stage === 2 || stage === 3) {
+      cambrian(g, stage);
+    }
     if (stage === 8) {
       today(g);
     }
     return g;
+  }
+
+  // A horizontal arrow from x1 to x2 at y, its head at x2.
+  function arrow(g, cls, x1, x2, y) {
+    var dir = x2 > x1 ? 1 : -1;
+    svg("line", { "class": cls, x1: x1, y1: y, x2: x2 - 6 * dir, y2: y }, g);
+    shape(g, cls, null,
+      coords([[x2 - 8 * dir, y - 4], [x2 - 8 * dir, y + 4], [x2, y]]));
+  }
+
+  // Stages 2 and 3 (issue #210): the granite weathered in place to grus;
+  // then, under the sea, its cobbles in the lowest sand, sand brought from
+  // inland by rivers and wind, and the shoreline moving inland. Schematic:
+  // the drawing has no compass, and inland is simply its left side.
+  function cambrian(g, stage) {
+    PLUTONS.forEach(function (pluton) {
+      var reach = pluton[1] * (stage === 2 ? 0.6 : 0.95);
+      for (var x = pluton[0] - reach; x <= pluton[0] + reach; x += 5) {
+        var y = knobs(x);
+        if (stage === 2) {
+          shape(g, "geo-grus", null,
+            coords([[x, y + 1.5], [x + 3.2, y + 4.5], [x - 0.8, y + 5]]));
+        } else if (y > HICKORY + 4) {
+          svg("circle", {
+            "class": "geo-cobble", cx: x.toFixed(1), cy: (y - 3).toFixed(1),
+            r: 2.4
+          }, g);
+        }
+      }
+    });
+    if (stage === 3) {
+      arrow(g, "geo-inflow", 10, 70, SEA[3] + 14);
+      arrow(g, "geo-inflow", 10, 58, SEA[3] + 25);
+      arrow(g, "geo-arrow", W - 12, W - 92, SEA[3] - 5);
+    }
   }
 
   // Stage 8: sandy soil on the outcrop of the Hickory Sandstone Member, rain
@@ -299,22 +352,51 @@
       shape(g, "geo-arrow", null, coords([[x - 4, s - 14], [x + 4, s - 14], [x, s - 6]]));
       var from = side === 0 ? 16 : run[run.length - 1] + 14;
       var to = side === 0 ? run[0] - 14 : W - 16;
-      line(g, "geo-aquifer", sample(function (u) {
-        return (top(u) + bottom(u)) / 2;
-      }, from, to));
+      held(g, from, to, top, bottom);
     });
+  }
+
+  // The Hickory Aquifer is the water-bearing part of the
+  // Hickory Sandstone Member, so its line keeps to the sandstone: it runs
+  // midway through the member, below the land surface, and breaks where the member pinches out
+  // against a granite knob. Water in the granite is not drawn.
+  function held(g, from, to, top, bottom) {
+    var run = [];
+    function end() {
+      if (run.length > 1) {
+        line(g, "geo-aquifer", run);
+      }
+      run = [];
+    }
+    sample(function (u) {
+      return u;
+    }, from, to).forEach(function (p) {
+      var u = p[0];
+      if (bottom(u) - top(u) > 2 && landNow(u) < top(u)) {
+        run.push([u, (top(u) + bottom(u)) / 2]);
+      } else {
+        end();
+      }
+    });
+    end();
   }
 
   /* The figure. */
 
   var KEY = {
     water: "Sea",
+    shore: "The shoreline moving inland",
+    inflow: "Sand from inland, by rivers and wind",
+    grus: "Granite weathered to grus",
+    cobble: "Granite cobbles in the lowest sand",
     soil: "Sandy soil",
     aquifer: "Water in the Hickory Aquifer",
     cret: "Cretaceous rock",
     later: "Later Cambrian and Ordovician rock",
     hickory: "Hickory Sandstone Member",
     unconformity: "Great Unconformity",
+    worn: "Worn away before the Cretaceous",
+    kbase: "Base-Cretaceous unconformity",
     fault: "Faults",
     granite: "Granite",
     gneiss: "Gneiss and schist"
@@ -322,15 +404,17 @@
   var KEYS = [
     [],
     ["granite", "gneiss"],
-    ["unconformity", "granite", "gneiss"],
-    ["water", "hickory", "unconformity", "granite", "gneiss"],
+    ["grus", "unconformity", "granite", "gneiss"],
+    ["water", "shore", "inflow", "hickory", "cobble", "unconformity",
+      "granite", "gneiss"],
     ["water", "later", "hickory", "unconformity", "granite", "gneiss"],
     ["later", "hickory", "unconformity", "fault", "granite", "gneiss"],
-    ["water", "cret", "later", "hickory", "unconformity", "fault", "granite",
+    ["water", "worn", "cret", "kbase", "later", "hickory", "unconformity",
+      "fault", "granite", "gneiss"],
+    ["cret", "kbase", "later", "hickory", "unconformity", "fault", "granite",
       "gneiss"],
-    ["cret", "later", "hickory", "unconformity", "fault", "granite", "gneiss"],
-    ["soil", "aquifer", "cret", "later", "hickory", "unconformity", "fault",
-      "granite", "gneiss"]
+    ["soil", "aquifer", "cret", "kbase", "later", "hickory", "unconformity",
+      "fault", "granite", "gneiss"]
   ];
 
   function el(tag, cls, words) {
@@ -421,8 +505,9 @@
   var key = el("ul", "geo-key");
   caption.appendChild(now);
   caption.appendChild(key);
-  caption.appendChild(el("p", "geo-note",
-    "A schematic section across the uplift, not to scale."));
+  var NOTE = "A schematic section across the uplift, not to scale.";
+  var note = el("p", "geo-note", NOTE);
+  caption.appendChild(note);
   figure.appendChild(caption);
 
   var current = 0;
@@ -511,6 +596,11 @@
     art.appendChild(draw(n));
     nowTitle.textContent = s.title;
     nowAge.textContent = s.age;
+    note.textContent = NOTE +
+      (n === 3 ? " The arrows are schematic: inland is to the left, not a " +
+        "compass direction." : "") +
+      (n >= 5 ? " Later Paleozoic layers, laid down after the Ellenburger " +
+        "Group and partly worn away, are left out." : "");
     count.textContent = s.index + " / 08";
     while (key.firstChild) {
       key.removeChild(key.firstChild);

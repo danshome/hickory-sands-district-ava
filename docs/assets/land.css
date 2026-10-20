@@ -46,6 +46,9 @@
 .lnd-step h3{font-size:clamp(1.75rem,3vw,2.25rem);margin:.4rem 0 .8rem}.lnd-step>p{font-size:1.0625rem;line-height:1.75;max-width:36rem}
 .lnd-key{display:flex;flex-wrap:wrap;gap:.3rem 1rem;list-style:none;margin:.9rem 0 0;padding:0;font-size:.75rem;color:var(--paper-ink)}.lnd-key li{display:flex;align-items:center;gap:.45rem}
 .lnd-locator{display:block;width:min(100%,260px);height:auto;margin-top:.9rem;background:#f4efe5;border:1px solid var(--paper-line)}
+/* Step 03's illustration (#211): host rock, water table and a confined well's water level, not to scale. */
+.lnd-inset{margin-top:.9rem;max-width:400px}.lnd-inset svg{width:100%;height:auto;background:#f4efe5;border:1px solid var(--paper-line)}
+.lnd-inset-words{font-family:var(--sans)}.lnd-inset figcaption{margin-top:.5rem}
 
 /* The drawing's layers (land.js): a layer waits, hidden, until its step; without JavaScript, or printed, all show. */
 .lnd-l{transition:opacity .45s ease-out}.lnd-wait{opacity:0}

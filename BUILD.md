@@ -824,7 +824,7 @@ The vineyards' data, `docs/assets/vineyards/`, is made apart by `src/site/make_v
 (the wells within a kilometre of each block, nearest first), `register.json` (one entry per vineyard, by its stable
 `vineyard_id`, with the year first planted and the varieties when given, for the vineyards page), `known.json` (each
 vineyard's public fields and blocks by its id: what "Suggest a change" fills the form with, and what the Supabase
-function bundles to know which vineyards a change may name), `counties.geojson` (the seven Llano Uplift counties
+function reads from the site, when a change comes, to know which vineyards a change may name), `counties.geojson` (the seven Llano Uplift counties
 closed into polygons, for the form's county guess), `stats.json` (the figures, which the 3D page merges with its own) and
 `record.json` (the inputs' SHA-256s, the parameters and the files). So a vineyard can be added anywhere, GitHub's runners
 among them, without the 3D page's downloads: `./build.sh` checks it (`--check`, exit 3 when stale), `./build.sh

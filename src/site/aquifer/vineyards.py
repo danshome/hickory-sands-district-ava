@@ -26,7 +26,7 @@ varieties. src/site/make_vineyards.py writes, into docs/assets/vineyards/:
     known.json
         Each vineyard's public fields and blocks by its id (known()), as
         the form's "Suggest a change" fills itself from them; the form's
-        function bundles the same file (src/vineyards/bundle_function.py)
+        function reads the same file from the site, when a change comes,
         to know which vineyards a change may name.
     counties.geojson
         The seven Llano Uplift counties as polygons, closed from the 3D

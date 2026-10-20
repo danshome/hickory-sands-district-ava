@@ -296,10 +296,15 @@ send is refused, so it ends at the email.
   the grower left as it was keeps its outline, label, acres and source, with a note of the change added to the source;
   a block drawn anew gets "Changed through the website's vineyard form (GitHub issue #n) ...". A historical
   vineyard stays historical. The sender's contact is in the Table Editor, as for a new vineyard.
-- **After a vineyard is added or changed** (its pull request merged): deploy the function again (step 5's "To update
-  the function later"). The function knows the listed vineyards from the site's data as it was when the function was
-  made (`docs/assets/vineyards/known.json`, in the bundle): until it is deployed again, a change to a vineyard added
-  since is refused (the grower is offered the email), and a renamed vineyard's next change is titled by its old name.
+- **After a vineyard is added or changed** (its pull request merged): nothing to do. The function reads the listed
+  vineyards from the site itself (`https://hickorysandsdistrictava.org/assets/vineyards/known.json`) when a change
+  comes, and keeps them five minutes. GitHub Pages serves that file with a cache of about ten minutes, so for a few
+  minutes after the merge (and its deploy) a change may still see the previous list: a vineyard just added is refused
+  (the grower is offered the email) and a vineyard just renamed is titled by its old name. If the site cannot be read,
+  or the file is not as the site makes it, a change is refused the same way, never posted unchecked; a new vineyard
+  never depends on it. Deploy the function again (step 5's "To update the function later") only when its own code
+  changes: `src/vineyards/functions/vineyard-submit/index.ts`, `docs/assets/vineyard-blocks.js` or
+  `docs/assets/aquifer/llano-uplift.geojson`.
 - **A pin with no outline:** the blocks are drawn from imagery before approval.
   1. In QGIS, add Esri World Imagery (XYZ Tiles) and zoom to the pin (the issue's map shows it).
   2. Make a new GeoPackage or scratch polygon layer in EPSG:4326, and draw each block of vines along the rows' outer

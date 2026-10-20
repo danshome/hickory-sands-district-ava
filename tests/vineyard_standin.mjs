@@ -1,7 +1,8 @@
 // Stand-ins for what the vineyard form's Edge Function talks to: Supabase's
 // table (and hsd_vineyard_reserve(), as hsd_vineyard_contacts.sql does it),
-// Cloudflare's Turnstile check and GitHub's API (the App's token, verified
-// against a key made here, and the issues). The function itself is the real
+// Cloudflare's Turnstile check, GitHub's API (the App's token, verified
+// against a key made here, and the issues) and the site's listed vineyards
+// (docs/assets/vineyards/known.json, as GitHub Pages serves it). The function itself is the real
 // one, the one-file bundle Dan deploys (src/vineyards/bundle_function.py).
 //
 //   node tests/vineyard_standin.mjs cases BUNDLE
@@ -13,12 +14,15 @@
 //       is passed on as if from the site; GET /standin and POST /standin
 //       read and set the stand-ins.
 import { createHmac, createVerify, generateKeyPairSync } from "node:crypto";
+import { readFileSync } from "node:fs";
 import http from "node:http";
 import { pathToFileURL } from "node:url";
 
 const SITE = "https://hickorysandsdistrictava.org";
 const API = "https://api.github.com";
 const URL_BASE = "https://yayebhncbagmebwgmezd.supabase.co/functions/v1/vineyard-submit";
+const KNOWN_PATH = "/assets/vineyards/known.json";
+const KNOWN_FILE = new URL("../docs/assets/vineyards/known.json", import.meta.url);
 
 const json = (status, body) => new Response(body === null ? null : JSON.stringify(body), {
   status, headers: { "Content-Type": "application/json" },
@@ -30,6 +34,10 @@ export function standIn() {
     rows: [], issues: [], logs: [], calls: [], nextIssue: 9001, siteverify: 0,
     turnstile: "pass", github: "ok", dropLabels: false, labelFails: false, db: "ok",
     now: new Date("2026-10-19T12:00:00.000Z"), seq: 0, lastTick: null,
+    // the site's known.json: "ok" (the file, or knownData when set), "down"
+    // (no answer), "500", "html", "malformed" (not JSON), "array" and
+    // "badShape" (JSON, not the list's shape)
+    known: "ok", knownData: null, knownFetches: [],
   };
   const env = {
     SUPABASE_URL: "https://db.example.invalid",
@@ -208,6 +216,21 @@ export function standIn() {
     return json(200, answers[mode] || { success: false, "error-codes": ["invalid-input-response"] });
   }
 
+  function knownList(url, init) {
+    state.knownFetches.push({ url, method: init.method || "GET", timeout: Boolean(init.signal) });
+    if (state.known === "down") throw new TypeError("fetch failed");
+    if (state.known === "500") return new Response("oops", { status: 500 });
+    if (state.known === "html") return new Response("<!doctype html><p>Not found</p>", { status: 200 });
+    if (state.known === "malformed") return new Response('{"blackmon-vineyard": {"name": "Blackmon', { status: 200 });
+    if (state.known === "array") return json(200, [{ name: "Blackmon Vineyard" }]);
+    if (state.known === "badShape") {
+      const list = JSON.parse(readFileSync(KNOWN_FILE, "utf8"));
+      list["blackmon-vineyard"].blocks = [[[-99.37, "30.82"], [-99.36, 30.82], [-99.36, 30.81]]];
+      return json(200, list);
+    }
+    return json(200, state.knownData ?? JSON.parse(readFileSync(KNOWN_FILE, "utf8")));
+  }
+
   async function fetchStub(url, init = {}) {
     init = { ...init, headers: { ...(init.headers || {}) } };
     // each stand-in by the URL's protocol and host name, parsed, never by its text
@@ -218,6 +241,8 @@ export function standIn() {
     };
     if (at(env.SUPABASE_URL)) return database(url, init);
     if (at(API)) return github(url, init);
+    if (at(SITE) && u.pathname === KNOWN_PATH) return knownList(url, init);
+    if (at("https://known.example.invalid")) return knownList(url, init); // KNOWN_VINEYARDS_URL
     if (at("https://challenges.cloudflare.com") && u.pathname === "/turnstile/v0/siteverify") return turnstile(init);
     throw new Error(`no stand-in for ${url}`);
   }
@@ -572,6 +597,57 @@ export async function cases(bundlePath) {
     mixed.push((await look(await t.handle(request(body)))).status);
   }
   out.changeLimits = mixed;
+
+  // the listed vineyards are the site's, read when a change comes
+  t = fresh();
+  out.knownGood = await look(await t.handle(request(GOOD)));
+  out.knownGoodFetches = t.state.knownFetches.length; // a new vineyard never asks
+  out.knownChange = await look(await t.handle(request(CHANGE)));
+  out.knownFetched = t.state.knownFetches[0];
+  // kept five minutes, then read again
+  t.state.now = new Date(t.state.now.getTime() + 4 * 60000);
+  await t.handle(request({ ...CHANGE, id: uuid(701) }));
+  out.knownWithin = t.state.knownFetches.length;
+  t.state.now = new Date(t.state.now.getTime() + 2 * 60000);
+  await t.handle(request({ ...CHANGE, id: uuid(702) }));
+  out.knownAfter = t.state.knownFetches.length;
+  // the list could not be read, or not as the site makes it: refused on the
+  // field "changes", as an id not listed is; nothing kept, nothing posted;
+  // a failure is never kept, so the next change asks again
+  for (const mode of ["down", "500", "html", "malformed", "array", "badShape"]) {
+    t = fresh();
+    t.state.known = mode;
+    out[`known:${mode}`] = await look(await t.handle(request(CHANGE)));
+    out[`knownAfter:${mode}`] = { rows: t.state.rows.length, issues: t.state.issues.length };
+    out[`knownLogs:${mode}`] = [...t.state.logs];
+    // a new vineyard does not depend on it
+    out[`knownNew:${mode}`] = (await look(await t.handle(request({ ...GOOD, id: uuid(710) })))).status;
+    t.state.known = "ok";
+    out[`knownRetry:${mode}`] = (await look(await t.handle(request(CHANGE)))).status;
+    out[`knownFetches:${mode}`] = t.state.knownFetches.length;
+  }
+  // a vineyard listed since the function was deployed: taken, with no new
+  // deploy; only the list's public fields reach the issue
+  t = fresh();
+  const list = JSON.parse(readFileSync(KNOWN_FILE, "utf8"));
+  list["newly-listed-vineyard"] = {
+    name: "Newly Listed Vineyard", category: "hsd", year: 2021, varieties: ["Tannat"],
+    blocks: GOOD.blocks, contact: "grower@example.com",
+  };
+  t.state.knownData = list;
+  out.knownNew = await look(await t.handle(request({ ...CHANGE, id: uuid(720), changes: "newly-listed-vineyard" })));
+  out.knownNewIssue = t.state.issues[0];
+  out.knownUnknown = await look(await t.handle(request({ ...CHANGE, id: uuid(721), changes: "no-such-vineyard" })));
+  // KNOWN_VINEYARDS_URL, for the tests; an address that is not https is ignored
+  t = fresh();
+  t.env.KNOWN_VINEYARDS_URL = "https://known.example.invalid/known.json";
+  out.knownEnv = await look(await t.handle(request(CHANGE)));
+  out.knownEnvHealth = (await look(await t.handle(request(null, { method: "GET", path: "/health" })))).body;
+  out.knownEnvUrls = t.state.knownFetches.map((f) => f.url);
+  t = fresh();
+  t.env.KNOWN_VINEYARDS_URL = "http://known.example.invalid/known.json";
+  out.knownEnvHttp = (await look(await t.handle(request(CHANGE)))).status;
+  out.knownEnvHttpUrls = t.state.knownFetches.map((f) => f.url);
   return out;
 }
 

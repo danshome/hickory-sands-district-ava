@@ -20,3 +20,8 @@
 
 /* The boundary page's links to the maps, one under the other. */
 .boundary-explanation .text-link{display:flex;max-width:26rem}
+
+/* About these figures (#169): the note under The boundary's numbers, its asterisk marks (24 px each way, muted) and the link lines to it. */
+.fig-note{font-size:.8em;line-height:0;white-space:nowrap}.fig-note a{display:inline-flex;align-items:center;justify-content:center;min-width:24px;min-height:24px;line-height:1;padding:0 .3em;margin:-.5em -.35em -.5em -.2em;text-decoration:none;font-weight:400;color:var(--muted)}.paper .fig-note a{color:var(--paper-muted)}.fig-note a:hover{text-decoration:underline;color:var(--bone)}.paper .fig-note a:hover{color:var(--paper-ink)}.boundary-numbers .fig-note,.lp-figs .fig-note,.about-body .fig-note{font-size:1em}
+.figures-note{max-width:44rem;margin-top:2.5rem;padding:1rem 1.25rem;border-left:2px solid var(--sand);font-size:.875rem;line-height:1.65;color:var(--muted);scroll-margin-top:2rem}.paper .figures-note{border-left-color:var(--wine);color:var(--paper-muted)}.figures-note h2{font-family:var(--sans);font-size:.75rem;letter-spacing:.15em;text-transform:uppercase;font-weight:500;line-height:1.55;margin:0 0 .5rem}.figures-note:target{background:#2a2320}.paper .figures-note:target{background:#e5dece;color:var(--paper-ink)}.boundary-explanation .figures-note{margin-block:0 2.5rem}
+.figures-inline{font-size:.875rem!important;line-height:1.6;color:var(--muted)!important;margin-top:1rem}.paper .figures-inline{color:var(--paper-muted)!important}.page-heading .figures-inline{max-width:38rem}

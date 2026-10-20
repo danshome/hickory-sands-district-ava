@@ -111,6 +111,7 @@
         "hickory_only",
         "about-district",
         "about-sources",
+        "about-figures",
         "sheet",
       ],
     },

@@ -170,6 +170,60 @@ def test_a_dropped_label_is_added_again(out):
     assert out["droppedLabels"] == ["vineyard-submission"]
 
 
+def test_a_change_names_a_listed_vineyard_and_shows_both(out):
+    known = json.loads(
+        open(bundle_function.KNOWN, encoding="utf-8").read()  # noqa: SIM115
+    )
+    assert out["changeHealth"]["changes"] is True
+    assert out["changeHealth"]["known_vineyards"] == len(known)
+    assert out["change"]["body"] == {"ok": True, "reference": 9001}
+    issue = out["changeIssue"]
+    # the title is the listed name, never what the sender typed
+    assert issue["title"] == "Vineyard change: Blackmon Vineyard"
+    assert [label["name"] for label in issue["labels"]] == [
+        "vineyard-submission",
+        "vineyard-change",
+    ]
+    body = issue["body"]
+    assert "| Listed now (`blackmon-vineyard`) | Suggested |" in body
+    assert "`Blackmon Vineyard`" in body  # listed now
+    assert "`Prairie Gap Vineyard`" in body  # suggested
+    assert "`Added a block in 2024.`" in body
+    listed = len(known["blackmon-vineyard"]["blocks"])
+    assert body.count('"listing":"listed now"') == listed
+    assert body.count('"listing":"suggested"') == 1
+    for private in ("Jane", "jane@example.com", "555"):
+        assert private not in body.split("```json")[0], private
+    assert re.search(r"<!-- hsd-vineyard-ref: [0-9a-f]{24} -->", body)
+    assert out["changeRow"] == 1
+    # an id not in the bundled list, no note, a pin, a private word: refused
+    # on their fields, nothing kept; the trap answered as sent
+    for case, field in (
+        ("changeUnknown", "changes"),
+        ("changeProto", "changes"),
+        ("changeNoNote", "note"),
+        ("changePin", "where"),
+        ("changePrivateWord", "name"),
+    ):
+        assert out[case]["status"] == 422, case
+        fields = [e["field"] for e in out[case]["body"]["errors"]]
+        assert fields == [field], (case, fields)
+    assert "quillfeather" not in json.dumps(out["changePrivateWord"]).lower()
+    assert out["changeTrap"]["body"] == {"ok": True, "reference": None}
+    assert out["afterChangeRefusals"] == {"rows": 1, "issues": 1}
+    assert out["changeAgain"]["body"]["reference"] == 9001
+    assert out["changeDropped"]["status"] == 200
+    assert out["changeDroppedLabels"] == [
+        "vineyard-submission",
+        "vineyard-change",
+    ]
+    assert out["changeNoLabel"]["body"] == {"ok": True, "reference": 9001}
+    assert out["changeNoLabelLabels"] == ["vineyard-submission"]
+    assert out["changeIssueAsked"] == 1
+    # the same limits: five a day from one address, changes and additions
+    assert out["changeLimits"] == [200, 200, 200, 200, 200, 429]
+
+
 def test_missing_secrets_and_the_health_check(out):
     assert out["notReady"]["status"] == 503
     health = out["health"]["body"]

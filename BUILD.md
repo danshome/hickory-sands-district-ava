@@ -756,7 +756,7 @@ else drops the whole call. Never free text, a place, an id or anything typed. It
 | `vote_cast` | `dir` (like, pass) | a vote on the logo vote |
 | `vote_undo` | none | a vote taken back |
 | `vote_upload` | `result` (ok; refused, an answer the page explains; error) | a design sent |
-| `vineyard_form` | `step` (start; blocks; details, steps 3 and 4; review; sent; error, the "Not sent yet" screen; email_fallback, its email link tapped) | each step once each time the form opens |
+| `vineyard_form` | `step` (start; change_start, "Suggest a change" opened; blocks; details, steps 3 and 4; review; sent; error, the "Not sent yet" screen; email_fallback, its email link tapped) | each step once each time the form opens |
 
 So the parameter names to register are `page`, `group`, `layer`, `state`, `kind`, `action`, `choice`, `mode`, `step`,
 `total`, `section`, `dir` and `result`. A new event or word goes in analytics.js's `EVENTS`, in `EVENTS` in
@@ -767,6 +767,9 @@ The vineyards page (`vineyards.html`) lists every vineyard of the site's data, g
 comes near the screen). Its "Not listed?" section opens "Add your vineyard", five steps over the whole screen
 (`assets/vineyard-wizard.js`, `vineyard-form.css`): where the vineyard is (the phone's location or Esri's search), its
 blocks tapped corner by corner on Esri World Imagery (or a pin), what it is, how to reach the sender, and a last check.
+Each listed vineyard's "Suggest a change" (in the list, and in its popup on The map, which links to
+`vineyards.html#change=<vineyard_id>`) opens the same form filled with that vineyard's public fields and blocks
+(`assets/vineyards/known.json`), with a short public note on what has changed; it is sent as a change (#181).
 The rules are `assets/vineyard-blocks.js`, the module the Supabase function also runs. What the grower enters is kept on
 the device as a draft (never the name, phone or email) until it is sent. It sends to the function named in
 `assets/vineyard-config.js` (public). The person check, Cloudflare Turnstile, is optional on both sides: the page loads
@@ -818,8 +821,10 @@ the manifest in one pull request. A changed fault-line file in `resources/` make
 The vineyards' data, `docs/assets/vineyards/`, is made apart by `src/site/make_vineyards.py`, from committed files only:
 `resources/vineyards/vineyards-EPSG4269.geojson`, the 3D page's well tiles (`docs/assets/aquifer/wells/index.json` and
 `draw-*.json`) and its county lines (`context.geojson`). It writes `vineyards.geojson` (the blocks), `vineyard-wells.json`
-(the wells within a kilometre of each block, nearest first), `register.json` (one entry per vineyard, with the year
-first planted and the varieties when given, for the vineyards page), `counties.geojson` (the seven Llano Uplift counties
+(the wells within a kilometre of each block, nearest first), `register.json` (one entry per vineyard, by its stable
+`vineyard_id`, with the year first planted and the varieties when given, for the vineyards page), `known.json` (each
+vineyard's public fields and blocks by its id: what "Suggest a change" fills the form with, and what the Supabase
+function bundles to know which vineyards a change may name), `counties.geojson` (the seven Llano Uplift counties
 closed into polygons, for the form's county guess), `stats.json` (the figures, which the 3D page merges with its own) and
 `record.json` (the inputs' SHA-256s, the parameters and the files). So a vineyard can be added anywhere, GitHub's runners
 among them, without the 3D page's downloads: `./build.sh` checks it (`--check`, exit 3 when stale), `./build.sh

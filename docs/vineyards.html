@@ -1,11 +1,11 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<script src="assets/analytics.js?v=f08dc8f" defer></script>
+<script src="assets/analytics.js?v=b20300b" defer></script>
 
 <meta name="theme-color" content="#141512"><meta name="description" content="The register of growers in the proposed Hickory Sands District.">
 <title>The vineyards · Hickory Sands District</title><link rel="canonical" href="https://hickorysandsdistrictava.org/vineyards.html">
 <meta property="og:type" content="website"><meta property="og:site_name" content="Hickory Sands District"><meta property="og:title" content="The vineyards · Hickory Sands District"><meta property="og:description" content="The register of growers in the proposed Hickory Sands District."><meta property="og:url" content="https://hickorysandsdistrictava.org/vineyards.html"><meta property="og:image" content="https://hickorysandsdistrictava.org/assets/share.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="Sandy ground, small stones and dry stems, photographed close to the surface."><meta name="twitter:card" content="summary_large_image">
-<link rel="icon" type="image/svg+xml" href="assets/favicon.svg"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&amp;family=Source+Sans+3:wght@400;500;600;700&amp;display=swap" rel="stylesheet"><link rel="stylesheet" href="assets/site.css?v=821589a"><link rel="stylesheet" href="assets/vineyard-form.css?v=16d5eb6"></head><body class="paper page-vineyards">
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&amp;family=Source+Sans+3:wght@400;500;600;700&amp;display=swap" rel="stylesheet"><link rel="stylesheet" href="assets/site.css?v=821589a"><link rel="stylesheet" href="assets/vineyard-form.css?v=2d1cea3"></head><body class="paper page-vineyards">
 <div id="page">
 <a class="skip" href="#main">Skip to content</a>
 <header class="site-header"><a class="identity" href="index.html" aria-label="Hickory Sands District home"><img src="assets/mark.svg" width="30" height="32" alt=""><span>Hickory Sands<br><span class="identity-small">District</span></span></a>
@@ -25,6 +25,8 @@
 <ol class="add-steps"><li>Find it on the map</li><li>Tap the corners of each block</li><li>Tell us about it</li><li>Leave a phone number or email</li><li>Check it and send</li></ol>
 <button type="button" class="w-button w-primary add-start" id="start">Add my vineyard</button>
 <p class="add-draft" id="draft-note" hidden><span id="draft-text">Your answers so far are kept on this device, apart from your name, phone and email.</span> <button type="button" class="w-link" id="draft-discard">Start again instead</button></p>
+<p class="vy-change-missing" id="change-missing" role="alert" hidden>That vineyard can't be changed from this page just now. Email <a href="mailto:district@hickorysandsdistrictava.org">district@hickorysandsdistrictava.org</a> with what has changed.</p>
+<p class="add-help">Already listed and something is wrong? Tap "Suggest a change" beside it in the list above.</p>
 <p class="add-help">Need a hand? Email <a href="mailto:district@hickorysandsdistrictava.org">district@hickorysandsdistrictava.org</a>.</p>
 <noscript><p class="add-help">The form needs JavaScript. Email the vineyard's name, where it is and how many acres to <a href="mailto:district@hickorysandsdistrictava.org">district@hickorysandsdistrictava.org</a>.</p></noscript>
 </div></section>
@@ -35,6 +37,7 @@
 <div class="wiz" id="wiz" role="dialog" aria-modal="true" aria-labelledby="wiz-title" hidden>
 <div class="wiz-top">
 <div class="wiz-top-row"><p class="wiz-count" id="wiz-count">Step 1 of 5</p><button type="button" class="wiz-close" id="wiz-close">Close</button></div>
+<p class="wiz-change" id="wiz-change" hidden></p>
 <h2 class="wiz-title" id="wiz-title" tabindex="-1">Where is your vineyard?</h2>
 <ol class="wiz-progress" aria-hidden="true"><li></li><li></li><li></li><li></li><li></li></ol>
 </div>
@@ -104,6 +107,7 @@
 <div class="chips" id="chips"></div>
 <label class="w-sub" for="w-other">Others, separated by commas</label><input id="w-other" type="text" maxlength="200" autocomplete="off" autocapitalize="words" enterkeyhint="done">
 <p class="w-error" id="err-varieties" hidden></p></fieldset>
+<div class="w-field" id="note-field" hidden><label for="w-note">What has changed?</label><textarea id="w-note" rows="3" maxlength="300" autocomplete="off" autocapitalize="sentences" aria-describedby="note-hint err-note"></textarea><p class="w-hint" id="note-hint">A few words, like "Block 2 replanted in 2024" or "New name". Shown publicly with the change, so leave out people's names, phone numbers and emails.</p><p class="w-error" id="err-note" hidden></p></div>
 </section>
 
 <section class="step" data-step="4" aria-labelledby="wiz-title" hidden>
@@ -119,6 +123,7 @@
 <div class="review" id="review"></div>
 <div class="public-box">
 <p><strong>Shown publicly:</strong> the vineyard's name, county, acres, varieties, year, and the blocks you drew or the place of your pin. They are posted on GitHub, a public website, as soon as you send, and shown on this website's map once the petitioners have checked them.</p>
+<p id="public-change" hidden><strong>For a change:</strong> your note on what has changed is shown publicly too, beside what is listed now.</p>
 <p><strong>Never shown:</strong> your name, phone and email. Only the petitioners see them.</p>
 </div>
 <label class="w-check"><input type="checkbox" id="w-agree-permission" aria-describedby="err-agree-permission"><span>This is my vineyard, or I have the owner's permission to send it.</span></label>
@@ -131,10 +136,10 @@
 
 <section class="step" data-step="done" aria-labelledby="wiz-title" hidden>
 <p class="thanks-mark" aria-hidden="true"><svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="22"/><path d="M14 25l7 7 13-15"/></svg></p>
-<p class="w-big">Your vineyard is with the petitioners.</p>
+<p class="w-big" id="done-say">Your vineyard is with the petitioners.</p>
 <p class="ref" id="ref-line">Your reference number: <strong id="ref"></strong></p>
 <h3 class="w-h3">What happens next</h3>
-<ol class="next-list"><li>The petitioners check your blocks against aerial photographs.</li><li>If anything is unclear, they call or email you.</li><li>Once it's checked, your vineyard appears on this website's map. We'll review it within about a week.</li></ol>
+<ol class="next-list"><li>The petitioners check your blocks against aerial photographs.</li><li>If anything is unclear, they call or email you.</li><li id="next-map">Once it's checked, your vineyard appears on this website's map. We'll review it within about a week.</li></ol>
 <p class="w-lead">Stuck, or want to change something? Email <a href="mailto:district@hickorysandsdistrictava.org">district@hickorysandsdistrictava.org</a> with your reference number.</p>
 <button type="button" class="w-button w-primary" id="done-close">Close</button>
 <button type="button" class="w-button w-secondary" id="another">Add another vineyard</button>
@@ -161,6 +166,6 @@
 </div>
 <p class="visually-hidden" id="live" aria-live="polite"></p>
 </div>
-<script type="module" src="assets/vineyard-list.js?v=82e3634"></script>
-<script type="module" src="assets/vineyard-wizard.js?v=cd3e195"></script>
+<script type="module" src="assets/vineyard-list.js?v=ca86673"></script>
+<script type="module" src="assets/vineyard-wizard.js?v=2bad3bc"></script>
 </body></html>

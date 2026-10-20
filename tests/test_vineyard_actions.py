@@ -634,6 +634,153 @@ def test_a_body_re_saved_in_the_browser_is_checked_and_approved(
     assert len(github.pulls) == 1
 
 
+# ---- a change to a listed vineyard ------------------------------------------
+
+BLACKMON = "blackmon-vineyard"
+NEW_BLOCK = [
+    [-99.3680, 30.8225],
+    [-99.3672, 30.8225],
+    [-99.3672, 30.8218],
+    [-99.3680, 30.8218],
+]
+
+
+def change_body(**changes):
+    """A change to Blackmon Vineyard: blocks 1 and 3 kept, 2 drawn anew."""
+    listed = vs.listed_vineyards()[BLACKMON]
+    raw = copy.deepcopy(GOOD)
+    raw.update(
+        version=2,
+        changes=BLACKMON,
+        note="Block 2 replanted further east in 2024.",
+        blocks=[listed["blocks"][0], NEW_BLOCK, listed["blocks"][2]],
+    )
+    raw["vineyard"].update(
+        name="Blackmon Estate Vineyard",
+        year=2015,
+        varieties=["Tempranillo", "Tannat"],
+    )
+    raw.update(changes)
+    sub, errors, _ = vs.check(raw, year=2026)
+    assert not errors, errors
+    return vs.issue_body(sub, SENT, listed)
+
+
+def file_lines(text, vid):
+    return [
+        json.loads(line.rstrip(","))
+        for line in text.splitlines()
+        if f'"vineyard_id":"{vid}"' in line
+    ]
+
+
+def test_a_change_is_checked_against_the_listing(github, tmp_path):
+    the_issue = issue(body=change_body(), labels=(vs.LABEL, vs.CHANGE_LABEL))
+    github.issues = [the_issue]
+    done = run("check_issue.py", github, tmp_path, event("opened", the_issue))
+    assert done.returncode == 0, done.stderr
+    (check,) = comments(github)
+    assert "### The check: ready for review" in check
+    assert f"A change to **`Blackmon Vineyard`** (`{BLACKMON}`)" in check
+    assert (
+        "| Name | `Blackmon Vineyard` | `Blackmon Estate Vineyard` |" in check
+    )
+    assert "3, " in check
+    assert "2 drawn as listed" in check
+    assert "`Block 2 replanted further east in 2024.`" in check
+    # its own listed blocks are not "already on the map", nor its name
+    assert "Already on the map" not in check
+    assert "already on the map (" not in check
+    assert "replaces the vineyard's blocks and fields" in check
+
+
+def test_a_change_that_changes_nothing_or_names_no_vineyard_is_held(
+    github, tmp_path
+):
+    listed = vs.listed_vineyards()[BLACKMON]
+    same = change_body(blocks=listed["blocks"])
+    same = same.replace("Blackmon Estate Vineyard", "Blackmon Vineyard")
+    same = same.replace('"year":2015', '"year":null').replace(
+        '"varieties":["Tempranillo","Tannat"]', '"varieties":[]'
+    )
+    the_issue = issue(body=same)
+    github.issues = [the_issue]
+    done = run("check_issue.py", github, tmp_path, event("opened", the_issue))
+    assert done.returncode == 0, done.stderr
+    assert "Nothing would change" in comments(github)[-1]
+    assert "something to look at" in comments(github)[-1]
+    gone = change_body().replace(f'"changes":"{BLACKMON}"', '"changes":"gone"')
+    the_issue = issue(13, body=gone)
+    github.issues = [the_issue]
+    done = run("check_issue.py", github, tmp_path, event("opened", the_issue))
+    assert done.returncode == 0, done.stderr
+    assert "is not in the vineyard file" in comments(github, 13)[-1]
+    assert "something to look at" in comments(github, 13)[-1]
+
+
+def test_an_approved_change_replaces_the_vineyard_never_adds_one(
+    github, tmp_path, copy_root
+):
+    before = (copy_root / vs.VINEYARDS).read_text(encoding="utf-8")
+    old = file_lines(before, BLACKMON)
+    total = len(json.loads(before)["features"])
+    the_issue = issue(
+        body=change_body(), labels=(vs.LABEL, vs.CHANGE_LABEL, vs.APPROVED)
+    )
+    github.issues = [the_issue]
+    done = run(
+        "approve.py",
+        github,
+        tmp_path,
+        event("labeled", the_issue, label=vs.APPROVED),
+        "--root",
+        str(copy_root),
+        "--today",
+        "2026-10-19",
+    )
+    assert done.returncode == 0, done.stdout + done.stderr
+    (pull,) = github.pulls
+    assert pull["title"] == "Vineyard change: Blackmon Estate Vineyard (#12)"
+    assert "(no new entry)" in pull["body"]
+    tree = next(c for c in github.calls if c[1].endswith("/git/trees"))[3]
+    paths = {e["path"]: github.blobs[e["sha"]] for e in tree["tree"]}
+    after = paths[vs.VINEYARDS].decode()
+    # the same number of blocks in the file; the vineyard's three replaced
+    assert len(json.loads(after)["features"]) == total
+    assert '"name":"Blackmon Vineyard"' not in after
+    new = file_lines(after, BLACKMON)
+    assert len(new) == 3
+    assert {f["properties"]["name"] for f in new} == {
+        "Blackmon Estate Vineyard"
+    }
+    assert all(f["properties"]["year"] == 2015 for f in new)
+    assert all(f["properties"]["category"] == "hsd" for f in new)
+    # blocks 1 and 3 kept as they were, with the change noted; 2 is new
+    kept = [f for f in new if f["properties"]["block"] in ("1", "3")]
+    assert [f["geometry"] for f in kept] == [
+        old[0]["geometry"],
+        old[2]["geometry"],
+    ]
+    for f in kept:
+        assert f["properties"]["source"].startswith(
+            old[0]["properties"]["source"]
+        )
+        assert "issue #12" in f["properties"]["source"]
+    (drawn,) = [f for f in new if f["properties"]["block"] == "2"]
+    assert drawn["properties"]["source"].startswith("Changed through")
+    # the site's data: one entry, the same id, the new name
+    register = json.loads(paths["docs/assets/vineyards/register.json"])
+    entries = [v for v in register["vineyards"] if v["id"] == BLACKMON]
+    assert len(entries) == 1
+    assert entries[0]["name"] == "Blackmon Estate Vineyard"
+    assert len(entries[0]["vids"]) == 3
+    known = json.loads(paths["docs/assets/vineyards/known.json"])
+    assert known[BLACKMON]["name"] == "Blackmon Estate Vineyard"
+    assert any("makes this change" in c for c in comments(github))
+    for data in paths.values():
+        assert b"jane" not in data.lower()
+
+
 class FunctionStandIn(http.server.ThreadingHTTPServer):
     """The vineyard function's /reconcile, answering as told."""
 

@@ -9,10 +9,12 @@ District AVA" (ref `yayebhncbagmebwgmezd`) beside vote-api, and leaves vote-api 
 | `index.ts` | the function: the form's POST, the GitHub App's webhook (`/github`), the daily check (`/reconcile`) and a health check (`/health`); its header says what it does, step by step |
 | `hsd_vineyard_contacts.sql` | the private table of contacts, `hsd_vineyard_reserve()` and the reconciliation's tick, which Dan runs once in the SQL editor |
 
-`index.ts` imports two files that live elsewhere in the repository and are never copied here: the site's rules,
-`docs/assets/vineyard-blocks.js` (the module the page runs, so the page and the function say the same thing), and TTB's
-proposed Llano Uplift AVA as the site publishes it, `docs/assets/aquifer/llano-uplift.geojson`.
-`src/vineyards/bundle_function.py` puts the three into one file, `target/vineyard-submit/index.ts`, which Dan pastes into
+`index.ts` imports three files that live elsewhere in the repository and are never copied here: the site's rules,
+`docs/assets/vineyard-blocks.js` (the module the page runs, so the page and the function say the same thing), TTB's
+proposed Llano Uplift AVA as the site publishes it, `docs/assets/aquifer/llano-uplift.geojson`, and the listed
+vineyards, `docs/assets/vineyards/known.json` (the vineyards a "Suggest a change" may name, and what each shows as
+listed now; a snapshot, so the function is deployed again after a vineyard is added or changed).
+`src/vineyards/bundle_function.py` puts the four into one file, `target/vineyard-submit/index.ts`, which Dan pastes into
 the dashboard's editor.
 
 - Setting it up, deploying it and checking it: `src/vineyards/SETUP.md`.

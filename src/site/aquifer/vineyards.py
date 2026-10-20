@@ -9,28 +9,35 @@ website's form also keeps the year its vineyard was first planted and its
 varieties. src/site/make_vineyards.py writes, into docs/assets/vineyards/:
 
     vineyards.geojson
-        The blocks, each with a vid, its name, category, the category's
-        label, block (its number or a planned block's name, as text),
-        acres and source; the 3D aquifer page draws one layer per
-        category, the vineyards page lists them.
+        The blocks, each with a vid (the block's), its vineyard's
+        vineyard_id, its name, category, the category's label, block (its
+        number or a planned block's name, as text), acres and source; the
+        3D aquifer page draws one layer per category, the vineyards page
+        lists them.
     vineyard-wells.json
         For each block (by its vid), every well within WELLS_M of its
         outline, nearest first: the distance in metres (0 inside it) and the
         well's drawing record, from the 3D page's committed well tiles
         (docs/assets/aquifer/wells/draw-*.json).
     register.json
-        One entry per vineyard, for the vineyards page's list: its name,
-        category, the vids of its blocks, the year first planted and the
-        varieties (when given).
+        One entry per vineyard, for the vineyards page's list: its id (the
+        vineyard_id), name, category, the vids of its blocks, the year
+        first planted and the varieties (when given).
+    known.json
+        Each vineyard's public fields and blocks by its id (known()), as
+        the form's "Suggest a change" fills itself from them; the form's
+        function bundles the same file (src/vineyards/bundle_function.py)
+        to know which vineyards a change may name.
     counties.geojson
         The seven Llano Uplift counties as polygons, closed from the 3D
         page's county lines (docs/assets/aquifer/context.geojson), for the
         form's county guess only.
 
-A block in no known category, or whose fields name a person (named()) or
-give an e-mail address or a telephone number, stops the run. Standard
-library only: the vineyard data is made on any machine, GitHub's runners
-among them, without the 3D page's downloads.
+A block in no known category, without a well-formed vineyard_id (ID) or
+whose id another vineyard's blocks also carry, or whose fields name a person
+(named()) or give an e-mail address or a telephone number, stops the run.
+Standard library only: the vineyard data is made on any machine, GitHub's
+runners among them, without the 3D page's downloads.
 """
 
 import hashlib
@@ -39,13 +46,18 @@ import json
 import math
 import os
 import re
+import unicodedata
 
 from . import privacy
 from . import record
 
-VERSION = 1  # raise with any change to the output no parameter shows
+VERSION = 2  # raise with any change to the output no parameter shows
 # The fields of the resources file the site's GeoJSON keeps, in order.
 FIELDS = ("name", "category", "block", "acres", "source")
+# A vineyard's stable id (vineyard_id in the resources file): a slug of its
+# name when it was first listed (slug()), kept when the vineyard is renamed.
+ID = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*")  # fullmatch()
+ID_MAX = 80
 # A vineyard's popup lists the wells within this many metres of it.
 WELLS_M = 1000.0
 # The vineyards' categories (resources/vineyards/), each a layer of its own
@@ -289,6 +301,93 @@ def counties(context_path):
     return {"type": "FeatureCollection", "features": feats}
 
 
+def slug(name):
+    """A new vineyard's id from its name: plain letters, digits, dashes.
+
+    Args:
+        name: The vineyard's name.
+
+    Returns:
+        The slug, at most ID_MAX characters ("vineyard" when nothing of
+        the name is left).
+    """
+    text = unicodedata.normalize("NFKD", name)
+    text = text.encode("ascii", "ignore").decode().lower()
+    out = re.sub(r"[^a-z0-9]+", "-", text).strip("-")[:ID_MAX].strip("-")
+    return out or "vineyard"
+
+
+def vineyard_ids(source):
+    """Checks that every block names its vineyard by one well-formed id.
+
+    Args:
+        source: The resources file's features.
+
+    Returns:
+        {id: (name, category)}, in the file's order.
+
+    Raises:
+        SystemExit: A block without a well-formed vineyard_id, or one id
+            on blocks of different names or categories.
+    """
+    out = {}
+    for i, f in enumerate(source, 1):
+        p = f["properties"]
+        vid = p.get("vineyard_id")
+        if (
+            not isinstance(vid, str)
+            or len(vid) > ID_MAX
+            or not ID.fullmatch(vid)
+        ):
+            raise SystemExit(f"vineyard block {i}: no well-formed vineyard_id")
+        seen = out.setdefault(vid, (p.get("name"), p.get("category")))
+        if seen != (p.get("name"), p.get("category")):
+            raise SystemExit(
+                f"vineyard block {i}: the id {vid} is on blocks of another "
+                "name or category"
+            )
+    return out
+
+
+def known(source):
+    """Each vineyard's public fields and blocks, by its id.
+
+    What the form's "Suggest a change" fills itself from, what its function
+    checks a change's id against, and what both show as listed now.
+
+    Args:
+        source: The resources file's features (vineyard_ids() passes).
+
+    Returns:
+        {id: {"name", "category", "year", "varieties", "blocks"}}, in the
+        file's order; blocks are open rings of [lon, lat] (the closing
+        corner left off), in the file's order.
+    """
+    out = {}
+    for f in source:
+        p = f["properties"]
+        entry = out.setdefault(
+            p["vineyard_id"],
+            {
+                "name": p["name"],
+                "category": p["category"],
+                "year": None,
+                "varieties": [],
+                "blocks": [],
+            },
+        )
+        if entry["year"] is None and isinstance(p.get("year"), int):
+            entry["year"] = p["year"]
+        for v in p.get("varieties") or ():
+            if isinstance(v, str) and v not in entry["varieties"]:
+                entry["varieties"].append(v)
+        ring = [list(pt[:2]) for pt in f["geometry"]["coordinates"][0]]
+        if len(ring) > 1 and ring[0] == ring[-1]:
+            ring.pop()
+        entry["blocks"].append(ring)
+    return out
+
+
 def register(source, labels, extra_words=()):
     """One entry per vineyard, for the vineyards page's list.
 
@@ -298,17 +397,18 @@ def register(source, labels, extra_words=()):
         extra_words: More words never to publish (.private-words).
 
     Returns:
-        A list of {"name", "category", "category_label", "vids", "year",
-        "varieties"}, in CATEGORIES' order and then by name.
+        A list of {"id", "name", "category", "category_label", "vids",
+        "year", "varieties"}, in CATEGORIES' order and then by name.
     """
     order = [c for c, _ in CATEGORIES]
     out = {}
     for i, f in enumerate(source, 1):
         p = f["properties"]
-        key = (p["category"], p["name"])
+        key = p["vineyard_id"]
         entry = out.setdefault(
             key,
             {
+                "id": key,
                 "name": p["name"],
                 "category": p["category"],
                 "category_label": labels[p["category"]],
@@ -355,13 +455,16 @@ def write(paths, out_dir, extra_words=()):
     feats = []
     near = {}
     for i, f in enumerate(source, 1):
-        p = f["properties"]
-        if p.get("category") not in labels:
+        if f["properties"].get("category") not in labels:
             raise SystemExit(f"vineyard block {i}: no known category")
+    vineyard_ids(source)
+    for i, f in enumerate(source, 1):
+        p = f["properties"]
         checked(p, i, extra_words)
         props = checked(
             {
                 "vid": f"v-{i}",
+                "vineyard_id": p["vineyard_id"],
                 **{k: p.get(k) for k in FIELDS},
                 "category_label": labels[p["category"]],
             },
@@ -401,6 +504,9 @@ def write(paths, out_dir, extra_words=()):
         },
         indent=1,
     )
+    listed = known(source)
+    checked(listed, "known.json", extra_words)
+    record.write_json(os.path.join(out_dir, "known.json"), listed)
     record.write_json(
         os.path.join(out_dir, "counties.geojson"), counties(paths["context"])
     )

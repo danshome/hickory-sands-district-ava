@@ -7,12 +7,14 @@ repository's owner added the label to one of the form's issues
 submission again (submission.review()) and refuses, with a comment, one
 that is not ready (a name already in the data, an overlap, a pin without
 blocks, a problem with the text); adds the blocks to
-resources/vineyards/vineyards-EPSG4269.geojson (submission.add_blocks());
-makes the site's vineyard data again (src/site/make_vineyards.py); and
-opens the pull request through GitHub's API: a branch vineyard/issue-<n>
-from the commit this run checked out, one commit, the pull request
-"Vineyard: <name> (#n)" that closes the issue, labelled vineyard-data. Then
-it comments on the issue with the pull request's link.
+resources/vineyards/vineyards-EPSG4269.geojson (submission.add_blocks()),
+or, for a change to a listed vineyard, replaces that vineyard's blocks and
+fields there (never a second entry); makes the site's vineyard data again
+(src/site/make_vineyards.py); and opens the pull request through GitHub's
+API: a branch vineyard/issue-<n> from the commit this run checked out, one
+commit, the pull request "Vineyard: <name> (#n)" (or "Vineyard change:
+<name> (#n)") that closes the issue, labelled vineyard-data. Then it
+comments on the issue with the pull request's link.
 
 Tokens, from the environment, never printed or written to disk:
     GH_TOKEN   the Actions' own token (Issues write): the comments;
@@ -88,23 +90,43 @@ def changed_files(root):
     return out
 
 
+def pr_title(number, sub):
+    """The pull request's title (and its commit's first line)."""
+    name = sub["vineyard"]["name"]
+    if sub.get("changes"):
+        return f"Vineyard change: {name} (#{number})"
+    return f"Vineyard: {name} (#{number})"
+
+
 def pr_body(number, sub, category, n):
     """The pull request's description."""
+    change = sub.get("changes")
+    what = (
+        f"Changes the listed vineyard `{change}`, now"
+        f" {vs.code(sub['vineyard']['name'])}, as suggested through the"
+        f" website's form (#{number}) and approved there with the label"
+        " `approved`:"
+        if change
+        else f"Adds the vineyard {vs.code(sub['vineyard']['name'])}, sent"
+        f" through the website's form (#{number}) and approved there"
+        " with the label `approved`:"
+    )
+    blocks = (
+        f"- `{vs.VINEYARDS}`: the vineyard's blocks replaced by these {n},"
+        f" category `{category}`, with its name, the year first planted and"
+        " the varieties as the sender gave them (no new entry);"
+        if change
+        else f"- `{vs.VINEYARDS}`: {n} block{'' if n == 1 else 's'},"
+        f" category `{category}`, with the year first planted and"
+        " the varieties as the sender gave them;"
+    )
     return "\n".join(
         [
             f"Closes #{number}.",
             "",
-            (
-                f"Adds the vineyard {vs.code(sub['vineyard']['name'])}, sent"
-                f" through the website's form (#{number}) and approved there"
-                " with the label `approved`:"
-            ),
+            what,
             "",
-            (
-                f"- `{vs.VINEYARDS}`: {n} block{'' if n == 1 else 's'},"
-                f" category `{category}`, with the year first planted and"
-                " the varieties as the sender gave them;"
-            ),
+            blocks,
             (
                 f"- `{OUT}/`: the site's vineyard data, made again by"
                 " `src/site/make_vineyards.py` (the blocks' wells from the 3D"
@@ -197,13 +219,14 @@ def open_pull_request(prs, number, sub, category, files, base):
         new_tree = prs.request(
             "POST", "{repo}/git/trees", {"base_tree": tree, "tree": entries}
         )
-        name = sub["vineyard"]["name"]
+        title = pr_title(number, sub)
+        how = "Changed" if sub.get("changes") else "Added"
         commit = prs.request(
             "POST",
             "{repo}/git/commits",
             {
                 "message": (
-                    f"Vineyard: {name} (#{number})\n\nAdded from the "
+                    f"{title}\n\n{how} from the "
                     f"website's vineyard form, issue #{number}, approved "
                     "there with the label approved; the site's vineyard data "
                     "made again."
@@ -224,7 +247,7 @@ def open_pull_request(prs, number, sub, category, files, base):
             "POST",
             "{repo}/pulls",
             {
-                "title": f"Vineyard: {name} (#{number})",
+                "title": title,
                 "head": branch,
                 "base": "main",
                 "body": pr_body(number, sub, category, len(sub["blocks"])),
@@ -381,12 +404,17 @@ def main(argv=None):
         )
     except RefusedError as why:
         return refuse(issues, number, str(why))
+    what = (
+        "makes this change"
+        if result["submission"].get("changes")
+        else "adds this vineyard"
+    )
     issues.request(
         "POST",
         f"{{repo}}/issues/{number}/comments",
         {
             "body": (
-                f"Approved: pull request #{pr_number} adds this vineyard "
+                f"Approved: pull request #{pr_number} {what} "
                 f"({url}). Its checks run now; merging it puts the vineyard "
                 "on the site and closes this issue."
             )

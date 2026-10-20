@@ -29,7 +29,8 @@ shifted onto the geology, write() writes into the page's data folder:
     llano-uplift.geojson
         TTB's proposed Llano Uplift AVA (AVAs_Production snapshot).
     hickory-member.geojson
-        The Hickory Sandstone Member formation (the shifted USGS geology).
+        The Hickory Sandstone Member of the Riley Formation (the shifted
+        USGS geology).
 
 It returns the figures the page shows and the drill grid's lookup, which
 the wells use to keep the reports inside the model.
@@ -533,7 +534,7 @@ def write(paths, out_dir):
     geology = ogr.Open(paths["usgs-sgmc-shifted"])
     member = [
         feature(
-            {"name": "Hickory Sandstone Member formation"},
+            {"name": "Hickory Sandstone Member"},
             geojson(f.GetGeometryRef()),
         )
         for f in geology.GetLayerByName(GEOLOGY_LAYER)

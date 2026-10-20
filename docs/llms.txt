@@ -11,7 +11,7 @@ A site by the petitioners. Independent of the Alcohol and Tobacco Tax and Trade 
 - [The boundary](https://hickorysandsdistrictava.org/boundary.html): A static map of the petitioners’ proposed boundary, with the live dashboard, documents and public-domain GIS downloads.
 - [Sources & photography](https://hickorysandsdistrictava.org/colophon.html): The sources, maps, photographs, type and license behind the Hickory Sands District site.
 - [Journal](https://hickorysandsdistrictava.org/journal.html): Notes from the proposed Hickory Sands District: the land, the line and the record.
-- [The land](https://hickorysandsdistrictava.org/land.html): Hickory Sandstone Member formation, sandy ground and the Hickory Aquifer within the proposed district.
+- [The land](https://hickorysandsdistrictava.org/land.html): The Hickory Sandstone Member of the Riley Formation, sandy ground and the Hickory Aquifer within the proposed district.
 - [The map](https://hickorysandsdistrictava.org/map.html): The proposed Hickory Sands District on the map: the line, every step and every point; and, when you turn them on, the Hickory Aquifer in 3D, wells, vineyards and geology.
 - [Status](https://hickorysandsdistrictava.org/status.html): Where the proposed Hickory Sands District AVA stands: the petition, Notice No. 243, the comment period and the proposed revision.
 - [The vineyards](https://hickorysandsdistrictava.org/vineyards.html): The register of growers in the proposed Hickory Sands District.

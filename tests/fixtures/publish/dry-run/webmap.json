@@ -335,7 +335,7 @@
   },
   {
    "id": "hsd-geology-0",
-   "title": "Hickory Sandstone Member formation (USGS SGMC, shifted)",
+   "title": "Hickory Sandstone Member (USGS SGMC, shifted)",
    "url": "https://services3.arcgis.com/FgD9ae359Y9QwuZY/arcgis/rest/services/Hickory_Sands_District_geology_SGMC_shifted/FeatureServer/0",
    "itemId": "00000000000000000000000000000025",
    "layerType": "ArcGISFeatureLayer",
@@ -370,7 +370,7 @@
     }
    },
    "popupInfo": {
-    "title": "Hickory Sandstone Member formation",
+    "title": "Hickory Sandstone Member",
     "fieldInfos": [
      {
       "fieldName": "name",
@@ -1083,7 +1083,7 @@
        },
        {
         "fieldName": "sandstone_acres",
-        "label": "Hickory Sandstone Member formation (acres)",
+        "label": "Hickory Sandstone Member (acres)",
         "visible": true
        },
        {

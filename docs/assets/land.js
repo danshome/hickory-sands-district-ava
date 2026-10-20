@@ -320,7 +320,7 @@
       var water = layer("lnd-l-water", 3);
       band(units.hickory, water, "url(#lnd-p-water)", "#47625c");
       below.appendChild(water);
-      // 2: the formation at the surface on the geologic map, a strip on the
+      // 2: the sandstone at the surface on the geologic map, a strip on the
       // ground.
       var strip = layer("lnd-l-strip", 2);
       S.surface_hickory.forEach(function (iv) {

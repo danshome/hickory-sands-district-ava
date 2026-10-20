@@ -5,13 +5,13 @@ the proposed district on each:
 
     01 Elevation   ground at RULE_FT and higher: USGS 3DEP 1 arc-second,
                    averaged onto a DEM_STEP grid, thresholded and outlined;
-    02 Sand        the Hickory Sandstone Member formation at the surface (the
+    02 Sand        the Hickory Sandstone Member at the surface (the
                    shifted USGS geology) and the Precambrian outcrop of TWDB's
                    model (the 3D aquifer page's precambrian.geojson);
     03 Water       every logged well in the frame, one dot each, coloured by
                    the page's class of the interval the 3D page colours it by
                    (src/site/land/rules.py);
-    04 Together    the formation where it lies at RULE_FT and higher.
+    04 Together    the sandstone where it lies at RULE_FT and higher.
 
 make() gives the outlines as SVG path data in the maps' own units and the
 wells as dots; src/site/land/draw.py writes the SVG files.

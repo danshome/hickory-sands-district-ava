@@ -33,7 +33,7 @@ TOGETHER_EDGE = "#7d5636"
 GRID = "#b1a797"
 STROKE = 'vector-effect="non-scaling-stroke"'
 
-# The maps' patterns: the formation (dotted sand) and the core (crosses).
+# The maps' patterns: the sandstone (dotted sand) and the core (crosses).
 MAP_DEFS = (
     "<defs>"
     '<pattern id="sand" width="9" height="8" patternUnits="userSpaceOnUse">'

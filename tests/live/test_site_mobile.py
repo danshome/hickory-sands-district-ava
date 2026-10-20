@@ -1314,7 +1314,7 @@ def test_every_group_turns_on(site_page):
             "Hickory Sands District vineyards",
             "Llano Uplift AVA (proposed, TTB)",
             "County lines (Census 2023)",
-            "Hickory Sandstone Member formation (USGS geologic map, shifted)",
+            "Hickory Sandstone Member (USGS geologic map, shifted)",
             "Precambrian rock at the surface (TWDB model layer 8)",
         ):
             assert title in got["layers"], f"{title} is not drawn: {got}"
@@ -2168,7 +2168,7 @@ def unexpected(view, aborted):
 
 
 def test_a_file_that_does_not_load_is_said(chrome):
-    # Geology's Hickory Sandstone Member formation and the page's figures do
+    # Geology's Hickory Sandstone Member and the page's figures do
     # not load, and Esri refuses the basemap: the map still opens, says each
     # in its status line, unticks the layer that failed and leaves no "…".
     aborted = [
@@ -2184,7 +2184,7 @@ def test_a_file_that_does_not_load_is_said(chrome):
             status = page.evaluate(STATUS_LINE)
             for words in (
                 "Esri’s basemap could not be loaded",
-                "“Hickory Sandstone Member formation (USGS geologic map,",
+                "“Hickory Sandstone Member (USGS geologic map,",
                 "figures could not be loaded",
             ):
                 assert words in status, f"{words!r} not in {status!r}"

@@ -73,8 +73,8 @@ def drawings():
             "map-sand.svg",
             "sand",
             (
-                "The Hickory Sandstone Member formation and the Precambrian "
-                "rock of TWDB's model, with the proposed district"
+                "The Hickory Sandstone Member and the Precambrian rock of "
+                "TWDB's model, with the proposed district"
             ),
         ),
         (
@@ -88,7 +88,7 @@ def drawings():
         (
             "map-together.svg",
             "together",
-            f"The formation at {rule} and higher, with the proposed district",
+            f"The sandstone at {rule} and higher, with the proposed district",
         ),
         (
             "locator.svg",
@@ -96,7 +96,7 @@ def drawings():
             (
                 "Where the slice runs, from its north-west end to its "
                 "south-east end, across the proposed district, over the "
-                "formation and the Precambrian rock"
+                "sandstone and the Precambrian rock"
             ),
         ),
     )
@@ -105,7 +105,7 @@ def drawings():
 SECTION_LABEL = (
     "A slice from north-west to south-east through the proposed district, "
     "along part of TWDB's section line A to A-prime: the ground, the Hickory "
-    "Sandstone Member formation and the Hickory Aquifer within it, the "
+    "Sandstone Member and the Hickory Aquifer within it, the "
     "younger rock above it and the Precambrian rock below it, real wells, "
     "and the district"
 )

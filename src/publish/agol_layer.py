@@ -1026,7 +1026,8 @@ def diff_layers(layers):
 GEO_ABOUT = (
     ABOUT
     + "<p>Three USGS geologic units near the AVA: Town Mountain Granite, the "
-    "younger granitic intrusions and the Hickory Sandstone Member formation, "
+    "younger granitic intrusions and the Hickory Sandstone Member of the "
+    "Riley Formation, "
     "from the USGS State Geologic Map Compilation (Horton and others, 2017, "
     "USGS Data Series 1052; public domain). SGMC as published sits about 400 "
     "m south-east of the outcrops seen on USDA NAIP imagery, so every "
@@ -1037,7 +1038,8 @@ GEO_ABOUT = (
 )
 gprops = {
     "snippet": "USGS geologic units near the AVA (granite and the Hickory "
-    "Sandstone Member formation), shifted about 400 m to sit on the outcrops.",
+    "Sandstone Member of the Riley Formation), shifted about 400 m to sit on "
+    "the outcrops.",
     "description": GEO_ABOUT,
     "tags": ",".join([*TAGS, "geology", "SGMC"]),
     "licenseInfo": "USGS data (public domain); shift " + CC0,
@@ -1054,7 +1056,7 @@ GEO = [
     ),
     (
         "hickory",
-        "Hickory Sandstone Member formation (USGS SGMC, shifted)",
+        "Hickory Sandstone Member (USGS SGMC, shifted)",
         [214, 168, 50],
     ),
 ]
@@ -1507,7 +1509,7 @@ GRIT_LINES_F = [
 GRIT_AREAS_F = [
     ("acres", "Acres"),
     ("granite_acres", "Granite (acres)"),
-    ("sandstone_acres", "Hickory Sandstone Member formation (acres)"),
+    ("sandstone_acres", "Hickory Sandstone Member (acres)"),
     ("revision_steps", "Proposed revision (or petition) steps along it"),
     ("notice_steps", "Notice No. 243 steps along it"),
 ]

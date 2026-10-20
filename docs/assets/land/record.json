@@ -190,11 +190,11 @@
  "outputs": {
   "locator.svg": 30532,
   "map-elevation.svg": 53438,
-  "map-sand.svg": 30019,
+  "map-sand.svg": 30009,
   "map-together.svg": 86942,
   "map-water.svg": 129726,
   "section.json": 25664,
-  "section.svg": 102826,
+  "section.svg": 102816,
   "stats.json": 2170
  }
 }

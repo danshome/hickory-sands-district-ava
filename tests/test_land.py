@@ -201,10 +201,10 @@ def test_the_privacy_check_refuses_more_than_the_words():
 # stroked paths, and the dots of map 03.
 OUTLINES = {
     "map-elevation.svg": 2,  # the high ground, the district
-    "map-sand.svg": 3,  # the core, the formation, the district
-    "map-water.svg": 3,  # the core, the formation, the district
-    "map-together.svg": 4,  # high, formation, both, the district
-    "locator.svg": 3,  # the formation, the core, the district
+    "map-sand.svg": 3,  # the core, the sandstone, the district
+    "map-water.svg": 3,  # the core, the sandstone, the district
+    "map-together.svg": 4,  # high, sandstone, both, the district
+    "locator.svg": 3,  # the sandstone, the core, the district
 }
 MADE_UP_MAPS = {
     "w": 540,

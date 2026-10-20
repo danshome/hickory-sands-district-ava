@@ -904,9 +904,9 @@ carry-over (and a planted link without the Shopify referrer), the network limit,
 ```
 
 The land page opens with two sections drawn from data. **Sand, height and water**: four small maps of one frame (USGS
-3DEP 1 arc-second ground at 1,500 feet and higher; the shifted geology's Hickory Sandstone Member formation and the
+3DEP 1 arc-second ground at 1,500 feet and higher; the shifted geology's Hickory Sandstone Member of the Riley Formation and the
 Precambrian outcrop of TWDB's model; every logged well in the frame, coloured by the first rock its driller names at its
-deepest water-bearing zone, else at the bottom of its log; the formation at 1,500 feet and higher). **A slice through
+deepest water-bearing zone, else at the bottom of its log; the sandstone at 1,500 feet and higher). **A slice through
 the district**: part of TWDB's section line A–A′, model row 239 (columns 150 to 290), to scale (40 times exaggerated),
 with the model's layers, the 3DEP ground, TWDB's fault lines, the district, and the deepest logged well within 800 m in
 each mile that has one, its log in the driller's words; six steps reveal it layer by layer, scrolled as the timeline is

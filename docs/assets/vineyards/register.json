@@ -77,8 +77,20 @@
     "v-18",
     "v-19"
    ],
-   "year": null,
-   "varieties": []
+   "year": 1998,
+   "varieties": [
+    "Cabernet Sauvignon",
+    "Chardonnay",
+    "Grenache",
+    "Merlot",
+    "Mourvèdre",
+    "Ruby Cabernet",
+    "Syrah",
+    "Tempranillo",
+    "Viognier",
+    "Touriga Nacional",
+    "Barbera"
+   ]
   },
   {
    "id": "tallent-vineyards",

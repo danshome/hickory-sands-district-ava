@@ -3,7 +3,7 @@
  "local": {
   "vineyards": {
    "file": "resources/vineyards/vineyards-EPSG4269.geojson",
-   "sha256": "sha256:cff3f0beb2eb3fbbe6234c62fc58d408e9d69c6b0ac60e868e8a09e084f961c2"
+   "sha256": "sha256:232462316e74e6943987e5987def6eeb0da3a88524a30adea499e701c380687c"
   },
   "wells": {
    "file": "docs/assets/aquifer/wells/index.json and draw-*.json",
@@ -55,10 +55,10 @@
  },
  "outputs": {
   "counties.geojson": 32460,
-  "known.json": 10251,
-  "register.json": 5264,
+  "known.json": 10393,
+  "register.json": 5467,
   "stats.json": 543,
   "vineyard-wells.json": 200708,
-  "vineyards.geojson": 34169
+  "vineyards.geojson": 34492
  }
 }

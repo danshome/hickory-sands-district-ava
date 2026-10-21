@@ -164,10 +164,16 @@
   fig.querySelectorAll("[data-src]").forEach(function (el) {
     el.setAttribute("tabindex", "0");
     el.setAttribute("role", "button");
-    el.setAttribute("aria-label", "Show source " + el.getAttribute("data-src"));
+    var src = (el.getAttribute("data-src") || "").trim();
+    if (/^\d+$/.test(src)) {
+      el.setAttribute("aria-label", "Show source " + src);
+    }
   });
   function cite(el) {
-    var n = el.getAttribute("data-src");
+    var n = (el.getAttribute("data-src") || "").trim();
+    if (!/^\d+$/.test(n)) {
+      return;
+    }
     var li = document.getElementById("source-" + n);
     if (!li) {
       return;

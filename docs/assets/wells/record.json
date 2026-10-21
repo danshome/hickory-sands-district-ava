@@ -1,0 +1,123 @@
+{
+ "about": "What docs/assets/wells/ and the three wells' drawings in docs/land.html were made from, by src/site/make_wells.py: ./build.sh checks it and ./build.sh site-data makes the data again when it changes",
+ "inputs": {
+  "usgs-sgmc-texas": {
+   "file": "TX.zip",
+   "url": "https://mrdata.usgs.gov/geology/state/shp/TX.zip",
+   "snapshot": "2022-01-12",
+   "fetched": "2026-10-20",
+   "bytes": 52545132,
+   "sha256": "sha256:6be84a0566e588c03c1f50f48092630b2d010a8bcd737e20840b76c9be6b043b"
+  },
+  "twdb-sdr": {
+   "file": "SDRDownload.zip",
+   "url": "https://www.twdb.texas.gov/groundwater/data/SDRDownload.zip",
+   "snapshot": "2026-10-16",
+   "fetched": "2026-10-18",
+   "bytes": 151956817,
+   "sha256": "sha256:e4a67c82abdd063d1d36893bbc6b219d0e6e591683013e680654ab882641e2c2"
+  },
+  "census-counties": {
+   "file": "cb_2023_us_county_500k.zip",
+   "url": "https://www2.census.gov/geo/tiger/GENZ2023/shp/cb_2023_us_county_500k.zip",
+   "snapshot": "2024-04-16",
+   "fetched": "2026-10-18",
+   "bytes": 11630077,
+   "sha256": "sha256:99d6597b1fc7767deef62e01d28d8b5dcbd578e151855f7dc0d173cbf5bf0868"
+  }
+ },
+ "local": {
+  "wells-constants": {
+   "file": "resources/wells/constants.json",
+   "sha256": "sha256:75ee12f85cd0a85a4ca73128cb5735b1041418a3f6c1c96ac488a7e1447cf37e"
+  },
+  "aquifer-drill-grid": {
+   "file": "docs/assets/aquifer/drill-grid.json",
+   "sha256": "sha256:f15f775a14f2b7a6bf9e35fde7253639ed1e6c791c55b5abc2ec091ca17dc2e5"
+  },
+  "aquifer-drill-grid-bin": {
+   "file": "docs/assets/aquifer/drill-grid.bin",
+   "sha256": "sha256:f557a54b0961605f00542bd4e24fcec70b11d98f8771643e802b004d4b97c49d"
+  },
+  "aquifer-stats": {
+   "file": "docs/assets/aquifer/stats.json",
+   "sha256": "sha256:8a8f8fbb4de23693810ce45c43ae24a1e8915527b5382cd0c344b486de371262"
+  },
+  "aquifer-wells": {
+   "file": "docs/assets/aquifer/wells/ (drawing records and reports)",
+   "files": 1233,
+   "sha256": "sha256:dae72f312ac91f6a5609999418218ca53ad61ba6cd78720bbd8f107500517ad0"
+  }
+ },
+ "parameters": {
+  "big_yield_gpm": 200,
+  "cost_depth_step_ft": 500,
+  "counties": [
+   "Gillespie",
+   "Kimble",
+   "Llano",
+   "Mason",
+   "McCulloch",
+   "Menard",
+   "San Saba"
+  ],
+  "deep_break_ft": [
+   600,
+   1950
+  ],
+  "deep_top_ft": [
+   1500,
+   3000
+  ],
+  "flag_layer7": 1,
+  "flag_outcrop": 4,
+  "granite_units": [
+   "pCt",
+   "pCy"
+  ],
+  "gutter": 0.07,
+  "irrigation_use": 0,
+  "logged_basis": 0,
+  "max_file_bytes": 200000,
+  "min_label_px": 11,
+  "outcrop_units": [
+   "Ch"
+  ],
+  "phone_px": 344,
+  "precambrian_prefix": "pC",
+  "quaternary_prefixes": [
+   "Q",
+   "Water"
+  ],
+  "slots": [
+   "deep",
+   "granite-gravel",
+   "granite-rock",
+   "outcrop",
+   "scale"
+  ],
+  "sources": {
+   "sgmc": 4,
+   "cm16": 5,
+   "twdb": 7,
+   "mason": 9,
+   "recharge_outcrop": 27,
+   "usgs_rock": 29,
+   "ctgcd": 30,
+   "construction": 32,
+   "example": 31,
+   "heath84": 33,
+   "hunt": 34,
+   "costs": 36
+  },
+  "statefp": "48",
+  "top_step_ft": 50,
+  "version": 1,
+  "privacy_rules": "sha256:f50ee1b54df7dbf0aefedcfb026bea21706a9b399403021f01f8b3c6e84fbd77",
+  "code": "sha256:14d13f7a30ca98a6af147edf049b442ce611ff9f2039904a788d528bff3c5d4c"
+ },
+ "outputs": {
+  "stats.json": 5718
+ },
+ "page": "sha256:18539ccb56370613dd1be602173202caa320fa31404736292c511839ba42bbfd"
+}

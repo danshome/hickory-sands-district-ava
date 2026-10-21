@@ -100,7 +100,10 @@ district, at every viewport, with no sideways scrolling, after tapping Next
 too (screenshots of the maps, each step and the questions); and when its data
 is not JSON, malformed, or fails while it is drawn, the slice keeps the
 build's static drawing and the steps, with nothing of land.js left on the
-page.
+page. The three wells, on the phones: every label of every drawing a phone
+shows (each tab, both granite views) is at least 11 px, a stuck figure
+fits the screen (a phone held sideways too), and Later steps through all
+six steps.
 A map must settle (ready, not updating) within 30 s of each move, or the
 test fails there.
 Screenshots: target/browser-tests/site/<page>-<viewport>-<test>.png
@@ -178,6 +181,8 @@ WIDE = (
 )
 # the narrowest screen that shows the header's place line
 NARROW = {"desktop-700x900": (700, 900, None, 1)}
+# a phone held sideways: short, and too narrow for the side-by-side layout
+TURNED = {"phone-turned-740x360": (740, 360, "Pixel 7", 3)}
 TARGET = 44  # px: the smallest button or action link, each way
 SUBPIXEL = 0.5  # px a box may fall short of TARGET by rounding
 LOAD_S = 120  # s a page may take to load (the maps load Esri's SDK)
@@ -642,9 +647,12 @@ def site_page(request, chrome):
     """
     page_name, viewport = request.param
     p, browser = chrome
-    width, height, device, ratio = {**VIEWPORTS, **NARROW, **FOLD_SIDE}[
-        viewport
-    ]
+    width, height, device, ratio = {
+        **VIEWPORTS,
+        **NARROW,
+        **FOLD_SIDE,
+        **TURNED,
+    }[viewport]
     options = dict(
         viewport={"width": width, "height": height},
         device_scale_factor=ratio,
@@ -1548,6 +1556,80 @@ def test_land_aquifer_keeps_to_the_sandstone(site_page):
             f"at {got['out'][:6]}"
         )
     view.shot("stage-8")
+    problems += view.problems()
+    assert not problems, f"{view.name}:\n  " + "\n  ".join(problems)
+
+
+# The smallest label the three wells' drawings show, in CSS pixels: each
+# shown <text>'s font size times its drawing's scale on the screen.
+WELL_LABELS = """() => {
+  let least = null;
+  document.querySelectorAll('#three-wells svg text').forEach((t) => {
+    const svg = t.ownerSVGElement;
+    const box = svg.getBoundingClientRect();
+    if (!box.width || !t.getClientRects().length) return;
+    const px = parseFloat(getComputedStyle(t).fontSize) * svg.getScreenCTM().a;
+    if (least === null || px < least[0]) least = [px, t.textContent];
+  });
+  return least;
+}"""
+WELL_LABEL_PX = 11  # src/site/wells/params.py MIN_LABEL_PX
+
+
+@pytest.mark.parametrize(
+    "site_page", cells(["land.html"], [*PHONES, *TURNED]), indirect=True
+)
+def test_land_wells_labels_are_large_enough_and_the_steps_go(site_page):
+    view, page = site_page, site_page.page
+    page.evaluate(
+        "document.querySelector('#three-wells .w-steps').scrollIntoView()"
+    )
+    page.wait_for_timeout(500)
+    problems = []
+    # every drawing a phone shows: the three tabs, the granite well's views
+    for tab, gview in (
+        ("outcrop", None),
+        ("granite", "rock"),
+        ("granite", "gravel"),
+        ("deep", None),
+    ):
+        page.evaluate(f"document.querySelector('#tab-{tab}').click()")
+        if gview:
+            page.evaluate(
+                "document.querySelector("
+                f"'.w-gview button[data-gview={gview}]').click()"
+            )
+        page.wait_for_timeout(150)
+        least = page.evaluate(WELL_LABELS)
+        if least is None:
+            problems.append(f"{tab} {gview or ''}: no drawing shown")
+        elif least[0] < WELL_LABEL_PX - 0.05:
+            problems.append(
+                f"{tab} {gview or ''}: {least[1]!r} is {least[0]:.1f}px"
+            )
+    # a figure that sticks must fit the screen, or it covers the steps
+    stuck = page.evaluate(
+        """() => { const f = document.querySelector('#three-wells .w-fig');
+        return [getComputedStyle(f).position,
+                f.getBoundingClientRect().height, innerHeight]; }"""
+    )
+    if stuck[0] == "sticky" and stuck[1] > stuck[2]:
+        problems.append(
+            f"the stuck figure is {stuck[1]:.0f}px, the screen {stuck[2]}px"
+        )
+    later = page.locator('#three-wells .geo-step[data-go="1"]')
+    for _ in range(5):
+        later.click()
+        page.wait_for_timeout(250)
+    count = ""
+    for _ in range(40):
+        count = page.locator("#three-wells .w-count").text_content()
+        if count == "06":
+            break
+        page.wait_for_timeout(100)
+    if count != "06":
+        problems.append(f"Later five times reached step {count}, not 06")
+    view.shot("wells")
     problems += view.problems()
     assert not problems, f"{view.name}:\n  " + "\n  ".join(problems)
 

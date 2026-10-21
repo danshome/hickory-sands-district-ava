@@ -1,0 +1,113 @@
+{
+ "about": "The cited constants of The land page's three wells (src/site/make_wells.py): each value with its source, as opened and read. The generator computes every figure the page shows from these and the well records; nothing here is typed into the page.",
+ "lift_whp_hr_per_acft_ft": {
+  "value": 1.373,
+  "source": "Rogers, D.H., and Alam, M., 2006. Comparing Irrigation Energy Costs. K-State Research and Extension MF-2360 rev, p. 2: 1.373 water horsepower-hours per acre-foot per foot of lift."
+ },
+ "hp_hr_per_kwh": {
+  "value": 1.341,
+  "source": "Rogers and Alam 2006, MF-2360, p. 2: one kilowatt-hour is 1.341 horsepower-hours, so 1.373 / 1.341 kWh per acre-foot per foot at 100% efficiency (derived)."
+ },
+ "lift_kwh_per_acft_ft": {
+  "value": 1.55,
+  "source": "Rogers and Alam 2006, MF-2360, p. 2: 1.55 kWh per acre-foot per foot of lift at the Nebraska Pumping Plant Performance Criteria."
+ },
+ "assumed_drawdown_ft": {
+  "value": [20, 60],
+  "source": "An assumption of the page, stated on it: only a few outcrop driller's tests record a drawdown, so the outcrop pumping level uses this range."
+ },
+ "ucm_depths_public_supply_ft": {
+  "value": [150, 300, 500, 700, 1000, 1500, 2000, 3000],
+  "source": "Texas Water Development Board, 2024. Uniform Costing Model User Guide v3.0, appendix memo (Feb. 27, 2024), Table 14, public supply wells, memo p. 30: the rows."
+ },
+ "ucm_depths_irrigation_ft": {
+  "value": [150, 300, 500, 700, 1000, 1500, 2000],
+  "source": "TWDB UCM v3.0 memo, Table 16, irrigation wells, memo p. 32: the rows (the table stops at 2,000 ft)."
+ },
+ "ucm_capacities_gpm": {
+  "value": [100, 175, 350, 700, 1000, 1800],
+  "source": "TWDB UCM v3.0 memo, Tables 14 and 16: the columns."
+ },
+ "ucm_public_supply_usd_2023_01": {
+  "value": [
+   [198619, 301516, 443527, 651676, 787582, 986983],
+   [265703, 379577, 528107, 743455, 888665, 1100608],
+   [343993, 474472, 627127, 888087, 1058050, 1280826],
+   [415163, 559876, 737308, 1020030, 1210253, 1453429],
+   [545643, 716452, 916101, 1261083, 1492563, 1752347],
+   [763899, 979784, 1210831, 1664528, 1958989, 2246210],
+   [982155, 1240743, 1496752, 2067973, 2427871, 2742238],
+   [1404482, 1774263, 2140355, 2957202, 3471856, 3921400]
+  ],
+  "source": "TWDB UCM v3.0 memo, Table 14, p. 30: cost to build and equip one public supply well, January 2023 dollars."
+ },
+ "ucm_irrigation_usd_2023_01": {
+  "value": [
+   [94895, 146468, 249613, 286746, 363074, 523982],
+   [125838, 187726, 305312, 361011, 457969, 639505],
+   [156783, 235173, 365137, 441464, 561114, 773595],
+   [181536, 270243, 416709, 509542, 651883, 889118],
+   [237236, 348634, 523982, 649820, 831356, 1116039],
+   [332131, 482724, 701393, 882929, 1128417, 1491491],
+   [424962, 612687, 878804, 1113977, 1427540, 1869005]
+  ],
+  "source": "TWDB UCM v3.0 memo, Table 16, p. 32: cost to build and equip one irrigation well, January 2023 dollars."
+ },
+ "region_f_reindex": {
+  "value": [1532046, 1496752],
+  "source": "Region F Water Planning Group, 2026. 2026 Region F Water Plan, Vol. II, App. D, Table D-6, p. D-9: the 2,000 ft, 350 gpm well at September 2023 prices (1,532,046) against the same cell of the UCM memo's Table 14 (1,496,752)."
+ },
+ "enr_cci_2023_09": {
+  "value": 13485.67,
+  "source": "As given in the 2026 Region F plan, App. D: 'Cost based on ENR CCI 13485.67 for September 2023'."
+ },
+ "enr_cci_2026_07": {
+  "value": 14307.59,
+  "source": "ENR, 'Construction Economics', July 13, 2026, p. 1: Construction Cost Index, July 2026."
+ },
+ "bid_spread": {
+  "value": 0.35,
+  "source": "TWDB UCM User Guide v3.0: the normalized standard deviation of bids, 0.35."
+ },
+ "nrcs_well_usd": {
+  "value": {"150": 4246.64, "300": 8478.42},
+  "source": "NRCS Texas EQIP payment schedule FY2023, p. 61, practice 642 Water Well: the payment for a well 150 ft deep or less, and 150 to 300 ft."
+ },
+ "nrcs_pump_usd": {
+  "value": 1715.82,
+  "source": "NRCS Texas EQIP payment schedule FY2023, p. 46, practice 533 Pumping Plant, electric pump of 2 hp or less."
+ },
+ "nrcs_share": {
+  "value": 0.75,
+  "source": "TWDB, Funding for Private Water Wells: '75%-90% of the drilling costs can be recouped' through EQIP; the lower share gives the higher cost."
+ },
+ "region_k_private_well_usd": {
+  "value": [20000, 27000],
+  "source": "Region K Water Planning Group, 2026. 2026 Region K Water Plan, p. 5-85: a private well at $20,000, and $27,000 per well in all (September 2023 prices)."
+ },
+ "dry_borehole_share": {
+  "value": 0.3,
+  "source": "Hunt, B.B., 2008. Crystalline Basement Aquifer, Llano Uplift, Central Texas. GSA 2008 Joint Meeting, Session 805, Paper 12, abstract: about 30% of boreholes are dry."
+ },
+ "dry_hole_cost_share": {
+  "value": [0.2, 0.3333],
+  "source": "Daniel, C.C., III, 1990. USGS Water-Supply Paper 2341-B, pp. B30-B32, and Cederstrom, D.J., 1973, USGS Water-Supply Paper 2034: a dry hole costs roughly a fifth to a third of a finished well."
+ },
+ "granite_example_report": {
+  "value": "524179",
+  "source": "TWDB Submitted Driller's Reports, report 524179 (Llano County, domestic, drilled October 7, 2019): the granite example, read from the 3D aquifer page's published well reports."
+ },
+ "gravel_view_ft": {
+  "value": {
+   "depth": 75,
+   "topsoil": 2,
+   "gravel_bottom": 60,
+   "transition_bottom": 70,
+   "casing_bottom": 55,
+   "entry_bottom": 72,
+   "static": 30,
+   "yield_gpm": 20
+  },
+  "source": "Illustrative, rounded values of the screened gravel-and-granite view: no one report. Granite gravel saturated from a few feet to about 100 ft, with yields of 5 to 100+ gpm (Central Texas GCD Management Plan, 2023, p. 15); screens in loose material, open hole in rock (Heath 1983, USGS WSP 2220, pp. 52-53)."
+ }
+}

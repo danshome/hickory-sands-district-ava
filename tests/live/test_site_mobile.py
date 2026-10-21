@@ -101,8 +101,9 @@ too (screenshots of the maps, each step and the questions); and when its data
 is not JSON, malformed, or fails while it is drawn, the slice keeps the
 build's static drawing and the steps, with nothing of land.js left on the
 page. The three wells, on the phones: every label of every drawing a phone
-shows (each tab, both granite views) is at least 11 px, and Later steps
-through all six steps.
+shows (each tab, both granite views) is at least 11 px, a stuck figure
+fits the screen (a phone held sideways too), and Later steps through all
+six steps.
 A map must settle (ready, not updating) within 30 s of each move, or the
 test fails there.
 Screenshots: target/browser-tests/site/<page>-<viewport>-<test>.png
@@ -180,6 +181,8 @@ WIDE = (
 )
 # the narrowest screen that shows the header's place line
 NARROW = {"desktop-700x900": (700, 900, None, 1)}
+# a phone held sideways: short, and too narrow for the side-by-side layout
+TURNED = {"phone-turned-740x360": (740, 360, "Pixel 7", 3)}
 TARGET = 44  # px: the smallest button or action link, each way
 SUBPIXEL = 0.5  # px a box may fall short of TARGET by rounding
 LOAD_S = 120  # s a page may take to load (the maps load Esri's SDK)
@@ -644,9 +647,12 @@ def site_page(request, chrome):
     """
     page_name, viewport = request.param
     p, browser = chrome
-    width, height, device, ratio = {**VIEWPORTS, **NARROW, **FOLD_SIDE}[
-        viewport
-    ]
+    width, height, device, ratio = {
+        **VIEWPORTS,
+        **NARROW,
+        **FOLD_SIDE,
+        **TURNED,
+    }[viewport]
     options = dict(
         viewport={"width": width, "height": height},
         device_scale_factor=ratio,
@@ -1571,7 +1577,7 @@ WELL_LABEL_PX = 11  # src/site/wells/params.py MIN_LABEL_PX
 
 
 @pytest.mark.parametrize(
-    "site_page", cells(["land.html"], [*PHONES]), indirect=True
+    "site_page", cells(["land.html"], [*PHONES, *TURNED]), indirect=True
 )
 def test_land_wells_labels_are_large_enough_and_the_steps_go(site_page):
     view, page = site_page, site_page.page
@@ -1601,6 +1607,16 @@ def test_land_wells_labels_are_large_enough_and_the_steps_go(site_page):
             problems.append(
                 f"{tab} {gview or ''}: {least[1]!r} is {least[0]:.1f}px"
             )
+    # a figure that sticks must fit the screen, or it covers the steps
+    stuck = page.evaluate(
+        """() => { const f = document.querySelector('#three-wells .w-fig');
+        return [getComputedStyle(f).position,
+                f.getBoundingClientRect().height, innerHeight]; }"""
+    )
+    if stuck[0] == "sticky" and stuck[1] > stuck[2]:
+        problems.append(
+            f"the stuck figure is {stuck[1]:.0f}px, the screen {stuck[2]}px"
+        )
     later = page.locator('#three-wells .geo-step[data-go="1"]')
     for _ in range(5):
         later.click()

@@ -160,14 +160,14 @@
     });
   });
 
-  // A drawn layer's source: each one names the number of its source in the page's list (data-src).
-  fig.querySelectorAll("[data-src]").forEach(function (el) {
-    el.setAttribute("tabindex", "0");
-    el.setAttribute("role", "button");
-    el.setAttribute("aria-label", "Show source " + el.getAttribute("data-src"));
-  });
+  // A drawn layer's source: each one names the number of its source in the page's list (data-src). A tap or click
+  // shows it; the layers are not focusable, since the drawings are images and their step groups may be hidden: from the
+  // keyboard, the same sources are the numbered links in the step text.
   function cite(el) {
-    var n = el.getAttribute("data-src");
+    var n = el.getAttribute("data-src") || "";
+    if (!/^\d+$/.test(n)) {
+      return;
+    }
     var li = document.getElementById("source-" + n);
     if (!li) {
       return;
@@ -182,13 +182,6 @@
   fig.addEventListener("click", function (e) {
     var el = e.target.closest("[data-src]");
     if (el) {
-      cite(el);
-    }
-  });
-  fig.addEventListener("keydown", function (e) {
-    var el = e.target.closest && e.target.closest("[data-src]");
-    if (el && (e.key === "Enter" || e.key === " ")) {
-      e.preventDefault();
       cite(el);
     }
   });
@@ -237,6 +230,9 @@
   if (wide.addEventListener) {
     wide.addEventListener("change", layout);
     all.addEventListener("change", layout);
+  } else if (wide.addListener) {
+    wide.addListener(layout); // older Safari
+    all.addListener(layout);
   }
   window.addEventListener("scroll", onScroll, { passive: true });
   window.addEventListener("resize", onScroll);

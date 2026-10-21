@@ -16,7 +16,6 @@ GDAL and NumPy.
 """
 
 import glob
-import json
 import os
 
 import numpy as np
@@ -24,6 +23,7 @@ from osgeo import ogr
 
 from ..aquifer import params as aquifer_params
 from . import params
+from . import record
 
 ogr.UseExceptions()
 
@@ -44,10 +44,7 @@ DRAW_FIELDS = {
 }
 
 
-def load(path):
-    """A JSON file's data."""
-    with open(path, encoding="utf-8") as fh:
-        return json.load(fh)
+load = record.load
 
 
 def read_wells(folder):
@@ -62,7 +59,10 @@ def read_wells(folder):
     wells = []
     for path in sorted(glob.glob(os.path.join(folder, "draw-*.json"))):
         for row in load(path):
-            wells.append({k: row[i] for k, i in DRAW_FIELDS.items()})
+            well = {k: row[i] for k, i in DRAW_FIELDS.items()}
+            if not well["depth"]:
+                well["depth"] = None  # a depth of 0 is not known
+            wells.append(well)
     return wells
 
 

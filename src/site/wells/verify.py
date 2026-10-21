@@ -14,6 +14,7 @@
 - every file is within params.MAX_FILE_BYTES.
 """
 
+import html
 import itertools
 import os
 import re
@@ -122,9 +123,9 @@ def privacy(texts, personal, extra_words=()):
     bad = []
     scrub = aquifer_privacy.Scrubber(extra_words)
     for where, text in texts.items():
-        low = text.lower()
+        texts_ = (text.lower(), html.unescape(text).lower())
         for value in personal:
-            if value.lower() in low:
+            if any(value.lower() in t for t in texts_):
                 bad.append(f"{where}: a name or address from the report")
         if scrub.extra_in(text):
             bad.append(f"{where}: a private word")

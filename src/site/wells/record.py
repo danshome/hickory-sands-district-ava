@@ -105,7 +105,26 @@ def parameters():
     keys = sorted(k for k in vars(params) if k.isupper())
     out = {k.lower(): getattr(params, k) for k in keys}
     out["privacy_rules"] = privacy.rules_digest()
+    out["code"] = code_digest()
     return json.loads(json.dumps(out))
+
+
+def code_digest():
+    """One SHA-256 of the generator's code: make_wells.py and wells/*.py."""
+    here = os.path.dirname(os.path.abspath(__file__))
+    files = sorted(glob.glob(os.path.join(here, "*.py")))
+    files.append(os.path.join(os.path.dirname(here), "make_wells.py"))
+    digest = hashlib.sha256()
+    for path in files:
+        digest.update(os.path.basename(path).encode("utf-8"))
+        digest.update(sha256_file(path).encode("ascii"))
+    return "sha256:" + digest.hexdigest()
+
+
+def load(path):
+    """A JSON file's data."""
+    with open(path, encoding="utf-8") as fh:
+        return json.load(fh)
 
 
 def blocks(text):

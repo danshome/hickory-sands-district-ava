@@ -67,10 +67,7 @@ START = (
 END = "<!-- end of the wells drawing: {slot} -->"
 
 
-def load(path):
-    """A JSON file's data."""
-    with open(path, encoding="utf-8") as fh:
-        return json.load(fh)
+load = record.load
 
 
 def constants():
@@ -175,8 +172,11 @@ def generate(manifest, local, out_dir):
     personal = verify.personal_values(
         paths["twdb-sdr"], c["granite_example_report"]
     )
-    section = new_page[new_page.find('id="three-wells"') :]
-    section = section[: section.find("</section>")]
+    start = new_page.find('id="three-wells"')
+    end = new_page.find("</section>", start)
+    if start < 0 or end < 0:
+        raise SystemExit("docs/land.html has no three-wells section to check")
+    section = new_page[start:end]
     bad = verify.flows(drawn)
     bad += verify.labels(drawn)
     bad += verify.privacy(

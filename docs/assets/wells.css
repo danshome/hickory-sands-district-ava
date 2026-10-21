@@ -145,5 +145,8 @@
 .w-body:not(.w-all) .w-strip[data-well="deep"] :is(.c-outcrop,.c-granite){display:none}
 .w-body:not(.w-all) .w-strip tbody th{width:45%}
 
+/* A phone held sideways (short, not wide enough for the side-by-side layout): the figure would be taller than the
+   screen, so it scrolls with the text instead of sticking over it. */
+@media (max-height:560px){.w-js:not(.w-wide) .w-fig{position:static;box-shadow:none}}
 @media (prefers-reduced-motion:reduce){.w-js :is(.w-water,.w-recharge,.w-levels,.w-unsure){transition:none}.w-move{display:none}.w-concept{animation:none}}
 @media print{.w-js:not(.w-wide) .w-fig{position:static;box-shadow:none}.w-js :is(.w-water,.w-recharge,.w-levels,.w-unsure){opacity:1}.w-move{animation:none}}

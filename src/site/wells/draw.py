@@ -222,9 +222,7 @@ def place(labels, frame, depth, limit=None):
 def label_svg(item, frame):
     """A placed label's <text> elements."""
     lb, x, rows, _ = item
-    cls = " ".join(
-        c for c in ("w-lab", f"w-{lb.size}", lb.cls) if c and c != "w-lab-"
-    )
+    cls = " ".join(c for c in ("w-lab", f"w-{lb.size}", lb.cls) if c)
     size = frame.fonts[lb.size]
     src = f' data-src="{lb.src}"' if lb.src else ""
     return "".join(
@@ -406,7 +404,8 @@ class Well:
         for top, bottom, cls, src in self.water:
             y0, y1 = depth.y(top), depth.y(bottom)
             src_ = f' data-src="{src}"' if src else ""
-            out.append(f'<g class="w-water {cls}"{src_}>'.replace(' "', '"'))
+            classes = " ".join(c for c in ("w-water", cls) if c)
+            out.append(f'<g class="{classes}"{src_}>')
             if y1 > y0:
                 out.append(
                     f'<rect x="{fmt(x0)}" y="{fmt(y0)}" width="{fmt(x1 - x0)}"'

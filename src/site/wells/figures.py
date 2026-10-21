@@ -44,6 +44,20 @@ SANDSTONE = aquifer_params.CLASSES.index("sandstone")
 GRANITE = aquifer_params.CLASSES.index("granite")
 
 
+NUMBER_WORDS = (
+    "no", "one", "two", "three", "four", "five",
+    "six", "seven", "eight", "nine", "ten",
+)  # fmt: skip
+
+
+def and_list(words):
+    """Words joined as the page writes a list: "a", "a and b", "a, b and c"."""
+    words = list(words)
+    return (
+        ", ".join(words[:-1]) + (" and " if len(words) > 1 else "") + words[-1]
+    )
+
+
 def num(text):
     """A report's number ("1,200", "45+"), or None."""
     try:
@@ -236,6 +250,8 @@ def make(wells, report, c, total):
         USE_WORDS[w["use"]] for w in deep if w["yield"] is not None
     )
     figs["deep_uses"] = mix(uses, {u: u for u in USE_WORDS})
+    commonest = [u for u, _ in uses.most_common(2)]
+    figs["deep_uses_main"] = and_list(commonest)
     figs["deep_irrigation_n"] = uses.get("irrigation", 0)
     for name in ("outcrop", "granite", "deep"):
         logs = counts[f"{name}_logs"]
@@ -246,6 +262,8 @@ def make(wells, report, c, total):
             figs[f"{name}_logs_{rock}_pct"] = percent(n, logs) if logs else 0
     figs["big_yield_gpm"] = params.BIG_YIELD_GPM
     figs["counties"] = len(params.COUNTIES)
+    figs["counties_word"] = NUMBER_WORDS[len(params.COUNTIES)]
+    figs["counties_named"] = and_list(params.COUNTIES)
     figs.update(costs.energy_figures(c, figs, figs["deep_drawdown"]))
     figs.update(costs.cost_figures(c, figs))
     example = example_figures(report_by_id(wells, report, c))

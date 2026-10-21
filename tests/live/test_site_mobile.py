@@ -1758,16 +1758,17 @@ def test_land_figures_stick_beside_the_text_on_an_open_fold(site_page):
 # The slice as land.js leaves it when its data is bad: the static drawing and
 # the steps, with nothing it adds
 STATIC = """() => ({
-  figure: document.querySelector('.lnd-sec-body')
+  figure: document.querySelector('#the-slice .lnd-sec-body')
     .classList.contains('lnd-has-figure'),
-  img: document.querySelectorAll('.lnd-art > img[src$="section.svg"]').length,
-  svg: document.querySelectorAll('.lnd-art svg').length,
-  buttons: document.querySelectorAll('.lnd-sec .geo-step').length,
-  hint: document.querySelectorAll('.lnd-sec .geo-hint').length,
-  marks: document.querySelectorAll('.lnd-progress li').length,
-  live: document.querySelectorAll('.lnd-sec .geo-live').length,
-  current: document.querySelectorAll('.lnd-current').length,
-  title: document.querySelector('.lnd-now').textContent})"""
+  img: document.querySelectorAll(
+    '#the-slice .lnd-art > img[src$="section.svg"]').length,
+  svg: document.querySelectorAll('#the-slice .lnd-art svg').length,
+  buttons: document.querySelectorAll('#the-slice .geo-step').length,
+  hint: document.querySelectorAll('#the-slice .geo-hint').length,
+  marks: document.querySelectorAll('#the-slice .lnd-progress li').length,
+  live: document.querySelectorAll('#the-slice .geo-live').length,
+  current: document.querySelectorAll('#the-slice .lnd-current').length,
+  title: document.querySelector('#the-slice .lnd-now').textContent})"""
 UNTOUCHED = {
     "figure": False,
     "img": 1,

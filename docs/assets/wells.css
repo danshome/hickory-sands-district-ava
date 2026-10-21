@@ -129,6 +129,10 @@
 .w-wide .w-fig{position:sticky;top:1.5rem;margin-bottom:0}
 .w-wide .w-steps .lnd-step{padding-block:2.5rem}
 .w-all .w-tabs{display:none}
+/* Side by side, the granite well's switch and caption go under its drawing, so the three drawings line up. */
+.w-all #panel-granite{display:flex;flex-direction:column}
+.w-all #panel-granite .w-example{order:1}
+.w-all #panel-granite .w-gview{order:2}
 .w-js:not(.w-all) .w-panel{display:none}
 .w-js:not(.w-all) .w-fig[data-well="outcrop"] #panel-outcrop,
 .w-js:not(.w-all) .w-fig[data-well="granite"] #panel-granite,

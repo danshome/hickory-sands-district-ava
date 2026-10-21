@@ -71,6 +71,8 @@ WALK_TOKENS = ("@STEPS@",)
 # The land page's slice and maps: their figures, under --pages
 # (src/site/make_land.py writes them).
 LAND_STATS = ("assets", "land", "stats.json")
+# The land page's three wells: their figures (src/site/make_wells.py).
+WELLS_STATS = ("assets", "wells", "stats.json")
 # A figure in a page: an element marked data-figure="name" holding only text,
 # such as <span data-figure="area_sqmi">193.83</span>; the build writes it.
 FIGURE = re.compile(
@@ -727,6 +729,23 @@ def figures(files):
 
 
 def land_figures(pages_dir):
+    """Returns the land page's figures: its slice and maps', its wells'.
+
+    The wells' are stats_figures(pages_dir, WELLS_STATS, "wells"),
+    src/site/make_wells.py's; the rest are described below.
+
+    Args:
+        pages_dir: The site's folder (docs).
+
+    Returns:
+        A dict from figure name to (text, ISO date or None).
+    """
+    out = stats_figures(pages_dir, LAND_STATS, "land")
+    out.update(stats_figures(pages_dir, WELLS_STATS, "wells"))
+    return out
+
+
+def stats_figures(pages_dir, where, prefix):
     """Returns the land page's figures, from its slice and maps' stats.
 
     src/site/make_land.py writes docs/assets/land/stats.json: every figure
@@ -734,6 +753,8 @@ def land_figures(pages_dir):
 
     Args:
         pages_dir: The site's folder (docs).
+        where: The stats file's path under it (LAND_STATS).
+        prefix: The marks' prefix ("land").
 
     Returns:
         A dict from figure name to (text, ISO date or None): a whole number
@@ -745,7 +766,7 @@ def land_figures(pages_dir):
     Raises:
         SystemExit: A figure is neither a number nor text.
     """
-    path = os.path.join(pages_dir, *LAND_STATS)
+    path = os.path.join(pages_dir, *where)
     if not os.path.exists(path):
         return {}
     with open(path, encoding="utf-8") as fh:
@@ -755,18 +776,18 @@ def land_figures(pages_dir):
         if isinstance(value, bool):
             sys.exit(f"{path}: {name} is not a number or text")
         if isinstance(value, int):
-            out[f"land_{name}"] = (f"{value:,}", None)
+            out[f"{prefix}_{name}"] = (f"{value:,}", None)
         elif isinstance(value, float):
-            out[f"land_{name}"] = (f"{value:,.2f}", None)
+            out[f"{prefix}_{name}"] = (f"{value:,.2f}", None)
         elif isinstance(value, str) and re.fullmatch(r"\d{4}-\d\d-\d\d", value):
             dated = datetime.date.fromisoformat(value)
             month = revision.LONG_MONTHS[dated.month - 1]
-            out[f"land_{name}"] = (
+            out[f"{prefix}_{name}"] = (
                 f"{month} {dated.day}, {dated.year}",
                 dated.isoformat(),
             )
         elif isinstance(value, str):
-            out[f"land_{name}"] = (value, None)
+            out[f"{prefix}_{name}"] = (value, None)
         else:
             sys.exit(f"{path}: {name} is not a number or text")
     return out

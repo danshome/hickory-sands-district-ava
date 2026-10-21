@@ -150,6 +150,8 @@ src/
                          pastes), shopify-handoff.liquid (the Shopify page's hand-off), sb and sb_deploy (Management
                          API helpers for another agent's connector); SETUP.md: the switch-over from Shopify
                          make_land (with land/): The land's slice and maps (docs/assets/land/)
+                         make_wells (with wells/): The land's three wells (docs/assets/wells/ and the drawings in
+                         docs/land.html)
                          stamp_assets: the scripts' and stylesheets' version stamps (#138)
                          make_site_meta: docs/llms.txt, each indexable page's JSON-LD and
                          docs/.well-known/security.txt, from the pages, SECURITY.md, LICENSE.txt and ABOUT.md
@@ -167,6 +169,8 @@ resources/
   aquifer/               the 3D aquifer page's inputs: inputs.csv (the pinned downloads), cache/ (them, not in git),
                          TWDB's fault lines; and The land's: land-inputs.csv (3DEP tiles), TWDB's row 239 line;
                          see resources/aquifer/README.md
+  wells/                 The land's three wells: inputs.csv (USGS's SGMC for Texas, pinned) and constants.json (the
+                         cited constants, each with its source)
   vineyards/             the vineyard outlines the site shows; see resources/vineyards/README.md
   quads/                 quads-manifest.csv, cropped/ (neatline VRT templates); geotiff/ and geopdf/ are downloaded
 documents/               hand-written texts: README.template.txt ({AREA_SQMI} filled by the build),
@@ -226,7 +230,9 @@ research/                research, audits, design proposals and prototypes until
    (`src/site/make_aquifer_3d.py --check`) is checked by its record, `docs/assets/aquifer/record.json`, with no
    download, and the vineyards' (`src/site/make_vineyards.py --check`) by theirs,
    `docs/assets/vineyards/record.json` (see The website below), and The land's slice and maps
-   (`src/site/make_land.py --check`) by theirs, `docs/assets/land/record.json`, the same way. The site's
+   (`src/site/make_land.py --check`) by theirs, `docs/assets/land/record.json`, the same way, as are The land's three
+   wells (`src/site/make_wells.py --check`, `docs/assets/wells/record.json`, which also holds the SHA-256 of the
+   drawings it writes into `docs/land.html`). The site's
    machine-readable files (`src/site/make_site_meta.py --check`: `docs/llms.txt`, each indexable page's JSON-LD and
    `docs/.well-known/security.txt`) must be what the pages, SECURITY.md and LICENSE.txt give (an Expires that is near
    or past only warns; see The website below). Last, every script and
@@ -927,6 +933,21 @@ within its budget (each map 200 KB, any file the hooks' 2 MB). `land.js` checks 
 page, and takes away everything it added if drawing still fails, so the static drawing stays. The class rule (`src/site/land/rules.py`: the first rock a
 driller names, a bare "sand" its own class) is not yet the 3D page's, so a well's colour here can differ from its colour
 on The water.
+
+**Three wells, three rocks** (`docs/land.html`, `#three-wells`) compares an outcrop well on the Hickory Sandstone
+Member, a granite well (one documented driller's report, and a screened gravel-and-granite well with illustrative values)
+and a deep downdip well, in six steps (`docs/assets/wells.js`, `wells.css`). `src/site/make_wells.py` (with
+`src/site/wells/`) groups the 3D page's cleaned wells in seven counties by the mapped rock at each well (USGS's SGMC for
+Texas, `resources/wells/inputs.csv`, at the geology's shift; the Census counties) and, downdip, the depth to the Hickory
+layer in the 3D page's drill grid; computes every figure (`docs/assets/wells/stats.json`, written into the page's
+`wells_` marks by `make_site_data.py`) from them and the cited constants in `resources/wells/constants.json`; and draws
+the four wells, each tall for the side-by-side desktop view and wide for phones, and step 05's depths to scale, between
+the "wells drawing" comments in `docs/land.html`. Its record, `docs/assets/wells/record.json`, holds the inputs, the
+parameters, the files and the drawings' SHA-256; the build only checks it (`make_wells.py --check`, no download), and
+`./build.sh site-data` makes it again when it is stale. It writes nothing unless its hard checks pass: every moving-water
+path and inflow arrow ends on a screen or open hole, never on casing; every label fits, without overlaps, and is at least
+11 px on a 360 px phone; no name or address from the granite example's raw report (read from TWDB's download) and no
+private word is in anything written; every source a drawing names is in the page's list.
 
 The land page's geologic timeline (#117) is plain HTML in `docs/land.html`: eight stages, oldest first, each with its
 age, its uncertainty in words and numbered citations to the Sources list at its end. `docs/assets/timeline.js` only adds

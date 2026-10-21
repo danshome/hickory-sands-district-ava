@@ -171,6 +171,7 @@ VINEYARDS=(src/site/make_vineyards.py)     # the vineyards' data (docs/assets/vi
 STAMP=(src/site/stamp_assets.py --site docs --template src/site/walk.template.html)
 SITE_META=(src/site/make_site_meta.py)   # llms.txt, the pages' JSON-LD and security.txt, from the pages themselves
 LAND=(src/site/make_land.py)   # The land page's slice and maps (docs/assets/land/), from resources/aquifer/land-inputs.csv and the 3D page's data
+WELLS=(src/site/make_wells.py)   # The land page's three wells (docs/assets/wells/ and its drawings), from resources/wells/ and the 3D page's data
 
 site_data() {
     step "the website's map data (docs/data/, walk.html, figures, stamps) against this build"   # hard, after the package: a boundary change must reach the site
@@ -180,6 +181,7 @@ site_data() {
     run "${AQUIFER_3D[@]}" --check           # exits 3 when an input snapshot, a parameter or a file changed; no download (#135)
     run "${VINEYARDS[@]}" --check            # exits 3 when the vineyards, the well tiles or a parameter changed
     run "${LAND[@]}" --check                 # the same for The land's slice and maps; no download
+    run "${WELLS[@]}" --check                # the same for The land's three wells and their drawings; no download
     run "${SITE_META[@]}" --check            # exits 3 when llms.txt, a page's JSON-LD or security.txt is stale; a near Expires only warns
     run "${STAMP[@]}" --check                # exits 3 when a script's or stylesheet's version stamp is missing or stale (#138)
 }
@@ -304,7 +306,8 @@ case "${1:-all}" in
                run "${AQUIFER_3D[@]}"               # made again only when stale: fetches missing inputs into resources/aquifer/cache/
                run "${VINEYARDS[@]}"                # after the aquifer: it reads the aquifer's well tiles
                run "${LAND[@]}"                     # after the boundary and the 3D page's data, which it reads; the same cache
-               run "${SITE_DATA[@]}"                # again, for The land's figures, which make_land.py may have changed
+               run "${WELLS[@]}"                    # after the 3D page's data, which it reads; the same cache
+               run "${SITE_DATA[@]}"                # again, for The land's figures, which make_land.py and make_wells.py may have changed
                run "${SITE_META[@]}"                # after walk.html is written from its template; renews security.txt's Expires
                run "${STAMP[@]}" ;;                 # last: walk.html is written above, from its template
     site-meta) env_setup; step "llms.txt, the pages' JSON-LD and security.txt"; run "${SITE_META[@]}" ;;

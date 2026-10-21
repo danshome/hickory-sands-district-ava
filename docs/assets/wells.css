@@ -1,0 +1,149 @@
+/* The land page's three wells (docs/land.html, #three-wells). Builds on site.css, timeline.css and land.css: the
+   paper colours, the slice's step list (.lnd-steps) and controls (.geo-controls), and the source list. The drawings
+   are made by src/site/make_wells.py; each SVG text carries its own font-size, so no rule here sets one. */
+.w-sec{border-top:0}
+.w-defs{position:absolute;width:0;height:0;overflow:hidden}
+
+/* The figure: three drawings, a segmented control on narrow screens */
+.w-fig{position:relative;margin:0 0 1rem;min-width:0;background:var(--bone)}
+.w-tabs{display:flex;border:1px solid var(--paper-line);margin-bottom:.6rem}
+.w-tabs button{flex:1 1 0;min-height:44px;border:0;border-right:1px solid var(--paper-line);background:none;color:var(--paper-ink);font:inherit;font-size:.875rem;cursor:pointer}
+.w-tabs button:last-child{border-right:0}
+.w-tabs button[aria-selected="true"]{background:var(--paper-ink);color:var(--bone)}
+.w-tabs button:focus-visible{outline:2px solid var(--wine);outline-offset:2px}
+.w-panels{display:flex;gap:.6rem}
+.w-panel{flex:1 1 0;min-width:0}
+.w-panel-title{font-size:.6875rem;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--paper-muted);margin:0 0 .3rem}
+.w-panel svg{display:block;width:100%;height:auto;background:#f4efe5;border:1px solid var(--paper-line);font-family:var(--sans)}
+.w-progress{display:flex;gap:4px;list-style:none;margin:.7rem 0 0;padding:0}
+.w-progress li{flex:1;height:3px;background:var(--geo-scale)}
+.w-progress li.on{background:#b1a797}.w-progress li.now{background:var(--paper-ink)}
+.w-fig figcaption{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:.25rem 1rem;margin-top:.6rem}
+.w-fig .geo-controls{margin-top:.6rem}
+.w-note{position:absolute;left:0;right:0;top:100%;z-index:5;display:flex;gap:.5rem;align-items:flex-start;margin-top:.35rem;padding:.55rem .6rem .55rem .8rem;background:#f4efe5;border:1px solid var(--paper-line);border-left:2px solid var(--wine);box-shadow:0 8px 18px -10px #282b2466;font-size:.8125rem;line-height:1.5}
+.w-note[hidden]{display:none}
+.w-note p{margin:0;flex:1}
+.w-note a{color:inherit}
+.w-note-x{flex:0 0 auto;min-width:44px;min-height:44px;border:0;background:none;font-size:1.2rem;line-height:1;color:var(--paper-ink);cursor:pointer}
+.w-note-x:focus-visible{outline:2px solid var(--wine)}
+
+/* The drawings */
+.w-sky{fill:#f4efe5}
+.w-ground{stroke:var(--paper-ink);stroke-width:1.6;fill:none}
+.w-axis path{stroke:var(--paper-muted);stroke-width:1;fill:none}
+.w-axis text{fill:var(--paper-muted);text-anchor:end}
+.w-lab{fill:var(--paper-ink)}
+.w-rock{font-style:italic}
+.w-contact{fill:none;stroke:var(--paper-ink);stroke-width:1.2;stroke-dasharray:5 3}
+.w-wt{stroke:#47625c;stroke-width:1.4;stroke-dasharray:6 3;fill:none}
+.w-rain{stroke:#6d8c86;stroke-width:1.4;fill:none}
+.w-flow{stroke:#47625c;stroke-width:1.8;fill:none}
+.w-head{fill:var(--paper-ink)}
+.w-casing{stroke:var(--paper-ink);stroke-width:1.8;fill:none}
+.w-screen{stroke:var(--paper-ink);stroke-width:1.8;stroke-dasharray:3 2.5;fill:none}
+.w-openhole{stroke:var(--paper-ink);stroke-width:1.2;stroke-dasharray:2 3;fill:none}
+.w-fracs{stroke:#8f8575;stroke-width:1.1;fill:none}
+.w-fracw{stroke:#47625c;stroke-width:2.4;fill:none}
+.w-joint{stroke:#8f8575;stroke-width:1.6;fill:none}
+.w-static{stroke:#2f4a45;stroke-width:3;fill:none}
+.w-pump{stroke:var(--wine);stroke-width:2;stroke-dasharray:4 2;fill:none}
+.w-cone{stroke:var(--wine);stroke-width:1.1;stroke-dasharray:3 3;fill:none}
+.w-column{fill:#6d8c86;fill-opacity:.75}
+.w-break{fill:#f4efe5;stroke:var(--paper-line);stroke-width:1}
+.w-breaklab{fill:var(--paper-muted)}
+.w-qbox{fill:#f4efe5;stroke:var(--wine);stroke-width:1;stroke-dasharray:4 3}
+.w-q{fill:var(--wine)}
+.w-soil{fill:#b9a98c}
+.w-inflow{stroke:#47625c;stroke-width:1.6;fill:none}
+.w-doc{stroke:var(--wine);stroke-width:4;fill:none}
+.w-doclab{fill:var(--wine);font-weight:600}
+.w-illus{stroke:var(--paper-muted);stroke-width:2;stroke-dasharray:3 2;fill:none}
+.w-conceptlab{fill:#5b716a;font-style:italic}
+/* Moving water (the same in every well), conceptual pathways (faint, dashed). Under reduced motion the moving dashes
+   go and the static arrows (.w-inflow) stay. */
+.w-move{fill:none;stroke:#2f5f5a;stroke-width:2.4;stroke-linecap:round;stroke-dasharray:.5 7;animation:w-flow 1.6s linear infinite}
+@keyframes w-flow{to{stroke-dashoffset:-15}}
+.w-concept{stroke:#6d8c86;stroke-opacity:.65;stroke-width:1.3;stroke-dasharray:4 4;animation:w-flow 4s linear infinite}
+
+/* What each step adds: water from 02, recharge from 03, levels from 04, the unknowns at 06 */
+.w-js :is(.w-water,.w-recharge,.w-levels,.w-unsure){opacity:0;transition:opacity .45s ease}
+.w-js .show-water .w-water,.w-js .show-recharge .w-recharge,.w-js .show-levels .w-levels,.w-js .show-unsure .w-unsure{opacity:1}
+[data-src]{cursor:pointer}
+[data-src]:focus-visible{outline:2px solid var(--wine)}
+
+/* Keys and the comparison */
+.w-sw{display:inline-block;width:16px;height:0;vertical-align:middle}
+.w-sw-static{border-top:3px solid #2f4a45}
+.w-sw-pump{border-top:2px dashed var(--wine)}
+.w-sw-q{height:10px;border:1px dashed var(--wine);background:#f4efe5}
+.w-sw-casing{border-top:2px solid var(--paper-ink)}
+.w-sw-screen{border-top:2px dashed var(--paper-ink)}
+.w-sw-open{border-top:2px dotted var(--paper-ink)}
+.w-sw-move{border-top:3px dotted #2f5f5a}
+.w-sw-concept{border-top:2px dashed #6d8c86;opacity:.75}
+.w-sw-doc{height:10px;width:4px;background:var(--wine);margin-inline:6px}
+.w-scale{margin:1.2rem 0 0;max-width:360px}
+.w-scale svg{display:block;width:100%;height:auto;background:#f4efe5;border:1px solid var(--paper-line);font-family:var(--sans)}
+.w-scale-cap{font-size:.75rem;color:var(--paper-muted);margin-top:.3rem}
+.w-bar-out{fill:#c7976f}.w-bar-gra{fill:#bdb3a2}.w-bar-deep{fill:#6d8c86}
+.w-strip-wrap{margin-top:1.4rem;overflow-x:auto}
+.w-strip{width:100%;border-collapse:collapse;font-size:.8125rem;line-height:1.45}
+.w-strip caption{caption-side:bottom;text-align:left;padding-top:.5rem;font-size:.75rem;color:var(--paper-muted)}
+.w-strip th,.w-strip td{text-align:left;vertical-align:top;padding:.55rem .5rem .55rem 0;border-top:1px solid var(--paper-line)}
+.w-strip thead th{font-size:.6875rem;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--paper-muted);border-top:0}
+.w-strip tbody th{font-weight:500;width:34%}
+.w-spec th{padding-top:1rem;font-weight:500}
+.w-est{display:block;margin-top:.15rem;font-size:.6875rem;font-weight:400;font-style:italic;color:var(--paper-muted)}
+.w-tbd{color:var(--paper-muted);font-style:italic}
+.w-vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.w-fine{font-size:.8125rem!important;line-height:1.6!important;color:var(--paper-muted);margin-top:.9rem}
+.w-methods{margin-top:2.5rem;border-top:1px solid var(--paper-line);padding-top:1rem;max-width:46rem}
+.w-methods summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-family:var(--serif);font-size:1.5rem}
+.w-methods summary:focus-visible{outline:2px solid var(--wine);outline-offset:4px}
+.w-methods p,.w-methods li{font-size:.875rem;line-height:1.6}
+.w-methods ul{padding-left:1.2rem}
+.w-methods table{border-collapse:collapse;font-size:.8125rem;margin:.6rem 0;width:100%}
+.w-methods th,.w-methods td{text-align:left;vertical-align:top;padding:.35rem .5rem .35rem 0;border-top:1px solid var(--paper-line)}
+.w-methods-wrap{overflow-x:auto}
+
+/* The granite well's two views: the documented example (water from granite) and the screened gravel well */
+.w-gv[hidden]{display:none}
+.w-gview{display:flex;flex-wrap:wrap;gap:.3rem;margin:0 0 .45rem}
+.w-gview button{flex:1 1 auto;min-height:44px;padding:.3rem .5rem;border:1px solid var(--paper-line);background:none;color:var(--paper-ink);font:inherit;font-size:.75rem;line-height:1.2;cursor:pointer}
+.w-gview button[aria-pressed="true"]{background:var(--paper-ink);color:var(--bone)}
+.w-gview button:focus-visible{outline:2px solid var(--wine);outline-offset:2px}
+.w-example{margin:.35rem 0;font-size:.75rem;line-height:1.35;color:var(--paper-muted)}
+.w-js:not(.w-all) .w-gview{flex-wrap:nowrap}
+.w-js:not(.w-all) .w-gview button{flex:1 1 0}
+#panel-granite[data-gview="rock"] .w-ex-gravel,#panel-granite[data-gview="gravel"] .w-ex-rock{display:none}
+
+/* Layouts (wells.js sets the classes): .w-wide puts the figure beside the text (the land page's rule); .w-all, from
+   1000 px, shows the three tall drawings side by side. Otherwise one wide drawing at a time, chosen with the tabs, its
+   labels large enough to read on a phone. Without JavaScript the three wide drawings follow one another. */
+.w-f-tall{display:none!important}
+.w-all .w-f-tall{display:block!important}
+.w-all .w-f-wide{display:none!important}
+.w-js:not(.w-wide) .w-fig{position:sticky;top:0;z-index:3;margin:0 -7vw;padding:.6rem 7vw .3rem;border-bottom:1px solid var(--paper-line);box-shadow:0 6px 14px -12px #282b2466}
+.w-body:not(.w-wide) .w-note{left:7vw;right:7vw}
+.w-wide{display:grid;grid-template-columns:minmax(0,6fr) minmax(0,5fr);gap:5vw;align-items:start}
+.w-wide .w-fig{position:sticky;top:1.5rem;margin-bottom:0}
+.w-wide .w-steps .lnd-step{padding-block:2.5rem}
+.w-all .w-tabs{display:none}
+.w-js:not(.w-all) .w-panel{display:none}
+.w-js:not(.w-all) .w-fig[data-well="outcrop"] #panel-outcrop,
+.w-js:not(.w-all) .w-fig[data-well="granite"] #panel-granite,
+.w-js:not(.w-all) .w-fig[data-well="deep"] #panel-deep{display:block}
+.w-js:not(.w-all) .w-panel-title{display:none}
+.w-js:not(.w-all) .w-example{display:none}
+.w-body:not(.w-wide) .lnd-ve{display:none}
+.w-body:not(.w-wide) .lnd-now{font-size:1.2rem}
+.w-body:not(.w-wide) .w-fig figcaption{margin-top:.3rem}
+.w-body:not(.w-wide) .w-fig .geo-controls{margin-top:.1rem}
+.w-body:not(.w-wide) .w-progress{margin-top:.45rem}
+.w-body:not(.w-all) .w-strip[data-well="outcrop"] :is(.c-granite,.c-deep),
+.w-body:not(.w-all) .w-strip[data-well="granite"] :is(.c-outcrop,.c-deep),
+.w-body:not(.w-all) .w-strip[data-well="deep"] :is(.c-outcrop,.c-granite){display:none}
+.w-body:not(.w-all) .w-strip tbody th{width:45%}
+
+@media (prefers-reduced-motion:reduce){.w-js :is(.w-water,.w-recharge,.w-levels,.w-unsure){transition:none}.w-move{display:none}.w-concept{animation:none}}
+@media print{.w-js:not(.w-wide) .w-fig{position:static;box-shadow:none}.w-js :is(.w-water,.w-recharge,.w-levels,.w-unsure){opacity:1}.w-move{animation:none}}
